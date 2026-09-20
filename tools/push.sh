@@ -1,5 +1,5 @@
 #!/bin/sh
-# Back Deckhand up to github.com/croix18/deckhand from a Claude session.
+# Back Deckhand up to github.com/croix18/Deckhand from a Claude session.
 #
 # The sandbox proxy answers git's first (credential-less) request with 403,
 # so the token must ride EVERY request preemptively as a Basic header —
