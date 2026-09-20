@@ -17,7 +17,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "6.29.0",
+  "appVersion": "6.33.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1761,7 +1761,7 @@
 
       <details class="setSec" id="secRosters">
         <summary>Class Rosters</summary>
-        <div class="setNote">One box per period &mdash; student first names separated by commas or new lines. The name picker and group maker follow the bell schedule automatically; leave a box empty to skip that period. Download a configured copy to keep rosters in the file.</div>
+        <div class="setNote">One box per period &mdash; student first names separated by commas or new lines. The name picker and group maker follow the bell schedule automatically; leave a box empty to skip that period. Download a configured copy to keep rosters in the file. <b>Privacy:</b> a copy with rosters carries student names inside it &mdash; keep those copies in your own Drive, and never upload one to the public website (GitHub).</div>
         <div id="rosterGrid" class="tplGrid"></div>
       </details>
 
@@ -1854,7 +1854,7 @@ var DEFAULT_SCENES = [
 ];
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "6.32.0",
+  appVersion: "6.33.0",
   ownerName: "",
   ui: { locked: false, motion: "auto" },
   activeScene: "Daily Board",
@@ -5093,12 +5093,41 @@ function makeMusic(host, wcfg){
    favorite) rides its channel's uploads playlist (UU + channel id), so
    it always opens on the newest upload. Library picks are one-tap PLAY
    actions; ☆ Save promotes any of them to a personal station. */
+/* v6.33: expanded per Croix ("expand the offerings… math antics…
+   sorted for my content… curated ted content, more ambient sounds,
+   more study music… instrumental Disney or instrumental video game
+   themes… school safe pop, hip hop, jazz"). SOURCING RULE UNCHANGED:
+   every url below was found by live web search (Sep 20, 2026), never
+   guessed. Math Antics entries are the OFFICIAL channel playlists
+   (their PLUPEBWbAHUs… set), sorted to 7th-grade topics. */
 var YT_LIB = [
+  { cat: "Math Antics", items: [
+    { name: "Fractions",           url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszeG-AhgtaRybo0ylguyk6_" },
+    { name: "Percents",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszZIGUj0Hypsane5yYAyIUY" },
+    { name: "Ratios & proportions",url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsy8XFOyG-aloxtb-yKNSk8J" },
+    { name: "Integers",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszGTzPZNvOjc_qp-3rY4X6i" },
+    { name: "Algebra basics 1",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsy-ow8RdnlRokMT9UrHb2Kd" },
+    { name: "Algebra basics 2",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsym6gcZi7rfeysMRxIrnLrf" },
+    { name: "Geometry",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsxuIbsAS--B6cobarm2bty2" }
+  ]},
   { cat: "Study music", items: [
     { name: "Lofi Girl radio",   url: "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk" },
     { name: "Mood Melodies",     url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUR68jfDGAqtZM15vgb3epDg" },
     { name: "Chillhop radio",    url: "https://www.youtube-nocookie.com/embed/5yx6BWlEVcY" },
     { name: "Coffee shop radio", url: "https://www.youtube-nocookie.com/embed/blAFxjhg62k" }
+  ]},
+  { cat: "Movie & game scores", items: [
+    { name: "Disney piano (3 hr)",   url: "https://www.youtube-nocookie.com/embed/5DiMoehAeOU" },
+    { name: "Disney piano mix",      url: "https://www.youtube-nocookie.com/embed/GBexfwe-9j0" },
+    { name: "Zelda for studying",    url: "https://www.youtube-nocookie.com/embed/RxrXSixvYAQ" },
+    { name: "Minecraft (C418)",      url: "https://www.youtube-nocookie.com/embed/ENgujtcYrk8" },
+    { name: "Minecraft + rain",      url: "https://www.youtube-nocookie.com/embed/qLuc8kZty1A" }
+  ]},
+  { cat: "Pop, jazz & beats", items: [
+    { name: "Classroom pop hits",    url: "https://www.youtube-nocookie.com/embed/mb6NyvfCMFI" },
+    { name: "Pop covers (clean)",    url: "https://www.youtube-nocookie.com/embed/X-yJhGcS7U4" },
+    { name: "Pop study mix",         url: "https://www.youtube-nocookie.com/embed/wDNT10n1zpY" },
+    { name: "Jazz lofi radio",       url: "https://www.youtube-nocookie.com/embed/E2vONfzoyRI" }
   ]},
   { cat: "Classical", items: [
     { name: "Best of Mozart",        url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_fm5s5Gm_0kIfA9weExAhDh" },
@@ -5109,7 +5138,11 @@ var YT_LIB = [
   { cat: "Ambience", items: [
     { name: "Rain in the woods", url: "https://www.youtube-nocookie.com/embed/9oc8Fa7tb8c" },
     { name: "Rain & stream 4K",  url: "https://www.youtube-nocookie.com/embed/buqt6_CjtuI" },
-    { name: "Cozy fireplace",    url: "https://www.youtube-nocookie.com/embed/wp2GVCZgpPE" }
+    { name: "Cozy fireplace",    url: "https://www.youtube-nocookie.com/embed/wp2GVCZgpPE" },
+    { name: "Ocean waves (10 hr)",  url: "https://www.youtube-nocookie.com/embed/cjqDNEN_4ro" },
+    { name: "Thunder & ocean",      url: "https://www.youtube-nocookie.com/embed/VcsEA0zl8LU" },
+    { name: "Birdsong & forest",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLQzmDP1HVzzbB9h1_Y1pNiZaBlquu3kKG" },
+    { name: "Brown noise",          url: "https://www.youtube-nocookie.com/embed/SwoL4Qi_FJk" }
   ]},
   { cat: "Brain breaks", items: [
     { name: "Koo Koo brain breaks", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLdC8ueW9VQ0gSrC8covABwp3ScaC5_kIo" },
@@ -5118,6 +5151,8 @@ var YT_LIB = [
   ]},
   { cat: "Watch & learn", items: [
     { name: "TED-Ed riddles",   url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUptLdhc0cdHEQTMrdI9t4GR6wM_nXLnA" },
+    { name: "TED-Ed: math in real life", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLE3376FF44087B17B" },
+    { name: "TED-Ed: think like a coder", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLJicmE8fK0EgogMqDYMgcADT1j5b911or" },
     { name: "Veritasium maths", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PL0q2jaibc2Q1SSDGbaab-dI2TaHS6_OaP" },
     { name: "Numberphile",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLt5AfwLFPxWIUYlCb5ip9f_s4qm1zi8kc" }
   ]}

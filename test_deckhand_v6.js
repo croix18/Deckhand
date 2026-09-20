@@ -3906,7 +3906,8 @@ function decodeQR(matrix){
       cats: [...document.querySelectorAll('.ytLib .menuLabel')].map(l => l.textContent),
       pills: document.querySelectorAll('.ytLib .pill').length
     }));
-    expect(libState.open && libState.cats.length === 5 && libState.pills >= 15,
+    // v6.33: 8 categories (Math Antics + scores + pop/jazz joined the 5)
+    expect(libState.open && libState.cats.length === 8 && libState.pills >= 30,
       'library wrong: ' + JSON.stringify(libState));
     await page.click('.ytLib .pill');            // first entry: Lofi Girl radio
     const libPick = await page.evaluate(() => ({
@@ -4099,6 +4100,28 @@ function decodeQR(matrix){
              'https://www.youtube-nocookie.com/embed/abc123defg4',
       'hostile yt config survived sanitize: ' + JSON.stringify(cleaned));
     await pg2.close();
+  });
+
+  await t('v6.33: every library pill is a distinct, valid nocookie embed', async () => {
+    await openAt('');
+    await launch();
+    await addW('addYtBtn');
+    await page.click('.ytLibBtn');               // open (a pick closes it)
+    const n = await page.locator('.ytLib .pill').count();
+    expect(n >= 30, 'library shrank: ' + n);
+    const seen = new Set();                      // dupes anywhere, not just adjacent
+    for (let i = 0; i < n; i++) {
+      if (i > 0) await page.click('.ytLibBtn');  // reopen after each pick
+      await page.locator('.ytLib .pill').nth(i).click();
+      const src = await page.evaluate(() =>
+        document.querySelector('.ytFrame').getAttribute('src') || '');
+      expect(src.startsWith('https://www.youtube-nocookie.com/embed/'),
+        'pill ' + i + ' produced a non-nocookie src: ' + src);
+      expect(!seen.has(src),
+        'pill ' + i + ' is a dupe or was refused (keep-last-good): ' + src);
+      seen.add(src);
+    }
+    await page.click('.w-yt .wClose');
   });
 
   await t('v6.18 motion: serpent glides; the sea sleeps during stage mode', async () => {
