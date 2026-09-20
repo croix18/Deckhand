@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deckhand — Classroom Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     DECKHAND CONFIG — this JSON block IS the saved state.
+     Edit via the in-app Settings panel, then "Download configured
+     copy" to bake changes into a new file. Hand-editable too.
+     Times use school convention: 6:00-11:59 = AM, 12:00-5:59 = PM.
+     Baked in: WHMS 2026-27 bell schedule, 7th-grade lunch track.
+     ============================================================ -->
+<script id="deckhand-config" type="application/json">
+{
+  "schemaVersion": 3,
+  "appVersion": "5.0.1",
+  "ownerName": "Mr. Shaffer",
+  "sound": { "enabled": true, "volume": 0.25 },
+  "timer": { "presetsMinutes": [1, 3, 5, 10], "defaultSeconds": 300 },
+  "bell": {
+    "nudgeSeconds": 0,
+    "showProgressBar": true,
+    "defaultGroup": "Teal Week",
+    "groups": [
+      {
+        "name": "Teal Week",
+        "regular": [
+          { "label": "1st", "start": "9:20", "end": "10:13" },
+          { "label": "2nd", "start": "10:16", "end": "11:09" },
+          { "label": "HOWL Time", "start": "11:12", "end": "11:43" },
+          { "label": "3rd", "start": "11:46", "end": "12:39" },
+          { "label": "Lunch", "start": "12:42", "end": "1:12" },
+          { "label": "4th", "start": "1:15", "end": "2:08" },
+          { "label": "5th", "start": "2:11", "end": "3:04" },
+          { "label": "6th", "start": "3:07", "end": "4:00" }
+        ],
+        "wednesday": [
+          { "label": "1st", "start": "9:20", "end": "10:03" },
+          { "label": "2nd", "start": "10:06", "end": "10:49" },
+          { "label": "HOWL Time", "start": "10:52", "end": "11:23" },
+          { "label": "3rd", "start": "11:26", "end": "12:09" },
+          { "label": "Lunch", "start": "12:12", "end": "12:42" },
+          { "label": "4th", "start": "12:45", "end": "1:28" },
+          { "label": "5th", "start": "1:31", "end": "2:14" },
+          { "label": "6th", "start": "2:17", "end": "3:00" }
+        ]
+      },
+      {
+        "name": "Black Week",
+        "regular": [
+          { "label": "6th", "start": "9:20", "end": "10:13" },
+          { "label": "5th", "start": "10:16", "end": "11:09" },
+          { "label": "HOWL Time", "start": "11:12", "end": "11:43" },
+          { "label": "3rd", "start": "11:46", "end": "12:39" },
+          { "label": "Lunch", "start": "12:42", "end": "1:12" },
+          { "label": "4th", "start": "1:15", "end": "2:08" },
+          { "label": "2nd", "start": "2:11", "end": "3:04" },
+          { "label": "1st", "start": "3:07", "end": "4:00" }
+        ],
+        "wednesday": [
+          { "label": "6th", "start": "9:20", "end": "10:03" },
+          { "label": "5th", "start": "10:06", "end": "10:49" },
+          { "label": "HOWL Time", "start": "10:52", "end": "11:23" },
+          { "label": "3rd", "start": "11:26", "end": "12:09" },
+          { "label": "Lunch", "start": "12:12", "end": "12:42" },
+          { "label": "4th", "start": "12:45", "end": "1:28" },
+          { "label": "2nd", "start": "1:31", "end": "2:14" },
+          { "label": "1st", "start": "2:17", "end": "3:00" }
+        ]
+      }
+    ]
+  }
+}
+</script>
+
+<style>
+  :root{
+    --cream:#F8F2E4; --grid:#EADFC6; --sand:#E6D5B8; --shadow:#D8C5A0;
+    --turq:#40E0D0; --paleturq:#D8F6F1; --teal:#127A85;
+    --navy:#17324D; --coral:#FF7F6A; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:"DM Sans", system-ui, sans-serif;
+    color:var(--navy);
+    background:var(--cream);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:48px 48px;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+
+  header{
+    margin:24px 28px 0;
+    background:var(--navy);
+    border-radius:18px;
+    box-shadow:6px 8px 0 var(--shadow);
+    padding:16px 28px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    flex-shrink:0;
+  }
+  #dateline{color:var(--white); font-weight:700; font-size:clamp(18px, 2.6vw, 30px);}
+  #headerRight{display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:flex-end;}
+  #brand{color:var(--turq); font-weight:900; letter-spacing:.14em; font-size:14px; white-space:nowrap;}
+  #brand small{color:var(--white); opacity:.55; font-weight:700; letter-spacing:.05em; margin-left:7px; font-size:12px;}
+  #brand .sim{color:var(--coral); margin-left:8px; letter-spacing:.08em;}
+  .pill{
+    background:var(--turq); color:var(--navy); border:none; cursor:pointer;
+    font:inherit; font-weight:700; font-size:14px;
+    padding:8px 18px; border-radius:999px;
+  }
+  #soundBtn{background:var(--sand);}
+  #soundBtn[aria-pressed="false"]{
+    background:transparent; color:var(--white);
+    border:2px solid var(--sand); padding:6px 16px;
+  }
+  #setBtn{background:var(--paleturq);}
+  .pill:focus-visible{outline:3px solid var(--white); outline-offset:2px;}
+
+  main{
+    flex:1; display:flex; gap:28px; padding:28px;
+    align-items:stretch; min-height:0;
+  }
+
+  .card{
+    background:var(--white);
+    border-radius:20px;
+    box-shadow:8px 10px 0 var(--shadow);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+  .card .strip{
+    padding:14px 26px;
+    font-weight:900; letter-spacing:.06em; font-size:clamp(15px,1.6vw,22px);
+  }
+
+  /* clock */
+  #clockCard{flex:1.5;}
+  #clockCard .strip{background:var(--turq); color:var(--navy);}
+  #clockBody{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 20px;}
+  #clock{
+    font-weight:900; font-variant-numeric:tabular-nums;
+    font-size:clamp(64px, 13vw, 190px); line-height:1;
+  }
+  #clockSub{font-weight:500; font-size:clamp(16px,2vw,26px); color:var(--teal); font-variant-numeric:tabular-nums;}
+
+  /* bell schedule readout */
+  #bellWrap{width:min(78%, 640px); display:flex; flex-direction:column; gap:10px; align-items:center; margin-top:14px;}
+  #bellWrap[hidden]{display:none;}
+  #bellLine{
+    font-weight:700; color:var(--teal); text-align:center;
+    font-size:clamp(15px, 2vw, 25px); font-variant-numeric:tabular-nums;
+  }
+  #bellBar{width:100%; height:10px; background:var(--paleturq); border-radius:999px; overflow:hidden;}
+  #bellBar[hidden]{display:none;}
+  #bellFill{height:100%; width:0%; background:var(--turq); border-radius:999px;}
+  #bellFill.passing{background:var(--sand);}
+
+  /* timer card with mode tabs */
+  #timerCard{flex:1;}
+  #timerCard .strip{
+    background:var(--teal); color:var(--white);
+    display:flex; gap:22px; padding:0 26px;
+  }
+  .tab{
+    background:none; border:none; cursor:pointer;
+    color:var(--white); opacity:.5;
+    font:inherit; font-weight:900; letter-spacing:.06em;
+    font-size:clamp(15px,1.6vw,22px);
+    padding:14px 2px 10px;
+    border-bottom:4px solid transparent;
+  }
+  .tab[aria-pressed="true"]{opacity:1; border-bottom-color:var(--turq);}
+  .tab:focus-visible{outline:3px solid var(--white); outline-offset:-3px;}
+
+  #timerBody{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:20px;}
+  #timer{
+    font-weight:900; font-variant-numeric:tabular-nums;
+    font-size:clamp(56px, 9vw, 130px); line-height:1;
+    border-bottom:6px solid transparent;
+    transition:color .3s;
+  }
+  #timer.low{color:var(--coral);}
+  #timer.entry{color:var(--teal); border-bottom:6px dashed var(--turq);}
+  .chips{display:flex; gap:12px; flex-wrap:wrap; justify-content:center;}
+  .chip{
+    background:var(--paleturq); color:var(--navy);
+    border:2px solid var(--turq); border-radius:999px;
+    font:inherit; font-weight:700; font-size:16px;
+    padding:9px 20px; cursor:pointer;
+  }
+  .chip[aria-pressed="true"]{background:var(--turq);}
+  .row{display:flex; gap:12px; flex-wrap:wrap; justify-content:center;}
+  .btn{
+    border:none; border-radius:14px; cursor:pointer;
+    font:inherit; font-weight:900; font-size:18px;
+    padding:14px 34px;
+  }
+  .btn:focus-visible, .chip:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
+  #startBtn{background:var(--turq); color:var(--navy);}
+  #plusBtn{background:var(--sand); color:var(--navy);}
+  #resetBtn{background:var(--white); color:var(--navy); border:3px solid var(--navy); padding:11px 28px;}
+  #hint{font-size:13px; color:var(--teal); font-weight:500; text-align:center; min-height:1.2em;}
+
+  #timerCard.sw .chips, #timerCard.sw #plusBtn{display:none;}
+
+  /* landing page */
+  #landing{
+    display:none; flex:1; min-height:0;
+    flex-direction:column; align-items:center; justify-content:center;
+    gap:24px; padding:28px; text-align:center;
+  }
+  body.landing #landing{display:flex;}
+  body.landing main{display:none;}
+  body.landing #homeBtn{display:none;}
+  #greet{font-weight:900; font-size:clamp(40px, 6.5vw, 96px); line-height:1.05;}
+  #landDate{color:var(--teal); font-weight:700; font-size:clamp(18px, 2.4vw, 30px);}
+  .landLabel{font-weight:900; letter-spacing:.14em; font-size:14px; opacity:.6; margin-top:14px;}
+  #launchBtn{
+    background:var(--turq); color:var(--navy);
+    font-size:clamp(18px, 2vw, 26px); font-weight:900;
+    padding:18px 48px; border-radius:18px; border:none; cursor:pointer;
+    box-shadow:6px 8px 0 var(--shadow); margin-top:10px;
+  }
+  #launchBtn:focus-visible{outline:3px solid var(--navy); outline-offset:3px;}
+  #landHint{font-size:13px; color:var(--teal); font-weight:500;}
+
+  /* waves */
+  #waves{flex-shrink:0; display:block; width:100%; height:88px;}
+
+  /* time's up overlay (always on top) */
+  #alarm{
+    position:fixed; inset:0; z-index:30;
+    background:var(--coral);
+    display:none;
+    flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    cursor:pointer;
+  }
+  #alarm.on{display:flex; animation:pulse 1s ease-in-out infinite alternate;}
+  #alarm h1{color:var(--white); font-weight:900; font-size:clamp(60px, 12vw, 170px); letter-spacing:.02em;}
+  #alarm p{color:var(--navy); font-weight:700; font-size:clamp(16px,2.2vw,26px);}
+  @keyframes pulse{from{background:var(--coral);} to{background:#E85F4A;}}
+  @media (prefers-reduced-motion: reduce){ #alarm.on{animation:none;} }
+
+  /* settings panel */
+  #settingsWrap{position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;}
+  #settingsWrap[hidden]{display:none;}
+  #settingsBack{position:absolute; inset:0; background:rgba(23,50,77,.45);}
+  #settingsCard{position:relative; width:min(760px, 94vw); max-height:88vh;}
+  #settingsCard .strip{background:var(--navy); color:var(--white);}
+  #settingsBody{overflow:auto; padding:22px 26px; display:flex; flex-direction:column; gap:18px;}
+  .setLabel{font-weight:700; color:var(--teal); font-size:13px; letter-spacing:.04em; display:block; margin-bottom:6px;}
+  .setInput, .setSelect, textarea{
+    font:inherit; color:var(--navy); background:var(--white);
+    border:2px solid var(--grid); border-radius:10px; padding:8px 10px;
+    font-variant-numeric:tabular-nums;
+  }
+  .setInput:focus-visible, .setSelect:focus-visible, textarea:focus-visible{outline:3px solid var(--turq); outline-offset:1px;}
+  textarea{width:100%; resize:vertical; line-height:1.55;}
+  .setFlex{display:flex; gap:18px; flex-wrap:wrap; align-items:center;}
+  .setCheck{display:flex; gap:8px; align-items:center; font-weight:700;}
+  .setCheck input{width:18px; height:18px; accent-color:var(--teal);}
+  .tplGrid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .setNote{font-size:12.5px; color:var(--teal); font-weight:500;}
+  #setErrors{color:var(--coral); font-weight:700; font-size:14px; white-space:pre-line;}
+  #setErrors.ok{color:var(--teal);}
+
+  @media (max-width: 780px){
+    main{flex-direction:column; overflow:auto;}
+    #clockCard, #timerCard{flex:none;}
+    #clockBody, #timerBody{padding:26px 12px;}
+    .tplGrid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div id="dateline">—</div>
+  <div id="headerRight">
+    <div id="brand">DECKHAND<small>v5</small></div>
+    <button class="pill" id="homeBtn" type="button">Home (H)</button>
+    <button class="pill" id="setBtn" type="button">Settings</button>
+    <button class="pill" id="soundBtn" type="button" aria-pressed="true">Sound On</button>
+    <button class="pill" id="fsBtn" type="button">Fullscreen (F)</button>
+  </div>
+</header>
+
+<div id="landing">
+  <h1 id="greet">—</h1>
+  <div id="landDate">—</div>
+  <div class="landLabel">THIS WEEK&rsquo;S BELLS</div>
+  <div class="chips" id="schedChips" role="group" aria-label="This week's bell schedule"></div>
+  <button id="launchBtn" type="button">Open the Daily Board</button>
+  <div id="landHint">Enter opens the board</div>
+</div>
+
+<main>
+  <section class="card" id="clockCard" aria-label="Current time and bell schedule">
+    <div class="strip">CLOCK</div>
+    <div id="clockBody">
+      <div id="clock">--:--</div>
+      <div id="clockSub">--</div>
+      <div id="bellWrap" hidden>
+        <div id="bellLine">—</div>
+        <div id="bellBar"><div id="bellFill"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="timerCard" aria-label="Countdown timer and stopwatch">
+    <div class="strip" role="group" aria-label="Timer mode">
+      <button class="tab" id="tabTimer" type="button" aria-pressed="true">TIMER</button>
+      <button class="tab" id="tabWatch" type="button" aria-pressed="false">STOPWATCH</button>
+    </div>
+    <div id="timerBody">
+      <div id="timer">5:00</div>
+      <div class="chips" id="chips" role="group" aria-label="Timer presets"></div>
+      <div class="row">
+        <button class="btn" id="startBtn" type="button">Start</button>
+        <button class="btn" id="plusBtn" type="button">+1:00</button>
+        <button class="btn" id="resetBtn" type="button">Reset</button>
+      </div>
+      <div id="hint"></div>
+    </div>
+  </section>
+</main>
+
+<svg id="waves" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0,55 C240,25 480,85 720,55 C960,25 1200,85 1440,55 C1680,25 1820,70 1920,50 L1920,120 L0,120 Z" fill="#E6D5B8"/>
+  <path d="M0,80 C260,50 520,105 780,78 C1040,50 1300,105 1560,78 C1720,62 1840,88 1920,75 L1920,120 L0,120 Z" fill="#BFEFEA"/>
+  <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" fill="#8FE5DC"/>
+</svg>
+
+<!-- settings -->
+<div id="settingsWrap" hidden>
+  <div id="settingsBack"></div>
+  <div class="card" id="settingsCard" role="dialog" aria-modal="true" aria-label="Deckhand settings">
+    <div class="strip">SETTINGS</div>
+    <div id="settingsBody">
+
+      <div class="setFlex">
+        <div>
+          <label class="setLabel" for="sName">Display name (greeting)</label>
+          <input class="setInput" type="text" id="sName" maxlength="40" style="width:180px" placeholder="Mr. Shaffer">
+        </div>
+        <div>
+          <label class="setLabel" for="sDefault">Bells at startup</label>
+          <select class="setSelect" id="sDefault"></select>
+        </div>
+        <div>
+          <label class="setLabel" for="sNudge">Bell nudge (seconds)</label>
+          <input class="setInput" type="number" id="sNudge" step="1" min="-600" max="600" style="width:110px">
+        </div>
+        <div>
+          <label class="setLabel" for="sPresets">Timer presets (minutes)</label>
+          <input class="setInput" type="text" id="sPresets" style="width:150px" placeholder="1,3,5,10">
+        </div>
+      </div>
+      <div class="setFlex">
+        <label class="setCheck"><input type="checkbox" id="sBar"> Period progress bar</label>
+        <label class="setCheck"><input type="checkbox" id="sSound"> Sound on</label>
+      </div>
+      <div class="setNote">Pick this week's bells on the home screen; Wednesdays switch to the Wednesday times automatically. "Bells at startup" is only the default. Nudge shifts only the bell math (e.g. 45 = school bells run 45s ahead of the clock).</div>
+
+      <div>
+        <div class="setNote" style="margin-bottom:8px">Up to four week types, each with regular times and (optionally) Wednesday times. One block per line: <b>label&nbsp;start-end</b> (e.g. <b>3rd 11:46-12:39</b>). Times 6:00&ndash;11:59 are AM, 12:00&ndash;5:59 are PM. Empty regular box = week type removed; empty Wednesday box = Wednesdays use the regular times.</div>
+        <div id="groupEditors">
+          <div class="groupEd" style="margin-bottom:14px">
+            <input class="setInput" type="text" id="sGrpName1" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
+            <div class="tplGrid">
+              <div><label class="setLabel" for="taGrpReg1">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg1" rows="9" spellcheck="false"></textarea></div>
+              <div><label class="setLabel" for="taGrpWed1">Wednesday (optional)</label><textarea id="taGrpWed1" rows="9" spellcheck="false"></textarea></div>
+            </div>
+          </div>
+          <div class="groupEd" style="margin-bottom:14px">
+            <input class="setInput" type="text" id="sGrpName2" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
+            <div class="tplGrid">
+              <div><label class="setLabel" for="taGrpReg2">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg2" rows="9" spellcheck="false"></textarea></div>
+              <div><label class="setLabel" for="taGrpWed2">Wednesday (optional)</label><textarea id="taGrpWed2" rows="9" spellcheck="false"></textarea></div>
+            </div>
+          </div>
+          <div class="groupEd" style="margin-bottom:14px">
+            <input class="setInput" type="text" id="sGrpName3" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
+            <div class="tplGrid">
+              <div><label class="setLabel" for="taGrpReg3">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg3" rows="9" spellcheck="false"></textarea></div>
+              <div><label class="setLabel" for="taGrpWed3">Wednesday (optional)</label><textarea id="taGrpWed3" rows="9" spellcheck="false"></textarea></div>
+            </div>
+          </div>
+          <div class="groupEd">
+            <input class="setInput" type="text" id="sGrpName4" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
+            <div class="tplGrid">
+              <div><label class="setLabel" for="taGrpReg4">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg4" rows="9" spellcheck="false"></textarea></div>
+              <div><label class="setLabel" for="taGrpWed4">Wednesday (optional)</label><textarea id="taGrpWed4" rows="9" spellcheck="false"></textarea></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="setErrors" role="alert"></div>
+
+      <div class="row">
+        <button class="btn" id="applyBtn" type="button" style="background:var(--turq); color:var(--navy)">Apply</button>
+        <button class="btn" id="dlBtn" type="button" style="background:var(--sand); color:var(--navy)">Download configured copy</button>
+        <button class="btn" id="closeBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy); padding:11px 28px">Close</button>
+      </div>
+      <div class="setNote">"Download configured copy" saves a new Deckhand file with these settings baked in — replace your old file with it and the settings are permanent. Nothing is stored in the browser.</div>
+
+    </div>
+  </div>
+</div>
+
+<div id="alarm" role="alert">
+  <h1>TIME&rsquo;S UP</h1>
+  <p>Click anywhere to dismiss</p>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================================================================
+   DECKHAND v5 — week-group bells: pick Teal/Black once, Wednesday
+   times apply automatically on Wednesdays.
+   Hard constraints: single file · no storage APIs · no deps except
+   Google Fonts · runs from file:// on a locked-down machine.
+   Persistence model: config lives in the #deckhand-config JSON
+   block; "Download configured copy" re-serializes this very file
+   with the current config baked in.
+   ================================================================ */
+
+/* Pristine source snapshot, captured BEFORE any DOM mutation.
+   Used by the download-configured-copy serializer. */
+var SOURCE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+
+/* ---------------- config load ---------------- */
+var DEFAULTS = {
+  schemaVersion: 3,
+  appVersion: "5.0.1",
+  ownerName: "",
+  sound: { enabled: true, volume: 0.25 },
+  timer: { presetsMinutes: [1,3,5,10], defaultSeconds: 300 },
+  bell: {
+    nudgeSeconds: 0, showProgressBar: true,
+    defaultGroup: "none", groups: []
+  }
+};
+function isObj(x){ return x && typeof x === "object" && !Array.isArray(x); }
+
+/* Sanitize the raw config: every field is type-checked and coerced with a
+   per-field fallback, so a hand-edited config that is valid JSON but the
+   wrong SHAPE degrades field-by-field instead of killing the app. */
+function sanitize(c){
+  if (!isObj(c)) c = {};
+  function num(v, d){ return typeof v === "number" && isFinite(v) ? v : d; }
+  function bool(v, d){ return typeof v === "boolean" ? v : d; }
+  function str(v, d){ return typeof v === "string" ? v : d; }
+  var s = isObj(c.sound) ? c.sound : {};
+  var t = isObj(c.timer) ? c.timer : {};
+  var b = isObj(c.bell) ? c.bell : {};
+  var pm = Array.isArray(t.presetsMinutes)
+    ? t.presetsMinutes.filter(function(n){
+        return typeof n === "number" && isFinite(n) && n >= 1 && n <= 120;
+      }).map(function(n){ return Math.round(n); }).slice(0, 6)
+    : [];
+  function cleanBlocks(arr){
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function(x){
+      return isObj(x) && typeof x.label === "string" &&
+             typeof x.start === "string" && typeof x.end === "string";
+    }).map(function(x){ return { label: x.label, start: x.start, end: x.end }; });
+  }
+  var groups = [];
+  var seenGroupNames = Object.create(null);
+  (Array.isArray(b.groups) ? b.groups : []).slice(0, 4).forEach(function(g, i){
+    if (!isObj(g)) return;
+    var reg = cleanBlocks(g.regular);
+    var wed = cleanBlocks(g.wednesday);
+    if (reg.length){
+      var nm = str(g.name, "Week " + (i+1)).slice(0, 30) || ("Week " + (i+1));
+      var base = nm, k = 2;
+      while (seenGroupNames[nm]) nm = base + " (" + (k++) + ")";  // never duplicate
+      seenGroupNames[nm] = true;
+      groups.push({ name: nm, regular: reg, wednesday: wed });
+    }
+  });
+  var defGroup = str(b.defaultGroup, "none");
+  if (defGroup !== "none" && !groups.some(function(g){ return g.name === defGroup; })){
+    defGroup = groups.length ? groups[0].name : "none";
+  }
+  return {
+    schemaVersion: 3,
+    appVersion: DEFAULTS.appVersion,
+    ownerName: str(c.ownerName, "").slice(0, 40),
+    sound: { enabled: bool(s.enabled, true),
+             volume: Math.max(0, Math.min(1, num(s.volume, 0.25))) },
+    timer: { presetsMinutes: pm.length ? pm : DEFAULTS.timer.presetsMinutes.slice(),
+             defaultSeconds: num(t.defaultSeconds, 300) },
+    bell: {
+      nudgeSeconds: Math.max(-600, Math.min(600, Math.round(num(b.nudgeSeconds, 0)))),
+      showProgressBar: bool(b.showProgressBar, true),
+      defaultGroup: defGroup,
+      groups: groups
+    }
+  };
+}
+/* Older downloaded copies migrate up the chain: 1 (auto week-parity era)
+   -> 2 (flat manual schedules) -> 3 (week groups). */
+function migrate(raw){
+  if (!isObj(raw)) return {};
+  var sv = +raw.schemaVersion;         // tolerate hand-edited "3" as string
+  if (sv === 3) return raw;
+  if (sv === 1){
+    var b1 = isObj(raw.bell) ? raw.bell : {};
+    var tpls = isObj(b1.templates) ? b1.templates : {};
+    var scheds = [];
+    [["blueReg","Blue Regular"], ["blueWed","Blue Wednesday"],
+     ["blackReg","Black Regular"], ["blackWed","Black Wednesday"]]
+      .forEach(function(p){
+        var tp = tpls[p[0]];
+        if (isObj(tp) && Array.isArray(tp.blocks) && tp.blocks.length){
+          scheds.push({ name: p[1], blocks: tp.blocks });
+        }
+      });
+    raw = {
+      schemaVersion: 2,
+      ownerName: "",
+      sound: raw.sound,
+      timer: raw.timer,
+      bell: {
+        nudgeSeconds: b1.nudgeSeconds,
+        showProgressBar: b1.showProgressBar,
+        /* v1 had a master bell.enabled switch — honor it. A v1 file with
+           bells OFF must not come back to life with bells on. */
+        defaultSchedule: (b1.enabled === true && scheds.length) ? scheds[0].name : "none",
+        schedules: scheds
+      }
+    };
+    sv = 2;
+  }
+  if (sv === 2){
+    /* Pair "X Regular" + "X Wednesday" into group "X Week"; anything
+       unpaired becomes its own group with no Wednesday variant. */
+    var b2 = isObj(raw.bell) ? raw.bell : {};
+    var flat = Array.isArray(b2.schedules) ? b2.schedules : [];
+    var used = {};
+    var groups = [];
+    flat.forEach(function(sc, i){
+      if (!isObj(sc) || used[i]) return;
+      var nm = typeof sc.name === "string" ? sc.name : "";
+      var m = /^(.*)\s+Regular$/.exec(nm);
+      if (m){
+        var wedName = m[1] + " Wednesday";
+        var wedIdx = -1;
+        flat.forEach(function(o, j){
+          if (!used[j] && isObj(o) && o.name === wedName) wedIdx = j;
+        });
+        used[i] = true;
+        if (wedIdx !== -1) used[wedIdx] = true;
+        groups.push({ name: m[1] + " Week", regular: sc.blocks,
+                      wednesday: wedIdx !== -1 ? flat[wedIdx].blocks : [] });
+      }
+    });
+    flat.forEach(function(sc, i){
+      if (used[i] || !isObj(sc)) return;
+      groups.push({ name: sc.name, regular: sc.blocks, wednesday: [] });
+    });
+    var def2 = typeof b2.defaultSchedule === "string" ? b2.defaultSchedule : "none";
+    var defGroup = "none";
+    if (def2 !== "none"){
+      var hasName = function(n){ return groups.some(function(g){ return g.name === n; }); };
+      if (hasName(def2)){ defGroup = def2; }        // unpaired schedule kept its name
+      else {
+        var mm = /^(.*)\s+(Regular|Wednesday)$/.exec(def2);
+        var want = mm ? mm[1] + " Week" : def2;
+        if (hasName(want)) defGroup = want;
+        else if (groups.length) defGroup = groups[0].name;
+      }
+    }
+    return {
+      schemaVersion: 3,
+      ownerName: raw.ownerName,
+      sound: raw.sound,
+      timer: raw.timer,
+      bell: {
+        nudgeSeconds: b2.nudgeSeconds,
+        showProgressBar: b2.showProgressBar,
+        defaultGroup: defGroup,
+        groups: groups
+      }
+    };
+  }
+  return {};
+}
+var cfg;
+try {
+  var rawCfg = JSON.parse(document.getElementById("deckhand-config").textContent);
+  cfg = sanitize(migrate(rawCfg));
+} catch(e){ cfg = sanitize({}); /* corrupted block: defaults, bells off */ }
+
+/* ---------------- simulated time (test/preview hook) ----------------
+   Open the file as Deckhand_v5.html#t=2026-09-02T10:30 to preview any
+   moment (a coral SIM tag shows). Durations/timers stay real. */
+var simOffset = 0;
+(function(){
+  var m = location.hash.match(/[#&]t=([^&]+)/);
+  if (m){
+    var d = new Date(decodeURIComponent(m[1]));
+    if (!isNaN(d.getTime())) simOffset = d.getTime() - Date.now();
+  }
+})();
+function now(){ return new Date(Date.now() + simOffset); }
+
+/* ---------------- tiny DOM helpers ---------------- */
+function $(id){ return document.getElementById(id); }
+var el = {
+  dateline: $("dateline"), clock: $("clock"), clockSub: $("clockSub"),
+  brand: $("brand"),
+  bellWrap: $("bellWrap"), bellLine: $("bellLine"), bellBar: $("bellBar"), bellFill: $("bellFill"),
+  timer: $("timer"), timerCard: $("timerCard"),
+  tabTimer: $("tabTimer"), tabWatch: $("tabWatch"),
+  chipsWrap: $("chips"),
+  startBtn: $("startBtn"), plusBtn: $("plusBtn"), resetBtn: $("resetBtn"),
+  soundBtn: $("soundBtn"), fsBtn: $("fsBtn"), setBtn: $("setBtn"), homeBtn: $("homeBtn"),
+  hint: $("hint"), alarm: $("alarm"),
+  greet: $("greet"), landDate: $("landDate"), schedChips: $("schedChips"),
+  launchBtn: $("launchBtn")
+};
+
+/* Blur buttons after pointer clicks (keyboard activation keeps focus).
+   Without this, clicking a chip then pressing Space re-fires the chip
+   instead of starting the timer. */
+function wireButton(btn, fn){
+  btn.addEventListener("click", function(e){
+    fn(e);
+    if (e.detail > 0) btn.blur();   // pointer click, not keyboard
+  });
+}
+
+/* ================= Clock module ================= */
+var Clock = (function(){
+  var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function tick(){
+    var n = now();
+    var h = n.getHours(), m = n.getMinutes(), s = n.getSeconds();
+    var ap = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    el.clock.textContent = h12 + ":" + String(m).padStart(2,"0");
+    el.clockSub.textContent = ":" + String(s).padStart(2,"0") + " " + ap;
+    var dateStr = DAYS[n.getDay()] + ", " + MONTHS[n.getMonth()] + " " + n.getDate();
+    el.dateline.textContent = dateStr;
+    el.landDate.textContent = dateStr;
+  }
+  return { init: function(){
+    if (simOffset !== 0){
+      var sim = document.createElement("span");
+      sim.className = "sim"; sim.textContent = "SIM";
+      el.brand.appendChild(sim);
+    }
+    tick(); setInterval(tick, 250);
+  }};
+})();
+
+/* ================= Bell module =================
+   Manual WEEK pick + automatic day shape (Croix's design, Aug 2026):
+   he answers the one question a machine can't ("Teal or Black week?");
+   the calendar answers the one it can (is it Wednesday?). Pure time
+   math takes an explicit Date -> testable. Nudge shifts only bell
+   computations, never the clock. */
+var Bell = (function(){
+  var active = -1;                    // index into cfg.bell.groups, -1 = no bells
+
+  function parseClock(str){
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(str).trim());
+    if (!m) return null;
+    var h = +m[1], mm = +m[2];
+    if (mm > 59 || h < 1 || h > 12) return null;
+    if (h <= 5) h += 12;             // 12:00-5:59 -> PM; 6:00-11:59 -> AM
+    return h * 60 + mm;              // minutes of day
+  }
+  function parsedBlocks(arr){
+    var out = [];
+    (arr || []).forEach(function(b){
+      var s = parseClock(b.start), e = parseClock(b.end);
+      if (s !== null && e !== null && e > s) out.push({ label: b.label, s: s, e: e });
+    });
+    out.sort(function(a, b){ return a.s - b.s; });
+    return out;
+  }
+  function activeGroup(){
+    return active >= 0 && cfg.bell.groups[active] ? cfg.bell.groups[active] : null;
+  }
+  /* status at an explicit Date, for the currently active week group;
+     the date's own weekday decides regular vs Wednesday blocks */
+  function statusAt(d){
+    var g = activeGroup();
+    if (!g) return { type: "off" };
+    var usedWed = d.getDay() === 3 && g.wednesday && g.wednesday.length > 0;
+    var blocks = parsedBlocks(usedWed ? g.wednesday : g.regular);
+    if (!blocks.length) return { type: "off" };
+    var dispName = g.name + (usedWed ? " (Wed)" : "");
+
+    var bellTime = new Date(d.getTime() + (cfg.bell.nudgeSeconds || 0) * 1000);
+    var mins = bellTime.getHours() * 60 + bellTime.getMinutes() + bellTime.getSeconds() / 60;
+
+    for (var i = 0; i < blocks.length; i++){
+      var b = blocks[i];
+      if (mins >= b.s && mins < b.e){
+        return { type: "in", sched: dispName, label: b.label,
+                 remainMs: (b.e - mins) * 60000, totalMs: (b.e - b.s) * 60000 };
+      }
+      if (mins < b.s){
+        var gapStart = i > 0 ? blocks[i-1].e : b.s - 90;   // pre-school window: 90 min
+        if (mins < gapStart) return { type: "off" };
+        return { type: "passing", sched: dispName, next: b.label,
+                 remainMs: (b.s - mins) * 60000, totalMs: (b.s - gapStart) * 60000 };
+      }
+    }
+    return { type: "off" };                                 // after last bell
+  }
+
+  function fmtRemain(ms){
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+  function paint(){
+    var st = statusAt(now());
+    if (st.type === "off"){ el.bellWrap.hidden = true; return; }
+    el.bellWrap.hidden = false;
+    el.bellBar.hidden = !cfg.bell.showProgressBar;
+    var pct = Math.max(0, Math.min(100, 100 * (1 - st.remainMs / st.totalMs)));
+    el.bellFill.style.width = pct + "%";
+    el.bellFill.classList.toggle("passing", st.type === "passing");
+    el.bellLine.textContent = st.type === "in"
+      ? st.sched + " · " + st.label + " · " + fmtRemain(st.remainMs) + " until bell"
+      : st.sched + " · Passing · " + st.next + " in " + fmtRemain(st.remainMs);
+  }
+  function getActive(){ return active; }
+  function setActive(i){
+    active = (i >= 0 && i < cfg.bell.groups.length) ? i : -1;
+    paint();
+  }
+  function activeName(){
+    var g = activeGroup();
+    return g ? g.name : null;
+  }
+  function snapshot(){ return { name: activeName(), index: active }; }
+  /* Keep selection sensible after config changes. Rules:
+     - an explicit "No bells" pick STAYS "No bells" (never resurrected);
+     - a renamed group keeps its slot (match by name, then by index);
+     - a deleted group falls back to the configured default. */
+  function reResolve(prev){
+    var byName = function(n){
+      for (var i = 0; i < cfg.bell.groups.length; i++){
+        if (cfg.bell.groups[i].name === n) return i;
+      }
+      return -1;
+    };
+    var i;
+    if (!prev){                                  // boot: use the default
+      i = cfg.bell.defaultGroup === "none" ? -1 : byName(cfg.bell.defaultGroup);
+    } else if (prev.index === -1){               // current pick is No bells
+      i = -1;
+    } else {
+      i = byName(prev.name);
+      if (i === -1 && prev.index >= 0 && prev.index < cfg.bell.groups.length){
+        i = prev.index;                          // renamed in place
+      }
+      if (i === -1 && cfg.bell.defaultGroup !== "none"){
+        i = byName(cfg.bell.defaultGroup);       // deleted: fall to default
+      }
+    }
+    active = i;
+    paint();
+  }
+  return {
+    init: function(){
+      reResolve(null);                // start on the configured default
+      setInterval(paint, 500);
+      document.addEventListener("visibilitychange", function(){
+        if (document.visibilityState === "visible") paint();
+      });
+    },
+    paint: paint, statusAt: statusAt, parseClock: parseClock,
+    getActive: getActive, setActive: setActive,
+    activeName: activeName, snapshot: snapshot, reResolve: reResolve
+  };
+})();
+
+/* ================= Landing module =================
+   The home screen: greeting, this-week's-bells picker, launch. Shows
+   on every open (no storage) — one tap through, and the tap doubles
+   as the weekly schedule pick. */
+var Landing = (function(){
+  var chipEls = [];
+  function greet(){
+    var h = now().getHours();
+    var g = h < 12 ? "Good morning" : (h < 17 ? "Good afternoon" : "Good evening");
+    el.greet.textContent = cfg.ownerName ? g + ", " + cfg.ownerName : g + "!";
+  }
+  function refreshPressed(){
+    chipEls.forEach(function(c, i){
+      var pressed = (i < cfg.bell.groups.length)
+        ? Bell.getActive() === i
+        : Bell.getActive() === -1;    // last chip = No bells
+      c.setAttribute("aria-pressed", pressed ? "true" : "false");
+    });
+  }
+  function buildChips(){
+    el.schedChips.innerHTML = "";
+    chipEls = [];
+    cfg.bell.groups.forEach(function(g, i){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.textContent = g.name;
+      wireButton(b, function(){ Bell.setActive(i); refreshPressed(); });
+      el.schedChips.appendChild(b);
+      chipEls.push(b);
+    });
+    var none = document.createElement("button");
+    none.type = "button"; none.className = "chip";
+    none.textContent = "No bells";
+    wireButton(none, function(){ Bell.setActive(-1); refreshPressed(); });
+    el.schedChips.appendChild(none);
+    chipEls.push(none);
+    refreshPressed();
+    $("landHint").textContent = chipEls.length > 1
+      ? "Enter opens the board · 1–" + chipEls.length + " picks this week’s bells · Wednesdays adjust automatically"
+      : "Enter opens the board";
+  }
+  function show(){
+    document.body.classList.add("landing");
+    greet(); buildChips();
+  }
+  function hide(){ document.body.classList.remove("landing"); }
+  function isShowing(){ return document.body.classList.contains("landing"); }
+  function pick(i){ if (i >= 0 && i < chipEls.length) chipEls[i].click(); }
+  return {
+    init: function(){
+      wireButton(el.launchBtn, hide);
+      wireButton(el.homeBtn, show);
+      setInterval(function(){ if (isShowing()) greet(); }, 30000);
+      show();
+    },
+    show: show, hide: hide, isShowing: isShowing, pick: pick,
+    refresh: function(){ if (isShowing()){ greet(); buildChips(); } }
+  };
+})();
+
+/* ================= Sound module =================
+   Hardened audio: ONE AudioContext, created/resumed on the first
+   user gesture and reused. A context created at ring time can sit
+   silently "suspended" under autoplay policy — this avoids that. */
+var Sound = (function(){
+  var ctx = null;
+  var on = cfg.sound.enabled;
+
+  function ensure(){
+    if (!ctx){
+      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ ctx = null; }
+    }
+    if (ctx && ctx.state === "suspended") ctx.resume().catch(function(){});
+  }
+  document.addEventListener("pointerdown", ensure, true);
+  document.addEventListener("keydown", ensure, true);
+
+  function playChime(){
+    var t0 = ctx.currentTime + 0.02;
+    [660, 660, 880].forEach(function(freq, i){
+      var t = t0 + i * 0.35;
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(cfg.sound.volume, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(g).connect(ctx.destination);
+      o.start(t); o.stop(t + 0.32);
+    });
+  }
+  function chime(){
+    if (!on) return;
+    try {
+      ensure();
+      if (!ctx) return;
+      if (ctx.state === "suspended") ctx.resume().then(playChime).catch(function(){});
+      else playChime();
+    } catch(e){ /* visual alarm always works */ }
+  }
+  function paint(){
+    el.soundBtn.textContent = on ? "Sound On" : "Sound Off";
+    el.soundBtn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  function toggle(){ on = !on; paint(); }
+  function setOn(v){ on = !!v; paint(); }
+  return { init: function(){ paint(); wireButton(el.soundBtn, toggle); },
+           toggle: toggle, setOn: setOn, chime: chime };
+})();
+
+/* ================= Timer module =================
+   Countdown + stopwatch sharing one display; independent state; a
+   running countdown keeps running (and rings) while the stopwatch
+   is shown. Accuracy rule: always derive from timestamps, never
+   decrement counters — survives tab throttling. */
+var Timer = (function(){
+  var HINT_TIMER   = "Type digits for a custom time · Space start/pause · R reset · S stopwatch · M sound";
+  var HINT_RUNNING = "Space pause · R reset · S stopwatch · M sound";
+  var HINT_ENTRY   = "Enter or Space to start · Backspace to edit · Esc to cancel";
+  var HINT_SW      = "Space start/pause · R reset · S timer · M sound";
+
+  var mode = "timer";
+  var t  = { setMs: 300000, remainMs: 300000, endAt: null, tid: null };
+  var sw = { accMs: 0, startedAt: null, tid: null };
+  var entry = null;
+  var chips = [];
+
+  function fmtDown(ms){
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+  function fmtUp(ms){
+    var s = Math.max(0, Math.floor(ms / 1000));
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+  function fmtEntry(d){
+    var p = d.padStart(3, "0");
+    return parseInt(p.slice(0, -2), 10) + ":" + p.slice(-2);
+  }
+  function entrySeconds(d){
+    if (!d) return 0;
+    var p = d.padStart(3, "0");
+    return parseInt(p.slice(0, -2), 10) * 60 + parseInt(p.slice(-2), 10);
+  }
+
+  function paint(){
+    if (mode === "timer"){
+      if (entry !== null){
+        el.timer.textContent = fmtEntry(entry);
+        el.timer.classList.add("entry");
+        el.timer.classList.remove("low");
+        el.hint.textContent = HINT_ENTRY;
+      } else {
+        el.timer.textContent = fmtDown(t.remainMs);
+        el.timer.classList.remove("entry");
+        el.timer.classList.toggle("low", t.remainMs <= 10000 && t.remainMs > 0);
+        el.hint.textContent = t.endAt ? HINT_RUNNING : HINT_TIMER;
+      }
+      el.startBtn.textContent = t.endAt ? "Pause" : "Start";
+    } else {
+      var ms = sw.accMs + (sw.startedAt ? Date.now() - sw.startedAt : 0);
+      el.timer.textContent = fmtUp(ms);
+      el.timer.classList.remove("entry", "low");
+      el.hint.textContent = HINT_SW;
+      el.startBtn.textContent = sw.startedAt ? "Pause" : "Start";
+    }
+  }
+
+  function loop(){
+    t.remainMs = t.endAt - Date.now();
+    if (t.remainMs <= 0){
+      t.remainMs = 0; t.endAt = null;
+      paint(); Alarm.ring(); return;
+    }
+    paint();
+    t.tid = setTimeout(loop, 200);
+  }
+  function timerStartPause(){
+    if (entry !== null){ commitEntryAndStart(); return; }
+    if (t.endAt){
+      clearTimeout(t.tid);
+      t.remainMs = Math.max(0, t.endAt - Date.now());
+      t.endAt = null;
+    } else {
+      if (t.remainMs <= 0) t.remainMs = t.setMs;
+      t.endAt = Date.now() + t.remainMs;
+      t.tid = setTimeout(loop, 0);
+    }
+    paint();
+  }
+  function timerReset(){
+    clearTimeout(t.tid);
+    t.endAt = null;
+    t.remainMs = t.setMs;
+    entry = null;
+    paint();
+  }
+  function plusMinute(){
+    if (mode !== "timer" || entry !== null) return;
+    t.remainMs += 60000;
+    if (t.endAt) t.endAt += 60000;
+    paint();
+  }
+  function setPreset(min, btn){
+    entry = null;
+    t.setMs = min * 60000;
+    chips.forEach(function(c){
+      c.setAttribute("aria-pressed", c === btn ? "true" : "false");
+    });
+    timerReset();
+  }
+  function clearPresetSelection(){
+    chips.forEach(function(c){ c.setAttribute("aria-pressed", "false"); });
+  }
+  function buildChips(){
+    el.chipsWrap.innerHTML = "";
+    chips = [];
+    (cfg.timer.presetsMinutes || []).forEach(function(min){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.dataset.min = min;
+      b.textContent = min + ":00";
+      b.setAttribute("aria-pressed", min * 60000 === t.setMs ? "true" : "false");
+      wireButton(b, function(){ setPreset(min, b); });
+      el.chipsWrap.appendChild(b);
+      chips.push(b);
+    });
+  }
+
+  function canEnter(){ return mode === "timer" && !t.endAt; }
+  function entryStart(digit){
+    entry = "";
+    entryDigit(digit);
+  }
+  function entryDigit(digit){
+    if (entry === null) return;
+    if (entry.length >= 4) return;
+    if (entry === "" && digit === "0"){ paint(); return; }
+    entry += digit;
+    paint();
+  }
+  function entryBackspace(){
+    if (entry === null) return;
+    entry = entry.slice(0, -1);
+    paint();
+  }
+  function entryCancel(){ entry = null; paint(); }
+  function commitEntryAndStart(){
+    var secs = entrySeconds(entry);
+    entry = null;
+    if (secs > 0){
+      clearTimeout(t.tid);
+      t.endAt = null;
+      t.setMs = secs * 1000;          // becomes the new Reset target
+      t.remainMs = t.setMs;
+      clearPresetSelection();
+      timerStartPause();
+    } else {
+      paint();
+    }
+  }
+
+  function swLoop(){
+    paint();
+    sw.tid = setTimeout(swLoop, 200);
+  }
+  function swStartPause(){
+    if (sw.startedAt){
+      sw.accMs += Date.now() - sw.startedAt;
+      sw.startedAt = null;
+      clearTimeout(sw.tid);
+    } else {
+      sw.startedAt = Date.now();
+      sw.tid = setTimeout(swLoop, 0);
+    }
+    paint();
+  }
+  function swReset(){
+    clearTimeout(sw.tid);
+    sw.startedAt = null;
+    sw.accMs = 0;
+    paint();
+  }
+
+  function setMode(m){
+    if (m === mode) return;
+    mode = m;
+    entry = null;
+    el.timerCard.classList.toggle("sw", mode === "stopwatch");
+    el.tabTimer.setAttribute("aria-pressed", mode === "timer" ? "true" : "false");
+    el.tabWatch.setAttribute("aria-pressed", mode === "stopwatch" ? "true" : "false");
+    paint();
+  }
+  function switchMode(){ setMode(mode === "timer" ? "stopwatch" : "timer"); }
+  function startPause(){ mode === "timer" ? timerStartPause() : swStartPause(); }
+  function reset(){ mode === "timer" ? timerReset() : swReset(); }
+
+  function init(){
+    var pm = cfg.timer.presetsMinutes || [5];
+    var defS = cfg.timer.defaultSeconds || 300;
+    t.setMs = pm.indexOf(defS / 60) >= 0 ? defS * 1000 : pm[0] * 60000;
+    t.remainMs = t.setMs;
+    buildChips();
+    wireButton(el.startBtn, startPause);
+    wireButton(el.resetBtn, reset);
+    wireButton(el.plusBtn, plusMinute);
+    wireButton(el.tabTimer, function(){ setMode("timer"); });
+    wireButton(el.tabWatch, function(){ setMode("stopwatch"); });
+    // If the tab was hidden (throttled timers), re-sync BOTH running
+    // displays the instant it becomes visible again.
+    document.addEventListener("visibilitychange", function(){
+      if (document.visibilityState !== "visible") return;
+      if (t.endAt){ clearTimeout(t.tid); loop(); }
+      if (sw.startedAt){ clearTimeout(sw.tid); swLoop(); }
+    });
+    paint();
+  }
+
+  return {
+    init: init, startPause: startPause, reset: reset, switchMode: switchMode,
+    timerReset: timerReset, buildChips: buildChips,
+    entryActive: function(){ return entry !== null; },
+    canEnter: canEnter, entryStart: entryStart, entryDigit: entryDigit,
+    entryBackspace: entryBackspace, entryCancel: entryCancel,
+    commitEntryAndStart: commitEntryAndStart
+  };
+})();
+
+/* ================= Alarm module ================= */
+var Alarm = (function(){
+  function isOn(){ return el.alarm.classList.contains("on"); }
+  function ring(){ el.alarm.classList.add("on"); Sound.chime(); }
+  function dismiss(){
+    el.alarm.classList.remove("on");
+    Timer.timerReset();               // always resets the countdown
+  }
+  return { init: function(){ el.alarm.addEventListener("click", dismiss); },
+           isOn: isOn, ring: ring, dismiss: dismiss };
+})();
+
+/* ================= Fullscreen module ================= */
+var FS = (function(){
+  function toggle(){
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(function(){});
+  }
+  return { init: function(){ wireButton(el.fsBtn, toggle); }, toggle: toggle };
+})();
+
+/* ================= Settings module ================= */
+var Settings = (function(){
+  var wrap = $("settingsWrap");
+  var f = {
+    name: $("sName"), def: $("sDefault"), bar: $("sBar"), sound: $("sSound"),
+    nudge: $("sNudge"), presets: $("sPresets"), errors: $("setErrors"),
+    grpNames: [$("sGrpName1"), $("sGrpName2"), $("sGrpName3"), $("sGrpName4")],
+    grpReg: [$("taGrpReg1"), $("taGrpReg2"), $("taGrpReg3"), $("taGrpReg4")],
+    grpWed: [$("taGrpWed1"), $("taGrpWed2"), $("taGrpWed3"), $("taGrpWed4")]
+  };
+
+  function isOpen(){ return !wrap.hidden; }
+  function blocksToText(blocks){
+    return (blocks || []).map(function(b){
+      return b.label + " " + b.start + "-" + b.end;
+    }).join("\n");
+  }
+  function rebuildDefaultOptions(){
+    f.def.innerHTML = "";
+    var optNone = document.createElement("option");
+    optNone.value = "none"; optNone.textContent = "No bells";
+    f.def.appendChild(optNone);
+    cfg.bell.groups.forEach(function(g){
+      var o = document.createElement("option");
+      o.value = g.name; o.textContent = g.name;
+      f.def.appendChild(o);
+    });
+    f.def.value = cfg.bell.defaultGroup || "none";
+  }
+  function open(){
+    f.name.value = cfg.ownerName || "";
+    f.bar.checked = !!cfg.bell.showProgressBar;
+    f.sound.checked = !!cfg.sound.enabled;
+    f.nudge.value = cfg.bell.nudgeSeconds || 0;
+    f.presets.value = (cfg.timer.presetsMinutes || []).join(",");
+    rebuildDefaultOptions();
+    for (var i = 0; i < 4; i++){
+      var g = cfg.bell.groups[i];
+      f.grpNames[i].value = g ? g.name : "";
+      f.grpReg[i].value = g ? blocksToText(g.regular) : "";
+      f.grpWed[i].value = g ? blocksToText(g.wednesday) : "";
+    }
+    setMsg("", false);
+    wrap.hidden = false;
+    f.name.focus();                       // move focus into the dialog
+  }
+  function close(){
+    wrap.hidden = true;
+    el.setBtn.focus();                    // restore focus to the opener
+  }
+  /* Keep Tab cycling inside the dialog — the backdrop is not part of
+     the lesson and a focused Start button behind it must never fire. */
+  function trapTab(e){
+    var items = Array.prototype.filter.call(
+      $("settingsCard").querySelectorAll("button, input, select, textarea"),
+      function(n){ return !n.disabled && n.offsetParent !== null; });
+    if (!items.length) return;
+    var i = items.indexOf(document.activeElement);
+    var next = e.shiftKey
+      ? (i <= 0 ? items.length - 1 : i - 1)
+      : (i === -1 || i === items.length - 1 ? 0 : i + 1);
+    items[next].focus();
+    e.preventDefault();
+  }
+  function setMsg(text, ok){
+    f.errors.textContent = text;
+    f.errors.classList.toggle("ok", !!ok);
+  }
+
+  function parseTemplateText(text, name, errors){
+    var blocks = [];
+    text.split("\n").forEach(function(line, idx){
+      var s = line.trim();
+      if (!s) return;
+      var m = /^(.+?)\s+(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})$/.exec(s);
+      if (!m){ errors.push(name + " line " + (idx+1) + ': can’t read "' + s + '"'); return; }
+      var st = Bell.parseClock(m[2]), en = Bell.parseClock(m[3]);
+      if (st === null || en === null){ errors.push(name + " line " + (idx+1) + ": bad time"); return; }
+      if (en <= st){ errors.push(name + " line " + (idx+1) + ": end must be after start"); return; }
+      blocks.push({ label: m[1], start: m[2], end: m[3], _s: st, _e: en });
+    });
+    blocks.sort(function(a,b){ return a._s - b._s; });
+    for (var i = 1; i < blocks.length; i++){
+      if (blocks[i]._s < blocks[i-1]._e){
+        errors.push(name + ': "' + blocks[i-1].label + '" and "' + blocks[i].label + '" overlap');
+      }
+    }
+    return blocks.map(function(b){ return { label: b.label, start: b.start, end: b.end }; });
+  }
+
+  function apply(){
+    var errors = [];
+    var presets = [];
+    f.presets.value.split(",").forEach(function(p){
+      var s = p.trim(); if (!s) return;
+      var n = parseInt(s, 10);
+      if (!(n >= 1 && n <= 120)) errors.push('Presets: "' + s + '" isn’t 1–120 minutes');
+      else presets.push(n);
+    });
+    if (presets.length < 1 || presets.length > 6) errors.push("Presets: enter 1–6 values");
+
+    var nudge = parseInt(f.nudge.value, 10);
+    if (isNaN(nudge) || nudge < -600 || nudge > 600) errors.push("Nudge: −600 to 600 seconds");
+
+    var newGroups = [];
+    var seenNames = Object.create(null);   // no inherited keys ("constructor"...)
+    for (var i = 0; i < 4; i++){
+      var regText = f.grpReg[i].value;
+      if (!regText.trim()){
+        if (f.grpWed[i].value.trim()){
+          errors.push('Week type ' + (i+1) + ': Wednesday times need regular times too');
+        }
+        continue;                                          // empty regular = removed
+      }
+      var nm = f.grpNames[i].value.trim() || ("Week " + (i+1));
+      if (seenNames[nm]){ errors.push('Two week types share the name "' + nm + '"'); }
+      seenNames[nm] = true;
+      var regBlocks = parseTemplateText(regText, nm + " (regular)", errors);
+      var wedBlocks = f.grpWed[i].value.trim()
+        ? parseTemplateText(f.grpWed[i].value, nm + " (Wednesday)", errors)
+        : [];
+      if (regBlocks.length) newGroups.push({ name: nm, regular: regBlocks, wednesday: wedBlocks });
+    }
+
+    if (errors.length){ setMsg(errors.join("\n"), false); return false; }
+
+    var prevActive = Bell.snapshot();
+    cfg.ownerName = f.name.value.trim().slice(0, 40);
+    cfg.timer.presetsMinutes = presets;
+    cfg.sound.enabled = f.sound.checked;
+    Sound.setOn(f.sound.checked);          // keep live state in step
+    cfg.bell.showProgressBar = f.bar.checked;
+    cfg.bell.nudgeSeconds = nudge;
+    cfg.bell.groups = newGroups;
+    var defSel = f.def.value;
+    cfg.bell.defaultGroup =
+      (defSel !== "none" && newGroups.some(function(g){ return g.name === defSel; }))
+        ? defSel
+        : (defSel === "none" ? "none" : (newGroups.length ? newGroups[0].name : "none"));
+    Timer.buildChips();
+    Bell.reResolve(prevActive);            // keep this week's pick if it still exists
+    Landing.refresh();
+    rebuildDefaultOptions();
+    setMsg("Applied.", true);
+    return true;
+  }
+
+  /* ---- download configured copy: this file serializes itself ---- */
+  function download(){
+    if (!apply()) return;                       // never bake invalid config
+    var json = JSON.stringify(cfg, null, 2).replace(/</g, "\\u003c");
+    var html = SOURCE.replace(
+      /(<script id="deckhand-config"[^>]*>)[\s\S]*?(<\/script>)/,
+      function(_, a, b){ return a + "\n" + json + "\n" + b; }
+    );
+    if (html.indexOf(json) === -1){             // serializer must never lie
+      setMsg("Download failed: could not embed settings. Your file on disk is unchanged.", false);
+      return;
+    }
+    var d = new Date();                         // real date even in SIM mode
+    var name = "Deckhand_v5_" + d.getFullYear() + "-" +
+      String(d.getMonth()+1).padStart(2,"0") + "-" +
+      String(d.getDate()).padStart(2,"0") + ".html";
+    var blob = new Blob([html], { type: "text/html" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    setMsg("Applied. Downloaded " + name + " — replace your old file with it.", true);
+  }
+
+  return {
+    init: function(){
+      wireButton(el.setBtn, open);
+      wireButton($("applyBtn"), apply);
+      wireButton($("dlBtn"), download);
+      wireButton($("closeBtn"), close);
+      $("settingsBack").addEventListener("click", close);
+    },
+    isOpen: isOpen, open: open, close: close, trapTab: trapTab
+  };
+})();
+
+/* ================= Keyboard routing =================
+   Priority: alarm overlay -> settings Tab trap -> form fields ->
+   settings open -> landing -> digit entry -> entry start -> globals. */
+var Keys = (function(){
+  function onKey(e){
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var tag = e.target ? e.target.tagName : "";
+    var isButton = tag === "BUTTON";
+    var isField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+    var k = e.key;
+
+    // 1. alarm overlay: Space/Esc/Enter dismiss; everything else —
+    // including key auto-repeats — is swallowed so nothing behind fires
+    if (Alarm.isOn()){
+      if (!e.repeat && (k === " " || k === "Escape" || k === "Enter")) Alarm.dismiss();
+      e.preventDefault();
+      return;
+    }
+
+    if (e.repeat) return;   // held keys must not strobe start/pause/mode
+
+    // 2. settings dialog: trap Tab inside it regardless of focus target
+    if (Settings.isOpen() && k === "Tab"){ Settings.trapTab(e); return; }
+
+    // 3. typing in a form field: let it type; Esc closes settings
+    if (isField){
+      if (k === "Escape" && Settings.isOpen()){ Settings.close(); e.preventDefault(); }
+      return;
+    }
+
+    // 4. settings open: Esc closes, everything else left alone
+    if (Settings.isOpen()){
+      if (k === "Escape"){ Settings.close(); e.preventDefault(); }
+      return;
+    }
+
+    // 4.5 landing page: Enter/Space launch, digits pick this week's bells
+    if (Landing.isShowing()){
+      if ((k === "Enter" || k === " ") && !isButton){
+        Landing.hide(); e.preventDefault(); return;
+      }
+      if (/^[1-9]$/.test(k)){ Landing.pick(+k - 1); e.preventDefault(); return; }
+      var lkL = k.length === 1 ? k.toLowerCase() : k;
+      if (lkL === "f") FS.toggle();
+      else if (lkL === "m") Sound.toggle();
+      return;
+    }
+
+    // 5. active digit entry
+    if (Timer.entryActive()){
+      if (/^[0-9]$/.test(k)){ Timer.entryDigit(k); e.preventDefault(); return; }
+      if (k === "Backspace"){ Timer.entryBackspace(); e.preventDefault(); return; }
+      if (k === "Escape"){ Timer.entryCancel(); e.preventDefault(); return; }
+      if (k === "Enter" || k === " "){
+        if (isButton) return;                    // buttons behave
+        Timer.commitEntryAndStart(); e.preventDefault(); return;
+      }
+      return;
+    }
+
+    // 6. digits begin a new entry
+    if (/^[0-9]$/.test(k) && Timer.canEnter()){
+      Timer.entryStart(k); e.preventDefault(); return;
+    }
+
+    // 7. global shortcuts
+    if (isButton && (k === " " || k === "Enter")) return;
+    var lk = k.length === 1 ? k.toLowerCase() : k;
+    if (k === " "){ Timer.startPause(); e.preventDefault(); }
+    else if (lk === "r"){ Timer.reset(); }
+    else if (lk === "f"){ FS.toggle(); }
+    else if (lk === "m"){ Sound.toggle(); }
+    else if (lk === "s"){ Timer.switchMode(); }
+    else if (lk === "h"){ Landing.show(); }
+  }
+  return { init: function(){ document.addEventListener("keydown", onKey); } };
+})();
+
+/* ================= boot =================
+   Each module boots independently: one failure (e.g. a hostile
+   hand-edited config slipping past sanitize) must never take the
+   clock or timer down with it. */
+[Clock, Bell, Landing, Sound, Timer, Alarm, FS, Settings, Keys].forEach(function(mod){
+  try { mod.init(); }
+  catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
+});
+
+/* Debug/preview API (documented in handoff; harmless in class) */
+window.Deckhand = {
+  version: cfg.appVersion,
+  get config(){ return cfg; },
+  bellStatusAt: function(x){ return Bell.statusAt(new Date(x)); },
+  setSchedule: function(i){ Bell.setActive(i); }
+};
+})();
+</script>
+</body>
+</html>

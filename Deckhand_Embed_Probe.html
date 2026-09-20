@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deckhand — Embed Probe</title>
+<style>
+  :root{
+    --cream:#F8F2E4; --grid:#EADFC6; --sand:#E6D5B8; --shadow:#D8C5A0;
+    --turq:#40E0D0; --paleturq:#D8F6F1; --teal:#127A85;
+    --navy:#17324D; --coral:#FF7F6A; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:"DM Sans", system-ui, sans-serif; color:var(--navy);
+    background:var(--cream);
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:48px 48px;
+    display:flex; flex-direction:column; gap:14px; padding:18px;
+  }
+  h1{font-size:18px; letter-spacing:.1em; color:var(--teal);}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  input{
+    flex:1; min-width:240px; font:inherit; font-weight:600; color:var(--navy);
+    border:2px solid var(--grid); border-radius:12px; padding:10px 14px;
+  }
+  button{
+    font:inherit; font-weight:900; border:none; cursor:pointer;
+    background:var(--turq); color:var(--navy); border-radius:999px; padding:10px 22px;
+  }
+  #note{font-weight:700; color:var(--teal); min-height:1.3em;}
+  #frameWrap{
+    flex:1; min-height:0; background:var(--white); border-radius:16px;
+    box-shadow:6px 8px 0 var(--shadow); overflow:hidden; display:none;
+  }
+  iframe{width:100%; height:100%; border:none;}
+  .verdict{font-size:14px; line-height:1.5; max-width:70ch;}
+  b.ok{color:var(--teal);} b.bad{color:var(--coral);}
+</style>
+</head>
+<body>
+<h1>DECKHAND · EMBED PROBE</h1>
+<div class="row">
+  <input id="url" type="url" spellcheck="false"
+    placeholder="Paste the published Slides link here (the /pub or /embed one)">
+  <button id="go" type="button">Load it in a frame</button>
+</div>
+<div id="note">This page frames the deck exactly the way the future Slides widget will.</div>
+<div id="frameWrap"><iframe id="frame" allowfullscreen></iframe></div>
+<p class="verdict">
+  <b class="ok">If your slides appear above and the arrows change slides:</b> the embed card
+  will work — tell Claude "embed test passed."&nbsp;
+  <b class="bad">If the box stays blank, shows an error page, or a district block screen:</b>
+  note what it says and tell Claude — we'll know it's the filter, not the tool.
+</p>
+<script>
+  var go = document.getElementById("go");
+  var input = document.getElementById("url");
+  var note = document.getElementById("note");
+  function load(){
+    var u = input.value.trim();
+    if (!u){ note.textContent = "Paste the published link first."; return; }
+    u = u.replace("/pub?", "/embed?").replace(/\/pub$/, "/embed");
+    if (u.indexOf("/embed") === -1 && u.indexOf("docs.google.com/presentation") !== -1){
+      note.textContent = "That doesn't look like a published link — use File → Share → Publish to web.";
+    } else {
+      note.textContent = "Framing: " + u;
+    }
+    document.getElementById("frameWrap").style.display = "block";
+    document.getElementById("frame").src = u;
+  }
+  go.addEventListener("click", load);
+  input.addEventListener("keydown", function(e){ if (e.key === "Enter") load(); });
+</script>
+</body>
+</html>
