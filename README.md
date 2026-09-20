@@ -37,6 +37,22 @@ The suite writes `tmp_*.html` fixtures beside itself (git-ignored). A release is
 delivered only with the full suite green, a screenshot review, and a fresh adversarial
 review with fixes and regression tests.
 
+## Hosting (GitHub Pages)
+
+Serving Deckhand from a real `https://` address fixes YouTube's embedded-playback
+refusal (Error 153 — embeds from `file://` send no referrer, and browsers won't let a
+page fake one). To turn it on — a human toggle, done once:
+
+**Settings → Pages → Source: "Deploy from a branch" → Branch: `main`, folder `/(root)`
+→ Save.**
+
+A minute later the board is live at
+`https://croix18.github.io/Deckhand/` (the `index.html` here forwards to
+`Deckhand_v6.html`). Bookmark that on the classroom panel instead of the Drive copy.
+Every push to `main` redeploys automatically, so `tools/push.sh` is also the deploy.
+Note: on a free account the repo must be public for Pages; everything in it already
+carries no student data or secrets (`.github-token` is git-ignored).
+
 ## Everything else here
 
 `Deckhand_v5*.html` and `Deckhand_v6.2_backup.html` are historical versions kept for
