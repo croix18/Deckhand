@@ -1,3 +1,14 @@
 .github-token
 node_modules/
 tmp_*.html
+tests/tmp_*.html
+test-results/
+playwright-report/
+.playwright/
+# an exported copy of Deckhand carries rosters — Chrome's duplicate-download
+# names, and any "configured" copy, must never be added by accident
+Deckhand_v6 (*).html
+Deckhand_v7 (*).html
+Deckhand*configured*.html
+Deckhand*export*.html
+.DS_Store

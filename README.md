@@ -2,60 +2,90 @@
 
 A single-file classroom OS for Mr. Shaffer's 7th-grade math room at Windy Hill Middle
 School — clock, bell schedule, settle-in countdown, timers, agenda, picker, sketch,
-YouTube/slides embeds, lofi tape, and a small sea. Built to run on a Promethean IR-touch
-panel via a managed Chromebox, opened by double-click over `file://` from Google Drive.
+YouTube/slides embeds, lofi tape, and a small sea. Built for a Promethean IR-touch
+panel driven by a managed Chromebox, opened either from Google Drive over `file://`
+or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand_v6.html`** — the current release. Everything (HTML, CSS, JS, fonts aside)
-lives in this one file. No build step, no install, no accounts, no browser storage:
-persistence is the **"Download configured copy"** button, which serializes the current
-config back into a fresh copy of the file itself.
+**`Deckhand_v6.html`** — the current release (v7.0). Everything — HTML, CSS, JS — lives
+in this one file. No build step, no install, no accounts.
 
-`Classroom_Clock_HANDOFF.md` is the project memory — every version's story, the design
-rules, the known constraints (YouTube Error 153 over `file://`, the iframe drag shield,
-reduced-motion panels), and the current-release marker. Read it before changing anything.
+Since v7.0 the board **saves itself on the device**: layout, bells, and class rosters
+autosave to the browser (localStorage, key `deckhand.config`) and come back on the next
+open, on the file and on the hosted URL alike. The config block baked into the file is
+the seed for a new device and the target of *Settings → Use this file's settings*.
+*Settings → Export a copy* still writes a complete Deckhand file with everything baked
+in — a backup, or the way to carry a board to another machine.
+
+`docs/HANDOFF.md` is the project memory — every version's story, the design rules, the
+known constraints (YouTube Error 153 over `file://`, the iframe drag shield,
+reduced-motion panels). Read it before changing anything.
 
 ## Hard constraints (do not break)
 
 1. Single self-contained HTML file; double-click over `file://` must work.
-2. NO browser storage of any kind — config persists only via the download-copy flow.
-3. No external dependencies except Google Fonts.
-4. No extensions, installs, or accounts on the school machine.
-5. The visual alarm must always be dismissable.
+2. No external dependencies except Google Fonts. Runtime network is otherwise only what
+   the teacher embeds (`youtube-nocookie.com`, `docs.google.com`).
+3. No extensions, installs, or accounts on the school machine.
+4. The visual alarm must always be dismissable.
+5. Persistence is the device store + Export; nothing ever leaves the machine.
+
+## Privacy — the public copy rule
+
+This repo is public because GitHub Pages needs it to be. The config block in every
+committed `.html` must carry **no rosters, no deck or station URLs, and no name beyond
+"Mr. Shaffer"**. `tools/check.sh` enforces that and `tools/push.sh` refuses to push
+otherwise; CI runs the same check. An exported copy carries student names inside it —
+keep exports in Drive, never in this folder.
+
+## Rosters
+
+Settings → Class Rosters has one box per bell period. **Import from Seating Chart** pulls
+first names straight from the Seating Chart tool's own device store when both tools run
+on the same machine the same way (both as files, or both on the web); **Import a Seating
+Chart backup…** takes its exported JSON anywhere. Apply to keep.
 
 ## Tests
 
-`test_deckhand_v6.js` — 151 Playwright tests (~5 min, all green at every release).
+`tests/` — a Playwright suite (`@playwright/test`), 174 tests split by feature, each in
+its own fresh browser context, run in parallel.
 
 ```sh
-npm install            # playwright + jsqr (chromium must be available)
-node test_deckhand_v6.js
+npm ci
+npx playwright install chromium   # once
+npm test                          # all projects: file, touch, http
+npm run test:file                 # file:// only — the classroom path
+npx playwright test tests/bells.spec.js --headed
 ```
 
-The suite writes `tmp_*.html` fixtures beside itself (git-ignored). A release is
-delivered only with the full suite green, a screenshot review, and a fresh adversarial
-review with fixes and regression tests.
+Projects: **file** (over `file://`, mouse), **touch** (touch context, for the IR panel;
+specs tagged `@touch`), **http** (served by `tools/serve.js` on a real origin like Pages;
+specs tagged `@http`). Failures keep a trace and screenshot under `test-results/`.
+
+A release ships only with the full suite green, a screenshot review, and a fresh
+adversarial review with fixes and regression tests.
 
 ## Hosting (GitHub Pages)
 
-Serving Deckhand from a real `https://` address fixes YouTube's embedded-playback
-refusal (Error 153 — embeds from `file://` send no referrer, and browsers won't let a
-page fake one). To turn it on — a human toggle, done once:
+Pages serves `main` from the repo root; `index.html` forwards to `Deckhand_v6.html`.
+**Every push to `main` deploys**, so `tools/push.sh` is the deploy: it runs the privacy
+check, commits, pushes, and verifies the remote head. Serving from a real `https://`
+origin is what fixes YouTube's embedded-playback refusal (Error 153 — embeds from
+`file://` send no referrer).
 
-**Settings → Pages → Source: "Deploy from a branch" → Branch: `main`, folder `/(root)`
-→ Save.**
+`.github/workflows/test.yml` runs the privacy check and the suite on every push; it's a
+signal, not a gate — Pages deploys from the branch regardless, so run the suite locally
+before pushing.
 
-A minute later the board is live at
-`https://croix18.github.io/Deckhand/` (the `index.html` here forwards to
-`Deckhand_v6.html`). Bookmark that on the classroom panel instead of the Drive copy.
-Every push to `main` redeploys automatically, so `tools/push.sh` is also the deploy.
-Note: on a free account the repo must be public for Pages; everything in it already
-carries no student data or secrets (`.github-token` is git-ignored).
+## Layout
 
-## Everything else here
-
-`Deckhand_v5*.html` and `Deckhand_v6.2_backup.html` are historical versions kept for
-reference. `shot_*.png` are the release screenshot records. `qr_encoder.js` supports the
-QR test path. `tools/push.sh` backs this repo up to GitHub (token in `.github-token`,
-git-ignored, never committed).
+```
+Deckhand_v6.html        the release
+index.html              Pages forwarder
+tests/                  Playwright suite + helpers
+tools/                  check.sh (privacy guard) · push.sh (deploy) · serve.js (local origin)
+docs/                   HANDOFF.md (project memory) · reviews
+archive/                historical versions (v5.x, v6.2 backup, embed probe, v5 suite)
+screenshots/            release screenshot records
+```
