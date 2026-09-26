@@ -23,13 +23,13 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.7.0",
+  "appVersion": "7.8.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
   "scenes": [
     { "name": "Daily Board", "widgets": [
-      { "type": "clock", "x": 0, "y": 0, "w": 58, "h": 100 }
+      { "type": "clock", "x": 0, "y": 0, "w": 100, "h": 100 }
     ]},
     { "name": "Stations", "widgets": [
       { "type": "clock", "x": 0, "y": 0, "w": 42, "h": 54 },
@@ -175,7 +175,7 @@
   /* clock */
   #clockBody{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 20px;}
   #clockFace{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; width:100%; min-height:0;}
-  #dateline{color:var(--teal); font-weight:700; font-size:clamp(14px, 3.2cqw, 28px); letter-spacing:.02em;}
+  #dateline{color:var(--teal); font-weight:700; font-size:clamp(14px, 3.2cqw, 34px); letter-spacing:.02em;}
   /* the settle MOMENT: the face steps aside, the count (or the flag) has the card */
   .w-clock.stLive #clockFace{display:none;}
   #clockSettle[hidden]{display:none;}
@@ -814,15 +814,17 @@
   /* container-query sizing inside widgets */
   /* sized to read from the BACK of the room (Croix, Sep 1);
      height-capped so a wide-but-short clock can't starve the lines below */
-  #clock{font-size:clamp(30px, min(23cqw, 42cqh), 190px);}
-  #clockSub{font-size:clamp(12px, 3.6cqw, 26px);}
-  #periodNow{font-size:clamp(20px, 7.6cqw, 62px);}
-  #weekTag{font-size:clamp(11px, 2.7cqw, 21px); padding:4px 14px;}
-  #bellSub{font-size:clamp(15px, 4.8cqw, 40px);}
-  .dayChip{font-size:clamp(11px, 2.7cqw, 22px); padding:3px 12px;}
-  #bathPill{font-size:clamp(12px, 3.1cqw, 25px); padding:5px 16px;}
+  /* v7.8 (Croix: "make my main clock a little bit bigger now that I have
+     more space"): the caps grew ~30% — a full-board clock at 1080p reaches them */
+  #clock{font-size:clamp(30px, min(23cqw, 42cqh), 250px);}
+  #clockSub{font-size:clamp(12px, 3.6cqw, 30px);}
+  #periodNow{font-size:clamp(20px, 7.6cqw, 78px);}
+  #weekTag{font-size:clamp(11px, 2.7cqw, 24px); padding:4px 16px;}
+  #bellSub{font-size:clamp(15px, 4.8cqw, 48px);}
+  .dayChip{font-size:clamp(11px, 2.7cqw, 25px); padding:3px 14px;}
+  #bathPill{font-size:clamp(12px, 3.1cqw, 28px); padding:5px 18px;}
   #bellWrap{width:min(94%, 760px); gap:1.6cqh; margin-top:1cqh;}
-  #bellWrap.passing #periodNow{font-size:clamp(24px, 9cqw, 72px);}
+  #bellWrap.passing #periodNow{font-size:clamp(24px, 9cqw, 88px);}
   #bellBar{height:clamp(10px, 1.6cqh, 16px);}
   .tDisplay{
     font-weight:900; font-variant-numeric:tabular-nums; line-height:1;
@@ -984,6 +986,45 @@
   @media (prefers-reduced-motion: reduce){ .die.shake{animation:none;} }
   .dcTotal{font-weight:900; color:var(--teal); font-variant-numeric:tabular-nums;
     font-size:clamp(14px, 3.6cqw, 30px); min-height:1.2em;}
+  /* v7.8 the probability kit: coin, spinner, cards — each keeps a session
+     tally, because experimental vs theoretical IS the lesson (MA.7.DP.2) */
+  .w-coin .strip, .w-spin .strip, .w-cards .strip{background:var(--sand); color:var(--navy);}
+  .prTally{display:flex; gap:.6em 1.4em; flex-wrap:wrap; justify-content:center; font-weight:700;
+    color:var(--teal); font-variant-numeric:tabular-nums; font-size:clamp(12px, 3cqw, 24px); min-height:1.2em;}
+  .prTally b{color:var(--navy); font-weight:900;}
+  .prN{font-weight:700; color:var(--navy); opacity:.6; font-size:clamp(11px, 2.4cqw, 18px); font-variant-numeric:tabular-nums;}
+  .cnFaces{display:flex; gap:3cqw; align-items:center; justify-content:center; flex-wrap:wrap;}
+  .coin{width:clamp(56px, 34cqmin, 260px); aspect-ratio:1/1; display:block;}
+  .coin .cnRim{fill:var(--sand); stroke:var(--navy); stroke-width:4;}
+  .coin .cnFace{fill:var(--white); stroke:var(--navy); stroke-width:3;}
+  .coin text{font-family:inherit; font-weight:900; fill:var(--navy); text-anchor:middle; dominant-baseline:central;}
+  .coin.tails .cnRim{fill:var(--paleturq);}
+  .coin.flip{animation:coinFlip .55s ease;}
+  @keyframes coinFlip{
+    0%{transform:scaleX(1);} 25%{transform:scaleX(.08) translateY(-6px);} 50%{transform:scaleX(1);}
+    75%{transform:scaleX(.08) translateY(-6px);} 100%{transform:scaleX(1);}
+  }
+  @media (prefers-reduced-motion: reduce){ .coin.flip{animation:none;} }
+  .spWrap{position:relative; width:clamp(90px, 60cqmin, 420px); aspect-ratio:1/1;}
+  .spWheel{width:100%; height:100%; display:block; transition:transform 2.2s cubic-bezier(.15,.85,.25,1);}
+  .spWheel.noAnim{transition:none;}
+  @media (prefers-reduced-motion: reduce){ .spWheel{transition:none;} }
+  .spWheel text{font-family:inherit; font-weight:900; fill:var(--navy); text-anchor:middle; dominant-baseline:central; font-size:11px;}
+  .spWheel .spSeg{stroke:var(--white); stroke-width:1.2;}
+  .spWheel .spHub{fill:var(--white); stroke:var(--navy); stroke-width:2;}
+  .spPtr{position:absolute; left:50%; top:-4%; transform:translateX(-50%); width:14%; height:14%;}
+  .spPtr path{fill:var(--navy);}
+  .spResult{font-weight:900; color:var(--navy); font-variant-numeric:tabular-nums; font-size:clamp(18px, 8cqw, 64px); line-height:1; min-height:1em;}
+  .cdRow{display:flex; gap:2cqw; align-items:center; justify-content:center;}
+  /* .pcard, NOT .card — that is the widget container's class (the .chip/.ring lesson) */
+  .pcard{width:clamp(64px, 30cqmin, 240px); aspect-ratio:5/7; display:block;}
+  .pcard .cdBack{fill:var(--white); stroke:var(--navy); stroke-width:3;}
+  .pcard.cdDown .cdBack{fill:var(--paleturq);}
+  .pcard text{font-family:inherit; font-weight:900; text-anchor:middle; dominant-baseline:central;}
+  .pcard.red text{fill:#C8323C;} .pcard.black text{fill:var(--navy);}
+  .pcard.deal{animation:cardDeal .3s ease;}
+  @keyframes cardDeal{from{transform:translateY(-14px) rotate(-6deg); opacity:0;} to{transform:none; opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .pcard.deal{animation:none;} }
 
   /* scoreboard */
   .scRow{display:flex; gap:1.6cqw; width:96%; flex:1; min-height:0;
@@ -1324,10 +1365,16 @@
   @media (prefers-reduced-motion: reduce){ .w-meter.strikeFlash{animation:none;} }
 
   .dwBody{padding:1cqh 1cqw; gap:1cqh;}
-  .dwCanvas{
-    flex:1; min-height:0; width:100%; background:var(--white);
-    border:2px solid var(--grid); border-radius:12px;
-    touch-action:none; cursor:crosshair;
+  /* v7.8: a background layer under the ink — grid, dots, a number line, a
+     coordinate plane — drawn to the box's real size so squares stay square */
+  .dwWrap{position:relative; flex:1; min-height:0; width:100%; align-self:stretch;
+    background:var(--white); border:2px solid var(--grid); border-radius:12px; overflow:hidden;}
+  .dwBg, .dwCanvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
+  .dwBg{pointer-events:none;}
+  .dwCanvas{touch-action:none; cursor:crosshair; background:transparent;}
+  .dwBgSel{
+    font:inherit; font-weight:700; font-size:clamp(10px, 2.2cqw, 15px); color:var(--navy);
+    background:var(--paleturq); border:none; border-radius:999px; padding:4px 10px; min-height:32px;
   }
   .dwTools{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;}
   .dwChips{display:flex; gap:6px;}
@@ -1623,10 +1670,10 @@
      768px one by a mile: go wider, not taller (the menu must never scroll
      mid-lesson) */
   @media (max-height: 1100px){
-    #addMenu{grid-template-columns:repeat(4, 160px);}
+    #addMenu{grid-template-columns:repeat(5, 160px);}   /* v7.8: 23 tiles under five headings */
   }
   @media (max-height: 820px){
-    #addMenu{grid-template-columns:repeat(5, 160px);}
+    #addMenu{grid-template-columns:repeat(6, 160px);}
   }
   /* ⋯ scene manager: the current scene as the heading, one field, a list */
   #sceneMenu{display:flex; flex-direction:column; min-width:300px;}
@@ -2235,6 +2282,9 @@
     <symbol id="i-slides" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2"/><path d="M12 16.5v3M8.5 19.5h7M8 10.5l3-2v4z"/></symbol>
     <symbol id="i-youtube" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12.5" rx="3.5"/><path d="M10 9.5v5.5l4.5-2.75z"/></symbol>
     <symbol id="i-sketch" viewBox="0 0 24 24"><path d="M4 20c4-1 5-2 6-4M6 14.5L16.5 4a2.1 2.1 0 0 1 3 3L9 17.5l-4 1z"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 8.5h3.2a2 2 0 0 1 0 4H9.5zM9.5 12.5h3.8a2 2 0 0 1 0 4H9.5zM9.5 8.5v8"/></symbol>
+    <symbol id="i-spin" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 5v8l5.7 5.6M12 13l-8-.5M12 13l6 5.3M12 2.5l-2 2.5h4z"/></symbol>
+    <symbol id="i-cards" viewBox="0 0 24 24"><rect x="7" y="4" width="11" height="15" rx="2" transform="rotate(8 12.5 11.5)"/><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9.5 10.5l-1.8 2.2h3.6z"/></symbol>
     <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="8.5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="8.5" cy="15.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/></symbol>
   </defs>
 </svg>
@@ -2352,8 +2402,12 @@
       <div class="menuLabel">Board</div>
       <button class="tile" id="addEmbedBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-slides"/></svg><span class="tName">Slides / Embed</span><span class="tDesc">Slides or a web page</span></button>
       <button class="tile" id="addYtBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-youtube"/></svg><span class="tName">YouTube</span><span class="tDesc">A video on the board</span></button>
-      <button class="tile" id="addDrawBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-sketch"/></svg><span class="tName">Sketch Pad</span><span class="tDesc">Draw with a finger</span></button>
-      <button class="tile" id="addDiceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-dice"/></svg><span class="tName">Dice</span><span class="tDesc">Tap to roll 1&ndash;3</span></button>
+      <button class="tile" id="addDrawBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-sketch"/></svg><span class="tName">Sketch Pad</span><span class="tDesc">Grid, number line, plane</span></button>
+      <div class="menuLabel">Probability</div>
+      <button class="tile" id="addDiceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-dice"/></svg><span class="tName">Dice</span><span class="tDesc">Roll 1&ndash;3, keep a tally</span></button>
+      <button class="tile" id="addCoinBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-coin"/></svg><span class="tName">Coin</span><span class="tDesc">Flip 1&ndash;3, heads vs tails</span></button>
+      <button class="tile" id="addSpinBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-spin"/></svg><span class="tName">Spinner</span><span class="tDesc">2&ndash;8 equal sectors</span></button>
+      <button class="tile" id="addCardsBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-cards"/></svg><span class="tName">Cards</span><span class="tDesc">Draw from a deck of 52</span></button>
     </div>
   </div>
   <div id="shelf" aria-label="Stage-only widgets"></div>
@@ -3049,15 +3103,16 @@ var DEFAULT_SCENES = [
   /* v6.29 (Croix): the settle-in IS the daily board's second act — the
      timer came off the default (the ⏱ summon makes one in a tap).
      v7.7: the settle-in is a MOMENT of the clock (cfg.bell.settle), not
-     a card; the right of the board is the teacher's (a Slides card, a timer). */
+     a card. v7.8 (Croix: "Yes it is empty"): the clock has the whole board;
+     a card added over it floats on top, as adds always have on a full board. */
   { name: "Daily Board", widgets: [
-    { type: "clock", x: 0, y: 0, w: 58, h: 100, label: "", pin: false }
+    { type: "clock", x: 0, y: 0, w: 100, h: 100, label: "", pin: false }
   ]}
 ];
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.7.0",
+  appVersion: "7.8.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies" },
   activeScene: "Daily Board",
@@ -3146,16 +3201,19 @@ function sanitize(c){
     var ws = [];
     var clockSeen = false;
     var seenLabels = Object.create(null);
+    var settleBoxes = [];
     (Array.isArray(sc.widgets) ? sc.widgets : []).slice(0, 12).forEach(function(w){
       if (!isObj(w)) return;
       var ty = (["timer","stopwatch","bell","clock","picker","groups",
-                 "text","work","dice","score","qr","meter","draw","embed",
+                 "text","work","dice","coin","spin","cards","score","qr","meter","draw","embed",
                  "event","tally","agenda","settle","music","yt"].indexOf(w.type) !== -1) ? w.type : null;
       if (!ty) return;
       /* v7.7: the settle-in card is gone — its settings move to bell.settle
-         (the first card's win); its place on the board is left to the teacher */
+         (the first card's win); v7.8: the scene's clock grows into its row */
       if (ty === "settle"){
         if (!settleSeen) settleSeen = w;
+        settleBoxes.push({ x: numIn(w.x, 0, 95, 4), y: numIn(w.y, 0, 95, 4),
+                           w: numIn(w.w, 8, 100, 30), h: numIn(w.h, 10, 100, 45) });
         return;
       }
       if (ty === "clock"){
@@ -3202,6 +3260,10 @@ function sanitize(c){
           ? w.mode : "silent";
       }
       if (ty === "dice") wc.count = Math.round(numIn(w.count, 1, 3, 2));
+      if (ty === "coin") wc.count = Math.round(numIn(w.count, 1, 3, 1));        // v7.8 the probability kit
+      if (ty === "spin") wc.sectors = Math.round(numIn(w.sectors, 2, 8, 4));
+      if (ty === "cards") wc.replace = bool(w.replace, false);
+      if (ty === "draw") wc.bg = ["blank","grid","dots","line","plane"].indexOf(w.bg) !== -1 ? w.bg : "blank";   // v7.8
       if (ty === "qr") wc.url = str(w.url, "").slice(0, 300);
       if (ty === "embed"){
         var eu = str(w.url, "").slice(0, 500);
@@ -3346,6 +3408,16 @@ function sanitize(c){
         }
       }
       ws.push(wc);
+    });
+    /* v7.8: the clock takes over a retired settle card that sat beside it on
+       the same row (the v6.29–7.6 default: clock 0–58, settle 61–100) */
+    settleBoxes.forEach(function(sb){
+      ws.forEach(function(wc){
+        if (wc.type !== "clock") return;
+        var sameRow = Math.abs(wc.y - sb.y) <= 4 && Math.abs(wc.h - sb.h) <= 4;
+        var beside = sb.x >= wc.x + wc.w - 4 && sb.x <= wc.x + wc.w + 8;
+        if (sameRow && beside) wc.w = Math.min(100 - wc.x, sb.x + sb.w - wc.x);
+      });
     });
     scenes.push({ name: nm, widgets: ws });
   });
@@ -6029,17 +6101,30 @@ function makeDice(host, wcfg){
     '<div class="wBody">' +
       '<div class="dcFaces"></div>' +
       '<div class="dcTotal"></div>' +
+      '<div class="prTally"></div>' +
       '<div class="chips dcChips" role="group" aria-label="Number of dice"></div>' +
       '<div class="row"><button class="btn dcGo" type="button" ' +
         'style="background:var(--turq); color:var(--navy)">Roll</button></div>' +
-      '<div class="tHint">Space rolls</div>' +
+      '<div class="tHint">Space rolls · R clears the tally</div>' +
     '</div>');
   var faces = host.querySelector(".dcFaces");
   var totalEl = host.querySelector(".dcTotal");
+  var tallyEl = host.querySelector(".prTally");
   var chipsWrap = host.querySelector(".dcChips");
   var chips = [];
   var values = [];
   var rollTid = null, destroyed = false;
+  /* v7.8: a session tally — per face for one die, per TOTAL for two or three
+     (the "why is 7 the most common" lesson) */
+  var counts = Object.create(null), rolls = 0;
+  function paintTally(){
+    var keys = Object.keys(counts).map(Number).sort(function(a, b){ return a - b; });
+    tallyLine(tallyEl, keys.map(function(k){ return [String(k), counts[k]]; }), rolls, "roll");
+  }
+  function record(){
+    var t = values.reduce(function(a, b){ return a + b; }, 0);
+    counts[t] = (counts[t] || 0) + 1; rolls++;
+  }
   function dieSVG(v){
     var s = '<svg class="die" viewBox="0 0 100 100" aria-label="Die showing ' + v + '">' +
             '<rect x="4" y="4" width="92" height="92" rx="18"/>';
@@ -6061,6 +6146,7 @@ function makeDice(host, wcfg){
     chips.forEach(function(c){
       c.setAttribute("aria-pressed", +c.dataset.n === wcfg.count ? "true" : "false");
     });
+    paintTally();
   }
   function randomValues(){
     var out = [];
@@ -6069,15 +6155,16 @@ function makeDice(host, wcfg){
   }
   function roll(){
     if (rollTid) return;
-    if (REDUCED){ values = randomValues(); paint(false); return; }
+    if (REDUCED){ values = randomValues(); record(); paint(false); return; }
     var flips = 0;
+    var final = randomValues();
     values = randomValues();
     paint(true);
     rollTid = setInterval(function(){
       if (destroyed){ clearInterval(rollTid); return; }
       values = randomValues();
       paint(true);
-      if (++flips >= 5){ clearInterval(rollTid); rollTid = null; paint(false); }
+      if (++flips >= 5){ clearInterval(rollTid); rollTid = null; values = final; record(); paint(false); }
     }, 90);
   }
   [1, 2, 3].forEach(function(n){
@@ -6086,6 +6173,7 @@ function makeDice(host, wcfg){
     b.dataset.n = n;
     b.textContent = n === 1 ? "1 die" : n + " dice";
     wireButton(b, function(){
+      if (wcfg.count !== n){ counts = Object.create(null); rolls = 0; }   // a different game, a fresh tally
       wcfg.count = n;
       values = values.slice(0, n);
       while (values.length < n) values.push(1);
@@ -6101,11 +6189,257 @@ function makeDice(host, wcfg){
   return {
     kind: "dice",
     label: function(){ return wcfg.label || "Dice"; },
-    startPause: roll, reset: function(){},
+    startPause: roll, reset: function(){ counts = Object.create(null); rolls = 0; paint(false); },
+    tally: function(){ return { counts: Object.assign({}, counts), rolls: rolls }; },   // test hook (v7.8)
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: function(){ paint(false); }, resync: function(){},
     destroy: function(){ destroyed = true; if (rollTid) clearInterval(rollTid); }
+  };
+}
+
+/* ---- v7.8 the probability kit (Croix: "we have probability content… a
+   coin flipper, a spinner, and a deck of cards draw"). Space = flip / spin /
+   draw, R = clear the tally (or reshuffle). Tallies are session-only. ---- */
+function tallyLine(el, parts, n, noun){
+  el.innerHTML = "";
+  parts.forEach(function(pt){
+    var sp = document.createElement("span");
+    sp.appendChild(document.createTextNode(pt[0] + " "));
+    var b = document.createElement("b"); b.textContent = pt[1];
+    sp.appendChild(b);
+    el.appendChild(sp);
+  });
+  var nEl = document.createElement("span"); nEl.className = "prN";
+  nEl.textContent = n ? n + " " + (n === 1 ? noun : noun + "s") : "";
+  el.appendChild(nEl);
+}
+function makeCoin(host, wcfg){
+  if (!(wcfg.count >= 1 && wcfg.count <= 3)) wcfg.count = 1;
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="cnFaces"></div>' +
+      '<div class="prTally"></div>' +
+      '<div class="chips cnChips" role="group" aria-label="Number of coins"></div>' +
+      '<div class="row"><button class="btn cnGo" type="button" ' +
+        'style="background:var(--turq); color:var(--navy)">Flip</button></div>' +
+      '<div class="tHint">Space flips · R clears the tally</div>' +
+    '</div>');
+  var faces = host.querySelector(".cnFaces"), tallyEl = host.querySelector(".prTally");
+  var chipsWrap = host.querySelector(".cnChips"), chips = [];
+  var values = [], heads = 0, tails = 0, flips = 0, tid = null, destroyed = false;
+  function coinSVG(v){
+    return '<svg class="coin' + (v ? "" : " tails") + '" viewBox="0 0 100 100" aria-label="' + (v ? "Heads" : "Tails") + '">' +
+      '<circle class="cnRim" cx="50" cy="50" r="46"/><circle class="cnFace" cx="50" cy="50" r="36"/>' +
+      '<text x="50" y="52" font-size="44">' + (v ? "H" : "T") + '</text></svg>';
+  }
+  function paint(anim){
+    faces.innerHTML = values.map(coinSVG).join("");
+    if (anim) faces.querySelectorAll(".coin").forEach(function(c){ c.classList.add("flip"); });
+    tallyLine(tallyEl, [["Heads", heads], ["Tails", tails]], flips, "flip");
+    chips.forEach(function(c){ c.setAttribute("aria-pressed", +c.dataset.n === wcfg.count ? "true" : "false"); });
+  }
+  function land(){
+    values = [];
+    for (var i = 0; i < wcfg.count; i++) values.push(Math.random() < 0.5);
+    values.forEach(function(v){ if (v) heads++; else tails++; });
+    flips++;
+  }
+  function flip(){
+    if (tid) return;
+    land();
+    if (REDUCED){ paint(false); return; }
+    var n = 0;
+    tid = setInterval(function(){
+      if (destroyed){ clearInterval(tid); return; }
+      var shown = values.map(function(){ return Math.random() < 0.5; });
+      faces.innerHTML = shown.map(coinSVG).join("");
+      if (++n >= 4){ clearInterval(tid); tid = null; paint(true); }
+    }, 110);
+  }
+  [1, 2, 3].forEach(function(n){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.dataset.n = n;
+    b.textContent = n === 1 ? "1 coin" : n + " coins";
+    wireButton(b, function(){
+      wcfg.count = n;
+      values = values.slice(0, n); while (values.length < n) values.push(true);
+      paint(false);
+    });
+    chipsWrap.appendChild(b); chips.push(b);
+  });
+  for (var i = 0; i < wcfg.count; i++) values.push(true);
+  paint(false);
+  wireButton(host.querySelector(".cnGo"), flip);
+  return {
+    kind: "coin",
+    label: function(){ return wcfg.label || "Coin"; },
+    startPause: flip,
+    reset: function(){ heads = tails = flips = 0; paint(false); },
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    rebuild: function(){ paint(false); }, resync: function(){},
+    tally: function(){ return { heads: heads, tails: tails, flips: flips }; },   // test hook
+    destroy: function(){ destroyed = true; if (tid) clearInterval(tid); }
+  };
+}
+/* the spinner: N equal sectors in the palette, a fixed pointer at the top;
+   a spin turns the wheel 3–6 times plus a random offset (CSS transition), and
+   the sector under the pointer is the result */
+var SPIN_COLORS = ["#40E0D0", "#FF7F6A", "#E6D5B8", "#B8ECE6", "#127A85", "#F8F2E4", "#9AD7CF", "#F2B6A8"];
+function makeSpin(host, wcfg){
+  if (!(wcfg.sectors >= 2 && wcfg.sectors <= 8)) wcfg.sectors = 4;
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="spWrap">' +
+        '<svg class="spWheel" viewBox="-50 -50 100 100" aria-label="Spinner"></svg>' +
+        '<svg class="spPtr" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 19L2 3h16z"/></svg>' +
+      '</div>' +
+      '<div class="spResult" aria-live="polite"></div>' +
+      '<div class="prTally"></div>' +
+      '<div class="chips spChips" role="group" aria-label="Number of sectors"></div>' +
+      '<div class="row"><button class="btn spGo" type="button" ' +
+        'style="background:var(--turq); color:var(--navy)">Spin</button></div>' +
+      '<div class="tHint">Space spins · R clears the tally</div>' +
+    '</div>');
+  var wheel = host.querySelector(".spWheel"), resEl = host.querySelector(".spResult");
+  var tallyEl = host.querySelector(".prTally"), chipsWrap = host.querySelector(".spChips"), chips = [];
+  var angle = 0, counts = [], spins = 0, spinning = false, result = null, tid = null, destroyed = false;
+  function buildWheel(){
+    var n = wcfg.sectors, out = "";
+    for (var i = 0; i < n; i++){
+      var a0 = -Math.PI / 2 + i * 2 * Math.PI / n, a1 = a0 + 2 * Math.PI / n;
+      var x0 = 48 * Math.cos(a0), y0 = 48 * Math.sin(a0), x1 = 48 * Math.cos(a1), y1 = 48 * Math.sin(a1);
+      out += '<path class="spSeg" fill="' + SPIN_COLORS[i % SPIN_COLORS.length] + '" d="M0 0L' + x0.toFixed(2) + ' ' + y0.toFixed(2) +
+             'A48 48 0 ' + (n === 2 ? 1 : 0) + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + 'Z"/>';
+      var am = (a0 + a1) / 2;
+      out += '<text x="' + (31 * Math.cos(am)).toFixed(2) + '" y="' + (31 * Math.sin(am)).toFixed(2) + '">' + (i + 1) + '</text>';
+    }
+    out += '<circle class="spHub" cx="0" cy="0" r="5"/>';
+    wheel.innerHTML = out;
+  }
+  function paint(){
+    resEl.textContent = result === null ? "" : String(result);
+    var parts = [];
+    for (var i = 0; i < wcfg.sectors; i++) parts.push([String(i + 1), counts[i] || 0]);
+    tallyLine(tallyEl, parts, spins, "spin");
+    chips.forEach(function(c){ c.setAttribute("aria-pressed", +c.dataset.n === wcfg.sectors ? "true" : "false"); });
+  }
+  function settle(){
+    spinning = false;
+    /* the pointer sits at 12 o'clock; sector i spans [i, i+1) * 360/n clockwise
+       from there when the wheel is unturned — a turn of `angle` degrees
+       clockwise brings the sector at (−angle) under it */
+    var n = wcfg.sectors, seg = 360 / n;
+    var under = ((360 - (angle % 360)) % 360);
+    result = Math.floor(under / seg) + 1;
+    counts[result - 1] = (counts[result - 1] || 0) + 1;
+    spins++;
+    paint();
+  }
+  function spin(){
+    if (spinning) return;
+    spinning = true;
+    angle += 360 * (3 + Math.floor(Math.random() * 4)) + Math.random() * 360;
+    wheel.classList.toggle("noAnim", REDUCED);
+    wheel.style.transform = "rotate(" + angle.toFixed(2) + "deg)";
+    clearTimeout(tid);
+    tid = setTimeout(function(){ if (!destroyed) settle(); }, REDUCED ? 30 : 2250);
+  }
+  [2, 3, 4, 5, 6, 8].forEach(function(n){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip chipSm"; b.dataset.n = n; b.textContent = String(n);
+    b.setAttribute("aria-label", n + " sectors");
+    wireButton(b, function(){
+      if (spinning) return;
+      wcfg.sectors = n; counts = []; spins = 0; result = null;
+      buildWheel(); paint();
+    });
+    chipsWrap.appendChild(b); chips.push(b);
+  });
+  buildWheel(); paint();
+  wireButton(host.querySelector(".spGo"), spin);
+  return {
+    kind: "spin",
+    label: function(){ return wcfg.label || "Spinner"; },
+    startPause: spin,
+    reset: function(){ counts = []; spins = 0; result = null; paint(); },
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    rebuild: function(){ buildWheel(); paint(); }, resync: function(){},
+    tally: function(){ return { counts: counts.slice(), spins: spins, result: result, angle: angle }; },   // test hook
+    destroy: function(){ destroyed = true; clearTimeout(tid); }
+  };
+}
+/* the cards: a standard 52, drawn without replacement (the count drops —
+   that is the conditional-probability conversation) unless "Put it back" is on */
+var CARD_RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+var CARD_SUITS = [["\u2660", "black", "Spades"], ["\u2665", "red", "Hearts"], ["\u2666", "red", "Diamonds"], ["\u2663", "black", "Clubs"]];
+function makeCards(host, wcfg){
+  if (typeof wcfg.replace !== "boolean") wcfg.replace = false;
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="cdRow"><div class="cdCard"></div></div>' +
+      '<div class="prTally"></div>' +
+      '<div class="chips cdChips" role="group">' +
+        '<button type="button" class="chip cdReplace" aria-pressed="false">Put it back</button>' +
+        '<button type="button" class="chip cdShuffle">Shuffle</button>' +
+      '</div>' +
+      '<div class="row"><button class="btn cdGo" type="button" ' +
+        'style="background:var(--turq); color:var(--navy)">Draw</button></div>' +
+      '<div class="tHint">Space draws · R shuffles</div>' +
+    '</div>');
+  var cardEl = host.querySelector(".cdCard"), tallyEl = host.querySelector(".prTally");
+  var replaceBtn = host.querySelector(".cdReplace"), goBtn = host.querySelector(".cdGo");
+  var deck = [], drawn = null, suitCount = [0, 0, 0, 0], draws = 0;
+  function fresh(){
+    deck = [];
+    for (var su = 0; su < 4; su++) for (var r = 0; r < 13; r++) deck.push({ s: su, r: r });
+    for (var i = deck.length - 1; i > 0; i--){          // Fisher–Yates
+      var j = Math.floor(Math.random() * (i + 1)), t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+    }
+  }
+  function cardSVG(c){
+    if (!c) return '<svg class="pcard cdDown" viewBox="0 0 100 140" aria-label="Face-down deck">' +
+      '<rect class="cdBack" x="4" y="4" width="92" height="132" rx="10"/>' +
+      '<rect x="16" y="16" width="68" height="108" rx="6" fill="none" stroke="#1B2E45" stroke-width="2" stroke-dasharray="4 4"/></svg>';
+    var suit = CARD_SUITS[c.s], rank = CARD_RANKS[c.r];
+    return '<svg class="pcard ' + suit[1] + ' deal" viewBox="0 0 100 140" aria-label="' + rank + " of " + suit[2] + '">' +
+      '<rect class="cdBack" x="4" y="4" width="92" height="132" rx="10"/>' +
+      '<text x="18" y="22" font-size="20">' + rank + '</text><text x="18" y="42" font-size="18">' + suit[0] + '</text>' +
+      '<text x="50" y="74" font-size="52">' + suit[0] + '</text>' +
+      '<g transform="rotate(180 50 70)"><text x="18" y="22" font-size="20">' + rank + '</text><text x="18" y="42" font-size="18">' + suit[0] + '</text></g></svg>';
+  }
+  function paint(){
+    cardEl.innerHTML = cardSVG(drawn);
+    var parts = CARD_SUITS.map(function(su, i){ return [su[0], suitCount[i]]; });
+    tallyLine(tallyEl, parts, draws, "draw");
+    replaceBtn.setAttribute("aria-pressed", wcfg.replace ? "true" : "false");
+    goBtn.textContent = deck.length ? "Draw \u00b7 " + deck.length + " left" : "Deck empty \u2014 shuffle";
+    goBtn.disabled = !deck.length;
+  }
+  function draw(){
+    if (!deck.length) return;
+    drawn = deck.pop();
+    if (wcfg.replace){ deck.push(drawn); deck.sort(function(){ return Math.random() - 0.5; }); }
+    suitCount[drawn.s]++; draws++;
+    paint();
+  }
+  function shuffle(){ fresh(); drawn = null; suitCount = [0, 0, 0, 0]; draws = 0; paint(); }
+  wireButton(replaceBtn, function(){ wcfg.replace = !wcfg.replace; paint(); });
+  wireButton(host.querySelector(".cdShuffle"), shuffle);
+  wireButton(goBtn, draw);
+  fresh(); paint();
+  return {
+    kind: "cards",
+    label: function(){ return wcfg.label || "Cards"; },
+    startPause: draw,
+    reset: shuffle,
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    rebuild: paint, resync: function(){},
+    tally: function(){ return { left: deck.length, drawn: drawn, suits: suitCount.slice(), draws: draws }; },   // test hook
+    destroy: function(){}
   };
 }
 
@@ -7991,18 +8325,133 @@ function makeMeter(host, wcfg){
 /* Drawing pad: quick sketches, number lines, cold-call work. Fixed
    internal resolution so strokes survive widget resizes; content is
    session-only by design (a bitmap would bloat the config file). */
+/* v7.8 the Sketch Pad's BACKGROUNDS (Croix: "Sketch pad gives me white space
+   to work with, I'd actually like to expand it to give me a grid, a number
+   line, other useful things for a math classroom"). Drawn on a second canvas
+   under the ink at the box's own pixel size, so a grid square is square and
+   Clear never touches it. */
+var DRAW_BGS = ["blank", "grid", "dots", "line", "plane"];
+var DRAW_BG_NAMES = { blank: "Blank", grid: "Grid", dots: "Dot paper", line: "Number line", plane: "Coordinate plane" };
+function drawSketchBg(c, kind, W, H){
+  var g = c.getContext("2d");
+  g.clearRect(0, 0, W, H);
+  if (kind === "blank" || !kind) return;
+  var GRID = "#E3D4B4", NAVY = "#1B2E45", TEAL = "#127A85";
+  g.lineCap = "butt";
+  if (kind === "grid" || kind === "dots"){
+    /* 16 columns across; the cell size sets the rows, so cells are square */
+    var cell = W / 16, x, y;
+    if (kind === "grid"){
+      g.strokeStyle = GRID; g.lineWidth = Math.max(1, W / 900);
+      g.beginPath();
+      for (x = cell; x < W - 1; x += cell){ g.moveTo(Math.round(x) + .5, 0); g.lineTo(Math.round(x) + .5, H); }
+      for (y = cell; y < H - 1; y += cell){ g.moveTo(0, Math.round(y) + .5); g.lineTo(W, Math.round(y) + .5); }
+      g.stroke();
+    } else {
+      g.fillStyle = "#CDBD9B";
+      var r = Math.max(1.5, W / 640);
+      for (x = cell / 2; x < W; x += cell) for (y = cell / 2; y < H; y += cell){
+        g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      }
+    }
+    return;
+  }
+  var font = Math.max(10, Math.round(W / 48));
+  g.font = "700 " + font + "px 'DM Sans', system-ui, sans-serif";
+  g.textAlign = "center"; g.textBaseline = "top";
+  if (kind === "line"){
+    /* −10 … 10, ticks every 1, labels every 1, arrowheads both ways */
+    var pad = W * 0.06, y0 = H / 2, step = (W - 2 * pad) / 20, i;
+    g.strokeStyle = NAVY; g.lineWidth = Math.max(2, W / 400);
+    g.beginPath(); g.moveTo(pad - step * .6, y0); g.lineTo(W - pad + step * .6, y0); g.stroke();
+    var ah = Math.max(8, W / 90);
+    g.fillStyle = NAVY;
+    g.beginPath(); g.moveTo(W - pad + step * .6 + ah, y0); g.lineTo(W - pad + step * .6 - ah * .2, y0 - ah * .6); g.lineTo(W - pad + step * .6 - ah * .2, y0 + ah * .6); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(pad - step * .6 - ah, y0); g.lineTo(pad - step * .6 + ah * .2, y0 - ah * .6); g.lineTo(pad - step * .6 + ah * .2, y0 + ah * .6); g.closePath(); g.fill();
+    for (i = -10; i <= 10; i++){
+      var x1 = pad + (i + 10) * step, big = i % 5 === 0;
+      g.lineWidth = big ? Math.max(2, W / 400) : Math.max(1.5, W / 700);
+      g.beginPath(); g.moveTo(x1, y0 - (big ? ah * 1.2 : ah * .75)); g.lineTo(x1, y0 + (big ? ah * 1.2 : ah * .75)); g.stroke();
+      g.fillStyle = i === 0 ? TEAL : NAVY;
+      g.fillText(String(i).replace("-", "\u2212"), x1, y0 + ah * 1.5);
+    }
+    return;
+  }
+  if (kind === "plane"){
+    /* −10 … 10 on both axes, square units, light grid, navy axes, labels every 2 */
+    var unit = Math.min(W, H) / 22, cx = W / 2, cy = H / 2, k;
+    g.strokeStyle = GRID; g.lineWidth = Math.max(1, W / 900);
+    g.beginPath();
+    for (k = -10; k <= 10; k++){
+      g.moveTo(Math.round(cx + k * unit) + .5, cy - 10.5 * unit); g.lineTo(Math.round(cx + k * unit) + .5, cy + 10.5 * unit);
+      g.moveTo(cx - 10.5 * unit, Math.round(cy + k * unit) + .5); g.lineTo(cx + 10.5 * unit, Math.round(cy + k * unit) + .5);
+    }
+    g.stroke();
+    g.strokeStyle = NAVY; g.lineWidth = Math.max(2, W / 400);
+    g.beginPath(); g.moveTo(cx - 10.8 * unit, cy); g.lineTo(cx + 10.8 * unit, cy); g.moveTo(cx, cy - 10.8 * unit); g.lineTo(cx, cy + 10.8 * unit); g.stroke();
+    var a2 = Math.max(7, unit * .45);
+    g.fillStyle = NAVY;
+    [[cx + 10.8 * unit, cy, 0], [cx - 10.8 * unit, cy, Math.PI], [cx, cy - 10.8 * unit, -Math.PI / 2], [cx, cy + 10.8 * unit, Math.PI / 2]].forEach(function(t){
+      g.save(); g.translate(t[0], t[1]); g.rotate(t[2]);
+      g.beginPath(); g.moveTo(a2, 0); g.lineTo(-a2 * .3, -a2 * .6); g.lineTo(-a2 * .3, a2 * .6); g.closePath(); g.fill();
+      g.restore();
+    });
+    var f2 = Math.max(9, Math.round(unit * .55));
+    g.font = "700 " + f2 + "px 'DM Sans', system-ui, sans-serif";
+    for (k = -10; k <= 10; k += 2){
+      if (k === 0) continue;
+      g.textAlign = "center"; g.textBaseline = "top";
+      g.fillText(String(k).replace("-", "\u2212"), cx + k * unit, cy + unit * .25);
+      g.textAlign = "right"; g.textBaseline = "middle";
+      g.fillText(String(-k).replace("-", "\u2212"), cx - unit * .25, cy + k * unit);
+    }
+    g.textAlign = "right"; g.textBaseline = "top";
+    g.fillText("0", cx - unit * .25, cy + unit * .25);
+    g.fillStyle = TEAL;
+    g.textAlign = "left"; g.textBaseline = "bottom";
+    g.fillText("x", cx + 10.8 * unit - unit * .2, cy - unit * .3);
+    g.textAlign = "left"; g.textBaseline = "top";
+    g.fillText("y", cx + unit * .3, cy - 10.8 * unit);
+  }
+}
 function makeDraw(host, wcfg){
+  if (DRAW_BGS.indexOf(wcfg.bg) === -1) wcfg.bg = "blank";
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody dwBody">' +
-      '<canvas class="dwCanvas" width="1280" height="960"></canvas>' +
+      '<div class="dwWrap">' +
+        '<canvas class="dwBg" aria-hidden="true"></canvas>' +
+        '<canvas class="dwCanvas" width="1280" height="960"></canvas>' +
+      '</div>' +
       '<div class="dwTools">' +
         '<span class="dwChips"></span>' +
         '<button class="dwTool dwEraser" type="button" aria-pressed="false">Eraser</button>' +
         '<button class="dwTool dwClear" type="button">Clear</button>' +
+        '<select class="dwBgSel" aria-label="Background"></select>' +
       '</div>' +
     '</div>');
   var canvas = host.querySelector(".dwCanvas");
   var g = canvas.getContext("2d");
+  /* the background layer follows the box: a card resize repaints it */
+  var bg = host.querySelector(".dwBg"), bgSel = host.querySelector(".dwBgSel"), wrap = host.querySelector(".dwWrap");
+  DRAW_BGS.forEach(function(k){
+    var o = document.createElement("option"); o.value = k; o.textContent = DRAW_BG_NAMES[k]; bgSel.appendChild(o);
+  });
+  bgSel.value = wcfg.bg;
+  function paintBg(){
+    var r = wrap.getBoundingClientRect();
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
+    if (bg.width !== W || bg.height !== H){ bg.width = W; bg.height = H; }
+    drawSketchBg(bg, wcfg.bg, W, H);
+  }
+  bgSel.addEventListener("change", function(){
+    wcfg.bg = DRAW_BGS.indexOf(this.value) !== -1 ? this.value : "blank";
+    this.blur();                                 // keyboard stays with the board
+    paintBg();
+  });
+  var ro = null;
+  try { ro = new ResizeObserver(function(){ paintBg(); }); ro.observe(wrap); } catch(e){}
+  setTimeout(paintBg, 0);
   var chipsWrap = host.querySelector(".dwChips");
   var eraserBtn = host.querySelector(".dwEraser");
   var COLORS = ["#17324D", "#127A85", "#40E0D0", "#FF7F6A", "#E6D5B8"];
@@ -8077,8 +8526,9 @@ function makeDraw(host, wcfg){
     reset: function(){ g.clearRect(0, 0, canvas.width, canvas.height); },
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){}, resync: function(){},
-    destroy: function(){}
+    rebuild: function(){ bgSel.value = wcfg.bg; paintBg(); }, resync: function(){},
+    setBg: function(k){ if (DRAW_BGS.indexOf(k) !== -1){ wcfg.bg = k; bgSel.value = k; paintBg(); } },   // test hook
+    destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} }
   };
 }
 
@@ -8976,7 +9426,8 @@ var Sea = (function(){
 var WIDGET_NAMES = {
   timer: "Timer", stopwatch: "Stopwatch", bell: "Next Bell", clock: "Clock",
   picker: "Picker", groups: "Groups", text: "Note", work: "Work Mode",
-  dice: "Dice", score: "Scoreboard", qr: "QR Code", meter: "Noise Meter",
+  dice: "Dice", coin: "Coin", spin: "Spinner", cards: "Cards",
+  score: "Scoreboard", qr: "QR Code", meter: "Noise Meter",
   draw: "Sketch", embed: "Slides",
   event: "Countdown", tally: "Tally", agenda: "Agenda",
   music: "Music", yt: "YouTube"
@@ -8984,7 +9435,8 @@ var WIDGET_NAMES = {
 var WIDGET_MAKERS = {
   stopwatch: makeStopwatch, bell: makeBellTimer, picker: makePicker,
   groups: makeGroups, text: makeText, work: makeWork,
-  dice: makeDice, score: makeScore, qr: makeQR, meter: makeMeter,
+  dice: makeDice, coin: makeCoin, spin: makeSpin, cards: makeCards,
+  score: makeScore, qr: makeQR, meter: makeMeter,
   draw: makeDraw, embed: makeEmbed,
   event: makeEvent, tally: makeTally, agenda: makeAgenda,
   music: makeMusic, yt: makeYT
@@ -9708,7 +10160,7 @@ var Canvas = (function(){
     if (locked){ hideAddMenu(); hideSceneMenu(); }
     refreshSceneMenu();
     ["addTimerBtn","addWatchBtn","addBellBtn","addPickerBtn","addGroupsBtn",
-     "addTextBtn","addWorkBtn","addDiceBtn","addScoreBtn",
+     "addTextBtn","addWorkBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn","addScoreBtn",
      "addQrBtn","addMeterBtn","addDrawBtn","addEmbedBtn",
      "addEventBtn","addTallyBtn","addAgendaBtn",
      "addMusicBtn","addYtBtn"].forEach(function(id){
@@ -9947,6 +10399,7 @@ var Canvas = (function(){
       [["addTimerBtn","timer"], ["addWatchBtn","stopwatch"], ["addBellBtn","bell"],
        ["addClockBtn","clock"], ["addPickerBtn","picker"], ["addGroupsBtn","groups"],
        ["addTextBtn","text"], ["addWorkBtn","work"], ["addDiceBtn","dice"],
+       ["addCoinBtn","coin"], ["addSpinBtn","spin"], ["addCardsBtn","cards"],
        ["addScoreBtn","score"], ["addQrBtn","qr"], ["addMeterBtn","meter"],
        ["addDrawBtn","draw"], ["addEmbedBtn","embed"], ["addEventBtn","event"],
        ["addTallyBtn","tally"], ["addAgendaBtn","agenda"],

@@ -564,7 +564,7 @@ test.describe("focus, pin and stage", () => {
     ok(!after.over && !after.float && !after.pin,
       "float outlived its stage: " + JSON.stringify(after));
     await page.keyboard.press("Escape");
-    await page.click(".w-stopwatch .wClose");
+    await page.evaluate(() => document.querySelector(".w-stopwatch .wClose").click());   // v7.8: under the full-board clock
   });
 
   test("v6.16: keyboard-flow timer (add → type → Enter, no touch) gets the full ghost grace", async ({ page, dh }) => {

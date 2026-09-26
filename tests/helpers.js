@@ -120,6 +120,9 @@ const test = base.test.extend({
       addTimer: async () => {
         await dh.addW("addTimerBtn");
         await page.evaluate(() => {
+          /* v7.8: the default clock owns the whole board — make the old right column */
+          const c = document.getElementById("clockWidget")._entry;
+          if (c && c.cfg.w > 58){ c.cfg.w = 58; c.el.style.width = "58%"; }
           const en = document.querySelector(".w-timer")._entry;
           en.cfg.x = 61; en.cfg.y = 0; en.cfg.w = 39; en.cfg.h = 100;
           en.el.style.left = "61%"; en.el.style.top = "0%";

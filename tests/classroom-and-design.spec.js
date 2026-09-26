@@ -263,7 +263,7 @@ test.describe("v6.13 design pass", () => {
       "strip targets: " + JSON.stringify(m));
     await page.click("#addBtn");
     const labels = await page.locator("#addMenu .menuLabel").allTextContents();
-    ok(labels.join("|") === "Time|Students|Classroom|Board",
+    ok(labels.join("|") === "Time|Students|Classroom|Board|Probability",   // v7.8: the kit
       "menu groups: " + labels.join("|"));
     // v7.0: the popover is a group, not a menu
     ok(await dh.attr("#addMenu", "role") === "group", "add menu role: " + await dh.attr("#addMenu", "role"));
@@ -298,6 +298,10 @@ test.describe("v6.13 design pass", () => {
     // is taken in-page, synchronously after the click: a forced layout right
     // then reads the transition's START width (a teleport would already be
     // full-width). A round trip through the driver can outlast the whole glide.
+    await pg.evaluate(() => {                    // v7.8: the clock owns the board — give it somewhere to glide from
+      const en = document.getElementById("clockWidget")._entry;
+      en.cfg.w = 58; en.el.style.width = "58%";
+    });
     const mid = await pg.evaluate(() => {
       const c = document.getElementById("canvas").getBoundingClientRect();
       const el = document.getElementById("clockWidget");

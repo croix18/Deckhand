@@ -2,6 +2,37 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.8.0 — 2026-09-28
+
+**The math room's tools** (batch C of the audit plan — the two things Croix asked to
+build out instead of cut).
+
+**The clock owns the board.** "Yes it is empty… make my main clock a little bit bigger
+now that I have more space." The default Daily Board is the clock at full width, and a
+board upgraded from 7.6 gets the same: the clock grows into the retired settle card's row.
+The clock's size caps grew about a third (the time to 250 px, the period line, the bell
+countdown, the day chips, the date with them).
+
+**Sketch Pad backgrounds.** A Background picker beside Clear: Blank, Grid (16 square
+cells across), Dot paper, Number line (−10 to 10, every integer labelled, arrowheads),
+Coordinate plane (−10 to 10 both ways, square units, light grid, navy axes, labels every
+2). The background is its own layer under the ink, drawn at the card's real pixel size
+so squares stay square whatever the card's shape, repainted on resize, untouched by
+Clear and the eraser, and saved with the card.
+
+**The probability kit** — a new + Add heading beside Dice, each with a session tally
+because experimental-vs-theoretical is the lesson: **Coin** (1–3 coins, a flip animation,
+Heads/Tails counts and the number of flips; Space flips, R clears); **Spinner** (2, 3, 4,
+5, 6 or 8 equal sectors in the palette, a fixed pointer, a 3–6-turn spin with a random
+offset, the result is the sector under the pointer, a per-sector tally; Space spins, R
+clears; a new sector count starts the tally over); **Cards** (a shuffled 52, drawn without
+replacement so the count drops — "Draw · 49 left" — or with "Put it back" on, a suit tally,
+Shuffle/R resets; Space draws). **Dice** gained the same tally: per face for one die, per
+total for two or three (why 7 wins), cleared by R or by changing the die count.
+
+**Also.** The + Add menu (23 tiles under five headings) runs five columns at 1080p and six
+on a 768-high screen so it never scrolls. Tests: `v78.spec.js` (6 new); 216 green.
+
 ## 7.7.0 — 2026-09-28
 
 **The room-facing release** (batch B of the audit plan; the design-lens review's three

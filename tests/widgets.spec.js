@@ -503,7 +503,7 @@ test.describe("landing, alarm, add menu, z-order", () => {
     ok(await page.locator("#addMenu").isHidden(), "menu stayed open after add");
     ok(await page.locator(".w-dice").count() === 1, "widget not added");
     await page.click("#addBtn");
-    await page.mouse.click(600, 400);            // outside tap
+    await page.mouse.click(1500, 400);           // outside tap (v7.8: the menu is taller)
     ok(await page.locator("#addMenu").isHidden(), "outside tap left menu open");
     await page.click("#addBtn");
     await page.keyboard.press("Escape");
