@@ -23,14 +23,17 @@ test.describe("autosave on the device", () => {
     await dh.openAt("#t=2026-09-21T10:30");
     ok(await page.evaluate(() => window.Deckhand.configSource) === "device", "boot did not seed the device copy");
     const st = await dh.stored();
-    ok(st && st.cfg && st.cfg.ownerName === "Mr. Shaffer" && st.fileVersion === "7.0.0", "seed: " + JSON.stringify(st && st.fileVersion));
+    const ver = await page.evaluate(() => window.Deckhand.version);
+    ok(st && st.cfg && st.cfg.ownerName === "Mr. Shaffer" && st.fileVersion === ver, "seed: " + JSON.stringify(st && st.fileVersion));
 
     await dh.launch();
     await page.click("#setBtn");
     await page.fill("#sName", "Ms. Test");
     await page.click("#applyBtn");
     await expect(page.locator("#setErrors")).toHaveText("Applied.");
+    await dh.tab("device");                       // v7.2: the status line lives on the Device tab
     await expect(page.locator("#storeNote")).toContainText("save automatically");
+    await expect(page.locator("#devSource")).toHaveText("Device copy");
     await page.click("#closeBtn");
     await dh.flush();
     ok((await dh.stored()).cfg.ownerName === "Ms. Test", "edit not persisted");
@@ -44,7 +47,7 @@ test.describe("autosave on the device", () => {
     await dh.openAt("#t=2026-09-21T10:30");
     await dh.launch();
     await page.click("#setBtn");
-    await page.evaluate(() => { document.getElementById("secRosters").open = true; });
+    await dh.tab("rosters");
     await page.fill('#rosterGrid textarea[data-period="2nd"]', "Ava, Ben, Cai");
     await page.click("#applyBtn");
     await expect(page.locator("#setErrors")).toHaveText("Applied.");
@@ -108,7 +111,7 @@ test.describe("autosave on the device", () => {
     });
     await dh.reopen("#t=2026-09-21T10:30");
     await expect(page.locator("#verNudge")).toBeVisible();
-    await expect(page.locator("#verNudgeText")).toContainText("7.0.0");
+    await expect(page.locator("#verNudgeText")).toContainText(await page.evaluate(() => window.Deckhand.version));
     await expect(page.locator("#verNudgeBells")).toBeVisible();
     ok((await page.evaluate(() => window.Deckhand.config.bell.groups[0].name)) === "Old Week", "device bells not loaded");
     await page.click("#verNudgeBells");
@@ -119,7 +122,7 @@ test.describe("autosave on the device", () => {
     }));
     ok(after.g0 === "Teal Week", "file bells not adopted: " + after.g0);
     ok(after.owner === "Ms. Keep", "adopting bells clobbered other settings");
-    ok(after.fv === "7.0.0", "device copy not re-stamped: " + after.fv);
+    ok(after.fv === (await page.evaluate(() => window.Deckhand.version)), "device copy not re-stamped: " + after.fv);
     // second open of the same release: no nudge
     await dh.reopen("#t=2026-09-21T10:30");
     await expect(page.locator("#verNudge")).toBeHidden();
@@ -165,6 +168,7 @@ test.describe("autosave on the device", () => {
     ok(await page.evaluate(() => !document.getElementById("cfgWarn")), "no defaults banner when the device copy is good");
     await dh.launch();
     await page.click("#setBtn");
+    await dh.tab("device");
     await expect(page.locator("#storeNote")).toContainText("damaged");
     await page.click("#dlBtn");
     await expect(page.locator("#setErrors")).toContainText("Export disabled");
@@ -177,7 +181,7 @@ test.describe("rosters from the Seating Chart", () => {
     await page.evaluate(S => localStorage.setItem("seatingchart.v1", JSON.stringify(S)), SEATING);
     await dh.launch();
     await page.click("#setBtn");
-    await page.evaluate(() => { document.getElementById("secRosters").open = true; });
+    await dh.tab("rosters");
     await page.click("#rosterImportBtn");
     await expect(page.locator("#setErrors")).toContainText("Loaded 3 students into 2 periods");
     ok((await page.inputValue('#rosterGrid textarea[data-period="1st"]')) === "Ava, Ben", "1st box");
@@ -196,7 +200,7 @@ test.describe("rosters from the Seating Chart", () => {
     await dh.openAt("#t=2026-09-21T10:30");
     await dh.launch();
     await page.click("#setBtn");
-    await page.evaluate(() => { document.getElementById("secRosters").open = true; });
+    await dh.tab("rosters");
     await page.click("#rosterImportBtn");
     await expect(page.locator("#setErrors")).toContainText("No Seating Chart data on this device");
 

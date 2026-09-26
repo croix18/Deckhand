@@ -12,3 +12,4 @@ Deckhand_v6 (*).html
 Deckhand*configured*.html
 Deckhand*export*.html
 .DS_Store
+/tests/tmp_fx_*.html

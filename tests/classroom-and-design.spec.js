@@ -25,7 +25,7 @@ async function bootPage(pg, dh, hash) {
 /* seed a 7-kid roster for 2nd period through Settings */
 async function seedRoster(page) {
   await page.click("#setBtn");
-  await page.evaluate(() => { document.getElementById("secRosters").open = true; });
+  await page.evaluate(() => window.Deckhand.settings.showTab("rosters"));
   await page.fill('#rosterGrid textarea[data-period="2nd"]', "A,B,C,D,E,F,G");
   await page.click("#applyBtn");
   await page.click("#closeBtn");
@@ -226,11 +226,9 @@ test.describe("focus pill, embed notes, settings", () => {
     await dh.openAt("");
     await dh.launch();
     await dh.addW("addEmbedBtn");
-    await page.fill(".w-embed .embIn", "file:///C:/Users/croix/deck.pptx");
-    await page.evaluate(() => {
-      const inp = document.querySelector(".w-embed .embIn");
-      inp.dispatchEvent(new Event("blur"));
-    });
+    // v7.1: the empty card carries a big paste box + Load
+    await page.fill(".w-embed .embBigIn", "file:///C:/Users/croix/deck.pptx");
+    await page.click(".w-embed .embLoad");
     await expect(page.locator(".w-embed .embNote")).toBeVisible();
     ok((await dh.text(".w-embed .embNote")).includes("Publish to web"), "note unhelpful");
   });
@@ -241,6 +239,7 @@ test.describe("focus pill, embed notes, settings", () => {
     ok(await page.evaluate(() => window.Deckhand.config.bell.warnChime) === false,
       "chime default on");
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.check("#sWarnChime");
     await page.click("#applyBtn");
     ok(await page.evaluate(() => window.Deckhand.config.bell.warnChime) === true,

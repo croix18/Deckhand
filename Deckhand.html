@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.0.0",
+  "appVersion": "7.1.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -364,50 +364,157 @@
   #alarm.calm #alarmWho{font-size:clamp(13px, 1.6vw, 19px); color:var(--white);}
   #alarm.calm p:last-child{display:none;}
 
-  /* settings panel */
+  /* v7.1 sheets: one modal look for the day editor, scene manager and
+     anything else that needs a card with a strip and an action row */
+  .sheetWrap{position:fixed; inset:0; z-index:21; display:flex; align-items:center; justify-content:center;}
+  .sheetWrap[hidden]{display:none;}
+  .sheetBack{position:absolute; inset:0; background:rgba(23,50,77,.45);}
+  .sheet{position:relative; width:min(720px, 94vw); max-height:88vh; display:flex; flex-direction:column;}
+  .sheet .strip{background:var(--navy); color:var(--white); display:flex; align-items:center; gap:12px;}
+  .sheetSub{font-weight:700; letter-spacing:0; text-transform:none; opacity:.8; font-size:14px;}
+  .sheetBody{overflow:auto; padding:18px 22px; display:flex; flex-direction:column; gap:14px;}
+  .sheetNote{font-size:13px; color:var(--teal); font-weight:600;}
+  .sheetErr{color:var(--navy); font-weight:700; font-size:14px; white-space:pre-line;}
+  .sheetErr:not(:empty){background:var(--coral); padding:10px 14px; border-radius:10px;}
+  .sheetActions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; padding:14px 22px 18px; border-top:2px solid var(--grid);}
+  .btnGhost{background:var(--white); color:var(--navy); border:3px solid var(--navy); padding:13px 26px;}
+  .rowLeft{justify-content:flex-start; align-items:center;}
+  .chipsSm .chip{font-size:15px; padding:10px 18px;}
+  #todayLabel{margin-top:6px;}
+  /* block editor: one row per bell block — label, start, end, remove */
+  .blkEd{display:flex; flex-direction:column; gap:8px;}
+  .blkRow{display:grid; grid-template-columns:minmax(120px, 1.4fr) 1fr auto 1fr 44px; gap:8px; align-items:center;}
+  .blkRow .setInput{width:100%; min-height:44px; font-size:16px;}
+  .blkRow input[type=time]{font-variant-numeric:tabular-nums; font-weight:700;}
+  .blkRow .blkDash{text-align:center; font-weight:900; color:var(--teal);}
+  .blkRow .blkX{
+    min-width:44px; min-height:44px; border:0; border-radius:12px; cursor:pointer;
+    background:var(--paleturq); color:var(--navy); font:inherit; font-weight:900; font-size:18px;
+  }
+  .blkRow.bad .setInput{border-color:var(--coral);}
+  .blkEmpty{font-size:14px; color:var(--teal); font-weight:600; padding:8px 0;}
+
+  /* ===== settings panel (v7.2 design pass) =====
+     A preferences panel, not a scroll of collapsibles: a tab rail on the
+     left, one panel at a time on the right, every field label-above on
+     the .fGrid, and one calm action row that never leaves the bottom.
+     Built from the same parts as the sheets (.card, .strip, .sheetSub,
+     .btnGhost) so the four surfaces read as one system. */
   #settingsWrap{position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;}
   #settingsWrap[hidden]{display:none;}
   #settingsBack{position:absolute; inset:0; background:rgba(23,50,77,.45);}
-  #settingsCard{position:relative; width:min(760px, 94vw); max-height:88vh;}
-  #settingsCard .strip{background:var(--navy); color:var(--white);}
-  #settingsBody{overflow:auto; padding:22px 26px; display:flex; flex-direction:column; gap:18px;}
-  .setLabel{font-weight:700; color:var(--teal); font-size:13px; letter-spacing:.04em; display:block; margin-bottom:6px;}
+  #settingsCard{position:relative; width:min(1180px, 94vw); height:min(780px, 90vh);}
+  #settingsCard .strip{background:var(--navy); color:var(--white); display:flex; align-items:center; gap:12px;}
+  #settingsBody{flex:1; min-height:0; display:flex; flex-direction:column;}
+  #setLayout{flex:1; min-height:0; display:flex;}
+  /* the rail */
+  #setRail{
+    flex:0 0 184px; display:flex; flex-direction:column; gap:4px;
+    padding:16px 12px; background:var(--cream); border-right:2px solid var(--grid);
+  }
+  .setTab{
+    display:flex; align-items:center; min-height:48px; padding:0 16px;
+    border:0; border-radius:12px; background:transparent; color:var(--navy);
+    font:inherit; font-weight:700; font-size:16px; text-align:left; cursor:pointer;
+  }
+  .setTab[aria-selected="true"]{background:var(--white); font-weight:900; box-shadow:inset 4px 0 0 var(--turq), 3px 4px 0 var(--shadow);}
+  .setTab:focus-visible{outline:3px solid var(--turq); outline-offset:2px;}
+  .setTab:active{transform:translateY(1px) scale(.98);}
+  /* the panels */
+  #setPanels{flex:1; min-width:0; overflow:auto; padding:22px 26px 26px;}
+  .setSec{display:flex; flex-direction:column; gap:20px;}
+  .setSec[hidden]{display:none;}
+  .setH{font-weight:900; font-size:24px; letter-spacing:-.01em; line-height:1.1;}
+  .fGroup{display:flex; flex-direction:column; gap:14px;}
+  .fGroup + .fGroup{border-top:2px solid var(--grid); padding-top:20px;}
+  .fSection{font-weight:900; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); font-size:13px;}
+  .fGrid{display:grid; gap:14px 16px; align-items:start;}
+  .fGrid.c1{grid-template-columns:minmax(0,1fr);}
+  .fGrid.c2{grid-template-columns:repeat(2, minmax(0,1fr));}
+  .fGrid.c3{grid-template-columns:repeat(3, minmax(0,1fr));}
+  .fField{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .fLabel{font-weight:700; color:var(--teal); font-size:14px; letter-spacing:.02em; line-height:1.3;}
+  .fHint{font-size:13px; color:var(--teal); font-weight:500; line-height:1.45;}
+  .fHint.warn{color:var(--navy); background:var(--coral-pale); padding:6px 10px; border-radius:8px; font-weight:700;}
+  .fHint[hidden]{display:none;}
   .setInput, .setSelect, textarea{
     font:inherit; color:var(--navy); background:var(--white);
-    border:2px solid var(--grid); border-radius:10px; padding:8px 10px;
+    border:2px solid var(--grid); border-radius:10px; padding:8px 12px;
     font-variant-numeric:tabular-nums;
   }
+  .fField .setInput, .fField .setSelect{width:100%; min-height:48px; font-size:16px;}
   .setInput:focus-visible, .setSelect:focus-visible, textarea:focus-visible{outline:3px solid var(--turq); outline-offset:1px;}
-  textarea{width:100%; resize:vertical; line-height:1.55;}
-  .setFlex{display:flex; gap:18px; flex-wrap:wrap; align-items:center;}
-  .setCheck{display:flex; gap:8px; align-items:center; font-weight:700;}
-  .setCheck input{width:18px; height:18px; accent-color:var(--teal);}
-  .tplGrid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-  .setNote{font-size:12.5px; color:var(--teal); font-weight:500;}
-  details.setSec{border:2px solid var(--grid); border-radius:14px; padding:0 18px 16px;}
-  details.setSec[open]{padding-bottom:18px;}
-  details.setSec > summary{
-    font-weight:900; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--teal); font-size:14px; padding:13px 0; cursor:pointer;
-    list-style-position:inside;
+  textarea{width:100%; resize:vertical; line-height:1.55; font-size:15px;}
+  .fRange{display:flex; align-items:center; min-height:48px; padding:0 14px; border:2px solid var(--grid); border-radius:12px;}
+  .setRange{width:100%; height:44px; margin:0; accent-color:var(--teal); background:transparent; border:0; padding:0;}
+  /* checkboxes: the whole row is the target */
+  .fCheck{
+    display:flex; align-items:center; gap:12px; min-height:48px; padding:0 14px;
+    border:2px solid var(--grid); border-radius:12px; background:var(--white);
+    font-weight:700; font-size:15px; line-height:1.25; cursor:pointer; user-select:none;
   }
-  details.setSec > summary:focus-visible{outline:3px solid var(--turq); outline-offset:2px;}
-  details.setSec > *:not(summary){margin-top:12px;}
-  #setErrors{font-weight:700; font-size:14px; white-space:pre-line; color:var(--navy);}
-  #setErrors:not(:empty){background:var(--coral); padding:10px 14px; border-radius:10px;}
+  .fCheck input{width:22px; height:22px; flex:0 0 22px; accent-color:var(--teal); margin:0;}
+  .fCheck:has(input:checked){background:var(--paleturq); border-color:var(--turq);}
+  .fCheck:has(input:focus-visible){outline:3px solid var(--turq); outline-offset:2px;}
+  .fCheck:active{transform:translateY(1px) scale(.99);}
+  /* the older helpers some widgets still reach for */
+  .setLabel{font-weight:700; color:var(--teal); font-size:14px; letter-spacing:.02em; display:block; margin-bottom:6px;}
+  .setNote{font-size:13px; color:var(--teal); font-weight:500;}
+  .tplGrid{display:grid; grid-template-columns:1fr 1fr; gap:14px 16px;}
+  /* device tab */
+  .fStatus{font-size:15px; font-weight:700; color:var(--navy); background:var(--paleturq); padding:12px 16px; border-radius:12px; line-height:1.4;}
+  .fStatus.warn{background:var(--coral); color:var(--navy);}
+  .fFact{border:2px solid var(--grid); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:4px;}
+  .fVal{font-weight:900; font-size:18px; font-variant-numeric:tabular-nums;}
+  /* schedules tab: one card per week type */
+  #groupEditors{display:flex; flex-direction:column; gap:16px;}
+  .wkCard{border:2px solid var(--grid); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:14px;}
+  .wkHead{display:flex; align-items:center; gap:12px;}
+  .wkNum{
+    flex:0 0 36px; height:36px; border-radius:50%; background:var(--navy); color:var(--turq);
+    font-weight:900; font-size:16px; display:flex; align-items:center; justify-content:center;
+  }
+  .wkName{flex:1; min-width:0; min-height:48px; font-size:16px; font-weight:700;}
+  .wkTextTog{font-size:14px; padding:10px 16px; min-height:48px; white-space:nowrap;}
+  .wkEd[hidden], .wkText[hidden]{display:none;}
+  .wkAdd{align-self:flex-start;}
+  /* two editors side by side: tighter rows than the day editor sheet */
+  .wkEd .blkRow{grid-template-columns:minmax(88px, 1fr) auto 12px auto 44px; gap:6px;}
+  .wkEd .blkRow input[type=time]{padding:8px 6px; font-size:15px;}
+  .wkEd .blkRow .blkLabel{font-size:15px; padding:8px 10px;}
+  .wkTextHint{grid-column:1 / -1;}
+  /* errors + actions ride the bottom, whatever tab is showing */
+  #setFoot{flex-shrink:0; border-top:2px solid var(--grid); background:var(--white);}
+  #setErrors{font-weight:700; font-size:14px; white-space:pre-line; color:var(--navy); margin:0 26px;}
+  #setErrors:not(:empty){background:var(--coral); padding:10px 14px; border-radius:10px; margin-top:12px;}
   #setErrors.ok:not(:empty){background:var(--paleturq); color:var(--navy);}
-
-  /* v7.0 sticky action row: Apply / Export / Reset / Close ride the
-     bottom of the scrolling panel — at 1080p they used to sit below the
-     fold, so the one row that matters was invisible on open */
   #setActions{
-    position:sticky; bottom:-22px; margin:0 -26px -22px; padding:14px 26px 16px;
-    background:var(--white); border-top:2px solid var(--grid);
-    display:flex; flex-direction:column; gap:10px; align-items:center;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:14px 26px 16px;
   }
-  #setActions .setNote{text-align:center;}
-  #setActions .setNote.warn{color:var(--navy); background:var(--coral); padding:6px 12px; border-radius:8px; font-weight:700;}
+  .setActL, .setActR{display:flex; gap:12px; flex-wrap:wrap; align-items:center;}
+  #setActions .btn{font-size:16px; padding:0 24px; min-height:52px; border-radius:14px;}
+  #setActions .btnGhost{padding:0 24px;}
+  .btnPri{background:var(--turq); color:var(--navy);}
+  .btnSand{background:var(--sand); color:var(--navy);}
+  .btnOutline{background:var(--white); color:var(--navy); border:3px solid var(--sand);}
   #resetBtn.armed{background:var(--coral) !important; border-color:var(--coral) !important;}
+  @media (max-width: 700px){
+    #settingsCard{width:96vw; height:92vh;}
+    #setLayout{flex-direction:column;}
+    #setRail{
+      flex:none; flex-direction:row; overflow-x:auto; gap:6px; padding:10px 12px;
+      border-right:0; border-bottom:2px solid var(--grid);
+    }
+    .setTab{flex:0 0 auto; min-height:44px; padding:0 14px; font-size:15px;}
+    .setTab[aria-selected="true"]{box-shadow:inset 0 -4px 0 var(--turq);}
+    #setPanels{padding:16px;}
+    .fGrid.c2, .fGrid.c3, .tplGrid{grid-template-columns:minmax(0,1fr);}
+    #setErrors{margin:0 16px;}
+    #setActions{padding:12px 16px 14px;}
+    .setActL, .setActR{width:100%; justify-content:center;}
+    .setActR{order:-1;}
+  }
 
   /* v7.0 update nudge: a new release opened over an older device copy */
   #verNudge{
@@ -496,15 +603,36 @@
   }
   #focusBar[hidden]{display:none;}
   #focusTimerWrap{position:relative;}
-  /* v6.17: the preset drop-under — same navy card language as + Add */
+  /* v7.2: the preset drop-under is a sheet like the dock popovers —
+     a white card, a navy strip, one column of uniform 48px pills, and
+     "Until bell" / "Type a time…" set apart from the numbers */
   #focusTimerMenu{
     position:absolute; top:calc(100% + 10px); right:0;
-    background:var(--navy); border-radius:16px; box-shadow:4px 6px 0 var(--shadow);
-    padding:10px; display:grid; grid-template-columns:1fr; gap:8px;
-    min-width:160px; max-height:calc(100vh - 90px); overflow-y:auto;
+    background:var(--white); color:var(--navy); border-radius:16px;
+    box-shadow:6px 8px 0 var(--shadow); border:2px solid var(--grid); overflow:hidden;
+    display:flex; flex-direction:column; min-width:200px;
+    max-height:calc(100vh - 90px); overflow-y:auto;
   }
   #focusTimerMenu[hidden]{display:none;}
-  #focusTimerMenu .pill{text-align:left; white-space:nowrap;}
+  #focusTimerMenu .strip{
+    position:sticky; top:0; z-index:1;
+    background:var(--navy); color:var(--white); padding:12px 16px;
+    font-weight:900; letter-spacing:.06em; font-size:14px;
+  }
+  .tmList{display:flex; flex-direction:column; gap:6px; padding:12px 12px 0;}
+  .tmList:last-child{padding-bottom:12px;}
+  .tmList + .tmList{margin-top:12px; border-top:2px solid var(--grid); padding-top:12px;}
+  #focusTimerMenu .pill{               /* out-ranks #focusBar button */
+    min-height:48px; padding:0 18px; border:0; border-radius:12px; opacity:1;
+    text-align:left; white-space:nowrap; letter-spacing:0;
+    font-size:16px; font-weight:700; background:var(--paleturq); color:var(--navy);
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  #focusTimerMenu .pill[data-min]{background:var(--turq);}
+  #focusTimerMenu .pill:disabled{opacity:.4; cursor:default;}
+  #focusTimerMenu .pill:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
+  #focusTimerMenu .pill .tmSub{font-weight:500; font-size:12px; color:var(--teal);}
+  #focusTimerMenu .menuLabel{padding:10px 16px 12px; color:var(--teal); text-align:center;}
   #focusBar button{
     background:var(--navy); color:var(--white);
     border:2px solid var(--turq); border-radius:999px;
@@ -716,38 +844,54 @@
   .w-dice .strip{background:var(--sand); color:var(--navy);}
   .w-score .strip{background:var(--teal); color:var(--white);}
 
-  /* text/announcement box */
+  /* text/announcement box (v7.1: rich text, bigger by default) */
+  .txBody{display:flex; flex-direction:column; gap:6px;}
   .txDisplay{flex:1; min-height:0; width:100%; overflow:auto; display:flex; cursor:text;}
   .txDisplay[hidden]{display:none;}
   .txInner{
-    margin:auto; max-width:100%;
-    white-space:pre-wrap; overflow-wrap:break-word; text-align:center;
-    font-weight:700; color:var(--navy); line-height:1.3;
-    font-size:clamp(16px, 7cqmin, 64px);
-    padding:1cqh 2.4cqw;
+    margin:auto; max-width:100%; width:100%;
+    overflow-wrap:break-word; text-align:center;
+    /* 500, not 700: the browser's Bold toggle treats >=600 as already
+       bold and would UN-bold the selection */
+    font-weight:500; color:var(--navy); line-height:1.3;
+    font-size:calc(clamp(20px, 9cqmin, 120px) * var(--tx-scale, 1));
+    padding:1cqh 2.4cqw; outline:none;
   }
+  .txInner:empty::before{content:""; display:inline-block;}
   .txInner.txEmpty{color:var(--teal); opacity:.75; font-weight:500;
     font-size:clamp(13px, 3cqw, 22px);}
-  .txInner.txLeft{text-align:left;}
-  .txLine{margin:0.3em 0;}
-  .txGap{height:0.8em;}
-  .txH1{font-weight:900; font-size:1.45em; line-height:1.15; color:var(--navy);}
-  .txH2{font-weight:900; font-size:1.12em; line-height:1.2; color:var(--teal);
-    letter-spacing:.03em;}
-  .txBullet{padding-left:1.1em; position:relative;}
-  .txBullet::before{content:"•"; position:absolute; left:0.1em; color:var(--turq); font-weight:900;}
-  .txNum{padding-left:1.6em; text-indent:-1.6em;}
-  .txRow[hidden], .txSyntax[hidden]{display:none;}
-  /* the syntax hint must survive small widgets while editing */
-  @container (max-height: 430px){
-    .widget.w-text .tHint{display:block;}
+  .txInner ul, .txInner ol{text-align:left; margin:.2em 0; padding-left:1.4em;}
+  .txInner li{margin:.15em 0;}
+  .txInner li::marker{color:var(--turq); font-weight:900;}
+  .txInner div, .txInner p{margin:.15em 0;}
+  .txInner h1, .txInner h2, .txInner h3{margin:.2em 0; line-height:1.15;}
+  .widget.txEditing .txInner{
+    margin:0; text-align:left; cursor:text; min-height:3em;
+    border:2px dashed var(--turq); border-radius:12px;
   }
-  .txArea{
-    flex:1; min-height:0; width:96%; font-family:inherit; font-weight:600;
-    font-size:clamp(14px, 3.6cqmin, 30px); color:var(--navy); line-height:1.4;
-    border:2px dashed var(--turq); border-radius:12px; padding:10px; resize:none;
+  .widget.txEditing .txDisplay{cursor:text;}
+  .txBar{
+    display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+    padding:6px 8px; background:var(--cream); border-radius:12px;
   }
-  .txArea[hidden]{display:none;}
+  .txBar[hidden]{display:none;}
+  .txGroup{display:flex; gap:3px; flex-wrap:wrap; padding:2px; border-radius:10px; background:var(--white);}
+  .txTool{
+    min-width:40px; min-height:40px; padding:4px 9px; border:0; border-radius:8px; cursor:pointer;
+    background:transparent; color:var(--navy); font:inherit; font-weight:900; font-size:15px;
+  }
+  .txTool:hover{background:var(--paleturq);}
+  .txTool[aria-pressed="true"]{background:var(--turq);}
+  .txSwatch{min-width:30px; width:30px; height:30px; min-height:30px; border-radius:50%; margin:5px 3px;
+    border:2px solid var(--white); box-shadow:0 0 0 1px var(--grid);}
+  .txSerif{font-family:Georgia, serif;}
+  .txMono{font-family:"Courier New", monospace;}
+  .txHand{font-family:"Comic Sans MS", "Segoe Print", cursive;}
+  .txBar .txBtn{margin-left:auto; padding:9px 18px; font-size:15px;}
+  @container (max-width: 520px){
+    .txTool{min-width:34px; min-height:34px; font-size:13px; padding:3px 6px;}
+    .txBar .txBtn{padding:7px 14px; font-size:13px;}
+  }
 
   /* work symbols / voice level */
   .wkBadge{
@@ -922,6 +1066,16 @@
   body.locked .stEdit{display:none;}
   /* v6.24: STAGED (the bell routine), the count owns the whole screen —
      card-sized clamps read tiny across a room of kids finding seats */
+  /* v7.1 the flag: small above the count, the whole card in the hold */
+  .stFlag{width:min(60%, 34cqh * 1.9); margin:0 auto 1cqh; line-height:0;
+    border-radius:6px; overflow:hidden; box-shadow:3px 4px 0 var(--shadow);}
+  .stFlag[hidden]{display:none;}
+  .stFlag svg{width:100%; height:auto; display:block;}
+  .w-settle.stPledgeOnly .stFlag{width:min(92%, 58cqh * 1.9);}
+  .w-settle.stPledgeOnly .stBig.stPledgeT{font-size:clamp(28px, 14cqmin, 120px); color:var(--navy);}
+  .w-settle.wFull.stPledgeOnly .stBig.stPledgeT{font-size:clamp(60px, 14cqh, 220px);}
+  .w-settle.wFull .stFlag{width:min(60%, 36cqh * 1.9);}
+  .w-settle.wFull.stPledgeOnly .stFlag{width:min(80%, 62cqh * 1.9);}
   .w-settle.wFull .stTop{font-size:clamp(20px, 4cqw, 64px);}
   .w-settle.wFull .stBig{font-size:clamp(80px, 34cqh, 560px);}
   .w-settle.wFull .stBig.stMsgB{font-size:clamp(32px, 8cqw, 150px);}
@@ -1074,6 +1228,11 @@
     font-size:clamp(15px, 3.6cqw, 30px); letter-spacing:.15em;
   }
   .mtRecord{color:var(--teal); font-weight:700; font-size:clamp(11px, 2.4cqw, 17px);}
+  .mtTally{color:var(--navy); font-weight:700; font-size:clamp(11px, 2.6cqw, 18px); min-height:1.2em;}
+  .mtTally:empty{display:none;}
+  .chipSm{font-size:13px; padding:8px 12px; min-height:40px;}
+  .mtSensChips{gap:6px;}
+  body.locked .mtSens{display:none;}
   .w-meter.strikeFlash{animation:strikePulse .9s ease;}
   @keyframes strikePulse{
     0%, 100%{box-shadow:8px 10px 0 var(--shadow);}
@@ -1111,6 +1270,27 @@
     padding:4cqh 6cqw; line-height:1.55;
   }
   .embEmpty b{color:var(--navy); font-size:1.25em;}
+  .embPaste{display:flex; gap:8px; width:min(92%, 720px); margin:1.6cqh 0 .8cqh;}
+  .embBigIn{
+    flex:1; min-width:0; font-family:inherit; font-weight:700; color:var(--navy);
+    font-size:clamp(14px, 2.6cqw, 22px); min-height:48px;
+    border:3px solid var(--turq); border-radius:14px; padding:8px 14px; background:var(--white);
+  }
+  .embBigIn:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
+  .embLoad{padding:10px 22px; font-size:clamp(14px, 2.4cqw, 20px); min-height:48px;}
+  .embHint{font-size:clamp(11px, 2cqw, 15px); opacity:.85; max-width:720px;}
+  .embSaved{flex-wrap:wrap; justify-content:center; margin-top:1.2cqh;}
+  .embSaved[hidden]{display:none;}
+  .embRow2{display:flex; gap:8px; padding:0 42px 12px; background:var(--paleturq); align-items:center; width:100%; align-self:stretch;}
+  .embRow2[hidden]{display:none;}
+  .embRow2 .embSaved{margin:0; justify-content:flex-start; flex:1;}
+  .embStar{font-size:20px;}
+  body.locked .embRow2{display:none;}
+  /* v7.1 the SHELF: a stage-only deck is hidden until it is staged */
+  .widget.wShelf:not(.wFull):not(.embEditing){display:none;}
+  #shelf{display:flex; gap:6px; align-items:center;}
+  #shelf:empty{display:none;}
+  #shelf .pill{background:var(--paleturq);}
   .embEmpty[hidden]{display:none;}
   .embFrame{flex:1; min-height:0; width:100%; border:none; background:var(--white);}
   .embFrame[hidden]{display:none;}
@@ -1289,30 +1469,84 @@
   }
   @keyframes holdFill{ to{ background-position:0 0; } }
   #addWrap, #sceneWrap{position:relative; display:flex; align-items:center; gap:10px;}
-  #addMenu, #sceneMenu{
+  /* ===== v7.2: the dock popovers are SHEETS — white cards with a navy
+     strip and the hard-offset shadow, same as the day editor and
+     Settings — not navy blobs that vanished into the dock ===== */
+  .pop{
     position:absolute; bottom:calc(100% + 12px); left:0;
-    background:var(--navy); border-radius:16px; box-shadow:4px 6px 0 var(--shadow);
-    padding:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px;
-    width:max-content;
+    background:var(--white); color:var(--navy); border-radius:16px;
+    box-shadow:6px 8px 0 var(--shadow); border:2px solid var(--grid);
+    width:max-content; overflow:hidden;
+    /* a short viewport must scroll the menu, never clip its top section */
+    max-height:calc(100vh - 120px); overflow-y:auto;
   }
-  #addMenu[hidden], #sceneMenu[hidden]{display:none;}
-  /* a short viewport must scroll the menu, never clip its top section */
-  #addMenu, #sceneMenu{max-height:calc(100vh - 120px); overflow-y:auto;}
-  #addMenu .pill, #sceneMenu .pill{text-align:left;}
-  /* 17 identical pills were a wall — four scannable sections */
-  .menuLabel{
+  .pop[hidden], #addMenu[hidden], #sceneMenu[hidden]{display:none;}
+  .pop .strip{
+    position:sticky; top:0; z-index:1;
+    background:var(--navy); color:var(--white); padding:12px 16px;
+    font-weight:900; letter-spacing:.06em; font-size:14px;
+    display:flex; align-items:center; gap:10px;
+  }
+  /* + Add: tiles in three columns under four headings */
+  #addMenu{
+    display:grid; grid-template-columns:repeat(3, 160px); gap:8px;
+    padding:12px; align-content:start;
+  }
+  .menuLabel{                            /* also the YouTube library's headings (navy ground) */
     grid-column:1 / -1; color:var(--turq);
     font-weight:900; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-    padding:4px 6px 0;
+    padding:4px 6px 0; line-height:1.2;
   }
-  #sceneMenu{grid-template-columns:1fr; min-width:200px;}
-  #sceneName{
-    font-family:inherit; font-weight:700; font-size:13px; color:var(--navy);
-    border:none; border-radius:999px; padding:7px 12px; background:var(--paleturq);
+  #addMenu .menuLabel{color:var(--teal); padding:4px 4px 0;}   /* white ground */
+  .popNote{
+    grid-column:1 / -1; background:var(--sand); color:var(--navy); border-radius:10px;
+    padding:10px 14px; font-weight:700; font-size:13px;
   }
-  #sceneName:focus-visible{outline:3px solid var(--turq); outline-offset:1px;}
+  .popNote[hidden]{display:none;}
+  .tile{
+    display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+    min-height:84px; padding:10px 12px; border:0; border-radius:14px;
+    background:var(--paleturq); color:var(--navy); text-align:left;
+    font:inherit; cursor:pointer;
+  }
+  .tile:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
+  .tile:active:not(:disabled){transform:translateY(1px) scale(.97);}
+  .tile:disabled{background:var(--cream); color:var(--navy); opacity:.45; cursor:default;}
+  .tIcon{
+    width:24px; height:24px; display:block; margin-bottom:2px; color:var(--teal);
+    fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .tile:disabled .tIcon{color:var(--navy);}
+  .tName{font-weight:900; font-size:14px; line-height:1.15;}
+  .tDesc{font-weight:500; font-size:11.5px; line-height:1.3; color:var(--teal);}
+  .tile:disabled .tDesc{color:var(--navy);}
+  /* 20 tiles in three columns outgrow a 1080p screen by a hair and a
+     768px one by a mile: go wider, not taller (the menu must never scroll
+     mid-lesson) */
+  @media (max-height: 1100px){
+    #addMenu{grid-template-columns:repeat(4, 160px);}
+  }
+  @media (max-height: 820px){
+    #addMenu{grid-template-columns:repeat(5, 160px);}
+  }
+  /* ⋯ scene manager: the current scene as the heading, one field, a list */
+  #sceneMenu{display:flex; flex-direction:column; min-width:300px;}
+  .popBody{display:flex; flex-direction:column; gap:10px; padding:14px 16px 16px;}
+  #sceneName{width:100%; min-height:48px; font-size:16px; font-weight:700;}
+  .popList{display:flex; flex-direction:column; gap:6px;}
+  .popItem{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    min-height:48px; padding:0 14px; border:0; border-radius:12px;
+    background:var(--paleturq); color:var(--navy); text-align:left;
+    font:inherit; font-weight:700; font-size:15px; cursor:pointer;
+  }
+  .popItem:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
+  .popItem:active:not(:disabled){transform:translateY(1px) scale(.98);}
+  .popItem:disabled{opacity:.4; cursor:default;}
+  .popItem .popSub{font-weight:500; font-size:12px; color:var(--teal); white-space:nowrap;}
   #sceneDelBtn{background:var(--sand);}
   #sceneDelBtn.confirm{background:var(--coral); color:var(--white);}
+  #sceneDelBtn.confirm .popSub{color:var(--white); opacity:.85;}
 
   #alarmWho{color:var(--white); font-weight:900; font-size:clamp(20px,3vw,40px); letter-spacing:.04em;}
 
@@ -1345,6 +1579,28 @@
   body.waveMotion #boat{animation:boatDrift 45s ease-in-out infinite alternate;}
   body.waveMotion #boat.hop{animation:boatDrift 45s ease-in-out infinite alternate,
                             boatHop .8s ease-out;}
+  /* v7.1: the SWAY — a 3.2s heel on the rig itself (the 45s drift was
+     1.4px/s: invisible from a desk); a bitten boat lurches for 2.6s */
+  body.waveMotion #boat .btRig{animation:boatSway 3.2s ease-in-out infinite alternate;}
+  body.waveMotion #boat.rocked .btRig{animation:boatSway 3.2s ease-in-out infinite alternate,
+                                      boatLurch 2.6s cubic-bezier(.3,.7,.3,1);}
+  .btRig{transform-box:view-box; transform-origin:20px 31px;}
+  .seaThing.go{will-change:transform;}
+  body.waveMotion #sea-turtle.go{animation:ttSwim 40s linear;}
+  body.waveMotion #sea-turtle.go .ttBob{animation:ttBob 2.8s ease-in-out infinite alternate;}
+  body.waveMotion #sea-turtle.go .ttFlip{animation:ttPaddle 1.4s ease-in-out infinite alternate;}
+  body.waveMotion #sea-turtle.go .f2, body.waveMotion #sea-turtle.go .f3{animation-delay:.7s;}
+  body.waveMotion #sea-school.go{animation:scDart 15s cubic-bezier(.4,0,.6,1);}
+  body.waveMotion #sea-school.go .scFish{animation:scWiggle .9s ease-in-out infinite alternate;}
+  body.waveMotion #sea-school.go .s2{animation-delay:.15s;}
+  body.waveMotion #sea-school.go .s3{animation-delay:.3s;}
+  body.waveMotion #sea-school.go .s4{animation-delay:.45s;}
+  body.waveMotion #sea-school.go .s5{animation-delay:.6s;}
+  body.waveMotion #sea-bottle.go{animation:boDrift 51s linear;}
+  body.waveMotion #sea-bottle.go .boRock{animation:boRock 3.6s ease-in-out infinite alternate;}
+  body.waveMotion #sea-attack.go .atRise{animation:atRise 9s ease-in-out;}
+  body.waveMotion #sea-attack.go .atNeck{animation:atLunge 9s ease-in-out;}
+  body.waveMotion #sea-attack.go .atJaw{animation:atBite 9s ease-in-out;}
   /* v6.18/20 sea life — each plays once when its .go lands; the
      infinite secondary loops (bob, flap, rock) run only under .go */
   body.waveMotion #sea-serpent.go{animation:ssGlide 30s linear;}
@@ -1366,6 +1622,33 @@
   @keyframes alarmIn{from{opacity:0; transform:scale(1.04);}}
   @keyframes boatDrift{from{transform:translateX(0) rotate(-2deg);} to{transform:translateX(64px) rotate(2deg);}}
   @keyframes boatHop{0%{margin-bottom:0;} 35%{margin-bottom:14px;} 70%{margin-bottom:-2px;} 100%{margin-bottom:0;}}
+  @keyframes boatSway{from{transform:rotate(-6deg) translateY(0);} to{transform:rotate(6deg) translateY(1.5px);}}
+  @keyframes boatLurch{0%{transform:rotate(0);} 18%{transform:rotate(-22deg) translateY(2px);}
+                       40%{transform:rotate(16deg);} 62%{transform:rotate(-9deg);}
+                       82%{transform:rotate(4deg);} 100%{transform:rotate(0);}}
+  @keyframes ttSwim{from{transform:translateX(0);} to{transform:translateX(calc(100vw + 200px));}}
+  @keyframes ttBob{from{transform:translateY(0);} to{transform:translateY(4px);}}
+  @keyframes ttPaddle{from{transform:rotate(-12deg);} to{transform:rotate(12deg);}}
+  /* the school darts in bursts: fast, a pause, fast again */
+  @keyframes scDart{0%{transform:translateX(0);} 30%{transform:translateX(-38vw);}
+                    42%{transform:translateX(-41vw);} 72%{transform:translateX(-78vw);}
+                    82%{transform:translateX(-81vw);} 100%{transform:translateX(calc(-100vw - 160px));}}
+  @keyframes scWiggle{from{transform:translateY(-2px);} to{transform:translateY(2px);}}
+  @keyframes boDrift{from{transform:translateX(0);} to{transform:translateX(calc(100vw + 120px));}}
+  @keyframes boRock{from{transform:rotate(-14deg) translateY(0);} to{transform:rotate(10deg) translateY(3px);}}
+  /* the ATTACK: up from the deep behind the hull, rear, lunge, bite,
+     and back under — 9 seconds, no words */
+  @keyframes atRise{0%{transform:translateY(96px);} 16%{transform:translateY(12px);}
+                    30%{transform:translateY(0);} 70%{transform:translateY(0);}
+                    100%{transform:translateY(100px);}}
+  /* the head starts high-left and strikes DOWN onto the sails (positive
+     rotation): anything that rears higher than the wave band vanishes
+     behind the widget cards (z 1 > the sea's z 0) */
+  @keyframes atLunge{0%,22%{transform:rotate(-6deg);} 32%{transform:rotate(22deg);}
+                     38%{transform:rotate(27deg);} 46%{transform:rotate(-4deg);}
+                     58%{transform:rotate(19deg);} 70%,100%{transform:rotate(0deg);}}
+  @keyframes atBite{0%,30%{transform:rotate(0);} 34%{transform:rotate(26deg);} 38%{transform:rotate(-2deg);}
+                    42%{transform:rotate(22deg);} 47%,100%{transform:rotate(0);}}
   @keyframes ssGlide{from{transform:translateX(0);} to{transform:translateX(calc(-100vw - 220px));}}
   /* the monster DIVES mid-crossing and resurfaces — one glide reads as
      two sightings, and the disappearing act is the whole act */
@@ -1446,6 +1729,30 @@
   .byBody{fill:var(--navy);}   /* navy on turquoise, like the hull —
                                   a turquoise buoy vanished into the sea */
   .byPi{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; font-size:15px; fill:var(--paleturq);}
+  #sea-turtle{bottom:4px; left:-100px; width:92px;}
+  .ttShell, .ttHead, .ttFlip{fill:var(--navy);}
+  .ttFlip{transform-box:view-box; transform-origin:center;}
+  .ttEye{fill:var(--paleturq);}
+  .ttLines{fill:none; stroke:var(--paleturq); stroke-width:1.5; opacity:.7;}
+  #sea-school{bottom:10px; left:100vw; width:150px;}
+  .scFish path{fill:var(--teal);}
+  #sea-bottle{bottom:6px; left:-60px; width:36px;}
+  .boRock{transform-origin:50% 90%;}
+  .boGlass{fill:var(--turq); opacity:.85;}
+  .boCork{fill:var(--sand);}
+  .boNote{fill:var(--cream);}
+  .boQ{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; font-size:12px; fill:var(--navy); font-style:italic;}
+  /* the attack surfaces right behind the hull: the boat's left is
+     max(42vw,300px) and it drifts 0–64px, so 150px of serpent centred
+     a little left of that puts the head over the sails */
+  #sea-attack{bottom:-4px; left:calc(max(42vw, 300px) - 96px); width:150px;}
+  #sea-attack svg{overflow:visible;}    /* the rearing head leaves the viewBox */
+  .atRise{transform:translateY(96px);}
+  .atHump, .atNeckP{fill:none; stroke:var(--navy); stroke-width:8; stroke-linecap:round;}
+  .atHead, .atJaw{fill:var(--navy);}
+  .atNeck{transform-box:view-box; transform-origin:84px 82px;}
+  .atJaw{transform-box:view-box; transform-origin:124px 16px;}
+  .atEye{fill:var(--coral);}
   #sea-whale{bottom:2px; left:60vw; width:96px;}
   .whSurf{transform:translateY(64px);}   /* parked SUBMERGED — it exists
                                             onscreen only mid-performance */
@@ -1486,10 +1793,9 @@
        518px in a 390px viewport and caused real mis-adds */
     #addMenu, #sceneMenu{
       position:fixed; left:14px; right:14px; bottom:76px;
-      width:auto; grid-template-columns:1fr 1fr;
-      max-height:calc(100dvh - 100px); overflow-y:auto;
+      width:auto; max-height:calc(100dvh - 100px); overflow-y:auto;
     }
-    #sceneMenu{grid-template-columns:1fr;}
+    #addMenu{grid-template-columns:repeat(2, minmax(0, 1fr));}
   }
 </style>
 </head>
@@ -1508,6 +1814,26 @@
     <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.5" cy="12" r="1.9"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9.5 3h5"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
+    <!-- v7.2: the + Add tiles (24px, 2px stroke, same hand as above) -->
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-stopwatch" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9.5 3h5M18.5 6.5l-1.5 1.5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-countdown" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M12 12.5v4"/></symbol>
+    <symbol id="i-picker" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 4.5l3-1.5M17.5 8l3 .5"/></symbol>
+    <symbol id="i-groups" viewBox="0 0 24 24"><circle cx="8" cy="8.5" r="3"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M2.5 19a5.5 5.5 0 0 1 11 0M13.5 18.5a4 4 0 0 1 8 0"/></symbol>
+    <symbol id="i-score" viewBox="0 0 24 24"><path d="M7 3.5h10v6a5 5 0 0 1-10 0z"/><path d="M7 5H4v2.5a3 3 0 0 0 3 3M17 5h3v2.5a3 3 0 0 1-3 3M12 14.5v3M8.5 20.5h7"/></symbol>
+    <symbol id="i-tally" viewBox="0 0 24 24"><path d="M5 5v14M9 5v14M13 5v14M17 5v14M3 17l18-10"/></symbol>
+    <symbol id="i-settle" viewBox="0 0 24 24"><path d="M4 17.5h16M6 17.5V11a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6.5M6 12h12M10 4.5c0 1.5 1 1.5 1 3M14 4.5c0 1.5 1 1.5 1 3"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></symbol>
+    <symbol id="i-work" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="11" rx="2"/><path d="M8 20h8M12 16.5V20M7.5 9.5h9M7.5 12.5h5"/></symbol>
+    <symbol id="i-meter" viewBox="0 0 24 24"><path d="M4 16.5a8 8 0 0 1 16 0"/><path d="M12 16.5l4-5.5M3.5 20.5h17"/></symbol>
+    <symbol id="i-agenda" viewBox="0 0 24 24"><path d="M4.5 6.5l1.5 1.5 3-3M4.5 12.5l1.5 1.5 3-3M4.5 18.5l1.5 1.5 3-3M12 7h8M12 13h8M12 19h8"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 4.5h10l4 4V19.5H5z"/><path d="M15 4.5v4h4M8.5 12h7M8.5 15.5h5"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 14h2M14 18v2M17 17h3v3"/></symbol>
+    <symbol id="i-slides" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2"/><path d="M12 16.5v3M8.5 19.5h7M8 10.5l3-2v4z"/></symbol>
+    <symbol id="i-youtube" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12.5" rx="3.5"/><path d="M10 9.5v5.5l4.5-2.75z"/></symbol>
+    <symbol id="i-sketch" viewBox="0 0 24 24"><path d="M4 20c4-1 5-2 6-4M6 14.5L16.5 4a2.1 2.1 0 0 1 3 3L9 17.5l-4 1z"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="8.5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="8.5" cy="15.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/></symbol>
   </defs>
 </svg>
 
@@ -1527,6 +1853,12 @@
   <div id="landDate">—</div>
   <div class="landLabel">THIS WEEK&rsquo;S BELLS</div>
   <div class="chips" id="schedChips" role="group" aria-label="This week's bell schedule"></div>
+  <div class="landLabel" id="todayLabel">TODAY</div>
+  <div class="chips chipsSm" id="todayChips" role="group" aria-label="Today's bell times">
+    <button type="button" class="chip" data-today="regular">Regular times</button>
+    <button type="button" class="chip" data-today="wednesday">Wednesday times</button>
+    <button type="button" class="chip" data-today="custom">Custom day&hellip;</button>
+  </div>
   <button id="launchBtn" type="button">Open the Daily Board</button>
   <div id="landHint">Enter opens the board</div>
 </div>
@@ -1572,44 +1904,52 @@
     <select id="sceneSel" aria-label="Scene"></select>
     <button class="pill" id="sceneBtn" type="button" aria-expanded="false"
       aria-haspopup="true" aria-label="Manage scenes"><svg class="wIcon dots"><use href="#i-dots"/></svg></button>
-    <div id="sceneMenu" role="group" aria-label="Scene manager" hidden>
-      <input id="sceneName" type="text" maxlength="24" spellcheck="false"
-        placeholder="Scene name&hellip;">
-      <button class="pill" id="sceneNewBtn" type="button">New scene</button>
-      <button class="pill" id="sceneDupBtn" type="button">Duplicate current</button>
-      <button class="pill" id="sceneRenBtn" type="button">Rename current</button>
-      <button class="pill" id="sceneDelBtn" type="button">Delete current</button>
+    <div id="sceneMenu" class="pop" role="group" aria-label="Scene manager" hidden>
+      <div class="strip">SCENE <span class="sheetSub" id="sceneMenuName"></span></div>
+      <div class="popBody">
+        <label class="fLabel" for="sceneName">Name</label>
+        <input id="sceneName" class="setInput" type="text" maxlength="24" spellcheck="false"
+          placeholder="Scene name&hellip;">
+        <div class="popList">
+          <button class="popItem" id="sceneNewBtn" type="button">New scene <span class="popSub">clock only</span></button>
+          <button class="popItem" id="sceneDupBtn" type="button">Duplicate <span class="popSub">copy this scene</span></button>
+          <button class="popItem" id="sceneRenBtn" type="button">Rename</button>
+          <button class="popItem" id="sceneDelBtn" type="button">Delete current</button>
+        </div>
+      </div>
     </div>
   </div>
   <div id="addWrap">
     <button class="pill" id="addBtn" type="button" aria-expanded="false" aria-haspopup="true">+ Add</button>
-    <div id="addMenu" role="group" aria-label="Add a widget" hidden>
+    <div id="addMenu" class="pop" role="group" aria-label="Add a widget" hidden>
+      <div class="popNote" id="addMenuNote" hidden></div>
       <div class="menuLabel">Time</div>
-      <button class="pill" id="addTimerBtn" type="button">Timer</button>
-      <button class="pill" id="addWatchBtn" type="button">Stopwatch</button>
-      <button class="pill" id="addBellBtn" type="button">Next Bell</button>
-      <button class="pill" id="addClockBtn" type="button">Clock</button>
-      <button class="pill" id="addEventBtn" type="button">Countdown</button>
+      <button class="tile" id="addTimerBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-timer"/></svg><span class="tName">Timer</span><span class="tDesc">Count down to a chime</span></button>
+      <button class="tile" id="addWatchBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-stopwatch"/></svg><span class="tName">Stopwatch</span><span class="tDesc">Count up from zero</span></button>
+      <button class="tile" id="addBellBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-bell"/></svg><span class="tName">Next Bell</span><span class="tDesc">Ring down to the bell</span></button>
+      <button class="tile" id="addClockBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-clock"/></svg><span class="tName">Clock</span><span class="tDesc">Time, period and bells</span></button>
+      <button class="tile" id="addEventBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-countdown"/></svg><span class="tName">Countdown</span><span class="tDesc">Days until the test</span></button>
       <div class="menuLabel">Students</div>
-      <button class="pill" id="addPickerBtn" type="button">Name Picker</button>
-      <button class="pill" id="addGroupsBtn" type="button">Group Maker</button>
-      <button class="pill" id="addScoreBtn" type="button">Scoreboard</button>
-      <button class="pill" id="addTallyBtn" type="button">Tally</button>
+      <button class="tile" id="addPickerBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-picker"/></svg><span class="tName">Name Picker</span><span class="tDesc">Random, no repeats</span></button>
+      <button class="tile" id="addGroupsBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-groups"/></svg><span class="tName">Group Maker</span><span class="tDesc">Shuffle into teams</span></button>
+      <button class="tile" id="addScoreBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-score"/></svg><span class="tName">Scoreboard</span><span class="tDesc">Points for teams</span></button>
+      <button class="tile" id="addTallyBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-tally"/></svg><span class="tName">Tally</span><span class="tDesc">Big tap counters</span></button>
       <div class="menuLabel">Classroom</div>
-      <button class="pill" id="addSettleBtn" type="button">Settle-in</button>
-      <button class="pill" id="addMusicBtn" type="button">Music</button>
-      <button class="pill" id="addWorkBtn" type="button">Work Mode</button>
-      <button class="pill" id="addMeterBtn" type="button">Noise Meter</button>
-      <button class="pill" id="addAgendaBtn" type="button">Agenda</button>
-      <button class="pill" id="addTextBtn" type="button">Text Box</button>
-      <button class="pill" id="addQrBtn" type="button">QR Code</button>
+      <button class="tile" id="addSettleBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-settle"/></svg><span class="tName">Settle-in</span><span class="tDesc">Seated by the bell</span></button>
+      <button class="tile" id="addMusicBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-music"/></svg><span class="tName">Music</span><span class="tDesc">Quiet lo-fi for work</span></button>
+      <button class="tile" id="addWorkBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-work"/></svg><span class="tName">Work Mode</span><span class="tDesc">Silent to group work</span></button>
+      <button class="tile" id="addMeterBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-meter"/></svg><span class="tName">Noise Meter</span><span class="tDesc">Quiet streaks, records</span></button>
+      <button class="tile" id="addAgendaBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-agenda"/></svg><span class="tName">Agenda</span><span class="tDesc">Today&rsquo;s plan, live</span></button>
+      <button class="tile" id="addTextBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-note"/></svg><span class="tName">Text Box</span><span class="tDesc">A note on the board</span></button>
+      <button class="tile" id="addQrBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-qr"/></svg><span class="tName">QR Code</span><span class="tDesc">A link kids can scan</span></button>
       <div class="menuLabel">Board</div>
-      <button class="pill" id="addEmbedBtn" type="button">Slides / Embed</button>
-      <button class="pill" id="addYtBtn" type="button">YouTube</button>
-      <button class="pill" id="addDrawBtn" type="button">Sketch Pad</button>
-      <button class="pill" id="addDiceBtn" type="button">Dice</button>
+      <button class="tile" id="addEmbedBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-slides"/></svg><span class="tName">Slides / Embed</span><span class="tDesc">Slides or a web page</span></button>
+      <button class="tile" id="addYtBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-youtube"/></svg><span class="tName">YouTube</span><span class="tDesc">A video on the board</span></button>
+      <button class="tile" id="addDrawBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-sketch"/></svg><span class="tName">Sketch Pad</span><span class="tDesc">Draw with a finger</span></button>
+      <button class="tile" id="addDiceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-dice"/></svg><span class="tName">Dice</span><span class="tDesc">Tap to roll 1&ndash;3</span></button>
     </div>
   </div>
+  <div id="shelf" aria-label="Stage-only widgets"></div>
   <button class="pill" id="lockBtn" type="button" aria-pressed="false">Lock</button>
 </nav>
 
@@ -1653,6 +1993,56 @@
       </div>
     </div>
   </div>
+  <!-- v7.1 (Croix: "kids loved the sea monster — expand, make it attack
+       the ship, make it smoother"): three more quiet visitors and one
+       loud one. Same register: low, wordless, inside the wave band. -->
+  <div id="sea-turtle" class="seaThing">
+    <div class="ttBob">
+      <svg viewBox="0 0 84 44">
+        <path class="ttFlip f1" d="M22,30 Q12,40 6,36 Q14,30 22,28 Z"/>
+        <path class="ttFlip f2" d="M56,30 Q66,40 72,36 Q64,30 56,28 Z"/>
+        <path class="ttFlip f3" d="M24,16 Q12,8 8,12 Q16,18 24,20 Z"/>
+        <path class="ttFlip f4" d="M54,16 Q66,8 70,12 Q62,18 54,20 Z"/>
+        <path class="ttShell" d="M20,30 Q20,10 40,9 Q60,10 60,30 Q40,36 20,30 Z"/>
+        <path class="ttHead" d="M60,22 Q72,18 76,24 Q72,30 60,28 Z"/>
+        <circle class="ttEye" cx="70" cy="23" r="1.6"/>
+        <path class="ttLines" d="M30,28 Q40,14 50,28 M40,9 L40,32"/>
+      </svg>
+    </div>
+  </div>
+  <div id="sea-school" class="seaThing">
+    <svg viewBox="0 0 120 40">
+      <g class="scFish s1"><path d="M30,10 Q24,4 18,10 Q24,16 30,10 Z"/><path d="M18,10 L13,6 L15,10 L13,14 Z"/></g>
+      <g class="scFish s2"><path d="M60,20 Q54,14 48,20 Q54,26 60,20 Z"/><path d="M48,20 L43,16 L45,20 L43,24 Z"/></g>
+      <g class="scFish s3"><path d="M40,30 Q34,24 28,30 Q34,36 40,30 Z"/><path d="M28,30 L23,26 L25,30 L23,34 Z"/></g>
+      <g class="scFish s4"><path d="M90,14 Q84,8 78,14 Q84,20 90,14 Z"/><path d="M78,14 L73,10 L75,14 L73,18 Z"/></g>
+      <g class="scFish s5"><path d="M100,30 Q94,24 88,30 Q94,36 100,30 Z"/><path d="M88,30 L83,26 L85,30 L83,34 Z"/></g>
+    </svg>
+  </div>
+  <div id="sea-bottle" class="seaThing">
+    <div class="boRock">
+      <svg viewBox="0 0 40 44">
+        <path class="boGlass" d="M14,10 L26,10 L26,16 Q34,22 34,30 L34,40 Q20,44 6,40 L6,30 Q6,22 14,16 Z"/>
+        <rect class="boCork" x="16" y="4" width="8" height="7" rx="2"/>
+        <path class="boNote" d="M12,24 L28,24 L28,36 L12,36 Z"/>
+        <text class="boQ" x="20" y="34" text-anchor="middle">x</text>
+      </svg>
+    </div>
+  </div>
+  <div id="sea-attack" class="seaThing">
+    <div class="atRise">
+      <svg viewBox="0 0 150 90">
+        <path class="atHump" d="M4,80 Q18,48 32,80"/>
+        <path class="atHump" d="M40,80 Q56,44 72,80"/>
+        <g class="atNeck">
+          <path class="atNeckP" d="M84,82 Q96,50 104,26 Q110,10 124,12"/>
+          <path class="atHead" d="M118,6 Q134,4 138,14 Q132,20 122,18 Q116,16 118,6 Z"/>
+          <path class="atJaw" d="M124,16 Q132,18 136,24 Q128,26 122,20 Z"/>
+          <circle class="atEye" cx="128" cy="11" r="2"/>
+        </g>
+      </svg>
+    </div>
+  </div>
   <div id="sea-whale" class="seaThing">
     <div class="whSurf">
       <svg viewBox="0 0 120 62">
@@ -1667,9 +2057,13 @@
   </div>
 </div>
 <svg id="boat" viewBox="0 0 40 40" aria-hidden="true">
-  <path class="btSail" d="M20 4v20H8z"/>
-  <path class="btSail2" d="M23 10v14h10z"/>
-  <path class="btHull" d="M5 27h30l-7 8H12z"/>
+  <!-- v7.1: the rig ROCKS (Croix: "still doesn't sway") — a 3s heel
+       on top of the slow drift, and a real lurch when something bites -->
+  <g class="btRig">
+    <path class="btSail" d="M20 4v20H8z"/>
+    <path class="btSail2" d="M23 10v14h10z"/>
+    <path class="btHull" d="M5 27h30l-7 8H12z"/>
+  </g>
 </svg>
 <svg id="waves" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
   <path d="M0,55 C240,25 480,85 720,55 C960,25 1200,85 1440,55 C1680,25 1820,70 1920,50 L1920,120 L0,120 Z" class="wvSand"/>
@@ -1682,169 +2076,303 @@
   <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" class="wvMid"/>
 </svg>
 
-<!-- settings -->
+<!-- settings: v7.2 preferences panel — a tab rail, one panel at a time,
+     every field label-above on a small grid, one sticky action row -->
 <div id="settingsWrap" hidden>
   <div id="settingsBack"></div>
   <div class="card" id="settingsCard" role="dialog" aria-modal="true" aria-label="Deckhand settings">
-    <div class="strip">SETTINGS</div>
+    <div class="strip">SETTINGS <span class="sheetSub" id="settingsVer"></span></div>
     <div id="settingsBody">
+      <div id="setLayout">
+        <nav id="setRail" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
+          <button class="setTab" type="button" role="tab" id="tabGeneral" data-tab="general" aria-controls="secGeneral" aria-selected="true">General</button>
+          <button class="setTab" type="button" role="tab" id="tabBells" data-tab="bells" aria-controls="secBells" aria-selected="false">Bells</button>
+          <button class="setTab" type="button" role="tab" id="tabTimer" data-tab="timer" aria-controls="secTimer" aria-selected="false">Timer</button>
+          <button class="setTab" type="button" role="tab" id="tabRosters" data-tab="rosters" aria-controls="secRosters" aria-selected="false">Rosters</button>
+          <button class="setTab" type="button" role="tab" id="tabScheds" data-tab="scheds" aria-controls="secScheds" aria-selected="false">Schedules</button>
+          <button class="setTab" type="button" role="tab" id="tabDevice" data-tab="device" aria-controls="secDevice" aria-selected="false">Device</button>
+        </nav>
+        <div id="setPanels">
 
-      <details class="setSec" id="secGeneral" open>
-        <summary>General</summary>
-        <div class="setFlex">
-          <div>
-            <label class="setLabel" for="sName">Display name (greeting)</label>
-            <input class="setInput" type="text" id="sName" maxlength="40" style="width:180px" placeholder="Mr. Shaffer">
-          </div>
-          <div>
-            <label class="setLabel" for="sVolume">Chime volume</label>
-            <input class="setInput" type="range" id="sVolume" min="0" max="100" step="5" style="width:150px; padding:14px 4px">
-          </div>
-          <label class="setCheck"><input type="checkbox" id="sSound"> Sound on</label>
-          <label class="setCheck"><input type="checkbox" id="sSeconds"> Show clock seconds</label>
-          <div>
-            <label class="setLabel" for="sMotion">Waterline motion (boat &amp; sea)</label>
-            <select class="setSelect" id="sMotion">
-              <option value="auto">Auto &mdash; follow this device</option>
-              <option value="on">Always on</option>
-              <option value="off">Off</option>
-            </select>
-            <div id="sMotionHint" hidden
-                 style="font-size:12px; font-weight:700; color:var(--coral); margin-top:6px; max-width:240px">
-              This device asks for reduced motion &mdash; on Auto, the water holds still.
+          <section class="setSec" id="secGeneral" role="tabpanel" aria-labelledby="tabGeneral">
+            <h2 class="setH">General</h2>
+            <div class="fGroup">
+              <div class="fGrid c2">
+                <div class="fField">
+                  <label class="fLabel" for="sName">Display name</label>
+                  <input class="setInput" type="text" id="sName" maxlength="40" placeholder="Mr. Shaffer">
+                  <div class="fHint">The home screen greets this name.</div>
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sMotion">Waterline motion</label>
+                  <select class="setSelect" id="sMotion">
+                    <option value="auto">Auto &mdash; follow this device</option>
+                    <option value="on">Always on</option>
+                    <option value="off">Off</option>
+                  </select>
+                  <div class="fHint">The boat and the sea things at the bottom of the board.</div>
+                  <div class="fHint warn" id="sMotionHint" hidden>This device asks for reduced motion &mdash; on Auto, the water holds still.</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </details>
-
-      <details class="setSec" id="secBells" open>
-        <summary>Clock &amp; Bells</summary>
-        <div class="setFlex">
-          <div>
-            <label class="setLabel" for="sDefault">Bells at startup</label>
-            <select class="setSelect" id="sDefault"></select>
-          </div>
-          <div>
-            <label class="setLabel" for="sNudge">Bell nudge (seconds)</label>
-            <input class="setInput" type="number" id="sNudge" step="1" min="-600" max="600" style="width:100px">
-          </div>
-          <div>
-            <label class="setLabel" for="sWarn">End-of-class warning (min, 0 = off)</label>
-            <input class="setInput" type="number" id="sWarn" step="1" min="0" max="60" style="width:100px">
-          </div>
-          <label class="setCheck"><input type="checkbox" id="sWarnChime"> Chime at the warning</label>
-        </div>
-        <div class="setFlex">
-          <label class="setCheck"><input type="checkbox" id="sAuto"> Rotate weeks automatically</label>
-          <div>
-            <label class="setLabel" for="sAnchor">Week of&hellip;</label>
-            <input class="setInput" type="date" id="sAnchor">
-          </div>
-          <div>
-            <label class="setLabel" for="sAnchorWeek">&hellip;is</label>
-            <select class="setSelect" id="sAnchorWeek"></select>
-          </div>
-        </div>
-        <div class="setFlex">
-          <label class="setCheck"><input type="checkbox" id="sCount"> Bell countdown</label>
-          <label class="setCheck"><input type="checkbox" id="sCountSecs"> Seconds in countdown</label>
-          <label class="setCheck"><input type="checkbox" id="sBar"> Period progress bar</label>
-          <label class="setCheck"><input type="checkbox" id="sStrip"> Day sequence strip</label>
-          <label class="setCheck"><input type="checkbox" id="sNext"> Next-class countdown when school&rsquo;s out</label>
-        </div>
-        <div class="setFlex">
-          <label class="setCheck"><input type="checkbox" id="sBath"> Bathroom window</label>
-          <div>
-            <label class="setLabel" for="sBathFirst">Closed first (min)</label>
-            <input class="setInput" type="number" id="sBathFirst" step="1" min="0" max="45" style="width:90px">
-          </div>
-          <div>
-            <label class="setLabel" for="sBathLast">Closed last (min)</label>
-            <input class="setInput" type="number" id="sBathLast" step="1" min="0" max="45" style="width:90px">
-          </div>
-        </div>
-        <div class="setNote">With rotation on, the home screen pre-picks the week from the anchor Monday (weeks alternate between the first two week types); tapping a chip still overrides for the day. Wednesdays switch times automatically. Nudge shifts only the bell math. The end-of-class warning turns the countdown coral and pulses the bar.</div>
-      </details>
-
-      <details class="setSec" id="secTimer" open>
-        <summary>Timer</summary>
-        <div class="setFlex">
-          <div>
-            <label class="setLabel" for="sPresets">Presets (minutes)</label>
-            <input class="setInput" type="text" id="sPresets" style="width:150px" placeholder="1,3,5,10">
-          </div>
-          <div>
-            <label class="setLabel" for="sTimerStyle">Timer style</label>
-            <select class="setSelect" id="sTimerStyle">
-              <option value="digits">Digits only</option>
-              <option value="ring">Ring</option>
-              <option value="disc">Timer disc</option>
-              <option value="tide">Tide</option>
-            </select>
-          </div>
-        </div>
-      </details>
-
-      <details class="setSec" id="secRosters">
-        <summary>Class Rosters</summary>
-        <div class="setNote">One box per period &mdash; student first names separated by commas or new lines. The name picker and group maker follow the bell schedule automatically; leave a box empty to skip that period. To move a student, cut the name from one box and paste it into another. Rosters save on this device like everything else. <b>Privacy:</b> an exported copy carries student names inside it &mdash; keep exports in your own Drive, and never upload one to the public website (GitHub).</div>
-        <div class="setFlex" id="rosterImportRow">
-          <button class="btn btnSm" id="rosterImportBtn" type="button">Import from Seating Chart</button>
-          <button class="btn btnSm" id="rosterImportFileBtn" type="button">Import a Seating Chart backup&hellip;</button>
-          <input type="file" id="rosterImportFile" accept=".json,application/json" hidden>
-          <span class="setNote">Pulls first names from the Seating Chart tool by period number, into the boxes below. Apply to keep.</span>
-        </div>
-        <div id="rosterGrid" class="tplGrid"></div>
-      </details>
-
-      <details class="setSec" id="secScheds">
-        <summary>Week Schedules</summary>
-        <div class="setNote">Up to four week types, each with regular times and (optionally) Wednesday times. One block per line: <b>label&nbsp;start-end</b> (e.g. <b>3rd 11:46-12:39</b>). Times 6:00&ndash;11:59 are AM, 12:00&ndash;5:59 are PM. Empty regular box = week type removed; empty Wednesday box = Wednesdays use the regular times.</div>
-        <div id="groupEditors">
-          <div class="groupEd" style="margin-bottom:14px">
-            <input class="setInput" type="text" id="sGrpName1" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
-            <div class="tplGrid">
-              <div><label class="setLabel" for="taGrpReg1">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg1" rows="9" spellcheck="false"></textarea></div>
-              <div><label class="setLabel" for="taGrpWed1">Wednesday (optional)</label><textarea id="taGrpWed1" rows="9" spellcheck="false"></textarea></div>
+            <div class="fGroup">
+              <div class="fSection">Sound &amp; clock</div>
+              <div class="fGrid c2">
+                <label class="fCheck"><input type="checkbox" id="sSound"> Sound on</label>
+                <label class="fCheck"><input type="checkbox" id="sSeconds"> Show seconds on the clock</label>
+              </div>
+              <div class="fGrid c2">
+                <div class="fField">
+                  <label class="fLabel" for="sVolume">Chime volume</label>
+                  <div class="fRange"><input class="setRange" type="range" id="sVolume" min="0" max="100" step="5" aria-label="Chime volume"></div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="groupEd" style="margin-bottom:14px">
-            <input class="setInput" type="text" id="sGrpName2" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
-            <div class="tplGrid">
-              <div><label class="setLabel" for="taGrpReg2">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg2" rows="9" spellcheck="false"></textarea></div>
-              <div><label class="setLabel" for="taGrpWed2">Wednesday (optional)</label><textarea id="taGrpWed2" rows="9" spellcheck="false"></textarea></div>
+          </section>
+
+          <section class="setSec" id="secBells" role="tabpanel" aria-labelledby="tabBells" hidden>
+            <h2 class="setH">Bells</h2>
+            <div class="fGroup">
+              <div class="fGrid c3">
+                <div class="fField">
+                  <label class="fLabel" for="sDefault">Bells at startup</label>
+                  <select class="setSelect" id="sDefault"></select>
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sNudge">Bell nudge (seconds)</label>
+                  <input class="setInput" type="number" id="sNudge" step="1" min="-600" max="600">
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sWarn">Warning before the bell (min)</label>
+                  <input class="setInput" type="number" id="sWarn" step="1" min="0" max="60">
+                </div>
+              </div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sWarnChime"> Chime at the warning</label>
+              </div>
+              <div class="fHint">Nudge shifts only the bell math, never the clock. The warning turns the countdown coral and pulses the bar; 0 turns it off.</div>
             </div>
-          </div>
-          <div class="groupEd" style="margin-bottom:14px">
-            <input class="setInput" type="text" id="sGrpName3" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
-            <div class="tplGrid">
-              <div><label class="setLabel" for="taGrpReg3">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg3" rows="9" spellcheck="false"></textarea></div>
-              <div><label class="setLabel" for="taGrpWed3">Wednesday (optional)</label><textarea id="taGrpWed3" rows="9" spellcheck="false"></textarea></div>
+            <div class="fGroup">
+              <div class="fSection">Week rotation</div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sAuto"> Rotate weeks</label>
+                <div class="fField">
+                  <label class="fLabel" for="sAnchor">Week of&hellip;</label>
+                  <input class="setInput" type="date" id="sAnchor">
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sAnchorWeek">&hellip;is</label>
+                  <select class="setSelect" id="sAnchorWeek"></select>
+                </div>
+              </div>
+              <div class="fHint">Weeks alternate between the first two week types from the anchor Monday. Tapping a chip on the home screen still overrides for the day; Wednesdays switch times on their own.</div>
             </div>
-          </div>
-          <div class="groupEd">
-            <input class="setInput" type="text" id="sGrpName4" maxlength="30" placeholder="Week type name" style="width:220px; margin-bottom:6px">
-            <div class="tplGrid">
-              <div><label class="setLabel" for="taGrpReg4">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg4" rows="9" spellcheck="false"></textarea></div>
-              <div><label class="setLabel" for="taGrpWed4">Wednesday (optional)</label><textarea id="taGrpWed4" rows="9" spellcheck="false"></textarea></div>
+            <div class="fGroup">
+              <div class="fSection">Clock readout</div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sCount"> Bell countdown</label>
+                <label class="fCheck"><input type="checkbox" id="sCountSecs"> Countdown seconds</label>
+                <label class="fCheck"><input type="checkbox" id="sBar"> Period progress bar</label>
+                <label class="fCheck"><input type="checkbox" id="sStrip"> Day sequence strip</label>
+                <label class="fCheck"><input type="checkbox" id="sNext"> Next class after hours</label>
+              </div>
+              <div class="fHint">What the clock shows under the time. &ldquo;Next class after hours&rdquo; counts down to the next school day once the last bell has rung.</div>
             </div>
-          </div>
+            <div class="fGroup">
+              <div class="fSection">Bathroom window</div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sBath"> Bathroom window</label>
+                <div class="fField">
+                  <label class="fLabel" for="sBathFirst">Closed first (min)</label>
+                  <input class="setInput" type="number" id="sBathFirst" step="1" min="0" max="45">
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sBathLast">Closed last (min)</label>
+                  <input class="setInput" type="number" id="sBathLast" step="1" min="0" max="45">
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="setSec" id="secTimer" role="tabpanel" aria-labelledby="tabTimer" hidden>
+            <h2 class="setH">Timer</h2>
+            <div class="fGroup">
+              <div class="fGrid c2">
+                <div class="fField">
+                  <label class="fLabel" for="sPresets">Presets (minutes)</label>
+                  <input class="setInput" type="text" id="sPresets" placeholder="1, 3, 5, 10">
+                  <div class="fHint">One to six values, separated by commas. These are the chips on every timer and the &#9201; menu in stage mode.</div>
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sTimerStyle">Timer style</label>
+                  <select class="setSelect" id="sTimerStyle">
+                    <option value="digits">Digits only</option>
+                    <option value="ring">Ring</option>
+                    <option value="disc">Timer disc</option>
+                    <option value="tide">Tide</option>
+                  </select>
+                  <div class="fHint">How the time left is drawn behind the digits.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="setSec" id="secRosters" role="tabpanel" aria-labelledby="tabRosters" hidden>
+            <h2 class="setH">Rosters</h2>
+            <div class="fHint">One box per period &mdash; first names separated by commas or new lines. The name picker and group maker follow the bell schedule; leave a box empty to skip that period. To move a student, cut the name from one box and paste it into another.</div>
+            <div class="fGroup">
+              <div class="row rowLeft" id="rosterImportRow">
+                <button class="btn btnSm" id="rosterImportBtn" type="button">Import from Seating Chart</button>
+                <button class="btn btnSm" id="rosterImportFileBtn" type="button">Import a Seating Chart backup&hellip;</button>
+                <input type="file" id="rosterImportFile" accept=".json,application/json" hidden>
+              </div>
+              <div class="fHint">Pulls first names from the Seating Chart tool by period number into the boxes below. Apply to keep them.</div>
+            </div>
+            <div id="rosterGrid" class="fGrid c2"></div>
+            <div class="fHint"><b>Privacy:</b> an exported copy carries student names inside it &mdash; keep exports in your own Drive and never upload one to the public website (GitHub).</div>
+          </section>
+
+          <section class="setSec" id="secScheds" role="tabpanel" aria-labelledby="tabScheds" hidden>
+            <h2 class="setH">Schedules</h2>
+            <div class="fHint">Up to four week types, each with regular times and, optionally, Wednesday times. Leave a week type with no regular blocks to remove it; leave Wednesday empty and Wednesdays use the regular times. Times run 6:00 AM to 5:59 PM.</div>
+            <div id="groupEditors">
+              <div class="wkCard" data-wk="0">
+                <div class="wkHead">
+                  <span class="wkNum" aria-hidden="true">1</span>
+                  <input class="setInput wkName" type="text" id="sGrpName1" maxlength="30" placeholder="Week type name" aria-label="Week type 1 name">
+                  <button class="chip wkTextTog" type="button" data-wk="0" aria-pressed="false">Edit as text</button>
+                </div>
+                <div class="wkEd tplGrid">
+                  <div class="fField"><div class="fLabel">Mon/Tue/Thu/Fri</div><div class="blkEd" data-ed="reg"></div><button class="btn btnSm wkAdd" type="button" data-ed="reg">+ Add block</button></div>
+                  <div class="fField"><div class="fLabel">Wednesday (optional)</div><div class="blkEd" data-ed="wed"></div><button class="btn btnSm wkAdd" type="button" data-ed="wed">+ Add block</button></div>
+                </div>
+                <div class="wkText tplGrid" hidden>
+                  <div class="fField"><label class="fLabel" for="taGrpReg1">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg1" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fField"><label class="fLabel" for="taGrpWed1">Wednesday (optional)</label><textarea id="taGrpWed1" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fHint wkTextHint">One block per line: <b>label start-end</b>, e.g. <b>3rd 11:46-12:39</b>.</div>
+                </div>
+              </div>
+              <div class="wkCard" data-wk="1">
+                <div class="wkHead">
+                  <span class="wkNum" aria-hidden="true">2</span>
+                  <input class="setInput wkName" type="text" id="sGrpName2" maxlength="30" placeholder="Week type name" aria-label="Week type 2 name">
+                  <button class="chip wkTextTog" type="button" data-wk="1" aria-pressed="false">Edit as text</button>
+                </div>
+                <div class="wkEd tplGrid">
+                  <div class="fField"><div class="fLabel">Mon/Tue/Thu/Fri</div><div class="blkEd" data-ed="reg"></div><button class="btn btnSm wkAdd" type="button" data-ed="reg">+ Add block</button></div>
+                  <div class="fField"><div class="fLabel">Wednesday (optional)</div><div class="blkEd" data-ed="wed"></div><button class="btn btnSm wkAdd" type="button" data-ed="wed">+ Add block</button></div>
+                </div>
+                <div class="wkText tplGrid" hidden>
+                  <div class="fField"><label class="fLabel" for="taGrpReg2">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg2" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fField"><label class="fLabel" for="taGrpWed2">Wednesday (optional)</label><textarea id="taGrpWed2" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fHint wkTextHint">One block per line: <b>label start-end</b>, e.g. <b>3rd 11:46-12:39</b>.</div>
+                </div>
+              </div>
+              <div class="wkCard" data-wk="2">
+                <div class="wkHead">
+                  <span class="wkNum" aria-hidden="true">3</span>
+                  <input class="setInput wkName" type="text" id="sGrpName3" maxlength="30" placeholder="Week type name" aria-label="Week type 3 name">
+                  <button class="chip wkTextTog" type="button" data-wk="2" aria-pressed="false">Edit as text</button>
+                </div>
+                <div class="wkEd tplGrid">
+                  <div class="fField"><div class="fLabel">Mon/Tue/Thu/Fri</div><div class="blkEd" data-ed="reg"></div><button class="btn btnSm wkAdd" type="button" data-ed="reg">+ Add block</button></div>
+                  <div class="fField"><div class="fLabel">Wednesday (optional)</div><div class="blkEd" data-ed="wed"></div><button class="btn btnSm wkAdd" type="button" data-ed="wed">+ Add block</button></div>
+                </div>
+                <div class="wkText tplGrid" hidden>
+                  <div class="fField"><label class="fLabel" for="taGrpReg3">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg3" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fField"><label class="fLabel" for="taGrpWed3">Wednesday (optional)</label><textarea id="taGrpWed3" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fHint wkTextHint">One block per line: <b>label start-end</b>, e.g. <b>3rd 11:46-12:39</b>.</div>
+                </div>
+              </div>
+              <div class="wkCard" data-wk="3">
+                <div class="wkHead">
+                  <span class="wkNum" aria-hidden="true">4</span>
+                  <input class="setInput wkName" type="text" id="sGrpName4" maxlength="30" placeholder="Week type name" aria-label="Week type 4 name">
+                  <button class="chip wkTextTog" type="button" data-wk="3" aria-pressed="false">Edit as text</button>
+                </div>
+                <div class="wkEd tplGrid">
+                  <div class="fField"><div class="fLabel">Mon/Tue/Thu/Fri</div><div class="blkEd" data-ed="reg"></div><button class="btn btnSm wkAdd" type="button" data-ed="reg">+ Add block</button></div>
+                  <div class="fField"><div class="fLabel">Wednesday (optional)</div><div class="blkEd" data-ed="wed"></div><button class="btn btnSm wkAdd" type="button" data-ed="wed">+ Add block</button></div>
+                </div>
+                <div class="wkText tplGrid" hidden>
+                  <div class="fField"><label class="fLabel" for="taGrpReg4">Mon/Tue/Thu/Fri</label><textarea id="taGrpReg4" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fField"><label class="fLabel" for="taGrpWed4">Wednesday (optional)</label><textarea id="taGrpWed4" rows="9" spellcheck="false"></textarea></div>
+                  <div class="fHint wkTextHint">One block per line: <b>label start-end</b>, e.g. <b>3rd 11:46-12:39</b>.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="setSec" id="secDevice" role="tabpanel" aria-labelledby="tabDevice" hidden>
+            <h2 class="setH">Device</h2>
+            <div class="fStatus" id="storeNote">Changes save automatically on this device.</div>
+            <div class="fGroup">
+              <div class="fGrid c3 fFacts">
+                <div class="fFact"><div class="fLabel">App version</div><div class="fVal" id="devVersion">&mdash;</div></div>
+                <div class="fFact"><div class="fLabel">Last saved</div><div class="fVal" id="devSaved">&mdash;</div></div>
+                <div class="fFact"><div class="fLabel">Running on</div><div class="fVal" id="devSource">&mdash;</div></div>
+              </div>
+            </div>
+            <div class="fGroup">
+              <div class="fSection">The buttons below</div>
+              <div class="fGrid c2">
+                <div class="fField">
+                  <div class="fLabel">Export a copy</div>
+                  <div class="fHint">Downloads a full copy of Deckhand with these settings, layout and rosters baked in. Keep it in your Drive as a backup, or open it on another machine to move the board there. Same file name each time, so the browser offers to replace the old copy.</div>
+                </div>
+                <div class="fField">
+                  <div class="fLabel">Use this file&rsquo;s settings</div>
+                  <div class="fHint">Forgets everything saved on this device &mdash; layout, bells and rosters &mdash; and reloads with the settings baked into the file you opened. Two taps, and Export first if you are unsure.</div>
+                </div>
+              </div>
+            </div>
+            <div class="fGroup">
+              <div class="fSection">Privacy</div>
+              <div class="fHint">Rosters stay on this device with everything else. An exported copy carries the student names inside it &mdash; keep exports in your own Drive, never on the public website.</div>
+            </div>
+          </section>
+
         </div>
-      </details>
-
-
-      <div id="setErrors" role="alert"></div>
-
-      <div id="setActions">
-        <div class="row">
-          <button class="btn" id="applyBtn" type="button" style="background:var(--turq); color:var(--navy)">Apply</button>
-          <button class="btn" id="dlBtn" type="button" style="background:var(--sand); color:var(--navy)">Export a copy</button>
-          <button class="btn" id="resetBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--sand); padding:11px 20px">Use this file&rsquo;s settings</button>
-          <button class="btn" id="closeBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy); padding:11px 28px">Close</button>
-        </div>
-        <div class="setNote" id="storeNote">Changes save automatically on this device.</div>
       </div>
 
+      <div id="setFoot">
+        <div id="setErrors" role="alert"></div>
+        <div id="setActions">
+          <div class="setActL">
+            <button class="btn btnSand" id="dlBtn" type="button">Export a copy</button>
+            <button class="btn btnOutline" id="resetBtn" type="button">Use this file&rsquo;s settings</button>
+          </div>
+          <div class="setActR">
+            <button class="btn btnGhost" id="closeBtn" type="button">Close</button>
+            <button class="btn btnPri" id="applyBtn" type="button">Apply</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- v7.1: custom bell times for TODAY — a touch editor, not a text box -->
+<div id="dayEditorWrap" class="sheetWrap" hidden>
+  <div class="sheetBack" data-close="dayEditor"></div>
+  <div class="card sheet" id="dayEditor" role="dialog" aria-modal="true" aria-label="Custom bell times for today">
+    <div class="strip">CUSTOM DAY <span class="sheetSub" id="dayEditorDate"></span></div>
+    <div class="sheetBody">
+      <div class="sheetNote">Bell times for today only &mdash; tomorrow goes back to the week&rsquo;s schedule. Start from a schedule, then tap a time to change it.</div>
+      <div class="row rowLeft" id="dayEditorFill"></div>
+      <div class="blkEd" id="dayEditorBlocks"></div>
+      <div class="row rowLeft">
+        <button class="btn btnSm" type="button" id="dayEditorAdd">+ Add block</button>
+        <span class="sheetNote">Shift all</span>
+        <button class="btn btnSm" type="button" data-shift="-5">&minus;5 min</button>
+        <button class="btn btnSm" type="button" data-shift="5">+5 min</button>
+      </div>
+      <div class="sheetErr" id="dayEditorErr" role="alert"></div>
+    </div>
+    <div class="sheetActions">
+      <button class="btn" type="button" id="dayEditorUse" style="background:var(--turq); color:var(--navy)">Use for today</button>
+      <button class="btn btnGhost" type="button" data-close="dayEditor">Cancel</button>
     </div>
   </div>
 </div>
@@ -1891,7 +2419,7 @@ var DEFAULT_SCENES = [
 ];
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.0.0",
+  appVersion: "7.1.0",
   ownerName: "",
   ui: { locked: false, motion: "auto" },
   activeScene: "Daily Board",
@@ -2015,7 +2543,14 @@ function sanitize(c){
         wc.by = w.by === "count" ? "count" : "size";
         wc.count = Math.round(numIn(w.count, 2, 8, 4));
       }
-      if (ty === "text") wc.text = str(w.text, "").slice(0, 2000);
+      if (ty === "text"){
+        /* v7.1: rich notes. `html` is sanitized on every load AND every
+           commit; a legacy plain `text` converts once. */
+        var legacy = str(w.text, "").slice(0, 2000);
+        var rawHtml = str(w.html, "");
+        wc.html = sanitizeNoteHTML(rawHtml || (legacy ? legacyTextToHTML(legacy) : "")).slice(0, 20000);
+        wc.size = ["auto","s","m","l","xl"].indexOf(w.size) !== -1 ? w.size : "auto";
+      }
       if (ty === "work"){
         wc.mode = ["silent","whisper","partners","groups"].indexOf(w.mode) !== -1
           ? w.mode : "silent";
@@ -2026,6 +2561,13 @@ function sanitize(c){
         var eu = str(w.url, "").slice(0, 500);
         wc.url = /^https?:\/\//i.test(eu) ? eu : "";   // web URLs only, never javascript:
         wc.perPeriod = bool(w.perPeriod, false);
+        wc.stageOnly = bool(w.stageOnly, false);          // v7.1: lives on the shelf
+        wc.saved = (Array.isArray(w.saved) ? w.saved : []).filter(isObj)   // v7.1: deck library
+          .map(function(d2){
+            var du = str(d2.url, "").slice(0, 500);
+            return { name: str(d2.name, "").trim().slice(0, 24) || "Deck",
+                     url: /^https?:\/\//i.test(du) ? du : "" };
+          }).filter(function(d2){ return !!d2.url; }).slice(0, 8);
         wc.period = str(w.period, "").slice(0, 20);
         if (wc.period === "__proto__") wc.period = "";   // never poison the prototype
         wc.decks = {};
@@ -2040,6 +2582,21 @@ function sanitize(c){
       }
       if (ty === "meter"){
         wc.limit = Math.round(numIn(w.limit, 10, 100, 60));
+        /* v7.1: how long the room must stay over the line before a
+           strike lands (Croix: "too forgiving") — and strikes REPEAT
+           every interval while it stays loud */
+        wc.strikeSecs = [0.5, 1, 2, 3].indexOf(w.strikeSecs) !== -1 ? w.strikeSecs : 1;
+        /* today's strike tally by period — dated, so it wipes itself */
+        wc.tally = { date: "", byPeriod: {} };
+        if (isObj(w.tally) && /^\d{4}-\d{2}-\d{2}$/.test(w.tally.date) && isObj(w.tally.byPeriod)){
+          wc.tally.date = w.tally.date;
+          Object.keys(w.tally.byPeriod).slice(0, 12).forEach(function(k){
+            var kk = String(k).trim().slice(0, 20);
+            if (!kk || kk === "__proto__") return;
+            var v = w.tally.byPeriod[k];
+            if (typeof v === "number" && isFinite(v) && v > 0) wc.tally.byPeriod[kk] = Math.min(999, Math.round(v));
+          });
+        }
         wc.records = {};
         if (isObj(w.records)){
           Object.keys(w.records).slice(0, 12).forEach(function(k){
@@ -2073,6 +2630,10 @@ function sanitize(c){
       if (ty === "settle"){
         wc.seconds = Math.round(numIn(w.seconds, 5, 300, 30));
         wc.msgDone = str(w.msgDone, "").trim().slice(0, 60);
+        /* v7.1 the Pledge: at the day's FIRST bell the flag shows for
+           N minutes, then the routine hands off to the slides */
+        var pl = isObj(w.pledge) ? w.pledge : {};
+        wc.pledge = { on: bool(pl.on, true), minutes: Math.round(numIn(pl.minutes, 1, 10, 2)) };
       }
       if (ty === "music"){
         wc.channel = "lofi";   // mozart returns when the real audio lands
@@ -2090,6 +2651,7 @@ function sanitize(c){
           return (u2 && u2.indexOf("https://www.youtube-nocookie.com/") === 0) ? u2 : "";
         };
         wc.url = normYt(w.url);
+        wc.stageOnly = bool(w.stageOnly, false);          // v7.1
         wc.stations = (Array.isArray(w.stations) ? w.stations : []).filter(isObj)
           .map(function(s2){
             return { name: str(s2.name, "").trim().slice(0, 20) || "Station",
@@ -2200,9 +2762,26 @@ function sanitize(c){
         ? b.anchorWeekName
         : (groups.length ? groups[0].name : ""),
       defaultGroup: defGroup,
-      groups: groups
+      groups: groups,
+      /* v7.1 "today" override: run Wednesday times (or a custom set of
+         blocks) on ANY day. Dated, so it expires by itself. */
+      today: (function(){
+        var t = isObj(b.today) ? b.today : {};
+        var mode = ["regular","wednesday","custom"].indexOf(t.mode) !== -1 ? t.mode : "regular";
+        return {
+          date: /^\d{4}-\d{2}-\d{2}$/.test(t.date) ? t.date : "",
+          mode: mode,
+          blocks: cleanBlocks(t.blocks)
+        };
+      })(),
+      customLast: cleanBlocks(b.customLast)
     }
   };
+}
+/* local calendar key for "today" overrides — never toISOString (UTC) */
+function dateKey(d){
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0");
 }
 /* Older downloaded copies migrate up the chain: 1 (auto week-parity era)
    -> 2 (flat manual schedules) -> 3 (week groups). */
@@ -2296,6 +2875,124 @@ function migrate(raw){
   }
   return {};
 }
+/* ---- Rich note HTML: the ONLY markup Deckhand ever renders from a
+   user/config string. Allowlist of tags; inline style limited to a
+   handful of properties with validated values; everything else is
+   unwrapped (text kept) or dropped (script/style/img and the like,
+   contents and all). Runs on every load and every commit. */
+var NOTE_TAGS = { B:1, STRONG:1, I:1, EM:1, U:1, S:1, BR:1, DIV:1, P:1, SPAN:1,
+                  UL:1, OL:1, LI:1, H1:1, H2:1, H3:1, FONT:1 };
+var NOTE_DROP = { SCRIPT:1, STYLE:1, IMG:1, IFRAME:1, OBJECT:1, EMBED:1, SVG:1, MATH:1,
+                  LINK:1, META:1, TEMPLATE:1, VIDEO:1, AUDIO:1, FORM:1, INPUT:1, BUTTON:1, TEXTAREA:1 };
+var NOTE_FONTS = {
+  sans: '"DM Sans", system-ui, sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  mono: '"Courier New", ui-monospace, monospace',
+  hand: '"Comic Sans MS", "Segoe Print", "Bradley Hand", cursive'
+};
+function noteFontKey(fam){
+  var f = String(fam || "").toLowerCase();
+  if (/mono|courier/.test(f)) return "mono";
+  if (/comic|hand|cursive|segoe print|bradley/.test(f)) return "hand";
+  if (/georgia|times|serif/.test(f) && !/sans/.test(f)) return "serif";
+  return "sans";
+}
+function noteColorOk(v){
+  v = String(v || "").trim();
+  return /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(v) ||
+    /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i.test(v) ? v : "";
+}
+function noteSizeEm(v){                          // any font-size -> clamped em, or ""
+  var m = /^([\d.]+)\s*(em|px|%|rem)?$/.exec(String(v || "").trim());
+  if (!m) return "";
+  var n = parseFloat(m[1]); if (!(n > 0)) return "";
+  var em = m[2] === "px" ? n / 32 : (m[2] === "%" ? n / 100 : n);
+  em = Math.max(0.5, Math.min(4, Math.round(em * 100) / 100));
+  return em + "em";
+}
+function sanitizeNoteHTML(html){
+  if (!html) return "";
+  var doc;
+  try { doc = new DOMParser().parseFromString("<body>" + html, "text/html"); }
+  catch(e){ return ""; }
+  function cleanStyle(el){
+    var out = [];
+    var st = el.style;
+    var fw = (st.fontWeight || "").toLowerCase();
+    if (fw === "bold" || fw === "bolder" || +fw >= 600) out.push("font-weight:900");
+    if ((st.fontStyle || "").toLowerCase() === "italic") out.push("font-style:italic");
+    var td = (st.textDecorationLine || st.textDecoration || "").toLowerCase();
+    var tds = [];
+    if (/underline/.test(td)) tds.push("underline");
+    if (/line-through/.test(td)) tds.push("line-through");
+    if (tds.length) out.push("text-decoration:" + tds.join(" "));
+    var c = noteColorOk(st.color); if (c) out.push("color:" + c);
+    var fs = noteSizeEm(st.fontSize); if (fs) out.push("font-size:" + fs);
+    if (st.fontFamily) out.push("font-family:" + NOTE_FONTS[noteFontKey(st.fontFamily)]);
+    var ta = (st.textAlign || "").toLowerCase();
+    if (ta === "left" || ta === "center" || ta === "right") out.push("text-align:" + ta);
+    return out.join(";");
+  }
+  function walk(node){
+    var kids = Array.prototype.slice.call(node.childNodes);
+    kids.forEach(function(k){
+      if (k.nodeType === 3) return;                          // text stays
+      if (k.nodeType !== 1){ k.remove(); return; }           // comments etc.
+      var tag = k.tagName;
+      if (NOTE_DROP[tag]){ k.remove(); return; }
+      if (!NOTE_TAGS[tag]){                                  // unwrap unknowns
+        walk(k);
+        while (k.firstChild) node.insertBefore(k.firstChild, k);
+        k.remove();
+        return;
+      }
+      walk(k);
+      /* <font> (execCommand's legacy output) -> span with style */
+      var el = k;
+      if (tag === "FONT"){
+        var sp = doc.createElement("span");
+        var st2 = [];
+        var col = noteColorOk(k.getAttribute("color")); if (col) st2.push("color:" + col);
+        var face = k.getAttribute("face"); if (face) st2.push("font-family:" + NOTE_FONTS[noteFontKey(face)]);
+        var sz = k.getAttribute("size");
+        if (sz) st2.push("font-size:" + ({1:"0.6em",2:"0.8em",3:"1em",4:"1.2em",5:"1.5em",6:"2em",7:"2.6em"}[sz] || "1em"));
+        var inner = cleanStyle(k); if (inner) st2.push(inner);
+        if (st2.length) sp.setAttribute("style", st2.join(";"));
+        while (k.firstChild) sp.appendChild(k.firstChild);
+        node.replaceChild(sp, k);
+        el = sp;
+      }
+      var keep = cleanStyle(el);
+      Array.prototype.slice.call(el.attributes).forEach(function(a){ el.removeAttribute(a.name); });
+      if (keep) el.setAttribute("style", keep);
+    });
+  }
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
+/* the pre-7.1 note syntax ("# big", "## small", "- bullet", "1) item")
+   becomes real markup once, then lives as html */
+function legacyTextToHTML(text){
+  var lines = String(text || "").split("\n");
+  var structured = lines.some(function(l){ return /^(#{1,2}\s|[-*]\s|\d+[.)]\s?)/.test(l.trim()); });
+  var out = [], list = null;
+  function esc(t){ return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function closeList(){ if (list){ out.push("</" + list + ">"); list = null; } }
+  lines.forEach(function(raw){
+    var l = raw.trim();
+    if (!l){ closeList(); out.push("<div><br></div>"); return; }
+    var m;
+    if ((m = /^##\s+(.*)$/.exec(l))){ closeList(); out.push('<div style="font-size:1.12em;font-weight:900;color:#127A85">' + esc(m[1]) + "</div>"); }
+    else if ((m = /^#\s+(.*)$/.exec(l))){ closeList(); out.push('<div style="font-size:1.45em;font-weight:900">' + esc(m[1]) + "</div>"); }
+    else if ((m = /^[-*]\s+(.*)$/.exec(l))){ if (list !== "ul"){ closeList(); list = "ul"; out.push("<ul>"); } out.push("<li>" + esc(m[1]) + "</li>"); }
+    else if ((m = /^\d+[.)]\s?(.*)$/.exec(l))){ if (list !== "ol"){ closeList(); list = "ol"; out.push("<ol>"); } out.push("<li>" + esc(m[1]) + "</li>"); }
+    else { closeList(); out.push("<div>" + esc(l) + "</div>"); }
+  });
+  closeList();
+  var html = out.join("");
+  return (structured || lines.length > 2) ? '<div style="text-align:left">' + html + "</div>" : html;
+}
+
 var cfg;
 var cfgFallback = false;                         // booted on defaults
 var fileBroken = false;                          // this file's own block is unreadable
@@ -2529,15 +3226,34 @@ var Bell = (function(){
   }
   /* a school day's blocks for a given date + group index; null on
      weekends, missing groups, or empty templates */
+  /* the dated "today" override, if it names this calendar day */
+  function overrideFor(day){
+    var t = cfg.bell.today;
+    return (t && t.date && t.date === dateKey(day) && t.mode !== "regular") ? t : null;
+  }
   function dayBlocksFor(day, gi){
     var wd = day.getDay();
+    var ov = overrideFor(day);
+    if (ov && ov.mode === "custom"){
+      /* a custom day runs even with No bells picked — that IS the use
+         case (testing days, early release: the bells are off, the
+         periods still exist) */
+      var cb = parsedBlocks(ov.blocks);
+      if (!cb.length) return null;
+      var g0 = gi >= 0 && cfg.bell.groups[gi] ? cfg.bell.groups[gi] : null;
+      return { g: g0 || { name: "Custom day" }, usedWed: false, custom: true, blocks: cb };
+    }
     if (wd === 0 || wd === 6) return null;                  // no school on weekends
     var g = gi >= 0 && cfg.bell.groups[gi] ? cfg.bell.groups[gi] : null;
     if (!g) return null;
-    var usedWed = wd === 3 && g.wednesday && g.wednesday.length > 0;
+    var hasWed = g.wednesday && g.wednesday.length > 0;
+    var usedWed = hasWed && (ov ? ov.mode === "wednesday" : wd === 3);
     var blocks = parsedBlocks(usedWed ? g.wednesday : g.regular);
     if (!blocks.length) return null;
-    return { g: g, usedWed: usedWed, blocks: blocks };
+    return { g: g, usedWed: usedWed, custom: false, blocks: blocks };
+  }
+  function schedTag(info){
+    return info.custom ? " (Custom)" : (info.usedWed ? " (Wed)" : "");
   }
   function groupIndexForDay(day){
     if (cfg.bell.autoWeek){
@@ -2589,7 +3305,7 @@ var Bell = (function(){
           target = new Date(target.getTime() - (cfg.bell.nudgeSeconds || 0) * 1000);
           var prevEnd = prevClassEndBefore(origin);
           return { type: "next",
-                   sched: info.g.name + (info.usedWed ? " (Wed)" : ""),
+                   sched: info.g.name + schedTag(info),
                    label: b.label,
                    when: (off === 0 ? "" : DAYN[day.getDay()] + " ") + fmtClock12(b.s),
                    remainMs: Math.max(0, target.getTime() - d.getTime()),
@@ -2605,11 +3321,11 @@ var Bell = (function(){
      the date's own weekday decides regular vs Wednesday blocks */
   function statusAt(d){
     var g = activeGroup();
-    if (!g) return { type: "off" };
     var today = dayBlocksFor(d, active);
+    if (!g && !(today && today.custom)) return { type: "off" };
     if (!today) return nextClassFrom(d);                    // weekend
     var blocks = today.blocks;
-    var dispName = today.g.name + (today.usedWed ? " (Wed)" : "");
+    var dispName = today.g.name + schedTag(today);
     var mins = bellMinsOf(d);
     var labels = blocks.map(function(x){ return x.label; });
     for (var i = 0; i < blocks.length; i++){
@@ -2832,7 +3548,179 @@ var Bell = (function(){
     fmtSpan: function(ms){ return cfg.bell.countdownSeconds ? fmtLong(ms) : fmtCoarse(ms); },
     getActive: getActive, setActive: setActive,
     activeName: activeName, snapshot: snapshot, reResolve: reResolve,
-    autoIndexFor: autoIndexFor
+    autoIndexFor: autoIndexFor,
+    /* v7.1: the dated today-override — mode "regular" clears it */
+    setToday: function(mode, blocks){
+      cfg.bell.today = { date: dateKey(now()), mode: mode,
+                         blocks: mode === "custom" ? (blocks || []) : [] };
+      if (mode === "custom" && blocks && blocks.length) cfg.bell.customLast = blocks.slice();
+      paint();
+      try { document.dispatchEvent(new CustomEvent("deckhand:weekchange")); } catch(e){}
+    },
+    todayMode: function(){
+      var t = cfg.bell.today;
+      return (t && t.date === dateKey(now())) ? t.mode : "regular";
+    },
+    dayBlocksFor: dayBlocksFor
+  };
+})();
+
+/* ================= Block editor (v7.1) =================
+   A touch-first editor for a list of bell blocks: one row per block,
+   native time pickers, no text syntax to remember. Used by the custom
+   day sheet and by Settings' schedules. Values in/out are the config's
+   {label, start, end} shape (school-convention "H:MM" strings). */
+function BlockEditor(container){
+  var rows = [];
+  function toTimeValue(str){                     // "1:15" -> "13:15"
+    var m = Bell.parseClock(str);
+    if (m === null) return "";
+    return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  }
+  function fromTimeValue(v){                     // "13:15" -> "1:15" (school convention)
+    var m = /^(\d{2}):(\d{2})$/.exec(v || "");
+    if (!m) return null;
+    var h = +m[1], mm = +m[2];
+    if (h < 6 || h > 17) return null;            // 6:00 AM – 5:59 PM only
+    if (h > 12) h -= 12;
+    return h + ":" + m[2] + "|" + (mm);
+  }
+  function addRow(b){
+    var row = document.createElement("div");
+    row.className = "blkRow";
+    row.innerHTML =
+      '<input class="setInput blkLabel" type="text" maxlength="20" placeholder="Label">' +
+      '<input class="setInput blkStart" type="time" step="60" aria-label="Start">' +
+      '<span class="blkDash">&ndash;</span>' +
+      '<input class="setInput blkEnd" type="time" step="60" aria-label="End">' +
+      '<button class="blkX" type="button" aria-label="Remove block">&times;</button>';
+    row.querySelector(".blkLabel").value = b && b.label ? b.label : "";
+    row.querySelector(".blkStart").value = b ? toTimeValue(b.start) : "";
+    row.querySelector(".blkEnd").value = b ? toTimeValue(b.end) : "";
+    wireButton(row.querySelector(".blkX"), function(){
+      rows.splice(rows.indexOf(row), 1); row.remove(); paintEmpty();
+    });
+    rows.push(row); container.appendChild(row);
+    paintEmpty();
+    return row;
+  }
+  var emptyEl = document.createElement("div");
+  emptyEl.className = "blkEmpty";
+  emptyEl.textContent = "No blocks yet — start from a schedule or add one.";
+  function paintEmpty(){
+    if (!rows.length){ if (!emptyEl.parentNode) container.appendChild(emptyEl); }
+    else if (emptyEl.parentNode) emptyEl.remove();
+  }
+  function fill(blocks){
+    rows.slice().forEach(function(r){ r.remove(); });
+    rows = [];
+    (blocks || []).forEach(addRow);
+    paintEmpty();
+  }
+  /* returns {blocks, errors[]}; marks bad rows */
+  function read(){
+    var out = [], errors = [];
+    rows.forEach(function(row, i){
+      row.classList.remove("bad");
+      var label = row.querySelector(".blkLabel").value.trim().slice(0, 20);
+      var sv = fromTimeValue(row.querySelector(".blkStart").value);
+      var ev = fromTimeValue(row.querySelector(".blkEnd").value);
+      if (!label && !sv && !ev) return;         // an untouched blank row is nothing
+      if (!label){ errors.push("Block " + (i+1) + ": needs a label"); row.classList.add("bad"); return; }
+      if (!sv || !ev){ errors.push('"' + label + '": times must be between 6:00 AM and 5:59 PM'); row.classList.add("bad"); return; }
+      var start = sv.split("|")[0], end = ev.split("|")[0];
+      if (Bell.parseClock(end) <= Bell.parseClock(start)){
+        errors.push('"' + label + '": end must be after start'); row.classList.add("bad"); return;
+      }
+      out.push({ label: label, start: start, end: end, _s: Bell.parseClock(start), _e: Bell.parseClock(end) });
+    });
+    out.sort(function(a, b){ return a._s - b._s; });
+    for (var i = 1; i < out.length; i++){
+      if (out[i]._s < out[i-1]._e) errors.push('"' + out[i-1].label + '" and "' + out[i].label + '" overlap');
+    }
+    if (out.length > 20) errors.push("At most 20 blocks (you have " + out.length + ")");
+    return { blocks: out.map(function(b){ return { label: b.label, start: b.start, end: b.end }; }),
+             errors: errors };
+  }
+  function shift(mins){
+    rows.forEach(function(row){
+      [".blkStart", ".blkEnd"].forEach(function(sel){
+        var inp = row.querySelector(sel);
+        var m = /^(\d{2}):(\d{2})$/.exec(inp.value || "");
+        if (!m) return;
+        var t = Math.max(0, Math.min(23 * 60 + 59, (+m[1]) * 60 + (+m[2]) + mins));
+        inp.value = String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+      });
+    });
+  }
+  function isEmpty(){ return rows.length === 0; }
+  paintEmpty();
+  return { fill: fill, read: read, add: function(){ return addRow(null); }, shift: shift, isEmpty: isEmpty };
+}
+
+/* ================= Day editor (v7.1) =================
+   "Custom day…" on the home screen: today's bell times, for today. */
+var DayEditor = (function(){
+  var wrap = $("dayEditorWrap"), ed = null, opener = null;
+  function fillButtons(){
+    var host = $("dayEditorFill");
+    host.innerHTML = "";
+    var add = function(label, blocks){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "btn btnSm"; b.textContent = label;
+      wireButton(b, function(){ ed.fill(blocks); $("dayEditorErr").textContent = ""; });
+      host.appendChild(b);
+    };
+    var g = Bell.getActive() >= 0 ? cfg.bell.groups[Bell.getActive()] : (cfg.bell.groups[0] || null);
+    if (g){
+      add("Start from " + g.name, g.regular);
+      if (g.wednesday && g.wednesday.length) add("Start from " + g.name + " (Wed)", g.wednesday);
+    }
+    if (cfg.bell.customLast && cfg.bell.customLast.length) add("Last custom day", cfg.bell.customLast);
+  }
+  function open(){
+    if (!ed) ed = BlockEditor($("dayEditorBlocks"));
+    opener = document.activeElement;
+    var d = now();
+    $("dayEditorDate").textContent = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()] +
+      ", " + d.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    fillButtons();
+    var t = cfg.bell.today;
+    var seed = (t && t.date === dateKey(d) && t.mode === "custom" && t.blocks.length) ? t.blocks
+      : (cfg.bell.customLast && cfg.bell.customLast.length ? cfg.bell.customLast : []);
+    ed.fill(seed);
+    $("dayEditorErr").textContent = "";
+    wrap.hidden = false;
+    var first = wrap.querySelector(".blkLabel, #dayEditorFill .btn");
+    if (first) first.focus();
+  }
+  function close(){
+    wrap.hidden = true;
+    try { if (opener && opener.focus) opener.focus(); } catch(e){}
+  }
+  function use(){
+    var r = ed.read();
+    if (r.errors.length){ $("dayEditorErr").textContent = r.errors.join("\n"); return; }
+    if (!r.blocks.length){ $("dayEditorErr").textContent = "Add at least one block, or pick Regular times instead."; return; }
+    Bell.setToday("custom", r.blocks);
+    Landing.refresh();
+    close();
+  }
+  return {
+    init: function(){
+      wireButton($("dayEditorUse"), use);
+      wireButton($("dayEditorAdd"), function(){ var r = ed.add(); r.querySelector(".blkLabel").focus(); });
+      wrap.querySelectorAll("[data-shift]").forEach(function(b){
+        wireButton(b, function(){ ed.shift(+b.dataset.shift); });
+      });
+      wrap.querySelectorAll('[data-close="dayEditor"]').forEach(function(b){
+        b.addEventListener("click", close);
+      });
+      wrap.addEventListener("keydown", function(e){
+        if (e.key === "Escape"){ e.stopPropagation(); close(); }
+      });
+    },
+    open: open, close: close, isOpen: function(){ return !wrap.hidden; }
   };
 })();
 
@@ -2854,6 +3742,27 @@ var Landing = (function(){
         : Bell.getActive() === -1;    // last chip = No bells
       c.setAttribute("aria-pressed", pressed ? "true" : "false");
     });
+    paintToday();
+  }
+  /* v7.1: TODAY row — regular / Wednesday times / custom day */
+  function paintToday(){
+    var mode = Bell.todayMode();
+    var g = Bell.getActive() >= 0 ? cfg.bell.groups[Bell.getActive()] : null;
+    var hasWed = !!(g && g.wednesday && g.wednesday.length);
+    var isWed = now().getDay() === 3;
+    $("todayChips").querySelectorAll(".chip").forEach(function(c){
+      var m = c.dataset.today;
+      c.setAttribute("aria-pressed", m === mode ? "true" : "false");
+      if (m === "wednesday"){
+        c.hidden = !hasWed;
+        c.textContent = isWed ? "Wednesday times (today)" : "Wednesday times";
+      }
+      if (m === "regular") c.textContent = isWed && hasWed ? "Regular times instead" : "Regular times";
+    });
+    var t = cfg.bell.today;
+    var n = t && t.date === dateKey(now()) && t.mode === "custom" ? t.blocks.length : 0;
+    $("todayChips").querySelector('[data-today="custom"]').textContent =
+      n ? "Custom day (" + n + " blocks) \u2026" : "Custom day\u2026";
   }
   function buildChips(){
     el.schedChips.innerHTML = "";
@@ -2896,6 +3805,13 @@ var Landing = (function(){
   function pick(i){ if (i >= 0 && i < chipEls.length) chipEls[i].click(); }
   return {
     init: function(){
+      $("todayChips").querySelectorAll(".chip").forEach(function(c){
+        wireButton(c, function(){
+          var m = c.dataset.today;
+          if (m === "custom") DayEditor.open();
+          else { Bell.setToday(m, []); paintToday(); }
+        });
+      });
       wireButton(el.launchBtn, hide);
       wireButton(el.homeBtn, show);
       setInterval(function(){ if (isShowing()) greet(); }, 30000);
@@ -2905,7 +3821,7 @@ var Landing = (function(){
       show();
     },
     show: show, hide: hide, isShowing: isShowing, pick: pick,
-    refresh: function(){ if (isShowing()){ greet(); buildChips(); } }
+    refresh: function(){ if (isShowing()){ greet(); buildChips(); } paintToday(); }
   };
 })();
 
@@ -4077,20 +4993,52 @@ function qrMatrix(text){
    Keys ladder's isField rule protects every keystroke from becoming a
    board shortcut. */
 function makeText(host, wcfg){
-  if (typeof wcfg.text !== "string") wcfg.text = "";
+  if (typeof wcfg.html !== "string") wcfg.html = "";
+  if (["auto","s","m","l","xl"].indexOf(wcfg.size) === -1) wcfg.size = "auto";
   host.insertAdjacentHTML("beforeend",
-    '<div class="wBody">' +
-      '<div class="txDisplay"><div class="txInner"></div></div>' +
-      '<textarea class="txArea" maxlength="2000" spellcheck="false" hidden></textarea>' +
-      '<div class="row txRow" hidden>' +
-        '<button class="btn txBtn" type="button" ' +
-          'style="background:var(--turq); color:var(--navy)">Done</button>' +
+    '<div class="wBody txBody">' +
+      '<div class="txBar" hidden>' +
+        '<div class="txGroup" aria-label="Text size">' +
+          '<button class="txTool" type="button" data-cmd="size" data-arg="s" aria-label="Small text">S</button>' +
+          '<button class="txTool" type="button" data-cmd="size" data-arg="m" aria-label="Medium text">M</button>' +
+          '<button class="txTool" type="button" data-cmd="size" data-arg="l" aria-label="Large text">L</button>' +
+          '<button class="txTool" type="button" data-cmd="size" data-arg="xl" aria-label="Extra large text">XL</button>' +
+          '<button class="txTool" type="button" data-cmd="size" data-arg="auto" aria-label="Fit to the box">Fit</button>' +
+        '</div>' +
+        '<div class="txGroup">' +
+          '<button class="txTool" type="button" data-cmd="bold" aria-label="Bold"><b>B</b></button>' +
+          '<button class="txTool" type="button" data-cmd="italic" aria-label="Italic"><i>I</i></button>' +
+          '<button class="txTool" type="button" data-cmd="underline" aria-label="Underline"><u>U</u></button>' +
+          '<button class="txTool" type="button" data-cmd="bigger" aria-label="Bigger selection">A+</button>' +
+          '<button class="txTool" type="button" data-cmd="smaller" aria-label="Smaller selection">A&minus;</button>' +
+        '</div>' +
+        '<div class="txGroup" aria-label="Text color">' +
+          '<button class="txTool txSwatch" type="button" data-cmd="color" data-arg="#17324D" style="background:#17324D" aria-label="Navy"></button>' +
+          '<button class="txTool txSwatch" type="button" data-cmd="color" data-arg="#127A85" style="background:#127A85" aria-label="Teal"></button>' +
+          '<button class="txTool txSwatch" type="button" data-cmd="color" data-arg="#FF7F6A" style="background:#FF7F6A" aria-label="Coral"></button>' +
+          '<button class="txTool txSwatch" type="button" data-cmd="color" data-arg="#7E5FC5" style="background:#7E5FC5" aria-label="Purple"></button>' +
+          '<button class="txTool txSwatch" type="button" data-cmd="color" data-arg="#1A7A42" style="background:#1A7A42" aria-label="Green"></button>' +
+          '<button class="txTool txSwatch" type="button" data-cmd="color" data-arg="#C0392B" style="background:#C0392B" aria-label="Red"></button>' +
+        '</div>' +
+        '<div class="txGroup" aria-label="Font">' +
+          '<button class="txTool" type="button" data-cmd="font" data-arg="sans" aria-label="Sans font">Aa</button>' +
+          '<button class="txTool txSerif" type="button" data-cmd="font" data-arg="serif" aria-label="Serif font">Aa</button>' +
+          '<button class="txTool txMono" type="button" data-cmd="font" data-arg="mono" aria-label="Mono font">Aa</button>' +
+          '<button class="txTool txHand" type="button" data-cmd="font" data-arg="hand" aria-label="Handwriting font">Aa</button>' +
+        '</div>' +
+        '<div class="txGroup">' +
+          '<button class="txTool" type="button" data-cmd="insertUnorderedList" aria-label="Bullet list">&bull; List</button>' +
+          '<button class="txTool" type="button" data-cmd="insertOrderedList" aria-label="Numbered list">1. List</button>' +
+          '<button class="txTool" type="button" data-cmd="justifyLeft" aria-label="Align left">&#8676;</button>' +
+          '<button class="txTool" type="button" data-cmd="justifyCenter" aria-label="Center">&#8801;</button>' +
+          '<button class="txTool" type="button" data-cmd="removeFormat" aria-label="Clear formatting">Clear</button>' +
+        '</div>' +
+        '<button class="btn txBtn" type="button" style="background:var(--turq); color:var(--navy)">Done</button>' +
       '</div>' +
-      '<div class="tHint txSyntax" hidden># big heading &nbsp;·&nbsp; ## small heading &nbsp;·&nbsp; - bullet &nbsp;·&nbsp; 1) numbered</div>' +
+      '<div class="txDisplay"><div class="txInner"></div></div>' +
     '</div>');
   var q = function(s){ return host.querySelector(s); };
-  var disp = q(".txDisplay"), inner = q(".txInner"), area = q(".txArea"), btn = q(".txBtn");
-  var row = q(".txRow"), syntax = q(".txSyntax");
+  var disp = q(".txDisplay"), inner = q(".txInner"), bar = q(".txBar"), btn = q(".txBtn");
   /* the pencil lives in the STRIP (like ✕), so the display itself stays
      clean — Croix: "I'd like to have the edit button hidden" */
   var pencil = document.createElement("button");
@@ -4101,116 +5049,151 @@ function makeText(host, wcfg){
   var strip = host.querySelector(".strip");
   strip.insertBefore(pencil, strip.querySelector(".wFocus"));
   var editing = false;
-  /* Lightweight formatting, rendered line by line with textContent:
-     "# " big heading · "## " small heading · "- "/"* " bullet ·
-     "1)"/"1." numbered (kept as typed) · blank line = spacing.
-     Structured or multi-line notes read left-aligned; a single plain
-     line stays centered like a title card. */
-  function renderInto(el, text){
-    el.innerHTML = "";
-    var lines = text.split("\n");
-    var structured = lines.some(function(l){
-      return /^(#{1,2}\s|[-*]\s|\d+[.)]\s?)/.test(l.trim());
-    });
-    el.classList.toggle("txLeft", structured || lines.length > 2);
-    lines.forEach(function(raw){
-      var l = raw.trim();
-      var div = document.createElement("div");
-      if (!l){
-        div.className = "txGap";
-      } else if (/^##\s+/.test(l)){
-        div.className = "txLine txH2";
-        div.textContent = l.replace(/^##\s+/, "");
-      } else if (/^#\s+/.test(l)){
-        div.className = "txLine txH1";
-        div.textContent = l.replace(/^#\s+/, "");
-      } else if (/^[-*]\s+/.test(l)){
-        div.className = "txLine txBullet";
-        div.textContent = l.replace(/^[-*]\s+/, "");
-      } else if (/^\d+[.)]\s?/.test(l)){
-        div.className = "txLine txNum";
-        div.textContent = l;
-      } else {
-        div.className = "txLine";
-        div.textContent = l;
-      }
-      el.appendChild(div);
-    });
-  }
-  /* Shrink-to-fit: step the font down until the whole note is visible —
-     an agenda you have to scroll is an agenda the back row never sees. */
-  var FIT_STEPS = [1, 0.85, 0.72, 0.6, 0.5, 0.42, 0.35, 0.3];
-  function fit(){
+  var SCALE = { s: 0.7, m: 1, l: 1.4, xl: 2 };
+  /* Fit (default): step the font down until the whole note is visible —
+     an agenda you have to scroll is an agenda the back row never sees.
+     An explicit size never shrinks: the teacher asked for THAT size. */
+  var FIT_STEPS = [1, 0.85, 0.72, 0.6, 0.5];
+  function applySize(){
+    host.classList.toggle("txFixed", wcfg.size !== "auto");
+    if (wcfg.size !== "auto"){
+      inner.style.setProperty("--tx-scale", SCALE[wcfg.size]);
+      return;
+    }
     for (var i = 0; i < FIT_STEPS.length; i++){
-      inner.style.fontSize = "calc(clamp(16px, 7cqmin, 64px) * " + FIT_STEPS[i] + ")";
+      inner.style.setProperty("--tx-scale", FIT_STEPS[i]);
       if (inner.scrollHeight <= disp.clientHeight + 2 &&
           inner.scrollWidth <= disp.clientWidth + 2) return;
     }
   }
+  function paintSizeChips(){
+    bar.querySelectorAll('[data-cmd="size"]').forEach(function(b){
+      b.setAttribute("aria-pressed", b.dataset.arg === wcfg.size ? "true" : "false");
+    });
+  }
   function paint(){
-    if (wcfg.text){
+    if (wcfg.html){
       inner.classList.remove("txEmpty");
-      renderInto(inner, wcfg.text);
-      fit();
+      inner.innerHTML = sanitizeNoteHTML(wcfg.html);   // defense in depth: never raw
+      applySize();
     } else {
-      inner.classList.remove("txLeft");
-      inner.style.fontSize = "";
+      inner.style.removeProperty("--tx-scale");
       inner.textContent = "Tap here to write an announcement, agenda, or warm-up.";
       inner.classList.add("txEmpty");
     }
   }
   var ro = null;
   if (window.ResizeObserver){
-    ro = new ResizeObserver(function(){ if (!editing && wcfg.text) fit(); });
+    ro = new ResizeObserver(function(){ if (!editing && wcfg.html) applySize(); });
     ro.observe(disp);
   }
   function startEdit(){
     if (cfg.ui.locked) return;                   // a locked board is read-only
     editing = true;
-    area.value = wcfg.text;
-    disp.hidden = true;
-    area.hidden = false;
-    row.hidden = false;
-    syntax.hidden = false;
-    area.focus();
+    host.classList.add("txEditing");
+    if (!wcfg.html){ inner.classList.remove("txEmpty"); inner.innerHTML = ""; }
+    else inner.innerHTML = sanitizeNoteHTML(wcfg.html);
+    inner.contentEditable = "true";
+    inner.spellcheck = false;
+    bar.hidden = false;
+    paintSizeChips();
+    try { document.execCommand("styleWithCSS", false, true); } catch(e){}
+    inner.focus();
+    /* caret at the end, not the start */
+    try {
+      var r = document.createRange(); r.selectNodeContents(inner); r.collapse(false);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    } catch(e){}
   }
   function commit(){
     if (!editing) return;
     editing = false;
-    wcfg.text = area.value.slice(0, 2000);
-    area.hidden = true;
-    row.hidden = true;
-    syntax.hidden = true;
-    disp.hidden = false;
+    host.classList.remove("txEditing");
+    inner.contentEditable = "false";
+    var html = sanitizeNoteHTML(inner.innerHTML).slice(0, 20000);
+    /* an "empty" note full of <br>/<div> is empty */
+    var probe = document.createElement("div"); probe.innerHTML = html;
+    wcfg.html = probe.textContent.trim() ? html : "";
+    bar.hidden = true;
     paint();
   }
-  /* Tapping Done blurs the textarea FIRST; that blur already commits.
-     Without the flag, the click that follows would see editing=false
-     and instantly reopen the editor. */
-  var blurCommitted = false;
-  btn.addEventListener("pointerdown", function(){ if (editing) blurCommitted = true; });
-  btn.addEventListener("pointerleave", function(){ blurCommitted = false; });
-  btn.addEventListener("pointercancel", function(){ blurCommitted = false; });
-  wireButton(btn, function(){
-    if (blurCommitted){ blurCommitted = false; return; }
-    if (editing) commit();
+  /* ---- toolbar: pointerdown is prevented so the selection in the
+     editor survives the tap (a focused button would drop it) ---- */
+  bar.addEventListener("pointerdown", function(e){
+    if (e.target.closest(".txTool")) e.preventDefault();
   });
-  /* pencil tapped WHILE editing: the textarea blur already committed —
-     consume the click so it doesn't instantly reopen the editor */
+  function sizeEm(delta){
+    /* the selection's current size in em (default 1) stepped up/down */
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var node = sel.anchorNode && sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
+    var cur = 1;
+    while (node && node !== inner){
+      var fs = node.style && node.style.fontSize;
+      if (fs){ var em = parseFloat(noteSizeEm(fs)) || 1; cur = em; break; }
+      node = node.parentElement;
+    }
+    var steps = [0.6, 0.8, 1, 1.25, 1.6, 2, 2.6];
+    var i = 0; for (var k = 0; k < steps.length; k++) if (Math.abs(steps[k] - cur) < 0.05) i = k;
+    if (Math.abs(steps[i] - cur) >= 0.05) i = 2;
+    i = Math.max(0, Math.min(steps.length - 1, i + delta));
+    /* execCommand fontSize gives <font size=7>; the sanitizer turns that
+       into a span — so tag with 7 and then rewrite to the exact em */
+    try { document.execCommand("styleWithCSS", false, false); } catch(e){}
+    document.execCommand("fontSize", false, "7");
+    try { document.execCommand("styleWithCSS", false, true); } catch(e){}
+    inner.querySelectorAll('font[size="7"]').forEach(function(f){
+      var sp = document.createElement("span");
+      sp.style.fontSize = steps[i] + "em";
+      while (f.firstChild) sp.appendChild(f.firstChild);
+      f.parentNode.replaceChild(sp, f);
+    });
+  }
+  bar.addEventListener("click", function(e){
+    var b = e.target.closest(".txTool");
+    if (!b || !editing) return;
+    var cmd = b.dataset.cmd, arg = b.dataset.arg;
+    inner.focus();
+    if (cmd === "size"){ wcfg.size = arg; paintSizeChips(); applySize(); return; }
+    if (cmd === "color"){ document.execCommand("foreColor", false, arg); return; }
+    if (cmd === "font"){ document.execCommand("fontName", false, NOTE_FONTS[arg]); return; }
+    if (cmd === "bigger"){ sizeEm(+1); return; }
+    if (cmd === "smaller"){ sizeEm(-1); return; }
+    document.execCommand(cmd, false, null);
+  });
+  /* Done: the editor's blur already committed by the time the click
+     lands — the flag stops the click from reopening it */
+  var blurCommitted = false;
+  btn.addEventListener("pointerdown", function(e){ e.preventDefault(); if (editing) commit(); });
+  /* pencil tapped WHILE editing: commit, don't reopen */
   var pencilSkip = false;
   pencil.addEventListener("pointerdown", function(){ if (editing) pencilSkip = true; });
   pencil.addEventListener("pointerleave", function(){ pencilSkip = false; });
   pencil.addEventListener("pointercancel", function(){ pencilSkip = false; });
   wireButton(pencil, function(){
     if (pencilSkip){ pencilSkip = false; return; }
-    if (!editing) startEdit();
+    if (editing) commit(); else startEdit();
   });
   disp.addEventListener("click", function(){ if (!editing) startEdit(); });
-  area.addEventListener("blur", commit);         // tap-away saves
-  area.addEventListener("keydown", function(e){
-    if (Alarm.isOn()) return;                    // the alarm's swallow-all stage
-    if (e.key === "Escape"){ e.stopPropagation(); commit(); }  // is absolute
+  inner.addEventListener("blur", function(){
+    /* a toolbar tap keeps focus (pointerdown prevented); any other
+       blur is a tap-away = save */
+    setTimeout(function(){ if (editing && document.activeElement !== inner) commit(); }, 0);
   });
+  inner.addEventListener("paste", function(e){
+    /* plain text only: pasted markup is noise the sanitizer would
+       mostly strip anyway, and a wall of font tags is not a note */
+    e.preventDefault();
+    var t = (e.clipboardData || window.clipboardData).getData("text/plain");
+    document.execCommand("insertText", false, t);
+  });
+  inner.addEventListener("keydown", function(e){
+    if (Alarm.isOn()) return;                    // the alarm's swallow-all stage
+    if (!editing) return;                        // is absolute
+    e.stopPropagation();                         // Space/R/digits are TEXT here
+    if (e.key === "Escape"){ commit(); }
+  });
+  void blurCommitted;
   paint();
   return {
     kind: "text",
@@ -4724,14 +5707,45 @@ function makeTally(host, wcfg){
    consequence message for a spell before re-arming. Start chip and
    Space restart it manually (play actions — live while LOCKED, like
    scoring); seconds + message are ✎ config, hidden by the lock. */
+/* the flag for the Pledge window: 13 stripes, a 50-star canton —
+   drawn once, inline, no image file */
+var FLAG_SVG = (function(){
+  var W = 1235, H = 650, stripe = H / 13;
+  var out = ['<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Flag of the United States" preserveAspectRatio="xMidYMid meet">'];
+  for (var i = 0; i < 13; i++){
+    out.push('<rect x="0" y="' + (i * stripe) + '" width="' + W + '" height="' + (stripe + 0.5) + '" fill="' + (i % 2 ? "#FFFFFF" : "#B22234") + '"/>');
+  }
+  var cw = 494, ch = stripe * 7;
+  out.push('<rect x="0" y="0" width="' + cw + '" height="' + ch + '" fill="#3C3B6E"/>');
+  var gx = cw / 12, gy = ch / 10, r = 18.5;
+  function star(cx, cy){
+    var pts = [];
+    for (var k = 0; k < 10; k++){
+      var a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.382 : r;
+      pts.push((cx + rr * Math.cos(a)).toFixed(1) + "," + (cy + rr * Math.sin(a)).toFixed(1));
+    }
+    return '<polygon points="' + pts.join(" ") + '" fill="#FFFFFF"/>';
+  }
+  for (var row = 0; row < 9; row++){
+    var n = row % 2 ? 5 : 6;
+    for (var c = 0; c < n; c++){
+      out.push(star(gx * (row % 2 ? 2 : 1) + c * 2 * gx, gy * (row + 1)));
+    }
+  }
+  out.push("</svg>");
+  return out.join("");
+})();
+
 function makeSettle(host, wcfg){
   if (typeof wcfg.seconds !== "number" || !isFinite(wcfg.seconds)) wcfg.seconds = 30;
   if (typeof wcfg.msgDone !== "string") wcfg.msgDone = "";
+  if (!isObj(wcfg.pledge)) wcfg.pledge = { on: true, minutes: 2 };
   var DEF_DONE = "Still standing? Comment card.";
   var DONE_MS = 20000;
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="stStage">' +
+        '<div class="stFlag" hidden>' + FLAG_SVG + '</div>' +
         '<div class="stTop"></div>' +
         '<div class="stBig"></div>' +
         '<div class="stSub"></div>' +
@@ -4739,6 +5753,8 @@ function makeSettle(host, wcfg){
       '<div class="stRow" hidden>' +
         '<label class="stLab">Seconds <input type="number" class="stSecs" min="5" max="300" step="5"></label>' +
         '<input type="text" class="stMsg" maxlength="60">' +
+        '<label class="stLab"><input type="checkbox" class="stPledgeCk"> Flag at the first bell for ' +
+          '<input type="number" class="stPledgeMin" min="1" max="10" step="1" aria-label="Pledge minutes"> min</label>' +
       '</div>' +
       '<div class="chips">' +
         '<button type="button" class="chip stStart">Start</button>' +
@@ -4748,14 +5764,26 @@ function makeSettle(host, wcfg){
       '<div class="tHint">Starts itself at the bell · Space restarts</div>' +
     '</div>');
   var q = function(s){ return host.querySelector(s); };
-  var top = q(".stTop"), big = q(".stBig"), sub = q(".stSub");
+  var top = q(".stTop"), big = q(".stBig"), sub = q(".stSub"), flag = q(".stFlag");
   var row = q(".stRow"), secsIn = q(".stSecs"), msgIn = q(".stMsg");
+  var pledgeCk = q(".stPledgeCk"), pledgeMin = q(".stPledgeMin");
   var t = { endAt: null, tid: null };
   var doneUntil = null, doneTid = null;
+  /* v7.1 the Pledge window: set only by the day's FIRST bell; the
+     flag rides the count, then holds the stage until this passes */
+  var pledgeUntil = null, pledgeTid = null;
   var destroyed = false;
+  function fmtMS(ms){
+    var sec = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+  }
   /* v6.30: the Hamilton quote ladder is GONE (Croix changed his mind).
      The audible swell stays — the count speaks with sound, not lyrics. */
   function paint(){
+    var pledging = pledgeUntil !== null && Date.now() < pledgeUntil;
+    flag.hidden = !pledging;
+    host.classList.toggle("stPledge", pledging);
+    host.classList.toggle("stPledgeOnly", pledging && !t.endAt && !doneUntil);
     if (t.endAt){
       var remMs = Math.max(0, t.endAt - Date.now());
       var rem = Math.ceil(remMs / 1000);
@@ -4771,6 +5799,11 @@ function makeSettle(host, wcfg){
       big.textContent = wcfg.msgDone || DEF_DONE;   // user data: textContent only
       big.className = "stBig stMsgB";
       sub.textContent = "";
+    } else if (pledging){
+      top.textContent = "Pledge & announcements";
+      big.textContent = fmtMS(pledgeUntil - Date.now());
+      big.className = "stBig stPledgeT";
+      sub.textContent = "then the slides";
     } else {
       top.textContent = "At the bell";
       big.textContent = (wcfg.seconds || 30) + "s";
@@ -4790,14 +5823,37 @@ function makeSettle(host, wcfg){
     try { document.dispatchEvent(new CustomEvent("deckhand:settle",
       { detail: { phase: phase, host: host } })); } catch(e){}
   }
-  function start(auto){
+  function start(auto, firstBell){
     doneUntil = null; clearTimeout(doneTid);
     clearTimeout(t.tid); clearTimeout(halfTid);
     lastTickSec = null;
+    /* the Pledge window opens ONLY on the day's first bell (auto) */
+    if (auto === true && firstBell === true && wcfg.pledge && wcfg.pledge.on){
+      clearTimeout(pledgeTid);
+      pledgeUntil = Date.now() + (wcfg.pledge.minutes || 2) * 60000;
+      pledgeTid = setTimeout(pledgeOver, pledgeUntil - Date.now());
+    } else if (auto !== true){
+      clearPledge();                             // a manual restart drops the flag
+    }
     t.endAt = Date.now() + (wcfg.seconds || 30) * 1000;
     if (auto === true) tell("start");
     loop();
   }
+  function clearPledge(){
+    clearTimeout(pledgeTid); pledgeTid = null; pledgeUntil = null;
+  }
+  /* the flag's time is up: if the count and its spell are already
+     over, THIS is the hand-off to the slides */
+  function pledgeOver(){
+    if (destroyed) return;
+    var wasHolding = !t.endAt && !doneUntil && pledgeUntil !== null;
+    clearPledge();
+    paint();
+    if (wasHolding) tell("end");
+  }
+  var pledgePaintTid = setInterval(function(){
+    if (pledgeUntil !== null && !t.endAt) paint();   // the m:ss holds ticking
+  }, 500);
   /* v6.29→32, Croix: "as the clock gets closer to zero the louder the
      seconds gets" … "make the clock only audibly start ticking at 10
      then keep the fast sounding ticks at 5." The count is SILENT until
@@ -4817,6 +5873,10 @@ function makeSettle(host, wcfg){
       try { Sound.soft(); } catch(e){}             // v6.30: one pleasant note
       doneTid = setTimeout(function(){
         doneUntil = null; paint();
+        /* the Pledge holds the stage past the spell: the flag stays up
+           and the hand-off waits for pledgeOver() */
+        if (pledgeUntil !== null && Date.now() < pledgeUntil) return;
+        clearPledge();
         tell("end");
       }, DONE_MS);
       paint();
@@ -4846,6 +5906,7 @@ function makeSettle(host, wcfg){
     clearTimeout(t.tid); clearTimeout(doneTid); clearTimeout(halfTid);
     lastTickSec = null;
     t.endAt = null; doneUntil = null;
+    clearPledge();
     paint();
     tell("reset");                               // a staged routine stands down
   }
@@ -4867,7 +5928,8 @@ function makeSettle(host, wcfg){
     /* the bell ALWAYS wins — a run already in flight (a kid tapping
        Start 20s early was a daily kill-switch, adversarial find) is
        simply restarted with the takeover */
-    if (cur && cur !== prevIn) start(true);
+    /* the day's first block (idx 0) is the Pledge bell */
+    if (cur && cur !== prevIn) start(true, s.idx === 0);
     prevIn = cur;
   }
   var watchTid = setInterval(bellWatch, 250);
@@ -4879,8 +5941,18 @@ function makeSettle(host, wcfg){
       secsIn.value = wcfg.seconds || 30;
       msgIn.value = wcfg.msgDone || "";
       msgIn.placeholder = DEF_DONE;
+      pledgeCk.checked = !!wcfg.pledge.on;
+      pledgeMin.value = wcfg.pledge.minutes || 2;
     }
   });
+  pledgeCk.addEventListener("change", function(){ wcfg.pledge.on = this.checked; });
+  function commitPledgeMin(){
+    var v = Math.round(+String(pledgeMin.value).trim());
+    if (isFinite(v) && v >= 1) wcfg.pledge.minutes = Math.min(10, v);
+    pledgeMin.value = wcfg.pledge.minutes;
+  }
+  pledgeMin.addEventListener("change", commitPledgeMin);
+  pledgeMin.addEventListener("blur", commitPledgeMin);
   function commitSecs(){
     /* an EMPTIED field is not a choice: "" coerces to 0 and clamped to
        5s — a 5-second settle window nobody asked for (adversarial
@@ -4901,7 +5973,7 @@ function makeSettle(host, wcfg){
   secsIn.addEventListener("blur", commitSecs);
   msgIn.addEventListener("change", commitMsg);
   msgIn.addEventListener("blur", commitMsg);
-  [secsIn, msgIn].forEach(function(inp){
+  [secsIn, msgIn, pledgeMin].forEach(function(inp){
     inp.addEventListener("keydown", function(e){
       if (Alarm.isOn()) return;                    // never shield the alarm
       e.stopPropagation();
@@ -4919,10 +5991,11 @@ function makeSettle(host, wcfg){
     entryActive: function(){ return false; },
     rebuild: paint, resync: function(){},
     _doneMs: function(ms){ DONE_MS = ms; },        // test hook
+    _pledgeUntil: function(){ return pledgeUntil; }, // test hook
     destroy: function(){
       destroyed = true;
-      clearInterval(watchTid);
-      clearTimeout(t.tid); clearTimeout(doneTid); clearTimeout(halfTid);
+      clearInterval(watchTid); clearInterval(pledgePaintTid);
+      clearTimeout(t.tid); clearTimeout(doneTid); clearTimeout(halfTid); clearTimeout(pledgeTid);
     }
   };
 }
@@ -5289,7 +6362,7 @@ function makeYT(host, wcfg){
         '<span class="ytTip">If the player shows &ldquo;Error 153&rdquo; on this ' +
         'machine, tap &#8599; Tab &mdash; it opens on YouTube itself and keeps ' +
         'playing while you work the board.</span></div>' +
-      '<iframe class="embFrame ytFrame" title="YouTube player" allowfullscreen hidden></iframe>' +
+      '<iframe class="embFrame ytFrame" title="YouTube player" allow="fullscreen *; autoplay *; encrypted-media *; picture-in-picture *" hidden></iframe>' +
       '<div class="chips ytStations" role="group" aria-label="Saved stations"></div>' +
       '<div class="ytLib" hidden></div>' +
       '<div class="row ytRow">' +
@@ -5818,11 +6891,14 @@ function makeQR(host, wcfg){
 function makeMeter(host, wcfg){
   if (!(wcfg.limit >= 10 && wcfg.limit <= 100)) wcfg.limit = 60;
   if (!isObj(wcfg.records)) wcfg.records = {};
+  if ([0.5, 1, 2, 3].indexOf(wcfg.strikeSecs) === -1) wcfg.strikeSecs = 1;
+  if (!isObj(wcfg.tally) || !isObj(wcfg.tally.byPeriod)) wcfg.tally = { date: "", byPeriod: {} };
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="mtStreak">0:00</div>' +
       '<div class="mtStreakLab">Quiet streak</div>' +
       '<div class="mtStrikes"></div>' +
+      '<div class="mtTally"></div>' +
       '<div class="mtRecord"></div>' +
       '<div class="mtTrack"><div class="mtFill"></div><div class="mtMark"></div></div>' +
       '<div class="mtStatus">—</div>' +
@@ -5831,25 +6907,51 @@ function makeMeter(host, wcfg){
       '<div class="mtRow"><span>Limit</span>' +
         '<input class="mtLimit" type="range" min="10" max="100" step="5">' +
       '</div>' +
+      '<div class="mtRow mtSens"><span>Strike after</span>' +
+        '<span class="chips mtSensChips">' +
+          '<button class="chip chipSm" type="button" data-secs="0.5">&frac12;s</button>' +
+          '<button class="chip chipSm" type="button" data-secs="1">1s</button>' +
+          '<button class="chip chipSm" type="button" data-secs="2">2s</button>' +
+          '<button class="chip chipSm" type="button" data-secs="3">3s</button>' +
+        '</span>' +
+      '</div>' +
     '</div>');
   var q = function(s){ return host.querySelector(s); };
   var fill = q(".mtFill"), mark = q(".mtMark"), status = q(".mtStatus");
   var btn = q(".mtBtn"), slider = q(".mtLimit");
   var streakEl = q(".mtStreak"), streakLab = q(".mtStreakLab");
-  var strikesEl = q(".mtStrikes"), recordEl = q(".mtRecord");
+  var strikesEl = q(".mtStrikes"), recordEl = q(".mtRecord"), tallyEl = q(".mtTally");
   var stream = null, ctx = null, analyser = null, buf = null;
   var raf = null, level = 0, destroyed = false, pending = false;
   /* game state */
-  var streakStart = null, overSince = null, struck = false, strikes = 0;
+  var streakStart = null, overSince = null, struck = false, struckN = 0, strikes = 0;
   var curPeriod = null, lastShownSec = -1, flashTid = null;
   function gamePeriod(){ return currentPeriodLabel() || "Class"; }
   function fmtStreak(sec){
     return Math.floor(sec / 60) + ":" + String(Math.floor(sec % 60)).padStart(2, "0");
   }
+  /* today's tally: {date, byPeriod} — a new day starts at zero */
+  function tallyToday(){
+    var dk = dateKey(now());
+    if (wcfg.tally.date !== dk){ wcfg.tally = { date: dk, byPeriod: {} }; }
+    return wcfg.tally.byPeriod;
+  }
+  function paintTally(){
+    var by = tallyToday();
+    var parts = Object.keys(by).filter(function(k){ return by[k] > 0; })
+      .map(function(k){ return k + " " + by[k]; });
+    tallyEl.textContent = parts.length ? "Today: " + parts.join(" · ") : "";
+  }
+  function paintSens(){
+    host.querySelectorAll(".mtSensChips .chip").forEach(function(c){
+      c.setAttribute("aria-pressed", +c.dataset.secs === wcfg.strikeSecs ? "true" : "false");
+    });
+  }
   function paintGame(){
     streakLab.textContent = "Quiet streak — " + curPeriod;
     strikesEl.textContent = strikes > 5 ? "✖ × " + strikes
       : new Array(strikes + 1).join("✖ ").trim();
+    paintTally();
     var bestP = null, bestS = 0;
     Object.keys(wcfg.records).forEach(function(k){
       if (wcfg.records[k] > bestS){ bestS = wcfg.records[k]; bestP = k; }
@@ -5894,9 +6996,19 @@ function makeMeter(host, wcfg){
     var nowMs = Date.now();
     if (over){
       if (overSince === null) overSince = nowMs;
-      if (!struck && nowMs - overSince > 2000){  // sustained noise, not a cough
-        struck = true;
+      /* v7.1: a strike lands after `strikeSecs` over the line, and
+         ANOTHER every 2× that while the room stays loud — a roar that
+         never stops used to cost exactly one strike ("too forgiving") */
+      var need = wcfg.strikeSecs * 1000;
+      var due = struck ? overSince + need + struckN * need * 2 : overSince + need;
+      if (nowMs >= due){
+        struck = true; struckN++;
         strikes++;
+        var by = tallyToday();
+        if (curPeriod && curPeriod !== "__proto__" &&
+            (hasOwn(by, curPeriod) || Object.keys(by).length < 12)){
+          by[curPeriod] = (hasOwn(by, curPeriod) ? by[curPeriod] : 0) + 1;
+        }
         streakStart = null;                      // the streak dies with the strike
         lastShownSec = -1;
         host.classList.add("strikeFlash");
@@ -5905,7 +7017,7 @@ function makeMeter(host, wcfg){
         paintGame();
       }
     } else {
-      overSince = null; struck = false;
+      overSince = null; struck = false; struckN = 0;
       if (streakStart === null) streakStart = nowMs;
     }
     var sec = streakStart ? (nowMs - streakStart) / 1000 : 0;
@@ -5960,6 +7072,10 @@ function makeMeter(host, wcfg){
   });
   slider.addEventListener("change", function(){ this.blur(); });
   wireButton(btn, start);
+  host.querySelectorAll(".mtSensChips .chip").forEach(function(c){
+    wireButton(c, function(){ wcfg.strikeSecs = +c.dataset.secs; paintSens(); });
+  });
+  paintSens();
   return {
     kind: "meter",
     label: function(){ return wcfg.label || "Noise Meter"; },
@@ -5973,7 +7089,7 @@ function makeMeter(host, wcfg){
     },
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){ slider.value = wcfg.limit; paintMark(); paintGame(); },
+    rebuild: function(){ slider.value = wcfg.limit; paintMark(); paintSens(); paintGame(); },
     resync: function(){ if (analyser && raf === null) raf = requestAnimationFrame(frame); },
     destroy: function(){
       destroyed = true;
@@ -6146,11 +7262,21 @@ function makeEmbed(host, wcfg){
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody embBody">' +
       '<div class="embEmpty">' +
-        '<b>Put your slides on the board.</b><br>' +
-        'Paste a Google Slides link below — the edit link works, or ' +
-        'File &rarr; Share &rarr; Publish to web for the cleanest player. ' +
+        '<b>Put your slides on the board.</b>' +
+        '<div class="embPaste">' +
+          '<input class="embBigIn" type="url" maxlength="500" spellcheck="false" inputmode="url" ' +
+            'placeholder="Paste a Google Slides link here" aria-label="Slides link">' +
+          '<button class="btn embLoad" type="button" style="background:var(--turq); color:var(--navy)">Load</button>' +
+        '</div>' +
+        '<div class="embHint">The edit link works; File &rarr; Share &rarr; Publish to web gives the cleanest player. ' +
         'YouTube, PhET, GeoGebra and Desmos links work too.</div>' +
-      '<iframe class="embFrame" title="Embedded slides" allowfullscreen hidden></iframe>' +
+        '<div class="chips embSaved" role="group" aria-label="Saved decks"></div>' +
+      '</div>' +
+      /* v7.1: `allow` with a * allowlist — `allowfullscreen` alone only
+         delegates to the frame's OWN origin, and a YouTube player nested
+         inside a Google Slides deck is a third origin (Croix: "be able
+         to fullscreen YouTube videos in slides embedded") */
+      '<iframe class="embFrame" title="Embedded slides" allow="fullscreen *; autoplay *; encrypted-media *; picture-in-picture *" hidden></iframe>' +
       '<div class="embKeys" hidden>&#9000; Keys are in the slides &mdash; tap the board background to give them back to Deckhand</div>' +
       '<div class="embRow">' +
         '<label class="embPP" title="A different deck for each class, following the bells">' +
@@ -6160,6 +7286,12 @@ function makeEmbed(host, wcfg){
           'placeholder="Paste a Slides link, then tap away">' +
         '<button class="embGo" type="button" aria-label="Reload">' +
           '<svg class="wIcon"><use href="#i-reload"/></svg></button>' +
+        '<button class="embGo embStar" type="button" aria-label="Save this deck to the library">&#9734;</button>' +
+      '</div>' +
+      '<div class="embRow2">' +
+        '<label class="embPP" title="Hidden on the board; the dock\u2019s Slides button and the settle-in bring it up">' +
+          '<input type="checkbox" class="embShelfCk"> Stage only</label>' +
+        '<div class="chips embSaved embSaved2" role="group" aria-label="Saved decks"></div>' +
       '</div>' +
       '<div class="embNote" hidden></div>' +
     '</div>');
@@ -6167,8 +7299,11 @@ function makeEmbed(host, wcfg){
   var empty = q(".embEmpty"), frame = q(".embFrame");
   var keysPill = q(".embKeys"), input = q(".embIn");
   var ppCk = q(".embPPck"), perSel = q(".embPer");
-  var row = q(".embRow");
-  var emptyHome = empty.innerHTML;               // single-mode onboarding text
+  var row = q(".embRow"), row2 = q(".embRow2");
+  var bigIn = q(".embBigIn"), shelfCk = q(".embShelfCk");
+  var emptyTitle = q(".embEmpty b");
+  if (!Array.isArray(wcfg.saved)) wcfg.saved = [];
+  if (typeof wcfg.stageOnly !== "boolean") wcfg.stageOnly = false;
   /* the link row hides once a deck is loaded (Croix: "couldn't get the
      link to go away") — the ✎ pencil in the strip brings it back */
   var rowOpen = false;
@@ -6189,7 +7324,51 @@ function makeEmbed(host, wcfg){
     }
   });
   function paintRow(){
-    row.hidden = !!activeURL() && !rowOpen;      // empty widget always shows it
+    row.hidden = !rowOpen;                       // v7.1: the empty state has its own big paste box
+    row2.hidden = !rowOpen;                      // shelf + library ride with ✎
+    /* a card being edited never vanishes under the teacher's finger —
+       "Stage only" takes effect when the ✎ row closes */
+    host.classList.toggle("embEditing", rowOpen);
+    renderSaved();
+  }
+  /* ---- v7.1 saved decks: ☆ keeps the current deck under a name; a
+     tap loads it into whatever the card is showing (single url or the
+     current period). PLAY action — live while locked, like stations. */
+  var savedSig = null;
+  function renderSaved(){
+    /* rebuild only on a real change: the input's blur repaints this row,
+       and rebuilding under a finger mid-tap detached the chip before its
+       click could land (the scoreboard rename bug, again) */
+    var cur = activeURL();
+    var sig = JSON.stringify(wcfg.saved) + "|" + cur;
+    if (sig === savedSig) return;
+    savedSig = sig;
+    host.querySelectorAll(".embSaved").forEach(function(rowEl){
+      rowEl.innerHTML = "";
+      var editable = rowEl.classList.contains("embSaved2");
+      wcfg.saved.forEach(function(d, i){
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "chip chipSm embDeck";
+        b.textContent = d.name;                  // user data: textContent only
+        b.setAttribute("aria-pressed", d.url === activeURL() ? "true" : "false");
+        wireButton(b, function(){ loadURL(d.url); });
+        rowEl.appendChild(b);
+        if (editable){
+          var del = document.createElement("button");
+          del.type = "button"; del.className = "chip ytDel";
+          del.textContent = "×";
+          del.setAttribute("aria-label", "Remove " + d.name + " from the library");
+          wireButton(del, function(){ wcfg.saved.splice(i, 1); savedSig = null; renderSaved(); });
+          rowEl.appendChild(del);
+        }
+      });
+      rowEl.hidden = !wcfg.saved.length;
+    });
+  }
+  function loadURL(u){
+    input.value = u;
+    draftFor = wcfg.perPeriod ? resolvedPeriod() : null;
+    applyInput();
   }
   /* ---- per-period deck resolution ---- */
   function resolvedPeriod(){
@@ -6251,16 +7430,11 @@ function makeEmbed(host, wcfg){
       frame.removeAttribute("src");
       if (wcfg.perPeriod){
         var p = resolvedPeriod();
-        empty.innerHTML = "";
-        var b = document.createElement("b");
-        b.textContent = p ? "No deck for " + p + " yet." : "No class in session.";
-        empty.appendChild(b);
-        empty.appendChild(document.createElement("br"));
-        empty.appendChild(document.createTextNode(
-          p ? "Paste its Slides link below — each period keeps its own."
-            : "Pick a period below to load or set its deck."));
+        emptyTitle.textContent = p ? "No deck for " + p + " yet." : "No class in session.";
+        bigIn.placeholder = p ? "Paste " + p + "\u2019s Slides link here" : "Pick a period below, then paste its link";
       } else {
-        empty.innerHTML = emptyHome;             // single mode gets its guidance back
+        emptyTitle.textContent = "Put your slides on the board.";
+        bigIn.placeholder = "Paste a Google Slides link here";
       }
     }
     paintRow();
@@ -6306,6 +7480,39 @@ function makeEmbed(host, wcfg){
     render();                                    // away; a mere blur leaves it be
     syncInput();                                 // show the CURRENT period's deck
   }
+  /* the big paste target in the empty state */
+  function bigLoad(){
+    var v = bigIn.value.trim();
+    if (!v) return;
+    loadURL(v);
+    bigIn.value = "";
+  }
+  wireButton(q(".embLoad"), bigLoad);
+  bigIn.addEventListener("keydown", function(e){
+    if (Alarm.isOn()) return;
+    e.stopPropagation();
+    if (e.key === "Enter"){ bigLoad(); bigIn.blur(); }
+    if (e.key === "Escape") bigIn.blur();
+  });
+  bigIn.addEventListener("blur", function(){ if (bigIn.value.trim()) bigLoad(); });
+  /* ☆ Save: the deck showing joins the library under a short name */
+  wireButton(q(".embStar"), function(){
+    var u = activeURL();
+    if (!u){ showNote("Load a deck first, then \u2606 saves it."); return; }
+    if (wcfg.saved.some(function(d){ return d.url === u; })){ showNote("That deck is already in the library."); return; }
+    if (wcfg.saved.length >= 8){ showNote("The library holds 8 decks \u2014 remove one (\u2716) to add another."); return; }
+    var name = (wcfg.perPeriod && resolvedPeriod()) ? resolvedPeriod() + " deck" : "Deck " + (wcfg.saved.length + 1);
+    var nm = window.prompt ? (window.prompt("Name this deck", name) || "") : name;
+    nm = nm.trim().slice(0, 24);
+    if (!nm) return;
+    wcfg.saved.push({ name: nm, url: u });
+    savedSig = null; renderSaved();
+  });
+  shelfCk.checked = wcfg.stageOnly;
+  shelfCk.addEventListener("change", function(){
+    wcfg.stageOnly = this.checked;
+    try { Canvas.syncShelf(host._entry); } catch(e){}
+  });
   ppCk.addEventListener("change", function(){
     wcfg.perPeriod = this.checked;
     var p = currentPeriodLabel();
@@ -6340,7 +7547,7 @@ function makeEmbed(host, wcfg){
     e.stopPropagation();
     if (e.key === "Enter" || e.key === "Escape") input.blur();
   });
-  wireButton(q(".embGo"), function(){            // reload the deck in place
+  wireButton(q(".embGo:not(.embStar)"), function(){   // reload the deck in place
     applyInput();
     var u = activeURL();                         // the deck actually SHOWING —
     if (u){ frame.src = ""; frame.src = u; }     // never the stale single-mode url
@@ -6477,8 +7684,12 @@ function applyWaveMotion(){
    never on phones, never under reduced motion — and a kid who spots
    one gets a tiny math moment instead of a distraction. */
 var Sea = (function(){
-  var THINGS = ["serpent", "fish", "buoy", "whale"];
-  var DUR = { serpent: 31000, fish: 4200, buoy: 47000, whale: 12500 };
+  var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "bottle", "attack"];
+  var DUR = { serpent: 31000, fish: 4200, buoy: 47000, whale: 12500,
+              turtle: 40500, school: 15500, bottle: 52000, attack: 9500 };
+  /* the attack is the loud one — rarer from the scheduler, likelier
+     from a tap on the boat (the kids asked for it) */
+  var WEIGHT = { attack: 0.35 };
   var last = null, tid = null;
   /* v6.19 (Croix watched for a few minutes and met nobody): the first
      visitor comes 1–2 min after launch, the rest every 3–7 min. Rare
@@ -6499,15 +7710,32 @@ var Sea = (function(){
       return th && th.classList.contains("go");
     });
   }
+  var rockTid = null;
   function play(name){
     var th = document.getElementById("sea-" + name);
     if (!th || th.classList.contains("go")) return;
     th.classList.add("go");
+    if (name === "attack"){
+      /* the lunge lands at ~38% — the boat lurches then rights itself */
+      clearTimeout(rockTid);
+      rockTid = setTimeout(function(){
+        var bt = document.getElementById("boat");
+        if (!bt) return;
+        bt.classList.add("rocked");
+        setTimeout(function(){ bt.classList.remove("rocked"); }, 2600);
+      }, Math.round(DUR.attack * 0.36));
+    }
     timers[name] = setTimeout(function(){ th.classList.remove("go"); }, DUR[name] || 5000);
   }
-  function pickOne(){
+  function pickOne(bias){
     var pool = THINGS.filter(function(n){ return n !== last; });
-    var pick = pool[Math.floor(Math.random() * pool.length)];
+    var total = 0, w = pool.map(function(n){
+      var x = WEIGHT[n] !== undefined ? WEIGHT[n] : 1;
+      if (bias && n === bias) x *= 3;             // a tap on the boat wants the show
+      total += x; return x;
+    });
+    var r = Math.random() * total, pick = pool[pool.length - 1];
+    for (var i = 0; i < pool.length; i++){ r -= w[i]; if (r <= 0){ pick = pool[i]; break; } }
     last = pick;
     play(pick);
   }
@@ -6516,7 +7744,7 @@ var Sea = (function(){
      over an alarm; stage/phone hide the boat so it can't fire there. */
   function summon(){
     if (busy() || Alarm.isOn()) return;
-    pickOne();
+    pickOne("attack");
   }
   /* display:none (stage mode, a shrunken window) CANCELS a CSS animation;
      without this, the restarted glide outlives its wall-clock removal
@@ -6528,6 +7756,9 @@ var Sea = (function(){
       if (th) th.classList.remove("go");
       clearTimeout(timers[n]);
     });
+    clearTimeout(rockTid);
+    var bt = document.getElementById("boat");
+    if (bt) bt.classList.remove("rocked");
   }
   function tick(){
     if (ok() && !busy()) pickOne();              // never two at once
@@ -6593,6 +7824,30 @@ var Canvas = (function(){
     }
     return cfg.scenes[0];
   }
+  /* v7.1 stage-only widgets (embed / yt): hidden on the board, brought
+     up by their dock chip or by the settle-in routine, hidden again on
+     exit. Croix's "wonky flow" — hiding the deck behind the clock so it
+     could be staged at the bell — is what this replaces. */
+  function syncShelf(en){
+    if (!en) return;
+    var shelved = !!(en.cfg && en.cfg.stageOnly) && (en.type === "embed" || en.type === "yt");
+    en.el.classList.toggle("wShelf", shelved);
+    refreshShelf();
+  }
+  function refreshShelf(){
+    var host = $("shelf");
+    if (!host) return;
+    host.innerHTML = "";
+    entries.forEach(function(e2){
+      if (!(e2.cfg && e2.cfg.stageOnly) || (e2.type !== "embed" && e2.type !== "yt")) return;
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "pill";
+      b.textContent = "\u25B6 " + (e2.cfg.label || WIDGET_NAMES[e2.type]);
+      b.setAttribute("aria-label", "Stage " + (e2.cfg.label || WIDGET_NAMES[e2.type]));
+      wireButton(b, function(){ if (focusedEntry !== e2) setFocus(e2); });
+      host.appendChild(b);
+    });
+  }
   function applyBox(en){
     en.el.style.left = en.cfg.x + "%";
     en.el.style.top = en.cfg.y + "%";
@@ -6627,7 +7882,7 @@ var Canvas = (function(){
   }
   function timerish(){ return entries.filter(function(e){ return e.type !== "clock"; }); }
   function cycleSel(){
-    var list = timerish();
+    var list = timerish().filter(function(e2){ return !e2.el.classList.contains("wShelf") || e2 === focusedEntry; });
     if (!list.length) return;
     var i = selected ? list.indexOf(selected) : -1;
     var next = list[(i + 1) % list.length];
@@ -6946,6 +8201,7 @@ var Canvas = (function(){
     var elx = en.el;
     elx._entry = en;
     syncPin(en);       // before the wired guard: the clock card is re-mounted
+    syncShelf(en);
     if (elx.dataset.wired) return;
     elx.dataset.wired = "1";
     elx.querySelector(".strip").addEventListener("pointerdown", function(e){
@@ -7105,8 +8361,8 @@ var Canvas = (function(){
     sc.widgets.forEach(function(w){ if (w.label) usedLabels[w.label] = true; });
     var label = base, k = 2;
     while (usedLabels[label]) label = base + " " + (k++);
-    var ww = type === "embed" ? 48 : 27;         // a deck needs real estate
-    var wh = type === "embed" ? 72 : 46;
+    var ww = type === "embed" ? 48 : (type === "text" ? 40 : 27);   // decks + notes need real estate
+    var wh = type === "embed" ? 72 : (type === "text" ? 60 : 46);
     /* Spawn into EMPTY SPACE. Every add used to land on the same per-type
        spot — three taps of + Add looked like one widget, and the pile
        baked into saved files (the triple review's most-agreed finding).
@@ -7227,6 +8483,7 @@ var Canvas = (function(){
     refocusDeck();   // the ghost needs no keys — the clicker does
   }
   function refreshDock(){
+    refreshShelf();
     var sel = $("sceneSel");
     sel.innerHTML = "";
     cfg.scenes.forEach(function(sc){
@@ -7250,6 +8507,10 @@ var Canvas = (function(){
     });
     $("addClockBtn").disabled = locked || full ||
       activeSceneObj().widgets.some(function(w){ return w.type === "clock"; });
+    /* v7.2: a menu of greyed tiles says WHY (the ⏱ menu already did) */
+    var note = $("addMenuNote");
+    note.hidden = !(locked || full);
+    note.textContent = locked ? "Unlock the board to add widgets" : "Board is full \u2014 12 widgets";
     /* switching scenes is a VIEW action (like ⛶), so it works locked —
        a stations rotation shouldn't need unlock → switch → relock.
        The ⋯ manager (new/rename/delete) stays locked out above. */
@@ -7314,31 +8575,43 @@ var Canvas = (function(){
   function buildTimerMenu(){
     var m = $("focusTimerMenu");
     m.innerHTML = "";
-    function pill(text, fn){
+    var strip = document.createElement("div");
+    strip.className = "strip"; strip.textContent = "TIMER";
+    m.appendChild(strip);
+    var presetsList = document.createElement("div"), otherList = document.createElement("div");
+    presetsList.className = "tmList"; otherList.className = "tmList";
+    m.appendChild(presetsList); m.appendChild(otherList);
+    function pill(text, fn, host, sub){
       var b = document.createElement("button");
       b.type = "button"; b.className = "pill";
       b.textContent = text;
+      if (sub){
+        var sp = document.createElement("span");
+        sp.className = "tmSub"; sp.textContent = sub;
+        b.appendChild(sp);
+      }
       wireButton(b, function(){ hideTimerMenu(); fn(); });
-      m.appendChild(b);
+      host.appendChild(b);
       return b;
     }
     (cfg.timer.presetsMinutes && cfg.timer.presetsMinutes.length
       ? cfg.timer.presetsMinutes : [5]).forEach(function(min){
-      pill(min + " min", function(){ summonGhost(min * 60); }).dataset.min = min;
+      pill(min + " min", function(){ summonGhost(min * 60); }, presetsList).dataset.min = min;
     });
     /* same contract as the widget's own chip: only during a period,
        and re-checked LIVE at pick time (the menu can sit open) */
     var s = null;
     try { s = Bell.statusAt(now()); } catch(e){}
     if (s && s.type === "in" && s.remainMs > 30000){
+      var left = Math.round(s.remainMs / 60000);
       pill("Until bell", function(){
         var s2 = null;
         try { s2 = Bell.statusAt(now()); } catch(e){}
         if (s2 && s2.type === "in" && s2.remainMs >= 5000)
           summonGhost(Math.floor(s2.remainMs / 1000));
-      }).dataset.bell = "1";
+      }, otherList, left >= 1 ? left + " min" : "").dataset.bell = "1";
     }
-    pill("Type a time…", summonTimer).dataset.custom = "1";
+    pill("Type a time\u2026", summonTimer, otherList, "digits").dataset.custom = "1";
     /* No timer in the scene and no way to make one (locked, or the
        12-widget cap): SAY so — a menu of silent no-op pills reads as
        "broken" mid-lesson (adversarial find) */
@@ -7385,6 +8658,8 @@ var Canvas = (function(){
        one scene must never fire against another */
     del.classList.remove("confirm");
     del.textContent = "Delete current";
+    var nmEl = $("sceneMenuName");
+    if (nmEl) nmEl.textContent = cfg.activeScene || "";
   }
   /* ---- scene CRUD (the dropdown was read-only until v6.6) ---- */
   function uniqueSceneName(base, ignore){
@@ -7553,6 +8828,7 @@ var Canvas = (function(){
     },
     selApi: function(){ return selected ? selected.api : null; },
     cycleSel: cycleSel,
+    syncShelf: syncShelf,
     closeMenus: function(){
       /* returns whether anything was open — Escape peels ONE layer:
          an open menu first, the stage only on the next press */
@@ -7607,6 +8883,69 @@ var Settings = (function(){
     grpReg: [$("taGrpReg1"), $("taGrpReg2"), $("taGrpReg3"), $("taGrpReg4")],
     grpWed: [$("taGrpWed1"), $("taGrpWed2"), $("taGrpWed3"), $("taGrpWed4")]
   };
+
+  /* ---- v7.2: the tab rail — one panel at a time ---- */
+  var TABS = ["general", "bells", "timer", "rosters", "scheds", "device"];
+  var PANEL_ID = { general: "secGeneral", bells: "secBells", timer: "secTimer",
+                   rosters: "secRosters", scheds: "secScheds", device: "secDevice" };
+  var curTab = "general";
+  function showTab(id){
+    if (TABS.indexOf(id) === -1) return false;
+    curTab = id;
+    TABS.forEach(function(t){
+      var on = t === id;
+      $(PANEL_ID[t]).hidden = !on;
+      var tab = wrap.querySelector('.setTab[data-tab="' + t + '"]');
+      if (tab){ tab.setAttribute("aria-selected", on ? "true" : "false"); tab.tabIndex = on ? 0 : -1; }
+    });
+    if (id === "device") paintDevice();
+    $("setPanels").scrollTop = 0;
+    return true;
+  }
+  function currentTab(){ return curTab; }
+
+  /* ---- v7.2: week-type cards — a BlockEditor pair each, with the
+     text boxes one tap away for teachers who paste a schedule ---- */
+  var wk = [];                                    // {reg, wed, text, card}
+  function wkCards(){
+    if (wk.length) return wk;
+    for (var i = 0; i < 4; i++){
+      var card = wrap.querySelector('.wkCard[data-wk="' + i + '"]');
+      wk.push({
+        card: card, text: false,
+        reg: BlockEditor(card.querySelector('.blkEd[data-ed="reg"]')),
+        wed: BlockEditor(card.querySelector('.blkEd[data-ed="wed"]'))
+      });
+    }
+    return wk;
+  }
+  /* switch card i between the block editor and the text boxes, carrying
+     the current edits across; a text box that can't be parsed keeps the
+     card in text mode and says why */
+  function textMode(i, on){
+    var c = wkCards()[i];
+    if (!c) return false;
+    on = !!on;
+    if (on === c.text) return true;
+    if (on){
+      var rr = c.reg.read(), rw = c.wed.read();
+      if (!rr.errors.length) f.grpReg[i].value = blocksToText(rr.blocks);
+      if (!rw.errors.length) f.grpWed[i].value = blocksToText(rw.blocks);
+    } else {
+      var errs = [];
+      var regB = parseTemplateText(f.grpReg[i].value, "Mon/Tue/Thu/Fri", errs);
+      var wedB = parseTemplateText(f.grpWed[i].value, "Wednesday", errs);
+      if (errs.length){ setMsg(errs.join("\n"), false); return false; }
+      c.reg.fill(regB); c.wed.fill(wedB);
+    }
+    c.text = on;
+    c.card.querySelector(".wkEd").hidden = on;
+    c.card.querySelector(".wkText").hidden = !on;
+    var tog = c.card.querySelector(".wkTextTog");
+    tog.setAttribute("aria-pressed", on ? "true" : "false");
+    tog.textContent = on ? "Edit as blocks" : "Edit as text";
+    return true;
+  }
 
   function isOpen(){ return !wrap.hidden; }
   function blocksToText(blocks){
@@ -7663,24 +9002,29 @@ var Settings = (function(){
     f.presets.value = (cfg.timer.presetsMinutes || []).join(",");
     rebuildDefaultOptions();
     rebuildAnchorOptions();
+    var cards = wkCards();
     for (var i = 0; i < 4; i++){
       var g = cfg.bell.groups[i];
       f.grpNames[i].value = g ? g.name : "";
       f.grpReg[i].value = g ? blocksToText(g.regular) : "";
       f.grpWed[i].value = g ? blocksToText(g.wednesday) : "";
+      cards[i].reg.fill(g ? g.regular : []);
+      cards[i].wed.fill(g ? g.wednesday : []);
     }
     renderRosters();
     setMsg("", false);
     disarmReset();
     paintStoreNote();
+    try { $("settingsVer").textContent = "v" + cfg.appVersion; } catch(e){}
     /* a failed device save led here: point straight at Export */
     if (SaveState.failed() || !Store.ok){
       var dl = $("dlBtn");
       dl.classList.add("dlNudge");
       setTimeout(function(){ dl.classList.remove("dlNudge"); }, 2600);
-    }
+      showTab("device");
+    } else showTab(curTab);                 // the tab you left is the tab you get back
     wrap.hidden = false;
-    var first = focusableItems()[0];      // first VISIBLE control (sections may be closed)
+    var first = focusableItems()[0];      // the selected tab in the rail
     if (first) first.focus();
   }
   function close(viaKeyboard){
@@ -7693,16 +9037,28 @@ var Settings = (function(){
   }
   /* Keep Tab cycling inside the dialog — the backdrop is not part of
      the lesson and a focused Start button behind it must never fire.
-     Controls inside a CLOSED <details> are skipped (their offsetParent
-     is non-null in Chromium, so visibility must be checked properly). */
+     Only the rail, the VISIBLE tab panel and the action row count: the
+     other panels are hidden (display:none), and the rail's unselected
+     tabs are reached with the arrow keys, not Tab. */
   function focusableItems(){
     return Array.prototype.filter.call(
-      $("settingsCard").querySelectorAll("button, input, select, textarea, summary"),
+      $("settingsCard").querySelectorAll("button, input, select, textarea"),
       function(n){
-        if (n.disabled) return false;
-        if (n.tagName !== "SUMMARY" && n.closest && n.closest("details:not([open])")) return false;
+        if (n.disabled || n.tabIndex < 0) return false;
+        if (n.closest(".setSec") && n.closest(".setSec").id !== PANEL_ID[curTab]) return false;
         return n.checkVisibility ? n.checkVisibility() : n.offsetParent !== null;
       });
+  }
+  function railKey(e){
+    var i = TABS.indexOf(curTab), n = i;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") n = (i + 1) % TABS.length;
+    else if (e.key === "ArrowUp" || e.key === "ArrowLeft") n = (i + TABS.length - 1) % TABS.length;
+    else if (e.key === "Home") n = 0;
+    else if (e.key === "End") n = TABS.length - 1;
+    else return;
+    showTab(TABS[n]);
+    wrap.querySelector('.setTab[data-tab="' + TABS[n] + '"]').focus();
+    e.preventDefault();
   }
   function trapTab(e){
     var items = focusableItems();
@@ -7739,8 +9095,9 @@ var Settings = (function(){
     grid.innerHTML = "";
     rosterLabels().forEach(function(label){
       var box = document.createElement("div");
+      box.className = "fField";
       var lab = document.createElement("label");
-      lab.className = "setLabel";
+      lab.className = "fLabel";
       lab.textContent = label;
       var ta = document.createElement("textarea");
       ta.rows = 6;
@@ -7823,21 +9180,30 @@ var Settings = (function(){
 
     var newGroups = [];
     var seenNames = Object.create(null);   // no inherited keys ("constructor"...)
+    var cards = wkCards();
     for (var i = 0; i < 4; i++){
-      var regText = f.grpReg[i].value;
-      if (!regText.trim()){
-        if (f.grpWed[i].value.trim()){
-          errors.push('Week type ' + (i+1) + ': Wednesday times need regular times too');
-        }
+      var nm = f.grpNames[i].value.trim() || ("Week " + (i+1));
+      var regBlocks, wedBlocks, regEmpty, wedEmpty;
+      if (cards[i].text){                                  // the text boxes rule this card
+        var regText = f.grpReg[i].value;
+        regEmpty = !regText.trim();
+        wedEmpty = !f.grpWed[i].value.trim();
+        regBlocks = regEmpty ? [] : parseTemplateText(regText, nm + " (regular)", errors);
+        wedBlocks = wedEmpty ? [] : parseTemplateText(f.grpWed[i].value, nm + " (Wednesday)", errors);
+      } else {                                             // the block editors do
+        var rr = cards[i].reg.read(), rw = cards[i].wed.read();
+        regEmpty = !rr.blocks.length && !rr.errors.length;
+        wedEmpty = !rw.blocks.length && !rw.errors.length;
+        rr.errors.forEach(function(m){ errors.push(nm + " (regular): " + m); });
+        rw.errors.forEach(function(m){ errors.push(nm + " (Wednesday): " + m); });
+        regBlocks = rr.blocks; wedBlocks = rw.blocks;
+      }
+      if (regEmpty){
+        if (!wedEmpty) errors.push('Week type ' + (i+1) + ': Wednesday times need regular times too');
         continue;                                          // empty regular = removed
       }
-      var nm = f.grpNames[i].value.trim() || ("Week " + (i+1));
       if (seenNames[nm]){ errors.push('Two week types share the name "' + nm + '"'); }
       seenNames[nm] = true;
-      var regBlocks = parseTemplateText(regText, nm + " (regular)", errors);
-      var wedBlocks = f.grpWed[i].value.trim()
-        ? parseTemplateText(f.grpWed[i].value, nm + " (Wednesday)", errors)
-        : [];
       if (regBlocks.length) newGroups.push({ name: nm, regular: regBlocks, wednesday: wedBlocks });
     }
 
@@ -8048,16 +9414,57 @@ var Settings = (function(){
       n.textContent = "Saving to this device FAILED (storage full or blocked). Export a copy so nothing is lost.";
       n.classList.add("warn");
     } else {
-      var when = SaveState.lastSavedAt();
-      n.textContent = "Changes save automatically on this device" +
-        (when ? " \u00b7 last saved " + when : "") +
-        ". Export a copy for a backup or to move the board to another machine.";
+      n.textContent = "Changes save automatically on this device. Export a copy for a backup or to move the board to another machine.";
     }
+  }
+  /* the Device tab's fact cards */
+  function paintDevice(){
+    paintStoreNote();
+    var when = null;
+    try { when = SaveState.lastSavedAt(); } catch(e){}
+    $("devVersion").textContent = "v" + cfg.appVersion;
+    $("devSaved").textContent = when ? when : (Store.ok ? "Not yet" : "Blocked");
+    $("devSource").textContent = cfgSource === "device" ? "Device copy" : "File settings";
   }
 
   return {
     init: function(){
       wireButton(el.setBtn, open);
+      /* the tab rail */
+      Array.prototype.forEach.call(wrap.querySelectorAll(".setTab"), function(b){
+        wireButton(b, function(){ showTab(b.dataset.tab); });
+      });
+      $("setRail").addEventListener("keydown", railKey);
+      /* week-type cards: text toggles and + Add block */
+      Array.prototype.forEach.call(wrap.querySelectorAll(".wkTextTog"), function(b){
+        wireButton(b, function(){
+          var i = +b.dataset.wk;
+          if (textMode(i, !wkCards()[i].text)) setMsg("", false);
+        });
+      });
+      Array.prototype.forEach.call(wrap.querySelectorAll(".wkAdd"), function(b){
+        wireButton(b, function(){
+          var i = +b.closest(".wkCard").dataset.wk;
+          var row = wkCards()[i][b.dataset.ed].add();
+          var lab = row.querySelector(".blkLabel");
+          if (lab) lab.focus();
+        });
+      });
+      /* v7.1 tests and tools set `secX.open = true` on the old <details>
+         sections \u2014 the same property on a panel now selects its tab
+         (and, for Schedules, opens the text boxes those callers type into) */
+      TABS.forEach(function(t){
+        try {
+          Object.defineProperty($(PANEL_ID[t]), "open", {
+            get: function(){ return curTab === t; },
+            set: function(v){
+              if (!v) return;
+              showTab(t);
+              if (t === "scheds") for (var i = 0; i < 4; i++) textMode(i, true);
+            }
+          });
+        } catch(e){}
+      });
       wireButton($("applyBtn"), apply);
       wireButton($("dlBtn"), download);
       wireButton($("resetBtn"), resetToFile);
@@ -8070,7 +9477,8 @@ var Settings = (function(){
         this.value = "";
       });
     },
-    isOpen: isOpen, open: open, close: close, trapTab: trapTab
+    isOpen: isOpen, open: open, close: close, trapTab: trapTab,
+    showTab: showTab, currentTab: currentTab, textMode: textMode
   };
 })();
 
@@ -8203,6 +9611,7 @@ var Keys = (function(){
 
     // 2. settings dialog: trap Tab inside it regardless of focus target
     if (Settings.isOpen() && k === "Tab"){ Settings.trapTab(e); return; }
+    if (DayEditor.isOpen()) return;              // the sheet handles its own keys
 
     // 3. typing in a form field: let it type; Esc closes settings.
     // Board selects (scene, period) are the exception: they take no typed
@@ -8272,7 +9681,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -8298,7 +9707,10 @@ window.Deckhand = {
   sound: Sound,                                 // test hook: tick swell is wrapped
   sea: Sea.play,                                // summon a sea thing by name
   seaEvery: Sea._every,                         // test hook: hurry the sea
-  qr: qrMatrix                                  // test hook: decode-verified in CI
+  qr: qrMatrix,                                 // test hook: decode-verified in CI
+  settings: {                                   // v7.2: the settings tab rail
+    showTab: Settings.showTab, currentTab: Settings.currentTab, textMode: Settings.textMode
+  }
 };
 })();
 </script>

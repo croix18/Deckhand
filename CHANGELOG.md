@@ -2,6 +2,45 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.1.0 — 2026-09-26
+
+The week-of-notes release (Croix's notebook, Sep 21–25).
+
+**Bells.** A TODAY row on the home screen: *Regular times* / *Wednesday times* / *Custom
+day…* — run the Wednesday schedule on any day, or build a one-off day in a touch editor
+(rows of label + time pickers, start from a schedule, shift all ±5, no text syntax).
+Dated, so it expires by itself; a custom day runs even with No bells picked. The same
+row editor replaces the schedule textareas in Settings ("Edit as text" keeps them).
+
+**Note widget → rich text.** Bold, italic, underline, six colors, four fonts, bullets,
+alignment, per-selection A+/A−, and whole-note sizes S/M/L/XL/Fit. Base type is much
+bigger (students couldn't read it) and notes spawn at 40×60%. Stored as sanitized HTML
+(allowlisted tags, validated inline styles — sanitized on every load and commit; hostile
+markup is inert); old `# / - / 1)` notes convert once.
+
+**Noise game.** *Strike after* ½/1/2/3 s (was a fixed 2 s), strikes repeat while the
+room stays loud, and a per-period tally for the day shows under the strikes.
+
+**Slides card.** Big paste box + Load in the empty state; ☆ saves the showing deck to a
+library of up to 8 (chips in the ✎ row); *Stage only* hides the card on the board and
+gives it a ▶ chip in the dock — the settle-in still hands off to it at the bell, and
+Exit puts it away. Iframes carry `allow="fullscreen *; autoplay *; …"` so a YouTube
+video inside an embedded deck can go fullscreen.
+
+**The Pledge.** At the day's first bell the settle-in shows the flag with the count,
+holds the stage after the count for N minutes (default 2, ✎ row), then hands off to
+the slides.
+
+**The sea.** The boat sways (3 s heel on the rig; the 45 s drift stays). Four new
+visitors — turtle, a darting school, a message in a bottle, and the ATTACK: the
+serpent surfaces behind the hull, strikes the sails twice, the boat lurches. A tap on
+the boat favors it.
+
+**Design pass.** Settings is a tabbed preferences panel (General · Bells · Timer ·
+Rosters · Schedules · Device) with one field grid, 48 px controls, and a fixed footer;
+the + Add menu is icon tiles with descriptions; the scene manager and ⏱ preset menu are
+sheets in the same language.
+
 ## 7.0.0 — 2026-09-25
 
 **Persistence.** The board autosaves to the device (localStorage `deckhand.config`) —

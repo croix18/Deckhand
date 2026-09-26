@@ -154,9 +154,10 @@ test.describe("settings", () => {
     ok((await dh.bellText()).includes("24 min"), "precondition: " + await dh.bellText());
     const clockBefore = await dh.text("#clock");
     await page.click("#setBtn");
+    await dh.tab("bells");
+    await page.fill("#sNudge", "600");
     await dh.openScheds();
     await page.fill("#sGrpName1", "Teal");
-    await page.fill("#sNudge", "600");
     await page.click("#applyBtn");
     ok((await dh.text("#setErrors")) === "Applied.", "msg: " + await dh.text("#setErrors"));
     await page.click("#closeBtn");
@@ -201,6 +202,7 @@ test.describe("settings", () => {
     await dh.launch();
     await dh.addTimer();
     await page.click("#setBtn");
+    await dh.tab("timer");
     await page.click("#sPresets");
     await page.keyboard.type("5");
     const cls = (await dh.attr("#timer", "class")) || "";
@@ -218,12 +220,14 @@ test.describe("settings", () => {
     await dh.launch();
     ok((await dh.bellText()).includes("5th"), "precondition: " + await dh.bellText());
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.selectOption("#sAnchorWeek", "0");  // week of Aug 31 was actually Teal
     await page.click("#applyBtn");
     await page.click("#closeBtn");
     let line = await dh.bellText();
     ok(line.includes("Teal Week") && line.includes("2nd"), "flip failed: " + line);
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.uncheck("#sAuto");                 // rotation off -> startup default governs
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -251,6 +255,7 @@ test.describe("settings", () => {
     await page.keyboard.press("3");               // No bells
     await dh.launch();
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.uncheck("#sAuto");
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -276,6 +281,7 @@ test.describe("day strip", () => {
     ok((await page.locator("#dayStrip .dayChip.next").textContent()).trim() === "3rd",
       "next wrong");
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.uncheck("#sStrip");
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -335,6 +341,7 @@ test.describe("period hero", () => {
     await dh.openAt("#t=2026-09-08T10:30");
     await dh.launch();
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.uncheck("#sCount");
     await page.click("#applyBtn");
     await page.click("#closeBtn");

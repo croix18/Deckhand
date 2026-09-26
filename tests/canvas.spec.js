@@ -389,6 +389,7 @@ test.describe("Next Bell widget", () => {
     await page.keyboard.press(" ");            // Space on a bell widget is a safe no-op
     ok(await dh.text("#startBtn") === "Start", "Space leaked to a timer");
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.check("#sCountSecs");
     await page.click("#applyBtn");
     await page.click("#closeBtn");

@@ -309,7 +309,7 @@ test.describe("sanitize hardening", () => {
     const w = c.scenes[0].widgets[1];
     ok(w.type === "picker" && w.period === "" && w.size === undefined,
       "widget fields not scrubbed: " + JSON.stringify(w));
-    ok(c.scenes[0].widgets[2].text === "", "junk text kept: " + JSON.stringify(c.scenes[0].widgets[2]));
+    ok(c.scenes[0].widgets[2].html === "" && c.scenes[0].widgets[2].size === "auto", "junk text kept: " + JSON.stringify(c.scenes[0].widgets[2]));
     const em = c.scenes[0].widgets[3];
     ok(em.type === "embed" && em.perPeriod === false && em.period === "",
       "embed flags not scrubbed: " + JSON.stringify(em));
@@ -426,6 +426,7 @@ test.describe("round trip", () => {
     await expect.poll(() => page.evaluate(() => window.Deckhand.scene)).toBe("Stations");
     await page.click("#lockBtn");
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.fill("#sNudge", "45");
     const [dl] = await Promise.all([
       page.waitForEvent("download"),

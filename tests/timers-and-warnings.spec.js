@@ -1,6 +1,6 @@
 /* Timer visual styles, digit entry, settings keyboard/focus, next-class
  * countdowns, end-of-class warning, bathroom window, clock seconds, volume,
- * settings sections, weekend bar, coarse countdown.
+ * settings tab rail, weekend bar, coarse countdown.
  * Ported from test_deckhand_v6.js (v5.2–v5.3 sections). */
 const { test, expect, ok } = require("./helpers");
 
@@ -43,6 +43,7 @@ test.describe("timer visual styles", () => {
     await dh.launch();
     await dh.addTimer();
     await page.click("#setBtn");
+    await dh.tab("timer");
     await page.selectOption("#sTimerStyle", "tide");
     await page.click("#applyBtn");
     ok(!(await page.locator("#tideTank").isHidden()), "tank hidden");
@@ -65,6 +66,7 @@ test.describe("timer visual styles", () => {
     await dh.launch();
     await dh.addTimer();
     await page.click("#setBtn");
+    await dh.tab("timer");
     await page.selectOption("#sTimerStyle", "disc");
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -95,6 +97,7 @@ test.describe("timer visual styles", () => {
     await dh.launch();
     await dh.addTimer();
     await page.click("#setBtn");
+    await dh.tab("timer");
     await page.selectOption("#sTimerStyle", "ring");
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -154,22 +157,32 @@ test.describe("settings keyboard and focus", () => {
       "keyboard close lost focus");
   });
 
-  test("settings organized in 5 sections; schedules + rosters collapsed", async ({ page, dh }) => {
+  test("v7.2: settings is a tab rail — 6 tabs, one panel visible, General first", async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
     await page.click("#setBtn");
-    const n = await page.locator("details.setSec").count();
-    ok(n === 5, "sections: " + n);
-    ok(!(await page.evaluate(() => document.getElementById("secScheds").open)),
-      "schedules open by default");
-    ok(!(await page.evaluate(() => document.getElementById("secRosters").open)),
-      "rosters open by default");
-    ok(await page.evaluate(() => document.getElementById("secGeneral").open),
-      "general collapsed");
+    const tabs = await page.locator("#setRail .setTab").allTextContents();
+    ok(tabs.join("|") === "General|Bells|Timer|Rosters|Schedules|Device", "tabs: " + tabs.join("|"));
+    const vis = async () => page.evaluate(() =>
+      [...document.querySelectorAll("#setPanels .setSec")].filter(s => !s.hidden).map(s => s.id));
+    ok((await vis()).join() === "secGeneral", "panels visible on open: " + (await vis()).join());
+    ok(await page.evaluate(() => window.Deckhand.settings.currentTab()) === "general", "currentTab");
+    await page.click("#tabScheds");
+    ok((await vis()).join() === "secScheds", "panels after tapping Schedules: " + (await vis()).join());
+    ok(await page.evaluate(() => window.Deckhand.settings.currentTab()) === "scheds", "currentTab after tap");
+    ok(await dh.attr("#tabScheds", "aria-selected") === "true", "tab not selected");
+    // the week types are BLOCK editors by default; the text boxes are one toggle away
+    ok(await page.locator("#secScheds .wkCard").count() === 4, "week-type cards");
+    ok(await page.locator("#taGrpReg1").isHidden(), "textarea shown by default");
+    await page.evaluate(() => window.Deckhand.settings.textMode(0, true));
+    ok(!(await page.locator("#taGrpReg1").isHidden()), "textarea hidden in text mode");
+    ok(await page.locator('#secScheds .wkCard[data-wk="1"] .blkRow').count() > 0, "block rows missing");
+    // the action row and the error slot are outside the tab panels
+    ok(!(await page.locator("#applyBtn").isHidden()) && !(await page.locator("#closeBtn").isHidden()), "actions hidden");
     await page.keyboard.press("Escape");
   });
 
-  test("Tab reaches Apply/Close with Schedules collapsed", async ({ page, dh }) => {
+  test("v7.2: Tab stays inside the visible panel + rail + actions; arrows move the rail", async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
     await page.click("#setBtn");
@@ -179,20 +192,34 @@ test.describe("settings keyboard and focus", () => {
       seen.add(await page.evaluate(() => document.activeElement.id || document.activeElement.tagName));
     }
     ok(seen.has("applyBtn") && seen.has("closeBtn"), "never reached buttons: " + [...seen].join(","));
+    ok(seen.has("sName"), "never reached the General panel: " + [...seen].join(","));
+    ok(!seen.has("sPresets") && !seen.has("taGrpReg1") && !seen.has("sNudge"),
+      "Tab reached a hidden panel: " + [...seen].join(","));
+    ok(![...seen].some(id => id === "BODY" || id === "launchBtn" || id === "setBtn"),
+      "focus escaped the dialog: " + [...seen].join(","));
+    // the rail: arrow keys switch tabs, and Tab then walks THAT panel
+    await page.focus("#tabGeneral");
+    await page.keyboard.press("ArrowDown");
+    ok(await page.evaluate(() => window.Deckhand.settings.currentTab()) === "bells", "ArrowDown did not switch");
+    ok(await page.evaluate(() => document.activeElement.id) === "tabBells", "focus not on the new tab");
+    await page.keyboard.press("Tab");
+    ok(await page.evaluate(() => document.activeElement.id) === "sDefault",
+      "Tab from the rail went to " + await page.evaluate(() => document.activeElement.id));
     await page.keyboard.press("Escape");
   });
 
-  test("reopening settings with General collapsed still focuses inside dialog", async ({ page, dh }) => {
+  test("v7.2: reopening settings returns to the tab you left, with focus inside the dialog", async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
     await page.click("#setBtn");
-    await page.evaluate(() => { document.getElementById("secGeneral").open = false; });
+    await page.click("#tabRosters");
     await page.click("#closeBtn");
     await page.click("#setBtn");
     const inside = await page.evaluate(() =>
       !!(document.activeElement && document.activeElement.closest("#settingsCard")));
     ok(inside, "focus not inside dialog");
-    await page.evaluate(() => { document.getElementById("secGeneral").open = true; });
+    ok(await page.evaluate(() => window.Deckhand.settings.currentTab()) === "rosters", "tab not remembered");
+    ok(!(await page.locator("#rosterGrid").isHidden()), "rosters panel not showing");
     await page.keyboard.press("Escape");
   });
 });
@@ -237,6 +264,7 @@ test.describe("next-class countdown", () => {
     await dh.launch();
     ok(!(await page.locator("#bellWrap").isHidden()), "precondition");
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.uncheck("#sNext");
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -290,6 +318,7 @@ test.describe("end-of-class warning and countdown", () => {
     // v7.0: the warning is navy text on a coral chip — assert the background
     await expect(page.locator("#bellSub")).toHaveCSS("background-color", CORAL);
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.uncheck("#sCount");             // countdown off...
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -302,6 +331,7 @@ test.describe("end-of-class warning and countdown", () => {
     await dh.launch();
     ok(!((await dh.attr("#bellWrap", "class")) || "").includes("warn"), "warn too early");
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.fill("#sWarn", "15");
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -313,6 +343,7 @@ test.describe("end-of-class warning and countdown", () => {
     await dh.launch();
     ok((await dh.text("#bellSub")) === "39 min until bell", "default: " + await dh.text("#bellSub"));
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.check("#sCountSecs");
     await page.click("#applyBtn");
     await page.click("#closeBtn");
@@ -345,6 +376,7 @@ test.describe("bathroom window, clock seconds, volume", () => {
     await dh.launch();
     ok((await dh.attr("#bathPill", "class")) === "closed", "late not closed");
     await page.click("#setBtn");
+    await dh.tab("bells");
     await page.uncheck("#sBath");
     await page.click("#applyBtn");
     await page.click("#closeBtn");

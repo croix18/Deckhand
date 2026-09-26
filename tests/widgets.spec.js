@@ -128,11 +128,9 @@ test.describe("rosters, picker, groups", () => {
     await dh.openAt("");
     await dh.launch();
     await page.click("#setBtn");
-    await page.evaluate(() => {
-      document.getElementById("secRosters").open = true;
-      document.getElementById("secScheds").open = true;
-    });
+    await dh.tab("rosters");
     await page.fill('#rosterGrid textarea[data-period="2nd"]', "Ava, Ben");
+    await dh.openScheds();
     const ta = await page.inputValue("#taGrpReg1");
     await page.fill("#taGrpReg1", ta.replace("2nd 10:16-11:09", "Second 10:16-11:09"));
     await page.click("#applyBtn");
@@ -188,49 +186,70 @@ test.describe("text box", () => {
     ok(await page.locator(".w-text .txBtn").isHidden(), "Done visible before editing");
     await page.click(".w-text .wEdit");          // pencil in the strip opens the editor
     ok(!(await page.locator(".w-text .txBtn").isHidden()), "Done missing while editing");
-    await page.keyboard.type("Warm-up:\n3r + 5 = 20");
+    await page.keyboard.type("Warm-up:");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("3r + 5 = 20");
     ok(await dh.text("#startBtn") === "Start", "typing started the timer");
     ok(await dh.text("#timer") === "5:00", "digits leaked to entry: " + await dh.text("#timer"));
     await page.click(".w-text .txBtn");          // Done
-    const t1 = (await lastWidget(page)).text;
-    ok(t1 === "Warm-up:\n3r + 5 = 20", "config text: " + JSON.stringify(t1));
+    const t1 = (await lastWidget(page)).html;     // v7.1: rich notes live as sanitized html
+    ok(/Warm-up:/.test(t1) && /3r \+ 5 = 20/.test(t1) && !/<script|onerror/i.test(t1), "config html: " + JSON.stringify(t1));
     ok(await page.locator(".w-text .txBtn").isHidden(), "Done lingers after commit");
     ok((await page.locator(".w-text .txInner").textContent()).includes("3r + 5"), "display");
     await page.click(".w-text .txDisplay");      // tap text re-opens editing
     await page.keyboard.type("solve for r … ");
     await page.keyboard.press("Escape");         // Esc commits, never leaks
-    ok((await lastWidget(page)).text.includes("solve for r"), "escape did not commit");
-    ok(await page.locator(".w-text .txArea").isHidden(), "still editing after Esc");
+    ok((await lastWidget(page)).html.includes("solve for r"), "escape did not commit");
+    ok(await page.locator(".w-text .txBar").isHidden(), "still editing after Esc");
   });
 
-  test("text box: headings/bullets/numbers render; lock makes it read-only", async ({ page, dh }) => {
+  test("text box: v7.1 rich text — size, bold, color survive a commit; hostile html is inert; legacy notes migrate; lock makes it read-only", async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
     await dh.addW("addTextBtn");
     await page.click(".w-text .txDisplay");      // tapping the text edits too
-    await page.keyboard.type("# Finished?\n## Next steps\n- IXL first\n- then NHIs\n1) unit review\nplain line");
-    await page.click(".w-text .txBtn");
-    const f = await page.evaluate(() => {
-      const w = document.querySelector(".w-text");
-      return {
-        h1: w.querySelectorAll(".txH1").length,
-        h2: w.querySelectorAll(".txH2").length,
-        bullets: w.querySelectorAll(".txBullet").length,
-        nums: w.querySelectorAll(".txNum").length,
-        left: w.querySelector(".txInner").classList.contains("txLeft"),
-        h1text: (w.querySelector(".txH1") || {}).textContent
-      };
+    await page.keyboard.type("Finished?");
+    await page.evaluate(() => {                  // select the word, then use the toolbar
+      const inner = document.querySelector(".w-text .txInner");
+      const r = document.createRange(); r.selectNodeContents(inner);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
     });
-    ok(f.h1 === 1 && f.h1text === "Finished?", "heading: " + JSON.stringify(f));
-    ok(f.h2 === 1 && f.bullets === 2 && f.nums === 1, "structure: " + JSON.stringify(f));
-    ok(f.left, "structured note not left-aligned");
-    // hashes/dashes are stripped from display but kept in the source text
-    ok((await lastWidget(page)).text.startsWith("# Finished?"), "markup lost from config");
+    await page.click('.w-text [data-cmd="bold"]');
+    await page.click('.w-text [data-cmd="color"][data-arg="#FF7F6A"]');
+    await page.click('.w-text [data-cmd="size"][data-arg="xl"]');
+    await page.click(".w-text .txBtn");
+    const w = await lastWidget(page);
+    ok(w.size === "xl", "size chip not saved: " + w.size);
+    ok(/font-weight:900/.test(w.html) && /rgb\(255, 127, 106\)/.test(w.html), "bold/color lost: " + w.html);
+    const scale = await page.evaluate(() => getComputedStyle(document.querySelector(".w-text .txInner")).getPropertyValue("--tx-scale").trim());
+    ok(scale === "2", "XL scale not applied: " + scale);
+    // hostile config html is sanitized before it ever renders
+    const clean = await page.evaluate(() => {
+      const en = document.querySelector(".w-text")._entry;
+      en.cfg.html = '<img src=x onerror=alert(1)><script>alert(2)</script><b onclick="x()">hi</b>' +
+        '<a href="javascript:alert(3)">link</a><span style="color:red;position:fixed;font-size:900px">big</span>';
+      en.api.rebuild();
+      return document.querySelector(".w-text .txInner").innerHTML;
+    });
+    ok(!/onerror|onclick|<script|<img|<a |position/.test(clean) && /<b>hi<\/b>/.test(clean) && /font-size:4em/.test(clean),
+      "sanitizer let something through: " + clean);
+    // a pre-7.1 note ("# heading", "- bullet") converts to markup once
+    await page.evaluate(() => {
+      const en = document.querySelector(".w-text")._entry;
+      en.cfg.html = ""; en.cfg.text = "# Finished?\n- IXL first\n1) unit review\nplain line";
+      window.Deckhand.flush();                      // the device copy now carries a legacy note
+    });
+    await dh.reopen("");
+    const mig = await page.evaluate(() => { const ws = window.Deckhand.config.scenes[0].widgets; return ws[ws.length - 1]; });
+    ok(/font-size:1.45em/.test(mig.html) && /<ul><li>IXL first<\/li><\/ul>/.test(mig.html) && /<ol><li>unit review/.test(mig.html),
+      "legacy note not migrated: " + mig.html);
+    await dh.launch();
+    ok((await page.locator(".w-text .txInner").textContent()).includes("Finished?"), "migrated note not shown");
     // locked board: pencil hidden, tapping the text does nothing
     await page.click("#lockBtn");
     ok(await page.locator(".w-text .wEdit").isHidden(), "pencil visible while locked");
     await page.click(".w-text .txDisplay");
-    ok(await page.locator(".w-text .txArea").isHidden(), "locked text still editable");
+    ok(await page.locator(".w-text .txBar").isHidden(), "locked text still editable");
     await dh.unlock();
   });
 });

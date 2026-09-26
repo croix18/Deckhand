@@ -110,7 +110,14 @@ const test = base.test.extend({
         await page.mouse.up();
         await page.waitForTimeout(120);
       },
-      openScheds: async () => page.evaluate(() => { document.getElementById("secScheds").open = true; }),
+      // v7.2: Settings is a tab rail — one panel visible at a time. tab()
+      // shows one; openScheds() shows Schedules with all four week types
+      // in TEXT mode (the textareas the older specs type into).
+      tab: async id => page.evaluate(id => window.Deckhand.settings.showTab(id), id),
+      openScheds: async () => page.evaluate(() => {
+        window.Deckhand.settings.showTab("scheds");
+        [0, 1, 2, 3].forEach(i => window.Deckhand.settings.textMode(i, true));
+      }),
       text: async sel => (await page.textContent(sel)).trim(),
       attr: async (sel, a) => await page.getAttribute(sel, a),
       bellText: async () => {
