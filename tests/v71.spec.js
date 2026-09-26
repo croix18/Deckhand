@@ -256,26 +256,54 @@ test.describe("the Pledge", () => {
 });
 
 test.describe("the sea", () => {
-  test("v7.1: eight visitors, the attack rocks the boat, the rig sways", async ({ page, dh }) => {
+  test("v7.1/7.4: eight visitors, the attack slithers in and rocks the boat, the rig sways, the sea has depth", async ({ page, dh }) => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await pg.goto(dh.url + "#t=2026-09-24T10:30");
     await pg.waitForFunction(() => !!window.Deckhand);
     await pg.click("#launchBtn");
     const things = await pg.evaluate(() => [...document.querySelectorAll("#sea .seaThing")].map(t => t.id.replace("sea-", "")));
-    ok(things.join() === "serpent,fish,turtle,school,bottle,attack,whale,buoy".split(",").sort().join() ||
-       things.length === 8, "visitors: " + things.join());
+    ok(things.sort().join() === "serpent,fish,turtle,school,paper,attack,whale,buoy".split(",").sort().join(),
+       "visitors: " + things.join());                      // v7.4: the bottle became a paper boat
     const sway = await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btRig")).animationName);
     ok(/boatSway/.test(sway), "no sway on the rig: " + sway);
     await pg.evaluate(() => window.Deckhand.sea("attack"));
     await expect(pg.locator("#sea-attack")).toHaveClass(/go/);
-    await expect(pg.locator("#boat")).toHaveClass(/rocked/, { timeout: 6000 });
+    // v7.4: it slithers in for ~8s first — the first strike (and the lurch) lands at ~10.5s
+    await expect(pg.locator("#boat")).not.toHaveClass(/rocked/);
+    await expect(pg.locator("#boat")).toHaveClass(/rocked/, { timeout: 14000 });
     await expect(pg.locator("#boat")).not.toHaveClass(/rocked/, { timeout: 6000 });
     await expect(pg.locator("#sea-attack")).not.toHaveClass(/go/, { timeout: 12000 });
     // a tap on the boat while something plays is refused; the school and turtle play too
-    for (const n of ["turtle", "school", "bottle"]){
+    for (const n of ["turtle", "school", "paper"]){
       await pg.evaluate(x => window.Deckhand.sea(x), n);
       await expect(pg.locator("#sea-" + n)).toHaveClass(/go/);
       await pg.evaluate(x => document.getElementById("sea-" + x).classList.remove("go"), n);
     }
+    // v7.4 DEPTH: a laned visitor plays far (small, behind the boat) or near (big, in front)
+    await pg.evaluate(() => window.Deckhand.sea("buoy", "near"));
+    let lane = await pg.evaluate(() => {
+      const b = document.getElementById("sea-buoy");
+      return { near: b.classList.contains("near"), box: b.parentElement.className,
+               ls: getComputedStyle(b).getPropertyValue("--ls").trim(),
+               afterBoat: !!(document.getElementById("boat").compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) };
+    });
+    ok(lane.near && lane.box === "seaNear" && lane.ls === "1.2" && lane.afterBoat, "near lane: " + JSON.stringify(lane));
+    await pg.evaluate(() => document.getElementById("sea-buoy").classList.remove("go"));
+    await pg.evaluate(() => window.Deckhand.sea("buoy", "far"));
+    lane = await pg.evaluate(() => {
+      const b = document.getElementById("sea-buoy");
+      return { far: b.classList.contains("far"), box: b.parentElement.className,
+               ls: getComputedStyle(b).getPropertyValue("--ls").trim(),
+               beforeBoat: !!(document.getElementById("boat").compareDocumentPosition(b) & Node.DOCUMENT_POSITION_PRECEDING) };
+    });
+    ok(lane.far && lane.box === "seaFar" && lane.ls === ".62" && lane.beforeBoat, "far lane: " + JSON.stringify(lane));
+    await pg.evaluate(() => document.getElementById("sea-buoy").classList.remove("go"));
+    // the boat heaves on the front wave's clock; the wave itself swells
+    const heave = await pg.evaluate(() => ({
+      boat: getComputedStyle(document.getElementById("boat")).animationName,
+      wave: getComputedStyle(document.getElementById("wavesFront")).animationName,
+      wake: getComputedStyle(document.querySelector("#boat .btWake")).animationName
+    }));
+    ok(/seaHeave/.test(heave.boat) && /frontSwell/.test(heave.wave) && /wakeFoam/.test(heave.wake), "no swell: " + JSON.stringify(heave));
   });
 });

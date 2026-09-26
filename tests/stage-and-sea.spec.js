@@ -429,9 +429,10 @@ test.describe("v6.18 sea", () => {
       const wfr = wf.getBoundingClientRect(), wvr = wv.getBoundingClientRect();
       const boat = document.getElementById("boat").getBoundingClientRect();
       return {
-        aligned: Math.abs(wfr.left - wvr.left) < 2 &&
-                 Math.abs(wfr.width - wvr.width) < 2 &&
-                 Math.abs(wfr.bottom - wvr.bottom) < 2,
+        /* v7.4: the front wave runs 16px past each edge (it sways) and
+           heaves ±4px — it must still cover the back wave's band */
+        aligned: wfr.left <= wvr.left && wfr.right >= wvr.right &&
+                 Math.abs(wfr.bottom - wvr.bottom) < 6,
         pe: getComputedStyle(wf).pointerEvents,
         boatDepth: boat.bottom - wvr.top,        // hull well into the wave band
         things: ["serpent", "fish", "buoy", "whale"].every(n =>

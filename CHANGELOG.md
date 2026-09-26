@@ -2,7 +2,22 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
-## 7.3.0 — 2026-09-26
+## 7.4.0 — 2026-09-27
+
+**The sea, with depth.** The front wave now heaves and sways, and the boat heaves on the
+same clock, so its hull rides the swell instead of sinking under it. Visitors pass in
+two lanes: far (small, behind the boat) or near (large, in front) — the buoy, the
+turtle and the paper boat pick a lane per show. The boat grew a mast, a waterline
+stripe and a little wake.
+
+**The visitors.** The school of fish swims head-first and stays under the waterline
+(it was crossing the sand dune tail-first). The message-in-a-bottle is gone; a paper
+boat folded from a ruled worksheet drifts by instead. The serpent glides head-first.
+The ATTACK slithers in from the right edge over eight seconds, head low and coils
+rolling, then rears up behind the sails, strikes twice (the boat lurches on the first)
+and goes under — sixteen seconds. The whale has an act: it surfaces heading left,
+spouts twice, arches and dives fluke-up, then breaches nose-first and lands in a splash.
+
 
 **Nine more sides on the tape.** The lofi tape had four sides that shared one e-piano
 and one beat; it has ten now, each with its own key, tempo, progression, motif, voice

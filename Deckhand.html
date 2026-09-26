@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.3.0",
+  "appVersion": "7.4.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1631,19 +1631,32 @@
      (Croix, field: "The boat didn't move") — "Always on" in Settings
      now overrides it. Glides, spawns, the alarm pulse and every other
      UI motion still strictly honor the device flag above. */
-  body.waveMotion #boat{animation:boatDrift 45s ease-in-out infinite alternate;}
+  /* v7.4: the SWELL. The front wave heaves and sways on a 5.6s clock and
+     the boat heaves on the SAME clock (the `translate` property, so it
+     composes with the drift on `transform`) — both start at boot, so the
+     hull rides the wave instead of sinking under it (Croix: "the boat
+     regularly dips beneath the waves even when it's not being attacked"). */
+  body.waveMotion #wavesFront{animation:frontSwell 5.6s ease-in-out infinite alternate;}
+  body.waveMotion #boat{animation:boatDrift 45s ease-in-out infinite alternate,
+                        seaHeave 5.6s ease-in-out infinite alternate;}
   body.waveMotion #boat.hop{animation:boatDrift 45s ease-in-out infinite alternate,
+                            seaHeave 5.6s ease-in-out infinite alternate,
                             boatHop .8s ease-out;}
   /* v7.1: the SWAY — a 3.2s heel on the rig itself (the 45s drift was
      1.4px/s: invisible from a desk); a bitten boat lurches for 2.6s */
   body.waveMotion #boat .btRig{animation:boatSway 3.2s ease-in-out infinite alternate;}
   body.waveMotion #boat.rocked .btRig{animation:boatSway 3.2s ease-in-out infinite alternate,
                                       boatLurch 2.6s cubic-bezier(.3,.7,.3,1);}
+  body.waveMotion #boat .btWake{animation:wakeFoam 3.2s ease-in-out infinite alternate;}
   .btRig{transform-box:view-box; transform-origin:20px 31px;}
   #boat{overflow:visible;}
   .btPen{visibility:hidden;}
   #boat.pennant .btPen{visibility:visible;}
   .btMast{stroke:var(--navy); stroke-width:1.6; stroke-linecap:round;}
+  .btMastFix{stroke:var(--navy); stroke-width:1.3; stroke-linecap:round;}
+  .btStripe{stroke:var(--paleturq); stroke-width:.9; opacity:.9;}
+  .btWake path{fill:none; stroke:var(--white); stroke-width:1.5; stroke-linecap:round; opacity:.8;}
+  .btWake{transform-box:view-box; transform-origin:20px 33px;}
   .btPenBg{fill:var(--navy);}   /* coral stays the alert color */
   .btPenText{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; font-size:14px; fill:var(--turq); letter-spacing:.02em;}
   .btPenCloth{transform-box:view-box; transform-origin:21px -14px; transform:scaleX(0);}
@@ -1659,7 +1672,9 @@
   @keyframes mastUp{0%{transform:scaleY(0);} 5%,100%{transform:scaleY(1);}}
   .btMast{transform-box:view-box; transform-origin:20px 4px;}
   .seaThing.go{will-change:transform;}
-  body.waveMotion #sea-turtle.go{animation:ttSwim 40s linear;}
+  /* every floating visitor bobs on the swell's clock too (its own phase —
+     a buoy that meets the wave a little late just looks like a buoy) */
+  body.waveMotion #sea-turtle.go{animation:ttSwim 40s linear, seaHeave 5.6s ease-in-out infinite alternate;}
   body.waveMotion #sea-turtle.go .ttBob{animation:ttBob 2.8s ease-in-out infinite alternate;}
   body.waveMotion #sea-turtle.go .ttFlip{animation:ttPaddle 1.4s ease-in-out infinite alternate;}
   body.waveMotion #sea-turtle.go .f2, body.waveMotion #sea-turtle.go .f3{animation-delay:.7s;}
@@ -1669,11 +1684,15 @@
   body.waveMotion #sea-school.go .s3{animation-delay:.3s;}
   body.waveMotion #sea-school.go .s4{animation-delay:.45s;}
   body.waveMotion #sea-school.go .s5{animation-delay:.6s;}
-  body.waveMotion #sea-bottle.go{animation:boDrift 51s linear;}
-  body.waveMotion #sea-bottle.go .boRock{animation:boRock 3.6s ease-in-out infinite alternate;}
-  body.waveMotion #sea-attack.go .atRise{animation:atRise 9s ease-in-out;}
-  body.waveMotion #sea-attack.go .atNeck{animation:atLunge 9s ease-in-out;}
-  body.waveMotion #sea-attack.go .atJaw{animation:atBite 9s ease-in-out;}
+  body.waveMotion #sea-paper.go{animation:ppDrift 49s linear, seaHeave 5.6s ease-in-out infinite alternate;}
+  body.waveMotion #sea-paper.go .ppRock{animation:ppRock 3.1s ease-in-out infinite alternate;}
+  body.waveMotion #sea-attack.go .atSlither{animation:atSlither 16s linear;}
+  body.waveMotion #sea-attack.go .atRise{animation:atRise 16s ease-in-out;}
+  body.waveMotion #sea-attack.go .atNeck{animation:atLunge 16s ease-in-out;}
+  body.waveMotion #sea-attack.go .atJaw{animation:atBite 16s ease-in-out;}
+  body.waveMotion #sea-attack.go .atHump{animation:ssBob 1.15s ease-in-out infinite alternate;}
+  body.waveMotion #sea-attack.go .a2{animation-delay:.3s;}
+  body.waveMotion #sea-attack.go .a3{animation-delay:.6s;}
   /* v6.18/20 sea life — each plays once when its .go lands; the
      infinite secondary loops (bob, flap, rock) run only under .go */
   body.waveMotion #sea-serpent.go{animation:ssGlide 30s linear;}
@@ -1685,11 +1704,14 @@
   body.waveMotion #sea-fish.go .pfArc path{animation:pfTrace 3.8s ease-out;}
   body.waveMotion #sea-fish.go .pfFish{animation:pfLeap 3.2s linear .2s;}
   body.waveMotion #sea-fish.go .pfTail{animation:pfFlap .22s linear infinite alternate;}
-  body.waveMotion #sea-buoy.go{animation:byDrift 46s linear;}
+  body.waveMotion #sea-buoy.go{animation:byDrift 46s linear, seaHeave 5.6s ease-in-out infinite alternate;}
   body.waveMotion #sea-buoy.go .byRock{animation:byRock 3.4s ease-in-out infinite alternate;}
   body.waveMotion #sea-buoy.go .byBob{animation:byBobUp 2.6s ease-in-out infinite alternate;}
-  body.waveMotion #sea-whale.go .whSurf{animation:whSurf 12s ease-in-out;}
-  body.waveMotion #sea-whale.go .whSpout{animation:whSpout 12s ease-out;}
+  body.waveMotion #sea-whale.go .whGlide{animation:whGlide 19s linear;}
+  body.waveMotion #sea-whale.go .whSurf{animation:whSurf 19s ease-in-out;}
+  body.waveMotion #sea-whale.go .whTail{animation:whFluke 19s ease-in-out;}
+  body.waveMotion #sea-whale.go .whSpout{animation:whSpout 19s ease-out;}
+  body.waveMotion #sea-whale.go .whSplash{animation:whSplash 19s ease-out;}
   @keyframes canvasIn{from{opacity:0;}}
   @keyframes wIn{from{opacity:0; transform:scale(.96) translateY(-10px);}}
   @keyframes alarmIn{from{opacity:0; transform:scale(1.04);}}
@@ -1699,7 +1721,14 @@
   @keyframes boatLurch{0%{transform:rotate(0);} 18%{transform:rotate(-22deg) translateY(2px);}
                        40%{transform:rotate(16deg);} 62%{transform:rotate(-9deg);}
                        82%{transform:rotate(4deg);} 100%{transform:rotate(0);}}
-  @keyframes ttSwim{from{transform:translateX(0);} to{transform:translateX(calc(100vw + 200px));}}
+  @keyframes wakeFoam{from{transform:scaleX(.9); opacity:.55;} to{transform:scaleX(1.12); opacity:1;}}
+  /* the swell: the front wave rides up-left / down-right; everything
+     afloat rides up and down with it */
+  @keyframes frontSwell{from{transform:translate(-12px, -4px);} to{transform:translate(12px, 4px);}}
+  @keyframes seaHeave{from{translate:0 -4px;} to{translate:0 4px;}}
+  /* the lanes: a far visitor is small and behind the boat, a near one is
+     big and in front — scale from the waterline, so `bottom` stays true */
+  @keyframes ttSwim{from{transform:translateX(0) scale(var(--ls, 1));} to{transform:translateX(calc(100vw + 200px)) scale(var(--ls, 1));}}
   @keyframes ttBob{from{transform:translateY(0);} to{transform:translateY(4px);}}
   @keyframes ttPaddle{from{transform:rotate(-12deg);} to{transform:rotate(12deg);}}
   /* the school darts in bursts: fast, a pause, fast again */
@@ -1707,21 +1736,23 @@
                     42%{transform:translateX(-41vw);} 72%{transform:translateX(-78vw);}
                     82%{transform:translateX(-81vw);} 100%{transform:translateX(calc(-100vw - 160px));}}
   @keyframes scWiggle{from{transform:translateY(-2px);} to{transform:translateY(2px);}}
-  @keyframes boDrift{from{transform:translateX(0);} to{transform:translateX(calc(100vw + 120px));}}
-  @keyframes boRock{from{transform:rotate(-14deg) translateY(0);} to{transform:rotate(10deg) translateY(3px);}}
-  /* the ATTACK: up from the deep behind the hull, rear, lunge, bite,
-     and back under — 9 seconds, no words */
-  @keyframes atRise{0%{transform:translateY(96px);} 16%{transform:translateY(12px);}
-                    30%{transform:translateY(0);} 70%{transform:translateY(0);}
-                    100%{transform:translateY(100px);}}
-  /* the head starts high-left and strikes DOWN onto the sails (positive
-     rotation): anything that rears higher than the wave band vanishes
-     behind the widget cards (z 1 > the sea's z 0) */
-  @keyframes atLunge{0%,22%{transform:rotate(-6deg);} 32%{transform:rotate(22deg);}
-                     38%{transform:rotate(27deg);} 46%{transform:rotate(-4deg);}
-                     58%{transform:rotate(19deg);} 70%,100%{transform:rotate(0deg);}}
-  @keyframes atBite{0%,30%{transform:rotate(0);} 34%{transform:rotate(26deg);} 38%{transform:rotate(-2deg);}
-                    42%{transform:rotate(22deg);} 47%,100%{transform:rotate(0);}}
+  @keyframes ppDrift{from{transform:translateX(0) scale(var(--ls, 1));} to{transform:translateX(calc(100vw + 120px)) scale(var(--ls, 1));}}
+  @keyframes ppRock{from{transform:rotate(-9deg) translateY(0);} to{transform:rotate(8deg) translateY(2px);}}
+  /* the ATTACK, 16 seconds: 0–8s it swims in from the right edge, low,
+     coils rolling; 8–10 it rears up behind the sails; 10–13 two strikes
+     (the boat lurches on the first); 14–16 it goes under */
+  @keyframes atSlither{0%{transform:translateX(62vw); animation-timing-function:cubic-bezier(.25,.6,.35,1);}
+                       52%,100%{transform:translateX(0);}}
+  @keyframes atRise{0%,50%{transform:translateY(2px);} 62%{transform:translateY(0);}
+                    86%{transform:translateY(0);} 100%{transform:translateY(110px);}}
+  /* the head lies low (rotated toward the water) on the way in, rears,
+     then strikes DOWN onto the sails — negative rotation, head-left */
+  @keyframes atLunge{0%,48%{transform:rotate(-34deg);} 60%{transform:rotate(6deg);}
+                     66%{transform:rotate(-24deg);} 70%{transform:rotate(-29deg);}
+                     76%{transform:rotate(4deg);} 82%{transform:rotate(-21deg);}
+                     88%,100%{transform:rotate(0deg);}}
+  @keyframes atBite{0%,63%{transform:rotate(0);} 67%{transform:rotate(-26deg);} 71%{transform:rotate(2deg);}
+                    79%{transform:rotate(-22deg);} 84%,100%{transform:rotate(0);}}
   @keyframes ssGlide{from{transform:translateX(0);} to{transform:translateX(calc(-100vw - 220px));}}
   /* the monster DIVES mid-crossing and resurfaces — one glide reads as
      two sightings, and the disappearing act is the whole act */
@@ -1733,20 +1764,36 @@
   @keyframes pfLeap{0%{offset-distance:0%; opacity:0;} 8%{opacity:1;}
                     92%{opacity:1;} 100%{offset-distance:100%; opacity:0;}}
   @keyframes pfFlap{from{transform:rotate(14deg);} to{transform:rotate(-14deg);}}
-  @keyframes byDrift{from{transform:translateX(0);} to{transform:translateX(calc(100vw + 140px));}}
+  @keyframes byDrift{from{transform:translateX(0) scale(var(--ls, 1));} to{transform:translateX(calc(100vw + 140px)) scale(var(--ls, 1));}}
   @keyframes byRock{from{transform:rotate(-6deg);} to{transform:rotate(6deg);}}
   @keyframes byBobUp{from{transform:translateY(0);} to{transform:translateY(3px);}}
   @keyframes muDance{from{height:8px;} to{height:30px;}}
-  @keyframes whSurf{0%{transform:translateY(64px);}
-                    12%{transform:translateY(-14px);}
-                    80%{transform:translateY(-14px) rotate(0deg);}
-                    100%{transform:translateY(72px) rotate(10deg);}}
-  @keyframes whSpout{0%,14%{opacity:0; transform:scaleY(.2);}
-                     20%{opacity:.95; transform:scaleY(1);}
-                     30%{opacity:0; transform:scaleY(1.15);}
-                     36%{opacity:0; transform:scaleY(.2);}
-                     42%{opacity:.95; transform:scaleY(1);}
-                     54%,100%{opacity:0; transform:scaleY(1.1);}}
+  /* the WHALE, 19 seconds: surfaces heading left (0–2s), spouts twice
+     (2–6), arches and dives with the fluke up (7–10), then breaches —
+     up nose-first, over, and down in a splash (11–15) — and is gone */
+  @keyframes whGlide{from{transform:translateX(0);} to{transform:translateX(-240px);}}
+  @keyframes whSurf{0%{transform:translateY(100px) rotate(0);}
+                    10%{transform:translateY(20px) rotate(0);}
+                    36%{transform:translateY(20px) rotate(0);}
+                    42%{transform:translateY(28px) rotate(-8deg);}
+                    50%{transform:translateY(46px) rotate(-16deg);}
+                    56%{transform:translateY(100px) rotate(-22deg);}
+                    60%{transform:translateY(110px) rotate(36deg);}
+                    68%{transform:translateY(-6px) rotate(30deg);}
+                    73%{transform:translateY(-2px) rotate(8deg);}
+                    79%{transform:translateY(46px) rotate(-12deg);}
+                    86%,100%{transform:translateY(120px) rotate(0);}}
+  @keyframes whFluke{0%,36%{transform:rotate(34deg);} 42%{transform:rotate(0);}
+                     52%{transform:rotate(-14deg);} 56%{transform:rotate(-10deg);} 60%,100%{transform:rotate(34deg);}}
+  @keyframes whSpout{0%,11%{opacity:0; transform:scaleY(.2);}
+                     15%{opacity:.95; transform:scaleY(1);}
+                     21%{opacity:0; transform:scaleY(1.15);}
+                     25%{opacity:0; transform:scaleY(.2);}
+                     29%{opacity:.95; transform:scaleY(1);}
+                     36%,100%{opacity:0; transform:scaleY(1.1);}}
+  @keyframes whSplash{0%,77%{opacity:0; transform:scale(.6,.2);}
+                      81%{opacity:.95; transform:scale(1.1,1.1);}
+                      90%,100%{opacity:0; transform:scale(1.3,1.35) translateY(-8px);}}
   @keyframes pop{45%{transform:scale(1.18);}}
 
   /* the boat: it's called Deckhand — it rides the waves at the edge of
@@ -1767,17 +1814,20 @@
   .btSail{fill:var(--turq);}
   .btSail2{fill:var(--paleturq);}
   #wavesFront{
-    position:fixed; left:0; bottom:0; width:100%; height:88px;
-    z-index:0; pointer-events:none;
+    position:fixed; left:-16px; bottom:0; width:calc(100% + 32px); height:88px;
+    z-index:0; pointer-events:none; overflow:visible;
   }
   /* ===== v6.18: sea life — rare, tiny, wordless math jokes =====
      hidden until the Sea scheduler (or Deckhand.sea('…')) plays one */
-  .seaThing{position:fixed; z-index:0; pointer-events:none; visibility:hidden;}
+  .seaThing{position:fixed; z-index:0; pointer-events:none; visibility:hidden; --ls:1; transform-origin:50% 100%;}
   .seaThing.go{visibility:visible;}
+  .seaThing.far{--ls:.62;}
+  .seaThing.near{--ls:1.4;}
   /* v6.20 ("a little underwhelming"): everything grew ~50%, and each
      visitor got real BEHAVIOR — secondary motion is what reads as alive
      from across a classroom, not raw pixels. */
   #sea-serpent{bottom:9px; left:100vw; width:136px;}
+  #sea-serpent svg{transform:scaleX(-1);}   /* v7.4: head first — it glides left */
   .ssHump{fill:none; stroke:var(--navy); stroke-width:7; stroke-linecap:round;}
   .ssEye{fill:var(--paleturq);}
   /* the skipper hops PAST the boat (they overlap on purpose — the kid
@@ -1797,42 +1847,53 @@
   .pfTail{transform-box:view-box; transform-origin:8px 8px;}
   .pfEye{fill:var(--paleturq);}
   #sea-buoy{bottom:6px; left:-52px; width:38px;}
+  #sea-buoy.far{bottom:17px;}  #sea-buoy.near{bottom:1px; --ls:1.2;}
   .byRock{transform-origin:50% 88%;}
   .byWake{fill:none; stroke:var(--white); stroke-width:2; stroke-linecap:round; opacity:.65;}
   .byBody{fill:var(--navy);}   /* navy on turquoise, like the hull —
                                   a turquoise buoy vanished into the sea */
-  .byPi{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; font-size:15px; fill:var(--paleturq);}
+  .byBand{stroke:var(--paleturq); stroke-width:2;}
+  .byPi{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; font-size:13px; fill:var(--paleturq);}
   #sea-turtle{bottom:4px; left:-100px; width:92px;}
+  #sea-turtle.far{bottom:15px;}  #sea-turtle.near{bottom:0;}
   .ttShell, .ttHead, .ttFlip{fill:var(--navy);}
   .ttFlip{transform-box:view-box; transform-origin:center;}
   .ttEye{fill:var(--paleturq);}
   .ttLines{fill:none; stroke:var(--paleturq); stroke-width:1.5; opacity:.7;}
-  #sea-school{bottom:10px; left:100vw; width:150px;}
+  #sea-school{bottom:-10px; left:100vw; width:126px;}
   .scFish path{fill:var(--teal);}
-  #sea-bottle{bottom:6px; left:-60px; width:36px;}
-  .boRock{transform-origin:50% 90%;}
-  .boGlass{fill:var(--turq); opacity:.85;}
-  .boCork{fill:var(--sand);}
-  .boNote{fill:var(--cream);}
-  .boQ{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; font-size:12px; fill:var(--navy); font-style:italic;}
-  /* the attack surfaces right behind the hull: the boat's left is
-     max(42vw,300px) and it drifts 0–64px, so 150px of serpent centred
-     a little left of that puts the head over the sails */
-  #sea-attack{bottom:-4px; left:calc(max(42vw, 300px) - 96px); width:150px;}
-  #sea-attack svg{overflow:visible;}    /* the rearing head leaves the viewBox */
-  .atRise{transform:translateY(96px);}
+  .scFish circle{fill:var(--paleturq);}
+  #sea-paper{bottom:4px; left:-70px; width:44px;}
+  #sea-paper.far{bottom:15px;}  #sea-paper.near{bottom:0;}
+  .ppRock{transform-origin:50% 90%;}
+  .ppHull, .ppSail{fill:var(--cream); stroke:var(--navy); stroke-width:1.6; stroke-linejoin:round;}
+  .ppSail2{fill:var(--sand); stroke:var(--navy); stroke-width:1.6; stroke-linejoin:round;}
+  .ppRule{fill:none; stroke:var(--turq); stroke-width:1.2; opacity:.9;}
+  .ppFold{fill:none; stroke:var(--navy); stroke-width:1.6;}
+  /* the attack parks with its head over the sails: the boat's left is
+     max(42vw,300px) and it drifts 0–64px; the head sits ~22px into the
+     150px svg, so the element starts 20px right of the boat's left */
+  #sea-attack{bottom:-4px; left:calc(max(42vw, 300px) + 20px); width:150px;}
+  #sea-attack svg{overflow:visible;}    /* the rearing head and the third coil leave the viewBox */
+  .atSlither{transform:translateX(62vw);}   /* parked off the right edge */
+  .atRise{transform:translateY(2px);}
   .atHump, .atNeckP{fill:none; stroke:var(--navy); stroke-width:8; stroke-linecap:round;}
   .atHead, .atJaw{fill:var(--navy);}
-  .atNeck{transform-box:view-box; transform-origin:84px 82px;}
-  .atJaw{transform-box:view-box; transform-origin:124px 16px;}
+  .atNeck{transform-box:view-box; transform-origin:66px 82px; transform:rotate(-34deg);}   /* head low, skimming */
+  .atJaw{transform-box:view-box; transform-origin:26px 16px;}
   .atEye{fill:var(--coral);}
-  #sea-whale{bottom:2px; left:60vw; width:96px;}
-  .whSurf{transform:translateY(64px);}   /* parked SUBMERGED — it exists
+  #sea-whale{bottom:0; left:62vw; width:190px;}
+  .whSurf{transform:translateY(100px); transform-origin:60px 60px;}   /* parked SUBMERGED — it exists
                                             onscreen only mid-performance */
-  .whBody, .whTail{fill:var(--navy);}
+  .whBody, .whFin{fill:var(--navy);}
+  .whTail path{fill:var(--navy);}
+  .whTail{transform-box:view-box; transform-origin:114px 58px; transform:rotate(34deg);}   /* fluke under, until the dive */
   .whEye{fill:var(--paleturq);}
-  .whSpout{opacity:0; transform-box:view-box; transform-origin:30px 26px;}
+  .whSpout{opacity:0; transform-box:view-box; transform-origin:36px 30px;}
   .whSpout path{fill:none; stroke:var(--turq); stroke-width:2.5; stroke-linecap:round;}
+  .whSpout circle{fill:var(--turq);}
+  .whSplash{position:absolute; left:0; top:0; width:100%; height:100%; opacity:0; transform-origin:50% 88%;}
+  .whSplash path{fill:none; stroke:var(--white); stroke-width:3.5; stroke-linecap:round;}
 
   @media (max-width: 780px), (max-height: 540px){
     html, body{height:auto; min-height:100%;}
@@ -2034,8 +2095,16 @@
      a channel buoy marked π. They swim BEHIND #wavesFront, so the
      water occludes them the way it occludes the hull. -->
 <div id="sea" aria-hidden="true">
+  <!-- v7.4 (Croix: "I want this sailboat thing to get a lot of attention
+       and detail"): the sea has DEPTH now. .seaFar visitors pass BEHIND
+       the boat, small; .seaNear ones pass in front, large; the boat sits
+       between them and the front wave paints over everything. Lane-capable
+       visitors (buoy, turtle, paper boat) are moved between the two boxes
+       by Sea.play before each show. -->
+  <div class="seaFar">
   <div id="sea-serpent" class="seaThing">
     <div class="ssSwim">
+      <!-- drawn head-right, mirrored by CSS: it glides LEFT, head first -->
       <svg viewBox="0 0 132 44">
         <path class="ssHump h1" d="M6,34 Q16,6 26,34"/>
         <path class="ssHump h2" d="M34,34 Q44,11 54,34"/>
@@ -2063,14 +2132,12 @@
         <svg viewBox="0 0 34 40">
           <path class="byWake" d="M2,36 Q8,34 14,36 M20,36 Q26,34 32,36"/>
           <path class="byBody" d="M9,32 L13,9 Q17,3 21,9 L25,32 Z"/>
-          <text class="byPi" x="17" y="27" text-anchor="middle">π</text>
+          <path class="byBand" d="M11.6,22 L22.4,22"/>
+          <text class="byPi" x="17" y="31" text-anchor="middle">π</text>
         </svg>
       </div>
     </div>
   </div>
-  <!-- v7.1 (Croix: "kids loved the sea monster — expand, make it attack
-       the ship, make it smoother"): three more quiet visitors and one
-       loud one. Same register: low, wordless, inside the wave band. -->
   <div id="sea-turtle" class="seaThing">
     <div class="ttBob">
       <svg viewBox="0 0 84 44">
@@ -2085,83 +2152,123 @@
       </svg>
     </div>
   </div>
+  <!-- v7.4: the school swims HEAD-FIRST (it darts left, so the heads
+       point left) and stays under the waterline — it was crossing the
+       sand dune tail-first ("moved backwards through the air") -->
   <div id="sea-school" class="seaThing">
     <svg viewBox="0 0 120 40">
-      <g class="scFish s1"><path d="M30,10 Q24,4 18,10 Q24,16 30,10 Z"/><path d="M18,10 L13,6 L15,10 L13,14 Z"/></g>
-      <g class="scFish s2"><path d="M60,20 Q54,14 48,20 Q54,26 60,20 Z"/><path d="M48,20 L43,16 L45,20 L43,24 Z"/></g>
-      <g class="scFish s3"><path d="M40,30 Q34,24 28,30 Q34,36 40,30 Z"/><path d="M28,30 L23,26 L25,30 L23,34 Z"/></g>
-      <g class="scFish s4"><path d="M90,14 Q84,8 78,14 Q84,20 90,14 Z"/><path d="M78,14 L73,10 L75,14 L73,18 Z"/></g>
-      <g class="scFish s5"><path d="M100,30 Q94,24 88,30 Q94,36 100,30 Z"/><path d="M88,30 L83,26 L85,30 L83,34 Z"/></g>
+      <g class="scFish s1"><path d="M18,10 Q24,3 30,10 Q24,17 18,10 Z"/><path d="M30,10 L36,5 L34,10 L36,15 Z"/><circle cx="21.5" cy="9" r="1"/></g>
+      <g class="scFish s2"><path d="M48,20 Q54,13 60,20 Q54,27 48,20 Z"/><path d="M60,20 L66,15 L64,20 L66,25 Z"/><circle cx="51.5" cy="19" r="1"/></g>
+      <g class="scFish s3"><path d="M28,30 Q34,23 40,30 Q34,37 28,30 Z"/><path d="M40,30 L46,25 L44,30 L46,35 Z"/><circle cx="31.5" cy="29" r="1"/></g>
+      <g class="scFish s4"><path d="M78,14 Q84,7 90,14 Q84,21 78,14 Z"/><path d="M90,14 L96,9 L94,14 L96,19 Z"/><circle cx="81.5" cy="13" r="1"/></g>
+      <g class="scFish s5"><path d="M88,30 Q94,23 100,30 Q94,37 88,30 Z"/><path d="M100,30 L106,25 L104,30 L106,35 Z"/><circle cx="91.5" cy="29" r="1"/></g>
     </svg>
   </div>
-  <div id="sea-bottle" class="seaThing">
-    <div class="boRock">
-      <svg viewBox="0 0 40 44">
-        <path class="boGlass" d="M14,10 L26,10 L26,16 Q34,22 34,30 L34,40 Q20,44 6,40 L6,30 Q6,22 14,16 Z"/>
-        <rect class="boCork" x="16" y="4" width="8" height="7" rx="2"/>
-        <path class="boNote" d="M12,24 L28,24 L28,36 L12,36 Z"/>
-        <text class="boQ" x="20" y="34" text-anchor="middle">x</text>
+  <!-- v7.4: a PAPER BOAT folded from a ruled worksheet replaces the
+       message-in-a-bottle (Croix: "looks like booze") -->
+  <div id="sea-paper" class="seaThing">
+    <div class="ppRock">
+      <svg viewBox="0 0 60 44">
+        <path class="ppSail" d="M30,3 L30,26 L11,26 Z"/>
+        <path class="ppSail2" d="M30,3 L49,26 L30,26 Z"/>
+        <path class="ppHull" d="M2,26 L58,26 L47,41 L13,41 Z"/>
+        <path class="ppRule" d="M8,31 L52,31 M11,35 L49,35 M14,39 L46,39"/>
+        <path class="ppFold" d="M2,26 L58,26 M30,3 L30,26"/>
       </svg>
     </div>
   </div>
+  <!-- v7.4 (Croix: "slowly slither in from the side instead of popping
+       up next to the ship"): the ATTACK starts off the right edge, swims
+       in over eight seconds with its coils rolling and its head low, then
+       rears up behind the sails, strikes twice, and goes under. Drawn
+       head-LEFT so it leads with the head. -->
   <div id="sea-attack" class="seaThing">
-    <div class="atRise">
-      <svg viewBox="0 0 150 90">
-        <path class="atHump" d="M4,80 Q18,48 32,80"/>
-        <path class="atHump" d="M40,80 Q56,44 72,80"/>
-        <g class="atNeck">
-          <path class="atNeckP" d="M84,82 Q96,50 104,26 Q110,10 124,12"/>
-          <path class="atHead" d="M118,6 Q134,4 138,14 Q132,20 122,18 Q116,16 118,6 Z"/>
-          <path class="atJaw" d="M124,16 Q132,18 136,24 Q128,26 122,20 Z"/>
-          <circle class="atEye" cx="128" cy="11" r="2"/>
-        </g>
-      </svg>
+    <div class="atSlither">
+      <div class="atRise">
+        <svg viewBox="0 0 150 90">
+          <path class="atHump a3" d="M182,80 Q168,52 154,80"/>
+          <path class="atHump a2" d="M146,80 Q132,48 118,80"/>
+          <path class="atHump a1" d="M110,80 Q94,44 78,80"/>
+          <g class="atNeck">
+            <path class="atNeckP" d="M66,82 Q54,50 46,26 Q40,10 26,12"/>
+            <path class="atHead" d="M32,6 Q16,4 12,14 Q18,20 28,18 Q34,16 32,6 Z"/>
+            <path class="atJaw" d="M26,16 Q18,18 14,24 Q22,26 28,20 Z"/>
+            <circle class="atEye" cx="22" cy="11" r="2"/>
+          </g>
+        </svg>
+      </div>
     </div>
   </div>
+  <!-- v7.4 (Croix: "rose up out of the water and was uninteresting"):
+       the whale now has an ACT — surfaces travelling left, spouts twice,
+       arches and dives with the fluke up, then breaches and lands in a
+       splash. Head-left. -->
   <div id="sea-whale" class="seaThing">
-    <div class="whSurf">
-      <svg viewBox="0 0 120 62">
-        <g class="whSpout">
-          <path d="M30,26 C27,16 22,12 17,10 M30,26 C30,13 30,8 30,4 M30,26 C33,16 38,12 43,10"/>
-        </g>
-        <path class="whBody" d="M6,54 Q14,28 48,27 Q84,26 98,44 L100,54 Z"/>
-        <path class="whTail" d="M96,48 Q104,40 102,31 Q109,42 117,37 Q112,50 101,53 Z"/>
-        <circle class="whEye" cx="26" cy="42" r="2"/>
+    <div class="whGlide">
+      <div class="whSurf">
+        <svg viewBox="0 0 150 80">
+          <g class="whSpout">
+            <path d="M36,30 Q34,14 24,12 Q19,12 20,18 M36,30 Q36,14 36,4 M36,30 Q38,14 48,12 Q53,12 52,18"/>
+            <circle cx="17" cy="22" r="1.6"/><circle cx="55" cy="22" r="1.6"/><circle cx="36" cy="1" r="1.4"/>
+          </g>
+          <path class="whBody" d="M6,64 Q12,36 50,32 Q92,29 112,50 L116,64 Z"/>
+          <path class="whFin" d="M46,58 Q56,68 72,63 Q60,54 46,58 Z"/>
+          <circle class="whEye" cx="28" cy="46" r="2.2"/>
+          <g class="whTail">
+            <path d="M112,56 Q122,46 120,34 Q128,50 140,44 Q133,62 118,64 Z"/>
+          </g>
+        </svg>
+      </div>
+      <svg class="whSplash" viewBox="0 0 150 80">
+        <path d="M14,70 Q26,38 38,70 M46,70 Q60,26 74,70 M82,70 Q96,30 110,70 M118,70 Q128,42 138,70"/>
       </svg>
     </div>
   </div>
-</div>
-<svg id="boat" viewBox="0 0 40 40" aria-hidden="true">
-  <!-- v7.1: the rig ROCKS (Croix: "still doesn't sway") — a 3s heel
-       on top of the slow drift, and a real lurch when something bites -->
-  <g class="btRig">
-    <!-- v7.2: the PENNANT — "<name> Rules", run up the mast now and then
-         (a Sea visitor). Drawn outside the 40×40 box; the svg overflows. -->
-    <g class="btPen" aria-hidden="true">
-      <defs><filter id="penRipple" x="-5%" y="-20%" width="110%" height="140%" color-interpolation-filters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="0.02 0.06" numOctaves="1" seed="3" result="n"/>
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
-      </filter></defs>
-      <line class="btMast" x1="20" y1="4" x2="20" y2="-26"/>
-      <g class="btPenCloth" filter="url(#penRipple)">
-        <path class="btPenBg" d="M21,-26 L200,-26 L188,-14 L200,-2 L21,-2 Z"/>
-        <text class="btPenText" x="30" y="-9">Mr. Shaffer Rules</text>
-      </g>
+  </div>
+  <svg id="boat" viewBox="0 0 40 40" aria-hidden="true">
+    <!-- v7.1: the rig ROCKS (Croix: "still doesn't sway") — a 3s heel
+         on top of the slow drift, and a real lurch when something bites.
+         v7.4: the whole boat HEAVES with the front wave (same keyframes,
+         same clock, so the hull never sinks under it), and it grew a
+         mast, a waterline stripe and a little wake. -->
+    <g class="btWake">
+      <path d="M-2,33 Q2,30.5 6,33 M34,33 Q38,30.5 42,33"/>
     </g>
-    <path class="btSail" d="M20 4v20H8z"/>
-    <path class="btSail2" d="M23 10v14h10z"/>
-    <path class="btHull" d="M5 27h30l-7 8H12z"/>
-  </g>
-</svg>
+    <g class="btRig">
+      <!-- v7.2: the PENNANT — "<name> Rules", run up the mast now and then
+           (a Sea visitor). Drawn outside the 40×40 box; the svg overflows. -->
+      <g class="btPen" aria-hidden="true">
+        <defs><filter id="penRipple" x="-5%" y="-20%" width="110%" height="140%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.02 0.06" numOctaves="1" seed="3" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+        </filter></defs>
+        <line class="btMast" x1="20" y1="4" x2="20" y2="-26"/>
+        <g class="btPenCloth" filter="url(#penRipple)">
+          <path class="btPenBg" d="M21,-26 L200,-26 L188,-14 L200,-2 L21,-2 Z"/>
+          <text class="btPenText" x="30" y="-9">Mr. Shaffer Rules</text>
+        </g>
+      </g>
+      <path class="btSail" d="M20 4v20H8z"/>
+      <path class="btSail2" d="M23 10v14h10z"/>
+      <path class="btMastFix" d="M20,3 V27"/>
+      <path class="btHull" d="M5 27h30l-7 8H12z"/>
+      <path class="btStripe" d="M6.5,29.2 H33.5"/>
+    </g>
+  </svg>
+  <div class="seaNear"></div>
+</div>
 <svg id="waves" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
   <path d="M0,55 C240,25 480,85 720,55 C960,25 1200,85 1440,55 C1680,25 1820,70 1920,50 L1920,120 L0,120 Z" class="wvSand"/>
   <path d="M0,80 C260,50 520,105 780,78 C1040,50 1300,105 1560,78 C1720,62 1840,88 1920,75 L1920,120 L0,120 Z" class="wvLight"/>
   <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" class="wvMid"/>
 </svg>
 <!-- the FRONT wave again, painted ABOVE the boat and the sea things:
-     hulls and humps dip into the water instead of hovering on it -->
+     hulls and humps dip into the water instead of hovering on it.
+     v7.4: it moves — a slow heave and sway — and runs 16px past each
+     edge so the sway never shows a gap. -->
 <svg id="wavesFront" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
   <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" class="wvMid"/>
+  <rect x="-40" y="119" width="2000" height="40" class="wvMid"/>   <!-- v7.4: covers the strip the heave would open at the bottom -->
 </svg>
 
 <!-- settings: v7.2 preferences panel — a tab rail, one panel at a time,
@@ -2534,7 +2641,7 @@ var DEFAULT_SCENES = [
 ];
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.3.0",
+  appVersion: "7.4.0",
   ownerName: "",
   ui: { locked: false, motion: "auto" },
   activeScene: "Daily Board",
@@ -8041,9 +8148,12 @@ function applyWaveMotion(){
    never on phones, never under reduced motion — and a kid who spots
    one gets a tiny math moment instead of a distraction. */
 var Sea = (function(){
-  var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "bottle", "attack", "pennant"];
-  var DUR = { serpent: 31000, fish: 4200, buoy: 47000, whale: 12500,
-              turtle: 40500, school: 15500, bottle: 52000, attack: 9500, pennant: 22000 };
+  var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "paper", "attack", "pennant"];
+  var DUR = { serpent: 31000, fish: 4200, buoy: 47000, whale: 19500,
+              turtle: 40500, school: 15500, paper: 50000, attack: 16500, pennant: 22000 };
+  /* v7.4: DEPTH — these three pass either far (small, behind the boat)
+     or near (large, in front of it); the lane is picked per show */
+  var LANED = { buoy: 1, turtle: 1, paper: 1 };
   /* the attack is the loud one — rarer from the scheduler, likelier
      from a tap on the boat (the kids asked for it) */
   var WEIGHT = { attack: 0.35, pennant: 0.6 };
@@ -8072,9 +8182,16 @@ var Sea = (function(){
     });
   }
   var rockTid = null;
-  function play(name){
+  function play(name, lane){
     var th = elFor(name);
     if (!th || th.classList.contains(clsFor(name))) return;
+    if (LANED[name]){
+      lane = (lane === "near" || lane === "far") ? lane : (Math.random() < 0.5 ? "near" : "far");
+      var box = document.querySelector("#sea .sea" + (lane === "near" ? "Near" : "Far"));
+      if (box && th.parentNode !== box) box.appendChild(th);   // moved BEFORE .go: the glide starts in the new lane
+      th.classList.toggle("near", lane === "near");
+      th.classList.toggle("far", lane === "far");
+    }
     if (name === "pennant"){
       /* the greeting name, at run-up time (Settings may have changed it) */
       var tx = th.querySelector(".btPenText");
@@ -8082,14 +8199,15 @@ var Sea = (function(){
     }
     th.classList.add(clsFor(name));
     if (name === "attack"){
-      /* the lunge lands at ~38% — the boat lurches then rights itself */
+      /* v7.4: the first strike lands at ~66% of the 16s act (after the
+         8s slither-in and the rear-up) — the boat lurches then rights itself */
       clearTimeout(rockTid);
       rockTid = setTimeout(function(){
         var bt = document.getElementById("boat");
         if (!bt) return;
         bt.classList.add("rocked");
         setTimeout(function(){ bt.classList.remove("rocked"); }, 2600);
-      }, Math.round(DUR.attack * 0.36));
+      }, Math.round(DUR.attack * 0.64));
     }
     timers[name] = setTimeout(function(){ th.classList.remove(clsFor(name)); }, DUR[name] || 5000);
   }
