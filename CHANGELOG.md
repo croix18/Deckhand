@@ -2,6 +2,27 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.2.0 — 2026-09-26
+
+**The Pledge, take two.** At the day's first bell the flag now has the screen to
+itself — no count, no words — with a fabric ripple and a slow sway; when its minutes
+are up, the slides. It keys off the day's *first block*, so on a reversed (Black) week
+it flies for 6th at 9:20 and never for 1st at 3:07.
+
+**Seconds by period.** The settle-in's ✎ row has a box per bell period; a number there
+overrides the default for that class only (blank = default). The armed readout shows
+the figure for whichever class is in the room.
+
+**The pennant.** Now and then the boat runs up a "Mr. Shaffer Rules" pennant (it reads
+the greeting name), lets it fly for twenty seconds, and hauls it down. A boat tap can
+summon it.
+
+**Ink.** *Draw* (dock pill, the stage bar, or **D**) puts a transparent drawing layer
+over everything — the board or a staged deck — with a floating palette: six pens
+including a highlighter, three widths, eraser, undo, clear. *Done* folds the palette
+and keeps the ink so you can keep working underneath it; Escape does the same.
+Session-only.
+
 ## 7.1.0 — 2026-09-26
 
 The week-of-notes release (Croix's notebook, Sep 21–25).

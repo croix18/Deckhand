@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.1.0",
+  "appVersion": "7.2.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -393,6 +393,40 @@
   }
   .blkRow.bad .setInput{border-color:var(--coral);}
   .blkEmpty{font-size:14px; color:var(--teal); font-weight:600; padding:8px 0;}
+
+  /* v7.2 INK overlay */
+  #ink{
+    position:fixed; inset:0; z-index:14; pointer-events:none;
+    width:100vw; height:100vh; touch-action:none;
+  }
+  body.inking #ink{pointer-events:auto; cursor:crosshair;}
+  body.landing #ink{display:none;}
+  #inkBar{
+    position:fixed; right:24px; bottom:24px; z-index:16;
+    display:flex; gap:8px; align-items:center; flex-wrap:nowrap;
+    background:var(--white); border-radius:18px; padding:8px 10px;
+    box-shadow:4px 6px 0 var(--shadow); border:2px solid var(--grid);
+  }
+  #inkBar[hidden]{display:none;}
+  .inkGroup{display:flex; gap:4px; align-items:center; padding:3px; border-radius:12px; background:var(--cream);}
+  .inkTool{
+    min-width:44px; min-height:44px; padding:6px 10px; border:0; border-radius:10px; cursor:pointer;
+    background:transparent; color:var(--navy); font:inherit; font-weight:900; font-size:14px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .inkTool[aria-pressed="true"]{background:var(--turq);}
+  .inkSwatch{width:34px; min-width:34px; height:34px; min-height:34px; border-radius:50%; margin:5px;
+    border:3px solid var(--white); box-shadow:0 0 0 1px var(--grid);}
+  .inkSwatch[aria-pressed="true"]{box-shadow:0 0 0 3px var(--navy);}
+  .inkDot{display:inline-block; border-radius:50%; background:var(--navy);}
+  .inkDone{
+    min-height:44px; padding:10px 20px; border:0; border-radius:12px; cursor:pointer;
+    background:var(--navy); color:var(--white); font:inherit; font-weight:900; font-size:15px;
+  }
+  #inkBtn[aria-pressed="true"], #inkBtnStage[aria-pressed="true"]{background:var(--turq); color:var(--navy); opacity:1;}
+  #inkBtn svg, #inkBtnStage svg{width:16px; height:16px;}
+  #inkBtn, #inkBtnStage{white-space:nowrap; display:inline-flex; align-items:center; gap:6px;}
+  @media (max-width: 780px), (max-height: 540px){ #ink, #inkBar, #inkBtn{display:none !important;} }
 
   /* ===== settings panel (v7.2 design pass) =====
      A preferences panel, not a scroll of collapsibles: a tab rail on the
@@ -1025,7 +1059,8 @@
   /* ===== settle-in (v6.23): find your seat before the count hits 0 ===== */
   .w-settle .strip{background:var(--paleturq); color:var(--navy);}
   .stStage{
-    flex:1; min-height:0; display:flex; flex-direction:column;
+    flex:1; min-height:0; width:100%; align-self:stretch;
+    display:flex; flex-direction:column;
     align-items:center; justify-content:center; gap:4px; text-align:center;
   }
   .stTop{
@@ -1071,11 +1106,31 @@
     border-radius:6px; overflow:hidden; box-shadow:3px 4px 0 var(--shadow);}
   .stFlag[hidden]{display:none;}
   .stFlag svg{width:100%; height:auto; display:block;}
-  .w-settle.stPledgeOnly .stFlag{width:min(92%, 58cqh * 1.9);}
+  .w-settle.stPledgeOnly .stFlag{width:min(92%, 78cqh * 1.9); margin:0 auto;}
+  .w-settle.stPledgeOnly .stTop, .w-settle.stPledgeOnly .stBig, .w-settle.stPledgeOnly .stSub,
+  .w-settle.stPledgeOnly .chips, .w-settle.stPledgeOnly .tHint, .w-settle.stPledgeOnly .stRow{display:none;}
+  .flagWave{position:relative; transform-origin:0% 50%; overflow:hidden; border-radius:6px;}
+  .flagSheen{
+    position:absolute; inset:0; pointer-events:none; z-index:1;
+    background:linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.22) 45%,
+      rgba(0,0,0,.10) 55%, rgba(255,255,255,0) 70%);
+    background-size:220% 100%; opacity:.9;
+  }
+  body.waveMotion .flagWave{animation:flagSway 3.6s ease-in-out infinite alternate;}
+  body.waveMotion .flagSheen{animation:flagSheen 3.6s ease-in-out infinite;}
+  @keyframes flagSway{from{transform:perspective(900px) rotateY(-3deg) skewY(-0.8deg);}
+                      to{transform:perspective(900px) rotateY(3.5deg) skewY(0.9deg);}}
+  @keyframes flagSheen{from{background-position:120% 0;} to{background-position:-20% 0;}}
+  .stPer{display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; width:100%;}
+  .stPer[hidden]{display:none;}
+  .stPerCap{width:100%; font-size:12px; font-weight:700; color:var(--teal);}
+  .stPerCell{display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:700; color:var(--navy);}
+  .stPerCell input{width:64px; min-height:36px; font:inherit; font-weight:700; color:var(--navy);
+    border:2px solid var(--grid); border-radius:8px; padding:4px 6px; font-variant-numeric:tabular-nums;}
   .w-settle.stPledgeOnly .stBig.stPledgeT{font-size:clamp(28px, 14cqmin, 120px); color:var(--navy);}
   .w-settle.wFull.stPledgeOnly .stBig.stPledgeT{font-size:clamp(60px, 14cqh, 220px);}
   .w-settle.wFull .stFlag{width:min(60%, 36cqh * 1.9);}
-  .w-settle.wFull.stPledgeOnly .stFlag{width:min(80%, 62cqh * 1.9);}
+  .w-settle.wFull.stPledgeOnly .stFlag{width:min(86%, 84cqh * 1.9);}
   .w-settle.wFull .stTop{font-size:clamp(20px, 4cqw, 64px);}
   .w-settle.wFull .stBig{font-size:clamp(80px, 34cqh, 560px);}
   .w-settle.wFull .stBig.stMsgB{font-size:clamp(32px, 8cqw, 150px);}
@@ -1585,6 +1640,24 @@
   body.waveMotion #boat.rocked .btRig{animation:boatSway 3.2s ease-in-out infinite alternate,
                                       boatLurch 2.6s cubic-bezier(.3,.7,.3,1);}
   .btRig{transform-box:view-box; transform-origin:20px 31px;}
+  #boat{overflow:visible;}
+  .btPen{visibility:hidden;}
+  #boat.pennant .btPen{visibility:visible;}
+  .btMast{stroke:var(--navy); stroke-width:1.6; stroke-linecap:round;}
+  .btPenBg{fill:var(--navy);}   /* coral stays the alert color */
+  .btPenText{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; font-size:14px; fill:var(--turq); letter-spacing:.02em;}
+  .btPenCloth{transform-box:view-box; transform-origin:21px -14px; transform:scaleX(0);}
+  #boat.pennant .btPenCloth{transform:scaleX(1);}
+  body.waveMotion #boat.pennant .btPenCloth{animation:penRun 22s ease-in-out;}
+  body.waveMotion #boat.pennant .btMast{animation:mastUp 22s ease-out;}
+  @keyframes penRun{0%,4%{transform:scaleX(0) skewY(0);} 9%{transform:scaleX(1.02) skewY(-2deg);}
+                    14%{transform:scaleX(1) skewY(2deg);} 24%{transform:scaleX(1) skewY(-2deg);}
+                    34%{transform:scaleX(1) skewY(2deg);} 44%{transform:scaleX(1) skewY(-2deg);}
+                    54%{transform:scaleX(1) skewY(2deg);} 64%{transform:scaleX(1) skewY(-2deg);}
+                    74%{transform:scaleX(1) skewY(2deg);} 84%{transform:scaleX(1) skewY(-1.5deg);}
+                    92%{transform:scaleX(1) skewY(1deg);} 100%{transform:scaleX(0) skewY(0);}}
+  @keyframes mastUp{0%{transform:scaleY(0);} 5%,100%{transform:scaleY(1);}}
+  .btMast{transform-box:view-box; transform-origin:20px 4px;}
   .seaThing.go{will-change:transform;}
   body.waveMotion #sea-turtle.go{animation:ttSwim 40s linear;}
   body.waveMotion #sea-turtle.go .ttBob{animation:ttBob 2.8s ease-in-out infinite alternate;}
@@ -1871,6 +1944,7 @@
       <!-- v6.17: pick a preset, get JUST the running wheel — never the card -->
       <div id="focusTimerMenu" role="group" aria-label="Timer presets" hidden></div>
     </div>
+    <button id="inkBtnStage" type="button" aria-label="Draw over the board" aria-pressed="false"><svg class="wIcon"><use href="#i-pencil"/></svg> Draw</button>
     <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
   </div>
   <section class="card widget w-clock" id="clockWidget" aria-label="Current time and bell schedule">
@@ -1951,6 +2025,7 @@
   </div>
   <div id="shelf" aria-label="Stage-only widgets"></div>
   <button class="pill" id="lockBtn" type="button" aria-pressed="false">Lock</button>
+  <button class="pill" id="inkBtn" type="button" aria-pressed="false" aria-label="Draw over the board"><svg class="wIcon"><use href="#i-pencil"/></svg> Draw</button>
 </nav>
 
 <!-- v6.18: the sea keeps small secrets. Rare, subtle, at the edge of
@@ -2060,6 +2135,19 @@
   <!-- v7.1: the rig ROCKS (Croix: "still doesn't sway") — a 3s heel
        on top of the slow drift, and a real lurch when something bites -->
   <g class="btRig">
+    <!-- v7.2: the PENNANT — "<name> Rules", run up the mast now and then
+         (a Sea visitor). Drawn outside the 40×40 box; the svg overflows. -->
+    <g class="btPen" aria-hidden="true">
+      <defs><filter id="penRipple" x="-5%" y="-20%" width="110%" height="140%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.02 0.06" numOctaves="1" seed="3" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+      </filter></defs>
+      <line class="btMast" x1="20" y1="4" x2="20" y2="-26"/>
+      <g class="btPenCloth" filter="url(#penRipple)">
+        <path class="btPenBg" d="M21,-26 L200,-26 L188,-14 L200,-2 L21,-2 Z"/>
+        <text class="btPenText" x="30" y="-9">Mr. Shaffer Rules</text>
+      </g>
+    </g>
     <path class="btSail" d="M20 4v20H8z"/>
     <path class="btSail2" d="M23 10v14h10z"/>
     <path class="btHull" d="M5 27h30l-7 8H12z"/>
@@ -2377,6 +2465,33 @@
   </div>
 </div>
 
+<!-- v7.2 INK: draw over anything — the board, a staged deck, all of it.
+     A fixed transparent canvas above the widgets (z 14, under the dock);
+     it only takes the pointer while armed, so the board stays usable
+     underneath the annotations. Session-only, like the sketch pad. -->
+<canvas id="ink" aria-hidden="true"></canvas>
+<div id="inkBar" role="toolbar" aria-label="Draw over the board" hidden>
+  <div class="inkGroup" aria-label="Pen color">
+    <button class="inkTool inkSwatch" type="button" data-color="#17324D" style="background:#17324D" aria-label="Navy pen" aria-pressed="true"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#FF7F6A" style="background:#FF7F6A" aria-label="Coral pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#127A85" style="background:#127A85" aria-label="Teal pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#7E5FC5" style="background:#7E5FC5" aria-label="Purple pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#FFFFFF" style="background:#FFFFFF; box-shadow:0 0 0 2px var(--grid) inset" aria-label="White pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch inkHi" type="button" data-color="#FFE45C" style="background:#FFE45C" aria-label="Yellow highlighter" aria-pressed="false"></button>
+  </div>
+  <div class="inkGroup" aria-label="Pen size">
+    <button class="inkTool" type="button" data-size="4" aria-label="Thin" aria-pressed="false"><span class="inkDot" style="width:6px;height:6px"></span></button>
+    <button class="inkTool" type="button" data-size="9" aria-label="Medium" aria-pressed="true"><span class="inkDot" style="width:11px;height:11px"></span></button>
+    <button class="inkTool" type="button" data-size="18" aria-label="Thick" aria-pressed="false"><span class="inkDot" style="width:18px;height:18px"></span></button>
+  </div>
+  <div class="inkGroup">
+    <button class="inkTool" type="button" id="inkEraser" aria-label="Eraser" aria-pressed="false">Eraser</button>
+    <button class="inkTool" type="button" id="inkUndo" aria-label="Undo the last stroke">Undo</button>
+    <button class="inkTool" type="button" id="inkClear" aria-label="Clear the drawing">Clear</button>
+  </div>
+  <button class="inkDone" type="button" id="inkDone">Done</button>
+</div>
+
 <div id="alarm" role="alert">
   <h1>TIME&rsquo;S UP</h1>
   <p id="alarmWho"></p>
@@ -2419,7 +2534,7 @@ var DEFAULT_SCENES = [
 ];
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.1.0",
+  appVersion: "7.2.0",
   ownerName: "",
   ui: { locked: false, motion: "auto" },
   activeScene: "Daily Board",
@@ -2634,6 +2749,17 @@ function sanitize(c){
            N minutes, then the routine hands off to the slides */
         var pl = isObj(w.pledge) ? w.pledge : {};
         wc.pledge = { on: bool(pl.on, true), minutes: Math.round(numIn(pl.minutes, 1, 10, 2)) };
+        /* v7.2: per-period seconds ("25s for 1st at the end of the day")
+           — blank = the widget's default */
+        wc.perPeriod = {};
+        if (isObj(w.perPeriod)){
+          Object.keys(w.perPeriod).slice(0, 12).forEach(function(k){
+            var kk = String(k).trim().slice(0, 20);
+            if (!kk || kk === "__proto__") return;
+            var v = w.perPeriod[k];
+            if (typeof v === "number" && isFinite(v)) wc.perPeriod[kk] = Math.max(5, Math.min(300, Math.round(v)));
+          });
+        }
       }
       if (ty === "music"){
         wc.channel = "lofi";   // mozart returns when the real audio lands
@@ -5711,7 +5837,14 @@ function makeTally(host, wcfg){
    drawn once, inline, no image file */
 var FLAG_SVG = (function(){
   var W = 1235, H = 650, stripe = H / 13;
-  var out = ['<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Flag of the United States" preserveAspectRatio="xMidYMid meet">'];
+  /* the ripple is a ONE-TIME displacement (no per-frame turbulence — a
+     Chromebox can't afford that at full screen); the motion is a cheap
+     CSS sway + sheen on the wrapper */
+  var out = ['<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Flag of the United States" preserveAspectRatio="xMidYMid meet" overflow="visible">',
+    '<defs><filter id="flagRipple" x="-4%" y="-8%" width="108%" height="116%" color-interpolation-filters="sRGB">',
+    '<feTurbulence type="fractalNoise" baseFrequency="0.0035 0.012" numOctaves="1" seed="7" result="n"/>',
+    '<feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/>',
+    '</filter></defs><g filter="url(#flagRipple)">'];
   for (var i = 0; i < 13; i++){
     out.push('<rect x="0" y="' + (i * stripe) + '" width="' + W + '" height="' + (stripe + 0.5) + '" fill="' + (i % 2 ? "#FFFFFF" : "#B22234") + '"/>');
   }
@@ -5732,7 +5865,7 @@ var FLAG_SVG = (function(){
       out.push(star(gx * (row % 2 ? 2 : 1) + c * 2 * gx, gy * (row + 1)));
     }
   }
-  out.push("</svg>");
+  out.push("</g></svg>");
   return out.join("");
 })();
 
@@ -5740,12 +5873,13 @@ function makeSettle(host, wcfg){
   if (typeof wcfg.seconds !== "number" || !isFinite(wcfg.seconds)) wcfg.seconds = 30;
   if (typeof wcfg.msgDone !== "string") wcfg.msgDone = "";
   if (!isObj(wcfg.pledge)) wcfg.pledge = { on: true, minutes: 2 };
+  if (!isObj(wcfg.perPeriod)) wcfg.perPeriod = {};
   var DEF_DONE = "Still standing? Comment card.";
   var DONE_MS = 20000;
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="stStage">' +
-        '<div class="stFlag" hidden>' + FLAG_SVG + '</div>' +
+        '<div class="stFlag" hidden><div class="flagWave"><div class="flagSheen"></div>' + FLAG_SVG + '</div></div>' +
         '<div class="stTop"></div>' +
         '<div class="stBig"></div>' +
         '<div class="stSub"></div>' +
@@ -5753,8 +5887,9 @@ function makeSettle(host, wcfg){
       '<div class="stRow" hidden>' +
         '<label class="stLab">Seconds <input type="number" class="stSecs" min="5" max="300" step="5"></label>' +
         '<input type="text" class="stMsg" maxlength="60">' +
-        '<label class="stLab"><input type="checkbox" class="stPledgeCk"> Flag at the first bell for ' +
-          '<input type="number" class="stPledgeMin" min="1" max="10" step="1" aria-label="Pledge minutes"> min</label>' +
+        '<label class="stLab"><input type="checkbox" class="stPledgeCk"> Flag alone at the first bell for ' +
+          '<input type="number" class="stPledgeMin" min="1" max="10" step="1" aria-label="Pledge minutes"> min, then the slides</label>' +
+        '<div class="stPer" aria-label="Seconds per period"></div>' +
       '</div>' +
       '<div class="chips">' +
         '<button type="button" class="chip stStart">Start</button>' +
@@ -5800,13 +5935,15 @@ function makeSettle(host, wcfg){
       big.className = "stBig stMsgB";
       sub.textContent = "";
     } else if (pledging){
-      top.textContent = "Pledge & announcements";
-      big.textContent = fmtMS(pledgeUntil - Date.now());
+      top.textContent = "";                      // the flag, alone
+      big.textContent = "";
       big.className = "stBig stPledgeT";
-      sub.textContent = "then the slides";
+      sub.textContent = "";
     } else {
+      var lbl = null;
+      try { lbl = currentPeriodLabel(); } catch(e){}
       top.textContent = "At the bell";
-      big.textContent = (wcfg.seconds || 30) + "s";
+      big.textContent = secsFor(lbl) + "s";
       big.className = "stBig stArmed";
       sub.textContent = "to be in your seat";
     }
@@ -5823,19 +5960,36 @@ function makeSettle(host, wcfg){
     try { document.dispatchEvent(new CustomEvent("deckhand:settle",
       { detail: { phase: phase, host: host } })); } catch(e){}
   }
+  /* v7.2: seconds for THIS class — a per-period override wins over the
+     widget's default (Croix: "25 seconds… only for 1st period at the
+     end of the day. I'd like to be able to adjust that as I please") */
+  function secsFor(label){
+    var pp = wcfg.perPeriod || {};
+    if (label && hasOwn(pp, label) && pp[label] >= 5) return pp[label];
+    return wcfg.seconds || 30;
+  }
   function start(auto, firstBell){
     doneUntil = null; clearTimeout(doneTid);
     clearTimeout(t.tid); clearTimeout(halfTid);
     lastTickSec = null;
-    /* the Pledge window opens ONLY on the day's first bell (auto) */
+    /* v7.2 the Pledge is the FLAG ALONE (Croix: "I don't want the timer
+       and text, just the flag for 2 minutes alone on screen"): on the
+       day's first bell (auto only) no count runs — the flag takes the
+       stage, and when its minutes are up the routine hands off to the
+       slides. Later bells run the count as always. */
     if (auto === true && firstBell === true && wcfg.pledge && wcfg.pledge.on){
       clearTimeout(pledgeTid);
+      t.endAt = null;
       pledgeUntil = Date.now() + (wcfg.pledge.minutes || 2) * 60000;
       pledgeTid = setTimeout(pledgeOver, pledgeUntil - Date.now());
-    } else if (auto !== true){
-      clearPledge();                             // a manual restart drops the flag
+      tell("start");
+      paint();
+      return;
     }
-    t.endAt = Date.now() + (wcfg.seconds || 30) * 1000;
+    if (auto !== true) clearPledge();            // a manual restart drops the flag
+    var label = null;
+    try { label = currentPeriodLabel(); } catch(e){}
+    t.endAt = Date.now() + secsFor(label) * 1000;
     if (auto === true) tell("start");
     loop();
   }
@@ -5849,11 +6003,11 @@ function makeSettle(host, wcfg){
     var wasHolding = !t.endAt && !doneUntil && pledgeUntil !== null;
     clearPledge();
     paint();
-    if (wasHolding) tell("end");
+    if (wasHolding) tell("end");                 // → the slides
   }
   var pledgePaintTid = setInterval(function(){
-    if (pledgeUntil !== null && !t.endAt) paint();   // the m:ss holds ticking
-  }, 500);
+    if (!t.endAt && !doneUntil) paint();         // armed: the per-period figure follows the bells
+  }, 5000);
   /* v6.29→32, Croix: "as the clock gets closer to zero the louder the
      seconds gets" … "make the clock only audibly start ticking at 10
      then keep the fast sounding ticks at 5." The count is SILENT until
@@ -5943,8 +6097,56 @@ function makeSettle(host, wcfg){
       msgIn.placeholder = DEF_DONE;
       pledgeCk.checked = !!wcfg.pledge.on;
       pledgeMin.value = wcfg.pledge.minutes || 2;
+      renderPer();
     }
   });
+  /* v7.2: one small box per bell period — blank means the default */
+  var perEl = q(".stPer");
+  function renderPer(){
+    perEl.innerHTML = "";
+    var labels = [];
+    try { labels = bellPeriodLabels(); } catch(e){}
+    Object.keys(wcfg.perPeriod || {}).forEach(function(k){ if (labels.indexOf(k) === -1) labels.push(k); });
+    if (!labels.length){ perEl.hidden = true; return; }
+    perEl.hidden = false;
+    var cap = document.createElement("span");
+    cap.className = "stPerCap"; cap.textContent = "Seconds by period (blank = default)";
+    perEl.appendChild(cap);
+    labels.forEach(function(label){
+      var wrap = document.createElement("label");
+      wrap.className = "stPerCell";
+      var t2 = document.createElement("span"); t2.textContent = label;   // user data: textContent
+      var inp = document.createElement("input");
+      inp.type = "number"; inp.min = 5; inp.max = 300; inp.step = 5;
+      inp.placeholder = String(wcfg.seconds || 30);
+      inp.setAttribute("aria-label", "Seconds for " + label);
+      if (hasOwn(wcfg.perPeriod, label)) inp.value = wcfg.perPeriod[label];
+      function commitPer(){
+        var raw = String(inp.value).trim();
+        if (label === "__proto__") return;
+        if (raw === ""){ delete wcfg.perPeriod[label]; }
+        else {
+          var v = Math.round(+raw);
+          if (isFinite(v)){
+            if (Object.keys(wcfg.perPeriod).length < 12 || hasOwn(wcfg.perPeriod, label)){
+              wcfg.perPeriod[label] = Math.max(5, Math.min(300, v));
+              inp.value = wcfg.perPeriod[label];
+            }
+          } else inp.value = hasOwn(wcfg.perPeriod, label) ? wcfg.perPeriod[label] : "";
+        }
+        paint();
+      }
+      inp.addEventListener("change", commitPer);
+      inp.addEventListener("blur", commitPer);
+      inp.addEventListener("keydown", function(e){
+        if (Alarm.isOn()) return;
+        e.stopPropagation();
+        if (e.key === "Enter" || e.key === "Escape") inp.blur();
+      });
+      wrap.appendChild(t2); wrap.appendChild(inp);
+      perEl.appendChild(wrap);
+    });
+  }
   pledgeCk.addEventListener("change", function(){ wcfg.pledge.on = this.checked; });
   function commitPledgeMin(){
     var v = Math.round(+String(pledgeMin.value).trim());
@@ -7684,12 +7886,16 @@ function applyWaveMotion(){
    never on phones, never under reduced motion — and a kid who spots
    one gets a tiny math moment instead of a distraction. */
 var Sea = (function(){
-  var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "bottle", "attack"];
+  var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "bottle", "attack", "pennant"];
   var DUR = { serpent: 31000, fish: 4200, buoy: 47000, whale: 12500,
-              turtle: 40500, school: 15500, bottle: 52000, attack: 9500 };
+              turtle: 40500, school: 15500, bottle: 52000, attack: 9500, pennant: 22000 };
   /* the attack is the loud one — rarer from the scheduler, likelier
      from a tap on the boat (the kids asked for it) */
-  var WEIGHT = { attack: 0.35 };
+  var WEIGHT = { attack: 0.35, pennant: 0.6 };
+  /* the pennant lives ON the boat (it must drift and sway with it), so
+     its element is the boat and its class is "pennant" */
+  function elFor(name){ return document.getElementById(name === "pennant" ? "boat" : "sea-" + name); }
+  function clsFor(name){ return name === "pennant" ? "pennant" : "go"; }
   var last = null, tid = null;
   /* v6.19 (Croix watched for a few minutes and met nobody): the first
      visitor comes 1–2 min after launch, the rest every 3–7 min. Rare
@@ -7706,15 +7912,20 @@ var Sea = (function(){
   var timers = {};
   function busy(){
     return THINGS.some(function(n){
-      var th = document.getElementById("sea-" + n);
-      return th && th.classList.contains("go");
+      var th = elFor(n);
+      return th && th.classList.contains(clsFor(n));
     });
   }
   var rockTid = null;
   function play(name){
-    var th = document.getElementById("sea-" + name);
-    if (!th || th.classList.contains("go")) return;
-    th.classList.add("go");
+    var th = elFor(name);
+    if (!th || th.classList.contains(clsFor(name))) return;
+    if (name === "pennant"){
+      /* the greeting name, at run-up time (Settings may have changed it) */
+      var tx = th.querySelector(".btPenText");
+      if (tx) tx.textContent = ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " Rules";
+    }
+    th.classList.add(clsFor(name));
     if (name === "attack"){
       /* the lunge lands at ~38% — the boat lurches then rights itself */
       clearTimeout(rockTid);
@@ -7725,7 +7936,7 @@ var Sea = (function(){
         setTimeout(function(){ bt.classList.remove("rocked"); }, 2600);
       }, Math.round(DUR.attack * 0.36));
     }
-    timers[name] = setTimeout(function(){ th.classList.remove("go"); }, DUR[name] || 5000);
+    timers[name] = setTimeout(function(){ th.classList.remove(clsFor(name)); }, DUR[name] || 5000);
   }
   function pickOne(bias){
     var pool = THINGS.filter(function(n){ return n !== last; });
@@ -7752,8 +7963,8 @@ var Sea = (function(){
      find). Hiding the sea now simply ends the show. */
   function clear(){
     THINGS.forEach(function(n){
-      var th = document.getElementById("sea-" + n);
-      if (th) th.classList.remove("go");
+      var th = elFor(n);
+      if (th) th.classList.remove(clsFor(n));
       clearTimeout(timers[n]);
     });
     clearTimeout(rockTid);
@@ -9588,6 +9799,135 @@ var SaveState = (function(){
   };
 })();
 
+/* ================= INK (v7.2) =================
+   Croix: "draw over anything via the tool pad in some elegant way."
+   One transparent canvas over the whole board, a floating palette, and
+   nothing else changes: Draw arms it (D, the dock, or the stage bar),
+   Done disarms it and the ink STAYS — annotate the slides, then keep
+   clicking through them. Undo/Clear are the only ways ink leaves.
+   Strokes are re-rendered on resize (stored in CSS pixels); session-
+   only, like the sketch pad (a bitmap has no place in the config). */
+var Ink = (function(){
+  var cv = $("ink"), bar = $("inkBar");
+  var ctx = null, strokes = [], cur = null, pid = null, armed = false;
+  var color = "#17324D", size = 9, erase = false;
+  function fit(){
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = window.innerWidth, h = window.innerHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)){
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    }
+    ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    redraw();
+  }
+  function strokePath(st){
+    if (!st.pts.length) return;
+    ctx.globalCompositeOperation = st.erase ? "destination-out" : (st.hi ? "multiply" : "source-over");
+    ctx.strokeStyle = st.color;
+    ctx.globalAlpha = st.hi ? 0.45 : 1;
+    ctx.lineWidth = st.erase ? st.size * 3 : (st.hi ? st.size * 2.2 : st.size);
+    ctx.beginPath();
+    var p = st.pts;
+    ctx.moveTo(p[0].x, p[0].y);
+    if (p.length === 1){ ctx.lineTo(p[0].x + 0.01, p[0].y); }
+    for (var i = 1; i < p.length - 1; i++){
+      var mx = (p[i].x + p[i+1].x) / 2, my = (p[i].y + p[i+1].y) / 2;
+      ctx.quadraticCurveTo(p[i].x, p[i].y, mx, my);
+    }
+    if (p.length > 1) ctx.lineTo(p[p.length-1].x, p[p.length-1].y);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+  }
+  function redraw(){
+    if (!ctx) return;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.restore();
+    strokes.forEach(strokePath);
+    if (cur) strokePath(cur);
+  }
+  function paintBar(){
+    bar.querySelectorAll("[data-color]").forEach(function(b){
+      b.setAttribute("aria-pressed", (!erase && b.dataset.color === color) ? "true" : "false");
+    });
+    bar.querySelectorAll("[data-size]").forEach(function(b){
+      b.setAttribute("aria-pressed", +b.dataset.size === size ? "true" : "false");
+    });
+    $("inkEraser").setAttribute("aria-pressed", erase ? "true" : "false");
+  }
+  function arm(on){
+    armed = !!on;
+    document.body.classList.toggle("inking", armed);
+    bar.hidden = !armed;
+    ["inkBtn", "inkBtnStage"].forEach(function(id){
+      var b = $(id); if (b) b.setAttribute("aria-pressed", armed ? "true" : "false");
+    });
+    if (armed){ fit(); paintBar(); }
+    else if (cur){ endStroke(); }
+  }
+  function endStroke(){
+    if (cur){ strokes.push(cur); cur = null; }
+    pid = null;
+    redraw();
+  }
+  function down(e){
+    if (!armed || pid !== null) return;        // one finger draws; a second is ignored
+    if (Alarm.isOn()) return;
+    pid = e.pointerId;
+    try { cv.setPointerCapture(pid); } catch(_){}
+    var hi = !erase && color === "#FFE45C";
+    cur = { color: color, size: size, erase: erase, hi: hi, pts: [{ x: e.clientX, y: e.clientY }] };
+    redraw();
+    e.preventDefault();
+  }
+  function move(e){
+    if (!cur || e.pointerId !== pid) return;
+    var last = cur.pts[cur.pts.length - 1];
+    if (Math.abs(last.x - e.clientX) + Math.abs(last.y - e.clientY) < 1.5) return;
+    cur.pts.push({ x: e.clientX, y: e.clientY });
+    redraw();
+  }
+  function up(e){
+    if (!cur || e.pointerId !== pid) return;
+    endStroke();
+  }
+  return {
+    init: function(){
+      fit();
+      window.addEventListener("resize", fit);
+      cv.addEventListener("pointerdown", down);
+      cv.addEventListener("pointermove", move);
+      cv.addEventListener("pointerup", up);
+      cv.addEventListener("pointercancel", up);
+      cv.addEventListener("lostpointercapture", up);
+      cv.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+      /* palette taps must not reach the board (or steal a stroke) */
+      bar.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
+      bar.addEventListener("click", function(e){
+        var b = e.target.closest("button"); if (!b) return;
+        if (b.dataset.color){ color = b.dataset.color; erase = false; }
+        else if (b.dataset.size){ size = +b.dataset.size; }
+        else if (b.id === "inkEraser"){ erase = !erase; }
+        else if (b.id === "inkUndo"){ strokes.pop(); redraw(); }
+        else if (b.id === "inkClear"){ strokes = []; cur = null; redraw(); }
+        else if (b.id === "inkDone"){ arm(false); return; }
+        paintBar();
+      });
+      wireButton($("inkBtn"), function(){ arm(!armed); });
+      var sb = $("inkBtnStage"); if (sb) wireButton(sb, function(){ arm(!armed); });
+      document.addEventListener("deckhand:home", function(){ arm(false); });
+    },
+    toggle: function(){ arm(!armed); },
+    arm: arm,
+    isArmed: function(){ return armed; },
+    clear: function(){ strokes = []; cur = null; redraw(); },
+    count: function(){ return strokes.length; }   // test hook
+  };
+})();
+
 /* ================= Keyboard routing =================
    Priority: alarm overlay -> settings Tab trap -> form fields ->
    settings open -> landing -> digit entry -> entry start -> globals. */
@@ -9666,7 +10006,9 @@ var Keys = (function(){
     // 7. global shortcuts (Space/R act on the selected widget)
     if (isButton && (k === " " || k === "Enter")) return;
     var lk = k.length === 1 ? k.toLowerCase() : k;
+    if (Ink.isArmed() && k === "Escape"){ Ink.arm(false); e.preventDefault(); return; }
     if (k === " "){ if (sel) sel.startPause(); e.preventDefault(); }
+    else if (lk === "d"){ Ink.toggle(); }
     else if (lk === "r"){ if (sel) sel.reset(); }
     else if (lk === "f"){ FS.toggle(); }
     else if (lk === "m"){ Sound.toggle(); }
@@ -9681,7 +10023,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -9701,6 +10043,7 @@ window.Deckhand = {
   get dirty(){ return SaveState.isDirty(); },
   get configSource(){ return cfgSource; },
   store: Store,                                 // v7.0: device persistence (test hook)
+  ink: Ink,                                     // v7.2: the overlay (test hook)
   flush: SaveState.flush,                       // v7.0: persist now
   alarmCalmMs: Alarm._setCalmMs,                // test hook: shrink the 45s
   ghostFuseMs: function(ms){ Canvas._setGhostFuse(ms); },  // test hook

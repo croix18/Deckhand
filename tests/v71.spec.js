@@ -183,7 +183,7 @@ test.describe("embed", () => {
 });
 
 test.describe("the Pledge", () => {
-  test("v7.1: the day's first bell shows the flag, holds the stage after the count, then hands off", async ({ page, dh }) => {
+  test("v7.1/7.2: the day's first bell is the flag ALONE — no count, no text — then the slides", async ({ page, dh }) => {
     test.setTimeout(150000);                          // a real one-minute Pledge window
     await dh.openAt("#t=2026-09-24T09:19:38");        // 1st period starts 9:20 — the first bell (setup takes a while under load)
     await dh.launch();
@@ -197,11 +197,15 @@ test.describe("the Pledge", () => {
     });
     await expect(page.locator(".w-settle")).toHaveClass(/wFull/, { timeout: 30000 });
     await expect(page.locator(".w-settle .stFlag")).toBeVisible();
-    ok(!!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())), "pledge window not opened");
-    // after the count and the spell, the flag HOLDS the stage
-    await expect(page.locator(".w-settle .stTop")).toHaveText("Pledge & announcements", { timeout: 12000 });
     await expect(page.locator(".w-settle")).toHaveClass(/stPledgeOnly/);
-    await expect(page.locator(".w-settle .stBig")).toHaveText(/^0:[0-5]\d$/);
+    ok(!!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())), "pledge window not opened");
+    // v7.2: no count runs and nothing is written — the flag has the screen to itself
+    ok((await page.evaluate(() => document.querySelector(".w-settle")._entry.api.running())) === false, "the count ran during the Pledge");
+    await expect(page.locator(".w-settle .stTop")).toHaveText("");
+    await expect(page.locator(".w-settle .stBig")).toHaveText("");
+    await expect(page.locator(".w-settle .stStart")).toBeHidden();
+    const sway = await page.evaluate(() => getComputedStyle(document.querySelector(".w-settle .flagWave")).animationName);
+    ok(sway === "none" || /flagSway/.test(sway), "flag wave rule missing: " + sway);   // reduced motion in the suite → none
     await expect(page.locator(".w-embed")).not.toHaveClass(/wFull/);
     // …and hands off when the minute is up
     await expect(page.locator(".w-embed")).toHaveClass(/wFull/, { timeout: 70000 });
@@ -209,10 +213,34 @@ test.describe("the Pledge", () => {
     await expect(page.locator(".w-settle .stFlag")).toBeHidden();
   });
 
+  test("v7.2: on a reversed (Black) week the flag flies for 6th at 9:20, never for 1st at 3:07 — and 1st gets its own 25 seconds", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T15:06:52");        // Black Monday: 1st is the LAST block
+    await dh.launch();
+    await page.evaluate(() => { const en = document.querySelector(".w-settle")._entry; en.cfg.perPeriod = { "1st": 25 }; });
+    await expect(page.locator(".w-settle .stBig")).toHaveText("25s", { timeout: 6000 });   // armed readout follows the period
+    await expect(page.locator(".w-settle")).toHaveClass(/wFull/, { timeout: 15000 });
+    await expect(page.locator(".w-settle .stFlag")).toBeHidden();
+    ok((await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())) === null, "flag flew for 1st at the end of the day");
+    await expect(page.locator(".w-settle .stTop")).toHaveText("Find your seat");
+    const secs = await page.evaluate(() => +document.querySelector(".w-settle .stBig").textContent);
+    ok(secs >= 20 && secs <= 25, "1st did not get 25 seconds: " + secs);
+    await dh.flush();
+    ok((await dh.stored()).cfg.scenes[0].widgets.filter(w => w.type === "settle")[0].perPeriod["1st"] === 25, "perPeriod not saved");
+    // the ✎ row shows one box per period; a blank box means the default
+    await page.click("#unfocusBtn");
+    await page.keyboard.press("r");
+    await page.click(".w-settle .stEdit");
+    await expect(page.locator(".w-settle .stPerCell")).toHaveCount(7);   // the bell periods, Lunch excluded
+    await page.fill('.w-settle .stPerCell input[aria-label="Seconds for 1st"]', "");
+    await page.locator('.w-settle .stPerCell input[aria-label="Seconds for 1st"]').dispatchEvent("blur");
+    ok(!("1st" in (await page.evaluate(() => document.querySelector(".w-settle")._entry.cfg.perPeriod))), "blank did not clear the override");
+    await expect(page.locator(".w-settle .stBig")).toHaveText("30s");
+  });
+
   test("v7.1: a later bell shows no flag; the ✎ row turns the Pledge off; sanitize bounds the minutes", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-24T10:15:52");        // 2nd period — not the first bell
     await dh.launch();
-    await page.evaluate(() => { const en = document.querySelector(".w-settle")._entry; en.cfg.seconds = 5; });
+    await page.evaluate(() => { const en = document.querySelector(".w-settle")._entry; en.cfg.seconds = 5; en.cfg.perPeriod = {}; });
     await expect(page.locator(".w-settle")).toHaveClass(/wFull/, { timeout: 15000 });
     await expect(page.locator(".w-settle .stFlag")).toBeHidden();
     ok((await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())) === null, "pledge opened on a later bell");

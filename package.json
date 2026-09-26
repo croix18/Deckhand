@@ -1,6 +1,6 @@
 {
   "name": "deckhand",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "private": true,
   "description": "Single-file classroom OS for a 7th-grade math room: clock, bells, timers, widgets, embeds.",
   "license": "MIT",
