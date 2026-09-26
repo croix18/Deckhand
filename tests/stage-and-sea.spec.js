@@ -35,7 +35,7 @@ test.describe("v6.14 stage mode", () => {
     ok(staged.mode && staged.header === "none", "header still up: " + JSON.stringify(staged));
     ok(staged.width > before * 2 && staged.top < 20,
       "deck did not take the screen: " + JSON.stringify(staged));
-    ok(staged.barBtns === 2 && !staged.barHidden, "focus bar incomplete");
+    ok(staged.barBtns === 3 && !staged.barHidden, "focus bar incomplete");   // Timer · Draw (v7.2) · Exit
     // Home mid-focus: the landing gets its header back…
     await page.keyboard.press("Escape");         // …but first: Esc fully restores
     const restored = await page.evaluate(() => ({

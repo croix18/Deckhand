@@ -93,7 +93,7 @@ test.describe("autosave on the device", () => {
     await expect(page.locator("#resetBtn")).toHaveClass(/armed/);
     await expect(page.locator("#setErrors")).toContainText("forgets everything");
     // arming disarms itself; a second tap inside the window reloads on the file
-    await page.evaluate(() => { try { sessionStorage.setItem("dh.keepStore", "1"); } catch (e) {} });
+    await page.evaluate(() => { try { sessionStorage.setItem("dh.keepStore", "1"); } catch (e) {} window.name = "dh.keepStore"; });
     await Promise.all([page.waitForNavigation(), page.click("#resetBtn")]);
     await page.waitForSelector("#launchBtn");
     await expect(page.locator("#greet")).toContainText("Mr. Shaffer");
@@ -159,6 +159,7 @@ test.describe("autosave on the device", () => {
       o.cfg.ownerName = "Ms. Device";
       localStorage.setItem("deckhand.config", JSON.stringify(o));
       try { sessionStorage.setItem("dh.keepStore", "1"); } catch (e) {}
+      window.name = "dh.keepStore";
     });
     const p = dh.writeFixture("broken.html", "{ this is not json");
     await page.goto("file://" + p + "#t=2026-09-21T10:30");

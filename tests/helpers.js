@@ -39,9 +39,15 @@ const test = base.test.extend({
     // fresh-boot semantics: wipe the device store on every navigation
     // unless the tab opted into keeping it (dh.reopen sets the flag)
     await context.addInitScript(() => {
+      /* the keep flag rides in sessionStorage AND window.name: a
+         sessionStorage write raced a reload on file:// about one run in
+         six (the new document saw no flag and cleared the store — the
+         "rosters lost" flake); window.name is carried by the tab itself */
       try {
-        if (sessionStorage.getItem("dh.keepStore") !== "1") localStorage.clear();
-        sessionStorage.removeItem("dh.keepStore");
+        var keep = false;
+        try { keep = sessionStorage.getItem("dh.keepStore") === "1"; sessionStorage.removeItem("dh.keepStore"); } catch (e) {}
+        if (window.name === "dh.keepStore") { keep = true; window.name = ""; }
+        if (!keep) localStorage.clear();
       } catch (e) {}
     });
     await use(context);
@@ -78,6 +84,7 @@ const test = base.test.extend({
            place, flag, and reload */
         await page.evaluate(h => {
           try { sessionStorage.setItem("dh.keepStore", "1"); } catch (e) {}
+          window.name = "dh.keepStore";
           if (location.hash !== h) location.hash = h;
         }, hash || "");
         await page.reload();

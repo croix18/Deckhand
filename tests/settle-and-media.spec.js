@@ -375,6 +375,46 @@ test.describe("music", () => {
     await page.click(".w-music .muPlay");
     await page.click(".w-music .wClose");          // destroy closes the context
   });
+
+  test("v7.3 music: ten named sides, Next › skips live and while locked, every side makes sound", async ({ page, dh }) => {
+    await dh.openAt("");
+    await dh.launch();
+    await dh.addW("addMusicBtn");
+    const what = () => page.locator(".w-music .muWhat").textContent();
+    const running = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
+    const level = () => page.evaluate(() => document.querySelector(".w-music")._entry.api._level());
+    expect(await what()).toBe("Lofi — Porch swing");     // side A is the original tape
+    // Next › before Play just turns the tape over: no context, no sound
+    await page.click(".w-music .muNext");
+    expect(await what()).toBe("Lofi — Rainy window");
+    ok(!(await running()), "Next started playback");
+    await page.click(".w-music .muPlay");
+    await expect(page.locator(".w-music .muPlay")).toHaveText("Pause");
+    await expect.poll(level, { timeout: 6000 }).toBeGreaterThan(0.1);
+    // the first pass walks the sides in order; each keeps playing
+    const seen = new Set(["Lofi — Porch swing", await what()]);
+    for (let i = 0; i < 8; i++) {
+      await page.click(".w-music .muNext");
+      const name = await what();
+      ok(/^Lofi — /.test(name) && !seen.has(name), "side repeated or unnamed: " + name);
+      seen.add(name);
+      ok(await running(), "Next stopped playback on " + name);
+      await expect.poll(level, { timeout: 6000 }).toBeGreaterThan(0.05);
+    }
+    expect(seen.size).toBe(10);
+    await page.click(".w-music .muNext");            // the pass is over: a shuffled side, never the one just played
+    ok(/^Lofi — /.test(await what()) && (await what()) !== "Lofi — Corner store", "shuffle repeated the last side");
+    // locked, Next is still a play action
+    await page.click("#lockBtn");
+    const before = await what();
+    await page.click(".w-music .muNext");
+    expect(await what()).not.toBe(before);
+    ok(await running(), "skip while locked killed playback");
+    await dh.unlock();
+    await page.click(".w-music .muPlay");
+    await expect.poll(level, { timeout: 6000 }).toBeLessThan(0.02);
+    await page.click(".w-music .wClose");
+  });
 });
 
 test.describe("embeds", () => {

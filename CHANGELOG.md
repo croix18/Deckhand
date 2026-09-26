@@ -2,7 +2,15 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
-## 7.2.0 — 2026-09-26
+## 7.3.0 — 2026-09-26
+
+**Nine more sides on the tape.** The lofi tape had four sides that shared one e-piano
+and one beat; it has ten now, each with its own key, tempo, progression, motif, voice
+(e-piano, glass rhodes, kalimba pluck, pad), drum feel (boom-bap, halftime, brushes,
+bossa, none) and echo. Side A is the original, untouched. The first listen walks the
+sides in order; after that they shuffle. A **Next ›** chip skips to another side
+without a gap, live while locked.
+
 
 **The Pledge, take two.** At the day's first bell the flag now has the screen to
 itself — no count, no words — with a fabric ripple and a slow sway; when its minutes
