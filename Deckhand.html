@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.8.1",
+  "appVersion": "7.9.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -55,6 +55,7 @@
     "settle": { "on": true, "seconds": 30, "msgDone": "", "pledge": { "on": true, "minutes": 2 }, "perPeriod": {} },
     "autoWeek": true,
     "anchorMonday": "2026-08-31",
+    "skipWeeks": ["2026-11-23", "2026-12-21", "2026-12-28", "2027-03-22"],
     "anchorWeekName": "Black Week",
     "defaultGroup": "Teal Week",
     "groups": [
@@ -2807,7 +2808,13 @@
                   <select class="setSelect" id="sAnchorWeek"></select>
                 </div>
               </div>
-              <div class="fHint">Weeks alternate between the first two week types from the anchor Monday. Tapping a chip on the home screen still overrides for the day; Wednesdays switch times on their own.</div>
+              <div class="fGrid c1">
+                <div class="fField">
+                  <label class="fLabel" for="sSkipWeeks">Weeks with no school (Mondays)</label>
+                  <input class="setInput" type="text" id="sSkipWeeks" placeholder="2026-11-23, 2026-12-21, 2026-12-28, 2027-03-22" spellcheck="false">
+                </div>
+              </div>
+              <div class="fHint">Weeks alternate between the first two week types from the anchor Monday, counting <b>school weeks</b>: a week with no school days (Thanksgiving, winter break, spring break) doesn&rsquo;t flip the colour. A week with a single holiday still counts. Tapping a chip on the home screen still overrides for the day; Wednesdays switch times on their own.</div>
             </div>
             <div class="fGroup">
               <div class="fSection">Clock readout</div>
@@ -3114,7 +3121,7 @@ var DEFAULT_SCENES = [
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.8.1",
+  appVersion: "7.9.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies" },
   activeScene: "Daily Board",
@@ -3130,6 +3137,7 @@ var DEFAULTS = {
     bathroom: { enabled: true, firstMinutes: 10, lastMinutes: 10 },
     settle: DEFAULT_SETTLE,
     autoWeek: false, anchorMonday: "2026-08-31", anchorWeekName: "",
+    skipWeeks: [],                               // v7.9: Mondays of weeks with no school (they don't count)
     defaultGroup: "none", groups: []
   }
 };
@@ -3501,6 +3509,20 @@ function sanitize(c){
       settle: settle,                             // v7.7: the moment of the clock
       autoWeek: bool(b.autoWeek, false) && groups.length >= 2,
       anchorMonday: /^\d{4}-\d{2}-\d{2}$/.test(b.anchorMonday) ? b.anchorMonday : DEFAULTS.bell.anchorMonday,
+      /* v7.9 (Croix: "it alternates by school week"): weeks with no school days
+         don't advance the rotation — a list of their Mondays, deduped, ≤ 20 */
+      skipWeeks: (function(){
+        var out = [], seen = Object.create(null);
+        (Array.isArray(b.skipWeeks) ? b.skipWeeks : []).slice(0, 40).forEach(function(x){
+          if (typeof x !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(x)) return;
+          var d = new Date(+x.slice(0, 4), +x.slice(5, 7) - 1, +x.slice(8, 10));
+          if (isNaN(d.getTime())) return;
+          d.setDate(d.getDate() - ((d.getDay() + 6) % 7));        // normalize to the Monday
+          var k = dateKey(d);
+          if (!seen[k] && out.length < 20){ seen[k] = true; out.push(k); }
+        });
+        return out.sort();
+      })(),
       anchorWeekName: (groups[1] && groups[1].name === b.anchorWeekName) || (groups[0] && groups[0].name === b.anchorWeekName)
         ? b.anchorWeekName
         : (groups.length ? groups[0].name : ""),
@@ -3831,8 +3853,14 @@ function verNum(v){ var p = String(v || "0").split(".").map(function(x){ return 
   try {
     var mig = migrate(st.cfg);
     if (!isObj(mig) || !Object.keys(mig).length) throw new Error("unrecognized stored schemaVersion");
+    var fileSkips = (!fileBroken && cfg && cfg.bell && cfg.bell.skipWeeks) ? cfg.bell.skipWeeks.slice() : [];
     cfg = sanitize(mig);
     cfgSource = "device";
+    /* v7.9: break weeks are calendar facts, not layout — a copy saved before
+       the list existed takes the file's (an empty list in the copy is kept) */
+    if (!(isObj(mig.bell) && Array.isArray(mig.bell.skipWeeks)) && fileSkips.length){
+      cfg.bell.skipWeeks = fileSkips;
+    }
     storedFileVersion = typeof st.fileVersion === "string" ? st.fileVersion : null;
     cfgFallback = false;                         // the device copy is good even if the file isn't
   } catch(e){
@@ -3978,7 +4006,17 @@ var Bell = (function(){
       return y;
     }
     var a = new Date(+m[1], +m[2]-1, +m[3]);
-    var diff = Math.round((mondayOf(d) - mondayOf(a)) / 604800000);
+    var aMon = mondayOf(a), dMon = mondayOf(d);
+    var diff = Math.round((dMon - aMon) / 604800000);
+    /* v7.9: SCHOOL weeks, not calendar weeks — a week with no school days
+       (Thanksgiving, winter break, spring break) doesn't flip the colour. A
+       break week itself keeps the colour of the school week before it. */
+    var lo = Math.min(aMon, dMon), hi = Math.max(aMon, dMon), skipped = 0;
+    (b.skipWeeks || []).forEach(function(k){
+      var s = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10)).getTime();
+      if (s > lo && s <= hi) skipped++;
+    });
+    diff = diff < 0 ? diff + skipped : diff - skipped;
     var even = ((diff % 2) + 2) % 2 === 0;
     return even ? anchorIdx : (anchorIdx === 0 ? 1 : 0);
   }
@@ -10573,6 +10611,7 @@ var Settings = (function(){
     seaWeather: $("sSeaWeather"),
     warn: $("sWarn"), warnChime: $("sWarnChime"),
     bath: $("sBath"), bathFirst: $("sBathFirst"), bathLast: $("sBathLast"),
+    skipWeeks: $("sSkipWeeks"),
     stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"),
     stPledge: $("sStPledge"), stPledgeMin: $("sStPledgeMin"), stPer: $("sStPer"),
     nudge: $("sNudge"), presets: $("sPresets"), errors: $("setErrors"),
@@ -10743,6 +10782,7 @@ var Settings = (function(){
     f.sound.checked = !!cfg.sound.enabled;
     f.auto.checked = !!cfg.bell.autoWeek;
     f.anchor.value = cfg.bell.anchorMonday || "";
+    f.skipWeeks.value = (cfg.bell.skipWeeks || []).join(", ");
     f.nudge.value = cfg.bell.nudgeSeconds || 0;
     f.presets.value = (cfg.timer.presetsMinutes || []).join(",");
     rebuildDefaultOptions();
@@ -10934,6 +10974,18 @@ var Settings = (function(){
       if (!/^\d{4}-\d{2}-\d{2}$/.test(f.anchor.value)) errors.push("Week rotation: pick the anchor week's date");
       if (!(anchorIdx === 0 || anchorIdx === 1)) errors.push("Week rotation: pick which week that was");
     }
+    var skipWeeks = [];
+    f.skipWeeks.value.split(/[,\s]+/).forEach(function(tok){
+      if (!tok) return;
+      var mm = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(tok);
+      var dd = mm ? new Date(+mm[1], +mm[2] - 1, +mm[3]) : null;
+      if (!dd || isNaN(dd.getTime())){ errors.push('Weeks with no school: "' + tok + '" is not a date (use 2026-11-23)'); return; }
+      dd.setDate(dd.getDate() - ((dd.getDay() + 6) % 7));
+      var k = dateKey(dd);
+      if (skipWeeks.indexOf(k) === -1) skipWeeks.push(k);
+    });
+    if (skipWeeks.length > 20) errors.push("Weeks with no school: at most 20");
+    skipWeeks.sort();
 
     var newGroups = [];
     var seenNames = Object.create(null);   // no inherited keys ("constructor"...)
@@ -10976,7 +11028,8 @@ var Settings = (function(){
        Turning rotation OFF computes nothing — the current pick stands. */
     var autoChanged = (autoOn && !cfg.bell.autoWeek) ||
                       (autoOn && cfg.bell.autoWeek &&
-                        (cfg.bell.anchorMonday !== f.anchor.value || oldAnchorIdx !== anchorIdx));
+                        (cfg.bell.anchorMonday !== f.anchor.value || oldAnchorIdx !== anchorIdx ||
+                         skipWeeks.join() !== (cfg.bell.skipWeeks || []).join()));
     cfg.ownerName = f.name.value.trim().slice(0, 40);
     cfg.timer.presetsMinutes = presets;
     cfg.sound.enabled = f.sound.checked;
@@ -11009,6 +11062,7 @@ var Settings = (function(){
     cfg.bell.nudgeSeconds = nudge;
     cfg.bell.autoWeek = autoOn && newGroups.length >= 2;
     if (autoOn){ cfg.bell.anchorMonday = f.anchor.value; cfg.bell.anchorWeekName = newAnchorName; }
+    cfg.bell.skipWeeks = skipWeeks;
     cfg.bell.groups = newGroups;
     cfg.rosters = gatherRosters();
     /* re-key the roster grid immediately: if this Apply renamed a period,
@@ -11352,7 +11406,8 @@ var SaveState = (function(){
             fileBells = fileCfg.bell;
           } catch(e){}
           var bellBtn = document.getElementById("verNudgeBells");
-          if (!fileBells || JSON.stringify(fileBells.groups) === JSON.stringify(cfg.bell.groups)){
+          var pick = function(bb){ return JSON.stringify([bb.groups, bb.anchorMonday, bb.anchorWeekName, bb.autoWeek, bb.skipWeeks]); };
+          if (!fileBells || pick(fileBells) === pick(cfg.bell)){
             bellBtn.hidden = true;               // nothing to adopt
           }
           wireButton(bellBtn, function(){
@@ -11360,6 +11415,7 @@ var SaveState = (function(){
             cfg.bell.anchorMonday = fileBells.anchorMonday;
             cfg.bell.anchorWeekName = fileBells.anchorWeekName;
             cfg.bell.autoWeek = fileBells.autoWeek;
+            cfg.bell.skipWeeks = fileBells.skipWeeks.slice();   // v7.9
             cfg.bell.defaultGroup = fileBells.defaultGroup;
             Bell.reResolve(null);
             Landing.refresh();

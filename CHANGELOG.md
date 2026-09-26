@@ -2,6 +2,19 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.9.0 — 2026-09-28
+
+**The rotation counts school weeks.** Croix: "it alternates by school week." A week with
+no school days no longer flips Teal/Black: the Mondays of those weeks live in
+*Settings → Bells → Week rotation → Weeks with no school*, any day of the week normalizes
+to its Monday, and the seed carries Lake County's 2026-27 breaks (Thanksgiving Nov 23,
+winter Dec 21 and Dec 28, spring Mar 22). A break week keeps the colour of the school
+week before it; the next school week flips from there. A board saved before the list
+existed takes the file's dates at boot (a saved empty list is respected), and the update
+nudge's "Use the new bell schedule" carries them too. Under the old calendar count, every
+week from Nov 30 to winter break would have been the wrong colour, and every week after
+winter break the right one again by accident. Three tests; 220 green.
+
 ## 7.8.1 — 2026-09-28
 
 **Batch C — the verify list, and the design lens's small words.** The school-hosting

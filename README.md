@@ -9,7 +9,7 @@ or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.8.1; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.9.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts.
 
 Since v7.0 the board **saves itself on the device**: layout, bells, and class rosters
@@ -55,7 +55,7 @@ Chart backup…** takes its exported JSON anywhere. Apply to keep.
 
 ## Tests
 
-`tests/` — a Playwright suite (`@playwright/test`), 217 tests split by feature, each in
+`tests/` — a Playwright suite (`@playwright/test`), 220 tests split by feature, each in
 its own fresh browser context, run in parallel.
 
 ```sh
