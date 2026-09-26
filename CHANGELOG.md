@@ -2,6 +2,41 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.6.0 — 2026-09-28
+
+**Robustness, no visible change.** Batch A of the audit round's plan (`docs/reviews/audit-2026-09-27-*`);
+the settle-in-as-a-moment and the one chrome bar are 7.7, the sketch backgrounds and the
+probability kit are 7.8.
+
+**A scene switch keeps a running timer.** A timer or stopwatch that is counting rides along
+to the next scene as a floated card, still counting, and is handed back to its own scene on
+return (never duplicated, never written into the other scene's config). Idle cards are
+dropped as before. Stopwatches gained `running()` for this.
+
+**The timer face paints at 10 Hz.** The ring and tide faces used to repaint every animation
+frame (60 style + layout passes a second on the Chromebox); they now paint at most ten
+times a second, and the tide is a `transform: scaleY()` instead of a height, so it never
+forces layout.
+
+**Absent marks are for today.** The board runs for weeks without a reload; a mark made
+Tuesday no longer skips that student on Wednesday — the marks are keyed to the (simulated)
+calendar date and clear at midnight.
+
+**☆ names a deck in a row of ours.** The deck library's `window.prompt` (a system dialog the
+panel draws off-theme, off-keyboard and sometimes not at all) is replaced by an inline
+"Name this deck" row: Save / Enter keeps it, ✕ / Escape drops it, the ✎ row folds it away.
+
+**Ink draws incrementally.** Finished strokes live on an offscreen copy; a pen move draws
+one new segment (the highlighter, translucent, repaints only its own stroke), so the pen
+no longer lags more the longer the lesson (98 ms a move at 150 strokes, per the adversarial
+audit). Undo, Clear and a resize rebuild once.
+
+**Small things.** The scoreboard sanitizer filters junk entries *before* it takes the first
+four (a junk entry used to cost a real team its place); the bathroom-closed pill is sand,
+not coral (coral is for alarms); the alarm says "Tap anywhere to dismiss". The Pledge flag
+was measured centred at three viewports (the review's "runs past its right edge" did not
+reproduce) — left alone. 204 tests.
+
 ## 7.5.1 — 2026-09-27
 
 **The audit round.** Four reviews of the whole project (`docs/reviews/audit-2026-09-27-*`):

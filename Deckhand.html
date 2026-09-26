@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.5.1",
+  "appVersion": "7.6.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -229,7 +229,8 @@
     padding:7px 20px; border-radius:999px; font-variant-numeric:tabular-nums;
   }
   #bathPill[hidden]{display:none;}
-  #bathPill.closed{background:var(--coral); color:var(--white);}
+  /* v7.6: closed is a routine state, not an alert — coral is for alarms */
+  #bathPill.closed{background:var(--sand); color:var(--navy);}
   #bathPill.open{background:var(--paleturq); color:var(--navy);}
 
   /* end-of-class warning */
@@ -1367,6 +1368,13 @@
   .embRow2[hidden]{display:none;}
   .embRow2 .embSaved{margin:0; justify-content:flex-start; flex:1;}
   .embStar{font-size:20px;}
+  /* v7.6: ☆ names the deck in a row of its own (window.prompt is a system
+     dialog the panel draws off-theme and off-keyboard; this one is ours) */
+  .embNameRow{display:flex; gap:8px; padding:0 42px 12px; background:var(--paleturq);
+    align-items:center; width:100%; align-self:stretch;}
+  .embNameRow[hidden], body.locked .embNameRow{display:none;}
+  .embNameRow label{font-weight:700; color:var(--teal); font-size:clamp(10px, 2cqw, 14px); white-space:nowrap;}
+  .embNameRow .embName{max-width:320px;}
   body.locked .embRow2{display:none;}
   /* v7.1 the SHELF: a stage-only deck is hidden until it is staged */
   .widget.wShelf:not(.wFull):not(.embEditing){display:none;}
@@ -1393,12 +1401,12 @@
   .embNote[hidden]{display:none;}
   .embKeys{width:100%; align-self:stretch;}
   body.locked .embRow{display:none;}
-  .embIn{
+  .embIn, .embName{
     flex:1; min-width:0; font-family:inherit; font-weight:600; color:var(--navy);
     font-size:clamp(11px, 2.2cqw, 15px);
     border:2px solid var(--grid); border-radius:10px; padding:6px 10px;
   }
-  .embIn:focus-visible{outline:3px solid var(--turq); outline-offset:1px;}
+  .embIn:focus-visible, .embName:focus-visible{outline:3px solid var(--turq); outline-offset:1px;}
   .embGo{
     font-family:inherit; font-weight:900; font-size:18px; line-height:1;
     border:none; cursor:pointer; background:var(--turq); color:var(--navy);
@@ -1447,7 +1455,7 @@
     background:var(--white); overflow:hidden;
   }
   .tideTank[hidden]{display:none;}
-  .tideWater{position:absolute; left:0; right:0; bottom:0; height:100%; background:var(--turq); transition:background .3s;}
+  .tideWater{position:absolute; left:0; right:0; bottom:0; height:100%; background:var(--turq); transition:background .3s; transform-origin:50% 100%; transform:scaleY(1);}
   .tideWaves{
     position:absolute; top:-11px; left:0; width:200%; height:14px;
     animation:tideSlide 5s linear infinite;
@@ -2955,7 +2963,7 @@
 <div id="alarm" role="alert">
   <h1>TIME&rsquo;S UP</h1>
   <p id="alarmWho"></p>
-  <p>Click anywhere to dismiss</p>
+  <p>Tap anywhere to dismiss</p>
 </div>
 
 <div id="verNudge" role="status" hidden>
@@ -2994,7 +3002,7 @@ var DEFAULT_SCENES = [
 ];
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.5.1",
+  appVersion: "7.6.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies" },
   activeScene: "Daily Board",
@@ -3280,8 +3288,11 @@ function sanitize(c){
         }
       }
       if (ty === "score"){
-        wc.teams = (Array.isArray(w.teams) ? w.teams : []).slice(0, 4)
+        /* filter THEN slice: a junk entry among the first four used to
+           cost a real team its place (v7.6) */
+        wc.teams = (Array.isArray(w.teams) ? w.teams : [])
           .filter(isObj)
+          .slice(0, 4)
           .map(function(t, ti){
             return { name: str(t.name, "").trim().slice(0, 16) || ("Team " + (ti+1)),
                      score: Math.round(numIn(t.score, 0, 999, 0)) };
@@ -4629,7 +4640,7 @@ function makeTimer(host, wcfg, assignIds){
   }
   function applyVisFrac(frac){
     if (visStyle() === "tide"){
-      water.style.height = (frac * 100) + "%";
+      water.style.transform = "scaleY(" + frac.toFixed(4) + ")";   // v7.6: a transform, not a height (no layout)
     } else {
       var r = +progC.getAttribute("r");
       var C = 2 * Math.PI * r;
@@ -4637,12 +4648,20 @@ function makeTimer(host, wcfg, assignIds){
       progC.setAttribute("stroke-dashoffset", C * (1 - frac));
     }
   }
+  /* v7.6 (audit): the face used to repaint every frame — a ring that moves a pixel
+     every half second cost 60 style+layout passes a second on the Chromebox. It now
+     paints at most 10 times a second (the rAF still keeps it in step with the display). */
+  var visLast = 0, visPaints = 0;
   function visFrame(){
     visRaf = null;
     if (destroyed || !t.endAt || visWrap.hidden) return;
-    var remain = Math.max(0, t.endAt - Date.now());
-    var denom = t.visMax > 0 ? t.visMax : t.setMs;
-    applyVisFrac(denom > 0 ? Math.max(0, Math.min(1, remain / denom)) : 0);
+    var nowMs = Date.now();
+    if (nowMs - visLast >= 100){
+      visLast = nowMs; visPaints++;
+      var remain = Math.max(0, t.endAt - nowMs);
+      var denom = t.visMax > 0 ? t.visMax : t.setMs;
+      applyVisFrac(denom > 0 ? Math.max(0, Math.min(1, remain / denom)) : 0);
+    }
     visRaf = requestAnimationFrame(visFrame);
   }
   function paintVis(low){
@@ -4838,6 +4857,7 @@ function makeTimer(host, wcfg, assignIds){
     startPause: startPause, reset: reset,
     startSeconds: startSeconds,                  // ⏱ preset menu (timer only)
     running: function(){ return !!t.endAt; },    // ghost mode needs to know
+    _visPaints: function(){ return visPaints; },  // test hook (v7.6): face repaints
     canEnter: canEnter,
     entryActive: function(){ return entry !== null; },
     entryStart: entryStart, entryDigit: entryDigit,
@@ -4899,6 +4919,7 @@ function makeStopwatch(host, wcfg){
     kind: "stopwatch",
     label: function(){ return wcfg.label || "Stopwatch"; },
     startPause: startPause, reset: reset,
+    running: function(){ return !!sw.startedAt; }, // v7.6: a scene switch carries a running watch
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: function(){},
@@ -5037,23 +5058,35 @@ function shuffleNames(arr){
    and never touches the saved config. Shared by picker AND groups. */
 var Absent = (function(){
   var byPeriod = Object.create(null);            // period -> {name: true}
+  var day = null;                                // the date the marks belong to
+  /* Marks are for today only. The board runs for weeks without a reload, so
+     a mark made Tuesday must not still skip that kid on Wednesday: any read
+     or write after midnight (local, and following the simulated clock)
+     starts from a clean sheet. */
+  function fresh(){
+    var k = dateKey(now());
+    if (k !== day){ byPeriod = Object.create(null); day = k; }
+    return byPeriod;
+  }
   return {
-    isOut: function(p, name){ return !!(byPeriod[p] && byPeriod[p][name]); },
+    isOut: function(p, name){ var m = fresh(); return !!(m[p] && m[p][name]); },
     toggle: function(p, name){
-      var s = byPeriod[p] || (byPeriod[p] = Object.create(null));
+      var m = fresh();
+      var s = m[p] || (m[p] = Object.create(null));
       if (s[name]) delete s[name]; else s[name] = true;
     },
     countOut: function(p){
-      var s = byPeriod[p];
+      var s = fresh()[p];
       if (!s) return 0;
       /* count only names still on the roster (edits can orphan marks) */
       return Rosters.namesFor(p).filter(function(n){ return s[n]; }).length;
     },
     presentFor: function(p){
-      var s = byPeriod[p];
+      var s = fresh()[p];
       var names = Rosters.namesFor(p);
       return s ? names.filter(function(n){ return !s[n]; }) : names;
-    }
+    },
+    day: function(){ fresh(); return day; }
   };
 })();
 /* Small "Absent" chip + tap-out name panel, shared by picker & groups.
@@ -8141,6 +8174,12 @@ function makeEmbed(host, wcfg){
           '<input type="checkbox" class="embShelfCk"> Stage only</label>' +
         '<div class="chips embSaved embSaved2" role="group" aria-label="Saved decks"></div>' +
       '</div>' +
+      '<div class="embNameRow" hidden>' +
+        '<label>Name this deck</label>' +
+        '<input class="embName" type="text" maxlength="24" spellcheck="false" aria-label="Deck name">' +
+        '<button class="embGo embNameOk" type="button">Save</button>' +
+        '<button class="embGo embNameNo" type="button" aria-label="Cancel" style="background:var(--white)">&#x2715;</button>' +
+      '</div>' +
       '<div class="embNote" hidden></div>' +
     '</div>');
   var q = function(s){ return host.querySelector(s); };
@@ -8174,6 +8213,7 @@ function makeEmbed(host, wcfg){
   function paintRow(){
     row.hidden = !rowOpen;                       // v7.1: the empty state has its own big paste box
     row2.hidden = !rowOpen;                      // shelf + library ride with ✎
+    if (!rowOpen) q(".embNameRow").hidden = true; // an open ☆ name goes with it
     /* a card being edited never vanishes under the teacher's finger —
        "Stage only" takes effect when the ✎ row closes */
     host.classList.toggle("embEditing", rowOpen);
@@ -8350,11 +8390,33 @@ function makeEmbed(host, wcfg){
     if (wcfg.saved.some(function(d){ return d.url === u; })){ showNote("That deck is already in the library."); return; }
     if (wcfg.saved.length >= 8){ showNote("The library holds 8 decks \u2014 remove one (\u2716) to add another."); return; }
     var name = (wcfg.perPeriod && resolvedPeriod()) ? resolvedPeriod() + " deck" : "Deck " + (wcfg.saved.length + 1);
-    var nm = window.prompt ? (window.prompt("Name this deck", name) || "") : name;
-    nm = nm.trim().slice(0, 24);
-    if (!nm) return;
+    nameRow.hidden = false;
+    nameIn.value = name;
+    nameIn.focus();
+    nameIn.select();
+  });
+  /* the name row: Save / Enter keeps the deck under the name; ✕ / Escape
+     drops it. The url is re-read at commit time so a deck swapped while
+     the row was open is what gets saved. */
+  var nameRow = q(".embNameRow"), nameIn = q(".embName");
+  function nameDone(commit){
+    nameRow.hidden = true;
+    if (!commit) return;
+    var u = activeURL();
+    var nm = nameIn.value.trim().slice(0, 24);
+    if (!u || !nm) return;
+    if (wcfg.saved.some(function(d){ return d.url === u; })){ showNote("That deck is already in the library."); return; }
+    if (wcfg.saved.length >= 8) return;
     wcfg.saved.push({ name: nm, url: u });
     savedSig = null; renderSaved();
+  }
+  wireButton(q(".embNameOk"), function(){ nameDone(true); });
+  wireButton(q(".embNameNo"), function(){ nameDone(false); });
+  nameIn.addEventListener("keydown", function(e){
+    if (Alarm.isOn()) return;
+    e.stopPropagation();                         // the board's shortcuts stay out of a name
+    if (e.key === "Enter"){ nameDone(true); nameIn.blur(); }
+    if (e.key === "Escape"){ nameDone(false); nameIn.blur(); }
   });
   shelfCk.checked = wcfg.stageOnly;
   shelfCk.addEventListener("change", function(){
@@ -9418,17 +9480,26 @@ var Canvas = (function(){
     applyBox(en); wire(en); entries.push(en);
     return en;
   }
+  /* v7.6 (audit): a RUNNING timer or stopwatch survives a scene switch — it is
+     carried over as a float (session-only, above the new scene, still counting)
+     instead of being destroyed at 5:00. Switching back to its own scene adopts
+     it in place; a carried timer that has stopped is let go at the next switch. */
   function clearScene(){
     cancelDrag();                                // a scene switch ends any drag
     setFocus(null);                              // scenes always open un-focused
+    var keep = entries.filter(function(en){
+      return en.type !== "clock" && (en.api.kind === "timer" || en.type === "stopwatch") &&
+             en.api.running && en.api.running();
+    });
     entries.slice().forEach(function(en){
-      if (en.type !== "clock"){ en.api.destroy(); en.el.remove(); }
+      if (en.type !== "clock" && keep.indexOf(en) === -1){ en.api.destroy(); en.el.remove(); }
     });
     /* Always hide the static clock card here — at BOOT it is visible in the
        markup but not yet in entries, so a saved clockless scene must not
        reopen with an unmanaged ghost clock. mountClock un-hides it. */
     $("clockWidget").hidden = true;
-    entries = [];
+    entries = keep;
+    keep.forEach(function(en){ en.carried = true; en.float = true; bringToFront(en); });
     selected = null;
   }
   function loadScene(){
@@ -9439,6 +9510,13 @@ var Canvas = (function(){
     sc.widgets.forEach(function(w){
       if (w.type === "clock"){ mountClock(w); }
       else {
+        var carried = entries.filter(function(en){ return en.carried && en.cfg === w; })[0];
+        if (carried){                            // home again: the running timer takes its own place back
+          carried.carried = false; carried.float = false;
+          bringToFront(carried);
+          if (w.type === "timer") firstTimer = false;
+          return;
+        }
         buildDynamic(w, w.type === "timer" && firstTimer);
         if (w.type === "timer") firstTimer = false;
       }
@@ -10767,44 +10845,108 @@ var Ink = (function(){
   var cv = $("ink"), bar = $("inkBar");
   var ctx = null, strokes = [], cur = null, pid = null, armed = false;
   var color = "#17324D", size = 9, erase = false;
+  /* v7.6: the strokes already finished live on an offscreen copy, so a
+     pointer move costs one new segment (or, for the translucent
+     highlighter, one blit plus the current stroke) instead of every
+     stroke ever drawn — the adversarial audit clocked 98 ms a move at
+     150 strokes, which is a pen that lags more the longer the lesson. */
+  var base = document.createElement("canvas"), bctx = null;
+  var stats = { full: 0, seg: 0 };               // test hook
   function fit(){
     var dpr = Math.min(2, window.devicePixelRatio || 1);
     var w = window.innerWidth, h = window.innerHeight;
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)){
       cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     }
-    ctx = cv.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.lineCap = "round"; ctx.lineJoin = "round";
-    redraw();
-  }
-  function strokePath(st){
-    if (!st.pts.length) return;
-    ctx.globalCompositeOperation = st.erase ? "destination-out" : (st.hi ? "multiply" : "source-over");
-    ctx.strokeStyle = st.color;
-    ctx.globalAlpha = st.hi ? 0.45 : 1;
-    ctx.lineWidth = st.erase ? st.size * 3 : (st.hi ? st.size * 2.2 : st.size);
-    ctx.beginPath();
-    var p = st.pts;
-    ctx.moveTo(p[0].x, p[0].y);
-    if (p.length === 1){ ctx.lineTo(p[0].x + 0.01, p[0].y); }
-    for (var i = 1; i < p.length - 1; i++){
-      var mx = (p[i].x + p[i+1].x) / 2, my = (p[i].y + p[i+1].y) / 2;
-      ctx.quadraticCurveTo(p[i].x, p[i].y, mx, my);
+    if (base.width !== cv.width || base.height !== cv.height){
+      base.width = cv.width; base.height = cv.height;
     }
-    if (p.length > 1) ctx.lineTo(p[p.length-1].x, p[p.length-1].y);
+    ctx = cv.getContext("2d");
+    bctx = base.getContext("2d");
+    [ctx, bctx].forEach(function(c){
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.lineCap = "round"; c.lineJoin = "round";
+    });
+    rebuild();
+  }
+  function setStyle(c, st){
+    c.globalCompositeOperation = st.erase ? "destination-out" : (st.hi ? "multiply" : "source-over");
+    c.strokeStyle = st.color;
+    c.globalAlpha = st.hi ? 0.45 : 1;
+    c.lineWidth = st.erase ? st.size * 3 : (st.hi ? st.size * 2.2 : st.size);
+  }
+  function resetStyle(c){
+    c.globalAlpha = 1;
+    c.globalCompositeOperation = "source-over";
+  }
+  function mid(a, b){ return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+  /* the whole stroke: moveTo p0, a quadratic through each interior point
+     to the midpoint of the next pair, a line to the last point */
+  function strokePath(c, st){
+    if (!st.pts.length) return;
+    setStyle(c, st);
+    c.beginPath();
+    var p = st.pts;
+    c.moveTo(p[0].x, p[0].y);
+    if (p.length === 1){ c.lineTo(p[0].x + 0.01, p[0].y); }
+    for (var i = 1; i < p.length - 1; i++){
+      var m = mid(p[i], p[i+1]);
+      c.quadraticCurveTo(p[i].x, p[i].y, m.x, m.y);
+    }
+    if (p.length > 1) c.lineTo(p[p.length-1].x, p[p.length-1].y);
+    c.stroke();
+    resetStyle(c);
+  }
+  /* only the piece of the current stroke that the newest point fixed —
+     exactly the curve strokePath would draw for it, so the finished stroke
+     lands on the same pixels. The tail to the last point waits for the
+     pen to lift (a lag of one sample, under two pixels). */
+  function segment(){
+    var p = cur.pts, n = p.length;
+    if (n === 2) return;
+    setStyle(ctx, cur);
+    ctx.beginPath();
+    if (n === 1){
+      ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(p[0].x + 0.01, p[0].y);
+    } else {
+      var from = n === 3 ? p[0] : mid(p[n-3], p[n-2]), to = mid(p[n-2], p[n-1]);
+      ctx.moveTo(from.x, from.y);
+      ctx.quadraticCurveTo(p[n-2].x, p[n-2].y, to.x, to.y);
+    }
     ctx.stroke();
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
+    resetStyle(ctx);
+    stats.seg++;
   }
-  function redraw(){
+  function clearOf(c){
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, cv.width, cv.height);
+    c.restore();
+  }
+  /* visible = the finished strokes + the one in progress */
+  function present(){
     if (!ctx) return;
+    clearOf(ctx);
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(base, 0, 0);
     ctx.restore();
-    strokes.forEach(strokePath);
-    if (cur) strokePath(cur);
+    if (cur) strokePath(ctx, cur);
   }
+  /* the offscreen copy from scratch: undo, clear, a resize */
+  function rebuild(){
+    if (!bctx) return;
+    clearOf(bctx);
+    strokes.forEach(function(st){ strokePath(bctx, st); });
+    stats.full++;
+    present();
+  }
+  /* a new point on the current stroke: the highlighter's translucent
+     multiply would double up where segments overlap, so it repaints its
+     whole (single) stroke; pen and eraser add a segment */
+  function advance(){
+    if (!ctx || !cur) return;
+    if (cur.hi) present(); else segment();
+  }
+  function redraw(){ rebuild(); }
   function paintBar(){
     bar.querySelectorAll("[data-color]").forEach(function(b){
       b.setAttribute("aria-pressed", (!erase && b.dataset.color === color) ? "true" : "false");
@@ -10825,9 +10967,13 @@ var Ink = (function(){
     else if (cur){ endStroke(); }
   }
   function endStroke(){
-    if (cur){ strokes.push(cur); cur = null; }
+    if (cur){
+      strokes.push(cur);
+      if (bctx) strokePath(bctx, cur);           // joins the finished copy
+      cur = null;
+    }
     pid = null;
-    redraw();
+    present();
   }
   function down(e){
     if (!armed || pid !== null) return;        // one finger draws; a second is ignored
@@ -10836,7 +10982,7 @@ var Ink = (function(){
     try { cv.setPointerCapture(pid); } catch(_){}
     var hi = !erase && color === "#FFE45C";
     cur = { color: color, size: size, erase: erase, hi: hi, pts: [{ x: e.clientX, y: e.clientY }] };
-    redraw();
+    advance();
     e.preventDefault();
   }
   function move(e){
@@ -10844,7 +10990,7 @@ var Ink = (function(){
     var last = cur.pts[cur.pts.length - 1];
     if (Math.abs(last.x - e.clientX) + Math.abs(last.y - e.clientY) < 1.5) return;
     cur.pts.push({ x: e.clientX, y: e.clientY });
-    redraw();
+    advance();
   }
   function up(e){
     if (!cur || e.pointerId !== pid) return;
@@ -10880,7 +11026,8 @@ var Ink = (function(){
     arm: arm,
     isArmed: function(){ return armed; },
     clear: function(){ strokes = []; cur = null; redraw(); },
-    count: function(){ return strokes.length; }   // test hook
+    count: function(){ return strokes.length; },  // test hook
+    stats: function(){ return { full: stats.full, seg: stats.seg }; }   // test hook (v7.6)
   };
 })();
 
@@ -11009,6 +11156,8 @@ window.Deckhand = {
   seaEvery: Sea._every,                         // test hook: hurry the free-time sea
   seaModule: Sea,                               // v7.5: the director, weather, plan(), residents (tests + the aquarium)
   canvas: Canvas,                               // v7.5: timerRunning() for the sea's director (tests)
+  absent: Absent,                               // v7.6: date-keyed marks (tests)
+  shiftClock: function(ms){ simOffset += ms; }, // test hook (v7.6): move the simulated clock
   qr: qrMatrix,                                 // test hook: decode-verified in CI
   settings: {                                   // v7.2: the settings tab rail
     showTab: Settings.showTab, currentTab: Settings.currentTab, textMode: Settings.textMode

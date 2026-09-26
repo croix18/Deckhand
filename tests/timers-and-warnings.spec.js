@@ -47,8 +47,8 @@ test.describe("timer visual styles", () => {
     await page.selectOption("#sTimerStyle", "tide");
     await page.click("#applyBtn");
     ok(!(await page.locator("#tideTank").isHidden()), "tank hidden");
-    const h = await page.$eval("#tideWater", n => n.style.height);
-    ok(parseFloat(h) > 99, "water not full on reset: " + h);
+    const h = await page.$eval("#tideWater", n => n.style.transform);   // v7.6: a transform, not a height
+    ok(/scaleY\(1(\.0+)?\)/.test(h), "water not full on reset: " + h);
     await page.selectOption("#sTimerStyle", "disc");
     await page.click("#applyBtn");
     ok(await page.locator("#tideTank").isHidden(), "tank lingers");

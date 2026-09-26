@@ -114,9 +114,10 @@ test.describe("embed", () => {
     await page.fill(".w-embed .embBigIn", "https://docs.google.com/presentation/d/abc123/edit");
     await page.click(".w-embed .embLoad");
     await expect(page.locator(".w-embed .embFrame")).toHaveAttribute("src", /\/d\/abc123\/embed/);
-    page.once("dialog", d => d.accept("Cube deck"));
     await page.click(".w-embed .wEdit");
-    await page.click(".w-embed .embStar");
+    await page.click(".w-embed .embStar");                              // v7.6: an inline name row, not window.prompt
+    await page.fill(".w-embed .embName", "Cube deck");
+    await page.click(".w-embed .embNameOk");
     const saved = await page.evaluate(() => document.querySelector(".w-embed")._entry.cfg.saved);
     ok(saved.length === 1 && saved[0].name === "Cube deck" && /abc123/.test(saved[0].url), "library: " + JSON.stringify(saved));
     await expect(page.locator(".w-embed .embSaved2 .embDeck")).toHaveText("Cube deck");

@@ -353,6 +353,15 @@ test.describe("scenes", () => {
     ok(await page.evaluate(() => window.Deckhand.scene) === "Stations", "s switched scene");
     await page.keyboard.press(" ");            // run the selected station timer
     await expect(page.locator(".w-timer.sel .tStart")).toHaveText("Pause");
+    // v7.6: a RUNNING station rides along (carried, floated) — pause it and
+    // it is an ordinary card again, dropped by the next switch like the rest
+    await page.selectOption("#sceneSel", "Daily Board");
+    await page.waitForTimeout(400);
+    ok(await page.locator("#canvas .widget:visible").count() === 3, "the running station was not carried");
+    ok(await page.locator(".w-timer").count() === 1 && await page.evaluate(() => document.querySelector(".w-timer")._entry.carried === true), "carried timer");
+    await page.evaluate(() => document.querySelector(".w-timer")._entry.api.reset());
+    await page.selectOption("#sceneSel", "Stations");
+    await expect(page.locator("#canvas .widget:visible")).toHaveCount(5);   // no duplicate station
     await page.selectOption("#sceneSel", "Daily Board");
     await page.waitForTimeout(400);            // destroyed timer must not tick or ring
     ok(await page.locator("#canvas .widget:visible").count() === 2, "residue widgets");
