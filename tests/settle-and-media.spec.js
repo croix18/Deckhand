@@ -800,8 +800,8 @@ test.describe("motion", () => {
       const s = document.getElementById("sea-serpent");
       return s.classList.contains("go") &&
              getComputedStyle(s).animationName.includes("ssGlide") &&
-             getComputedStyle(s.querySelector(".ssSwim")).animationName.includes("ssDive") &&
-             getComputedStyle(s.querySelector(".ssHump")).animationName.includes("ssBob") &&
+             getComputedStyle(s.querySelector(".ssSeg")).animationName.includes("ssDive") &&
+             getComputedStyle(s.querySelector(".ssHump")).animationName.includes("ssRoll") &&
              getComputedStyle(s).visibility === "visible";
     }), "serpent not gliding/diving/bobbing");
     // v6.20: the whale surfaces, spouts, and its rig animates
@@ -812,7 +812,7 @@ test.describe("motion", () => {
     ok(await pg.evaluate(() => {
       const w = document.getElementById("sea-whale");
       return w.classList.contains("go") &&
-             getComputedStyle(w.querySelector(".whSurf")).animationName.includes("whSurf") &&
+             getComputedStyle(w.querySelector(".whSurf")).animationName.includes("whY") &&
              getComputedStyle(w.querySelector(".whSpout")).animationName.includes("whSpout");
     }), "whale not performing");
     await pg.evaluate(() =>

@@ -8,7 +8,7 @@ or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.4; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.5; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts.
 
 Since v7.0 the board **saves itself on the device**: layout, bells, and class rosters
@@ -20,7 +20,8 @@ in — a backup, or the way to carry a board to another machine.
 
 `docs/HANDOFF.md` is the project memory — every version's story, the design rules, the
 known constraints (YouTube Error 153 over `file://`, the iframe drag shield,
-reduced-motion panels). Read it before changing anything.
+reduced-motion panels). Read it before changing anything. `docs/SEA.md` is the sea's own
+manual (the waves, the cast, the director); `tools/aquarium.html` is its review tank.
 
 ## Hard constraints (do not break)
 
@@ -48,7 +49,7 @@ Chart backup…** takes its exported JSON anywhere. Apply to keep.
 
 ## Tests
 
-`tests/` — a Playwright suite (`@playwright/test`), 188 tests split by feature, each in
+`tests/` — a Playwright suite (`@playwright/test`), 194 tests split by feature, each in
 its own fresh browser context, run in parallel.
 
 ```sh

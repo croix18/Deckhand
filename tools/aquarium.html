@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deckhand — the aquarium</title>
+<!-- A review tank for the sea. Serve the repo (node tools/serve.js) and open
+     http://localhost:4173/tools/aquarium.html — the board runs in a frame on the
+     same origin, so the buttons drive its Sea module directly. Not for the panel. -->
+<style>
+  :root{--navy:#1B2E45; --turq:#40E0D0; --cream:#F8F2E4; --sand:#E6D5B8; --teal:#127A85;}
+  html,body{margin:0; background:#101820; color:var(--cream); font:14px/1.4 system-ui, sans-serif;}
+  header{display:flex; align-items:center; gap:14px; padding:10px 16px; background:var(--navy);}
+  header h1{font-size:16px; margin:0 12px 0 0; letter-spacing:.08em; text-transform:uppercase; color:var(--turq);}
+  header label{display:flex; align-items:center; gap:6px;}
+  select, input, button{font:inherit; border-radius:8px; border:1px solid #2c4058; background:#16243a; color:var(--cream); padding:6px 10px;}
+  button{cursor:pointer; background:var(--teal); border-color:var(--teal); color:#fff;}
+  button.rare{background:#7a3b12; border-color:#7a3b12;}
+  button.boat{background:#3b4a7a; border-color:#3b4a7a;}
+  button:disabled{opacity:.4; cursor:default;}
+  #stage{position:relative; width:1920px; height:1080px; transform-origin:0 0; background:#000; margin:12px 16px;}
+  #stage iframe{width:1920px; height:1080px; border:0; display:block;}
+  #wrap{overflow:hidden;}
+  main{display:grid; grid-template-columns:1fr 360px; gap:0;}
+  aside{padding:12px 16px; border-left:1px solid #22324a;}
+  aside h2{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#9fb3c8; margin:14px 0 6px;}
+  .row{display:flex; flex-wrap:wrap; gap:6px;}
+  table{border-collapse:collapse; width:100%; font-size:12px;}
+  td, th{padding:3px 6px; border-bottom:1px solid #22324a; text-align:left;}
+  #fps{font-variant-numeric:tabular-nums; color:var(--turq);}
+  #log{font:12px/1.5 ui-monospace, monospace; color:#9fb3c8; max-height:160px; overflow:auto; white-space:pre-wrap;}
+  .hint{color:#9fb3c8; font-size:12px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Aquarium</h1>
+  <label>Zoom <select id="zoom"><option value=".5">50%</option><option value=".66" selected>66%</option><option value="1">100%</option></select></label>
+  <label>Weather <select id="weather"><option>calm</option><option selected>breezy</option><option>windy</option></select></label>
+  <label>Lane <select id="lane"><option value="">act's own</option><option>far</option><option>near</option></select></label>
+  <label>Clock <input id="clock" type="datetime-local" value="2026-09-28T09:40"></label>
+  <button id="reload">Reload</button>
+  <span id="fps" title="frames per second inside the board">— fps</span>
+</header>
+<main>
+  <div id="wrap"><div id="stage"><iframe id="board" title="Deckhand"></iframe></div></div>
+  <aside>
+    <h2>Visitors</h2>
+    <div class="row" id="acts"></div>
+    <h2>The boat</h2>
+    <div class="row">
+      <button class="boat" data-boat="tap">Tap</button>
+      <button class="boat" data-boat="press">Long press</button>
+      <button class="boat" data-boat="hop">Hop</button>
+      <button class="boat" data-boat="gullLeave">Spook the gull</button>
+      <button class="boat" data-boat="clear">Clear the sea</button>
+    </div>
+    <h2>Director</h2>
+    <div class="row">
+      <input id="pdate" type="date" value="2026-09-28"><input id="pperiod" type="number" min="0" max="8" value="0" style="width:60px"><input id="plen" type="number" min="10" max="120" value="53" style="width:64px">
+      <button id="plan">Plan</button>
+    </div>
+    <div id="planOut"></div>
+    <h2>Log</h2>
+    <div id="log"></div>
+    <p class="hint">Every act plays on its own clock; the boat's reactions ride the same clock. Watch the Chromebox, not this laptop — the frame counter is a sanity check, not a verdict.</p>
+  </aside>
+</main>
+<script>
+(function(){
+  var frame = document.getElementById("board"), stage = document.getElementById("stage");
+  var log = document.getElementById("log");
+  function say(t){ log.textContent = new Date().toLocaleTimeString() + "  " + t + "\n" + log.textContent; }
+  function D(){ try { return frame.contentWindow.Deckhand; } catch(e){ return null; } }
+  function sea(){ var d = D(); return d && d.seaModule; }
+  function zoom(){ stage.style.transform = "scale(" + document.getElementById("zoom").value + ")";
+    document.getElementById("wrap").style.height = (1080 * +document.getElementById("zoom").value + 24) + "px"; }
+  document.getElementById("zoom").addEventListener("change", zoom); zoom();
+  function load(){
+    var t = document.getElementById("clock").value.replace(" ", "T");
+    frame.src = "../Deckhand.html#t=" + t;
+    frame.addEventListener("load", function once(){
+      frame.removeEventListener("load", once);
+      var tries = 0;
+      (function wait(){
+        var d = D();
+        if (d && d.seaModule){
+          try { frame.contentDocument.getElementById("launchBtn").click(); } catch(e){}
+          try { d.config.ui.motion = "on"; frame.contentDocument.body.classList.add("waveMotion"); } catch(e){}
+          d.seaModule.setWeather(document.getElementById("weather").value);
+          buildActs(d.seaModule.acts);
+          say("board ready — weather " + d.seaModule.weather());
+          fps();
+        } else if (tries++ < 50) setTimeout(wait, 100);
+      })();
+    });
+  }
+  function buildActs(acts){
+    var box = document.getElementById("acts"); box.innerHTML = "";
+    Object.keys(acts).forEach(function(k){
+      var b = document.createElement("button");
+      b.textContent = k + (acts[k].tier === "rare" ? " ★" : acts[k].tier === "uncommon" ? " ◆" : "");
+      b.className = acts[k].tier === "rare" ? "rare" : acts[k].boat && !acts[k].lanes ? "boat" : "";
+      b.title = acts[k].tier + " · " + Math.round(acts[k].dur / 1000) + "s" + (acts[k].lanes ? " · " + acts[k].lanes.join("/") : "");
+      b.addEventListener("click", function(){
+        var S = sea(); if (!S) return;
+        var lane = document.getElementById("lane").value || undefined;
+        var went = S.play(k, lane);
+        say(k + (lane ? " (" + lane + ")" : "") + (went ? " playing" : " refused (busy or already on)"));
+      });
+      box.appendChild(b);
+    });
+  }
+  document.getElementById("weather").addEventListener("change", function(){ var S = sea(); if (S){ S.setWeather(this.value); say("weather " + S.weather()); } });
+  document.getElementById("reload").addEventListener("click", load);
+  document.querySelectorAll("[data-boat]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var S = sea(), doc = frame.contentDocument; if (!S) return;
+      var boat = doc.getElementById("boat");
+      switch (b.dataset.boat){
+        case "tap": say("tap → " + (S.summon() ? "show" : "hop only")); break;
+        case "press": say("long press → " + (S.earned() ? "queued" : "refused")); break;
+        case "hop": boat.classList.remove("hop"); void boat.offsetWidth; boat.classList.add("hop"); setTimeout(function(){ boat.classList.remove("hop"); }, 900); break;
+        case "gullLeave": S.gullLeave(); say("gull spooked"); break;
+        case "clear": S.clear(); say("cleared"); break;
+      }
+    });
+  });
+  document.getElementById("plan").addEventListener("click", function(){
+    var S = sea(); if (!S) return;
+    var date = document.getElementById("pdate").value, per = +document.getElementById("pperiod").value, len = +document.getElementById("plen").value;
+    var wd = new Date(date + "T12:00").getDay();
+    var p = S.plan(date, per, len, wd, { hist: S.history() });
+    var h = "<table><tr><th>at</th><th>act</th><th>tier</th></tr>";
+    p.events.forEach(function(e){ h += "<tr><td>" + (e.at / 60000).toFixed(1) + " min</td><td>" + e.act + "</td><td>" + S.acts[e.act].tier + "</td></tr>"; });
+    h += "</table><p class='hint'>weather: <b>" + p.weather + "</b> · " + p.events.length + " acts · seeded by " + date + " / period " + per + "</p>";
+    document.getElementById("planOut").innerHTML = h;
+  });
+  function fps(){
+    var w = frame.contentWindow, n = 0, t0 = performance.now();
+    function tickf(){ n++; var dt = performance.now() - t0; if (dt >= 1000){ document.getElementById("fps").textContent = Math.round(n * 1000 / dt) + " fps"; n = 0; t0 = performance.now(); } w.requestAnimationFrame(tickf); }
+    w.requestAnimationFrame(tickf);
+  }
+  load();
+})();
+</script>
+</body>
+</html>

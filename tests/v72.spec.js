@@ -13,7 +13,7 @@ test("v7.2: the boat runs up a '<name> Rules' pennant now and then, and it follo
   await expect(pg.locator("#boat .btPenText")).toHaveText("Mr. Shaffer Rules");
   ok((await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btPen")).visibility)) === "visible", "pennant hidden while flying");
   const anim = await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btPenCloth")).animationName);
-  ok(/penRun/.test(anim), "pennant does not run: " + anim);
+  ok(/penReveal/.test(anim), "pennant does not run: " + anim);   // v7.5: a clip reveal (the letters never squash)
   await pg.evaluate(() => { window.Deckhand.config.ownerName = "Ms. Rivera"; });
   await pg.evaluate(() => document.getElementById("boat").classList.remove("pennant"));
   await pg.evaluate(() => window.Deckhand.sea("pennant"));

@@ -2,7 +2,32 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
-## 7.4.0 — 2026-09-27
+## 7.5.0 — 2026-09-27
+
+**Sea 2.0.** Built after a three-part review (`docs/reviews/sea-2.0-*.md`) and written up
+in `docs/SEA.md`. The water is three travelling wave layers with periods by deep-water
+dispersion; the boat rides them phase-locked by geometry (heave and pitch on the swell's
+clock, so the hull's waterline never changes), with foam on the crests and calm / breezy /
+windy weather drawn per class period. Every creature was redrawn as a proper silhouette
+(the whale is a humpback now, with a fluke that opens on the dive), the boat grew a bow, a
+forestay and a burgee, and every act was retimed against the twelve principles. New: a
+gull that lands on the masthead and sits — and leaves first when something loud is coming;
+a dolphin pair on one arc (a sine and a cosine), and the chase (the skipper, then the
+dolphins). The attack has a story: bubbles, a periscope look, the slither, the rear, ONE hit
+with spray off the sail and the boat shoved, a MISS into the water, a look at the room, a
+head-first dive, a victory flick of the burgee. The whale has an act: footprint, surface,
+spouts, the late fluke, gone, bubbles, the breach, the splash, the ripple reaching the boat,
+a wave goodbye. The pennant hoists in hitches and pops back up once on the way down. The
+paper boat sinks in windy weather.
+
+**The director.** Each class period gets a setlist from a generator seeded by the date and
+the period (deterministic, testable, different for every class): a greeting 45 s after the
+bell, ten minutes of hush, rares only in the last third, nothing in the last three minutes,
+commons only while a timer runs, the attack only after a serpent sighting, and a memory of
+what each period has seen. A tap hops the boat at once and answers with a show (with a
+one-minute cooldown); a 1.5 s long press queues the next rare. Settings → Sea weather:
+varies / always calm. `tools/aquarium.html` plays any act on demand.
+
 
 **The sea, with depth.** The front wave now heaves and sways, and the boat heaves on the
 same clock, so its hull rides the swell instead of sinking under it. Visitors pass in

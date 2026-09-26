@@ -424,13 +424,12 @@ test.describe("v6.18 sea", () => {
     await dh.openAt("");
     await dh.launch();
     const sea = await page.evaluate(() => {
-      const wf = document.getElementById("wavesFront");
+      const wf = document.getElementById("wv1");            // v7.5: the front swell layer
       const wv = document.getElementById("waves");
       const wfr = wf.getBoundingClientRect(), wvr = wv.getBoundingClientRect();
       const boat = document.getElementById("boat").getBoundingClientRect();
       return {
-        /* v7.4: the front wave runs 16px past each edge (it sways) and
-           heaves ±4px — it must still cover the back wave's band */
+        /* v7.5: the front swell is a 160vw layer that scrolls; it must always cover the band */
         aligned: wfr.left <= wvr.left && wfr.right >= wvr.right &&
                  Math.abs(wfr.bottom - wvr.bottom) < 6,
         pe: getComputedStyle(wf).pointerEvents,
@@ -449,8 +448,8 @@ test.describe("v6.18 sea", () => {
       window.Deckhand.sea("fish");               // double-tap: one show only
       return document.getElementById("sea-fish").classList.contains("go");
     }), "fish did not play");
-    // fish runs 4.2s, then expires
-    await expect(page.locator("#sea-fish")).not.toHaveClass(/go/, { timeout: 6000 });
+    // the skipper runs 5.6s, then expires
+    await expect(page.locator("#sea-fish")).not.toHaveClass(/go/, { timeout: 8000 });
     // under reduced motion the SCHEDULER stays quiet even at test cadence
     await page.evaluate(() => window.Deckhand.seaEvery(60));
     await page.waitForTimeout(500);              // several 60ms ticks: nothing may play
@@ -463,17 +462,17 @@ test.describe("v6.18 sea", () => {
     await page.setViewportSize({ width: 700, height: 500 });
     await expect(page.locator("#sea-buoy")).not.toHaveClass(/go/);
     await page.setViewportSize({ width: 1920, height: 1080 });
-    // v6.19: tapping the BOAT summons one visitor — and only one at a time
-    await page.click("#boat");
-    let going = await page.evaluate(() =>
-      [...document.querySelectorAll(".seaThing")].filter(el =>
-        el.classList.contains("go")).length);
-    ok(going === 1, "boat tap summoned " + going + " things");
-    await page.click("#boat");                   // the sea is busy: no double bill
-    going = await page.evaluate(() =>
-      [...document.querySelectorAll(".seaThing")].filter(el =>
-        el.classList.contains("go")).length);
-    ok(going === 1, "a second tap overlapped the show: " + going);
+    // v6.19/7.5: tapping the BOAT summons a show — the boat hops at once; with motion on and the sea
+    // free, one act from the summon pool starts; a second tap while it plays is refused
+    await page.evaluate(() => { window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); });
+    await page.click("#boat", { force: true });
+    await expect(page.locator("#boat")).toHaveClass(/hop/);
+    const first = await page.evaluate(() => window.Deckhand.seaModule.lastStaged());
+    ok(first && first.act, "boat tap summoned nothing");
+    await page.waitForTimeout(300);
+    await page.click("#boat", { force: true });                   // the sea is busy: no double bill
+    const second = await page.evaluate(() => window.Deckhand.seaModule.lastStaged());
+    ok(second.at === first.at, "a second tap started another show");
   });
 });
 

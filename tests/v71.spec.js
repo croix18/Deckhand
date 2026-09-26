@@ -256,23 +256,23 @@ test.describe("the Pledge", () => {
 });
 
 test.describe("the sea", () => {
-  test("v7.1/7.4: eight visitors, the attack slithers in and rocks the boat, the rig sways, the sea has depth", async ({ page, dh }) => {
+  test("v7.1/7.4/7.5: nine visitors, the attack rocks the boat, the boat rides the swell, the sea has depth", async ({ page, dh }) => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await pg.goto(dh.url + "#t=2026-09-24T10:30");
     await pg.waitForFunction(() => !!window.Deckhand);
     await pg.click("#launchBtn");
     const things = await pg.evaluate(() => [...document.querySelectorAll("#sea .seaThing")].map(t => t.id.replace("sea-", "")));
-    ok(things.sort().join() === "serpent,fish,turtle,school,paper,attack,whale,buoy".split(",").sort().join(),
-       "visitors: " + things.join());                      // v7.4: the bottle became a paper boat
-    const sway = await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btRig")).animationName);
-    ok(/boatSway/.test(sway), "no sway on the rig: " + sway);
+    ok(things.sort().join() === "serpent,fish,turtle,school,paper,attack,whale,buoy,dolphins".split(",").sort().join(),
+       "visitors: " + things.join());                      // v7.4: the bottle became a paper boat; v7.5: dolphins
+    const sway = await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btSwell")).animationName);
+    ok(/heave1/.test(sway) && /pitch1/.test(sway), "the boat does not ride the swell: " + sway);
     await pg.evaluate(() => window.Deckhand.sea("attack"));
     await expect(pg.locator("#sea-attack")).toHaveClass(/go/);
-    // v7.4: it slithers in for ~8s first — the first strike (and the lurch) lands at ~10.5s
-    await expect(pg.locator("#boat")).not.toHaveClass(/rocked/);
-    await expect(pg.locator("#boat")).toHaveClass(/rocked/, { timeout: 14000 });
-    await expect(pg.locator("#boat")).not.toHaveClass(/rocked/, { timeout: 6000 });
-    await expect(pg.locator("#sea-attack")).not.toHaveClass(/go/, { timeout: 12000 });
+    // v7.5: the boat wears .struck for the act's whole clock (its lurch keyframes are timed to the hit at 12s)
+    await expect(pg.locator("#boat")).toHaveClass(/struck/);
+    ok(/btStruck/.test(await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btRig")).animationName)), "no lurch keyframes on the rig");
+    await expect(pg.locator("#sea-attack")).not.toHaveClass(/go/, { timeout: 25000 });
+    await expect(pg.locator("#boat")).not.toHaveClass(/struck/, { timeout: 5000 });
     // a tap on the boat while something plays is refused; the school and turtle play too
     for (const n of ["turtle", "school", "paper"]){
       await pg.evaluate(x => window.Deckhand.sea(x), n);
@@ -298,12 +298,18 @@ test.describe("the sea", () => {
     });
     ok(lane.far && lane.box === "seaFar" && lane.ls === ".62" && lane.beforeBoat, "far lane: " + JSON.stringify(lane));
     await pg.evaluate(() => document.getElementById("sea-buoy").classList.remove("go"));
-    // the boat heaves on the front wave's clock; the wave itself swells
+    // the three wave layers scroll on their own clocks; the boat's swell wrapper shares the front one
     const heave = await pg.evaluate(() => ({
-      boat: getComputedStyle(document.getElementById("boat")).animationName,
-      wave: getComputedStyle(document.getElementById("wavesFront")).animationName,
-      wake: getComputedStyle(document.querySelector("#boat .btWake")).animationName
+      d1: getComputedStyle(document.querySelector("#boat .btSwell")).animationDuration,
+      w1: getComputedStyle(document.getElementById("wv1")).animationDuration,
+      w2: getComputedStyle(document.getElementById("wv2")).animationDuration,
+      w3: getComputedStyle(document.getElementById("wv3")).animationDuration,
+      names: [1, 2, 3].map(i => getComputedStyle(document.getElementById("wv" + i)).animationName).join(),
+      wake: getComputedStyle(document.querySelector("#boat .btWakeBow")).animationName,
+      delay: getComputedStyle(document.querySelector("#boat .btSwell")).animationDelay
     }));
-    ok(/seaHeave/.test(heave.boat) && /frontSwell/.test(heave.wave) && /wakeFoam/.test(heave.wake), "no swell: " + JSON.stringify(heave));
+    ok(/wvScroll/.test(heave.names) && heave.w1 === "11.2s" && heave.w2 === "7.1s" && heave.w3 === "15.8s", "wave layers: " + JSON.stringify(heave));
+    ok(heave.d1 === "5.6s, 5.6s" && heave.delay === "0s, -2.8s", "boat not phase-locked to the swell: " + JSON.stringify(heave));
+    ok(/wake/.test(heave.wake), "no wake: " + heave.wake);
   });
 });
