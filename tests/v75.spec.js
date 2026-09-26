@@ -2,7 +2,7 @@
    acts themselves are checked in v71 (attack, lanes, the swell) and in
    settle-and-media (serpent, whale, stage mode); the pictures were reviewed
    by hand from frame grabs (docs/SEA.md). */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 
 test.describe("the sea's director", () => {
   test("v7.5: a period's setlist is a pure function of (date, period) — greeting, hush, rares late, nothing at the end", async ({ page, dh }) => {
@@ -78,7 +78,7 @@ test.describe("the boat and the residents", () => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await pg.goto(dh.url + "#t=2026-09-26T12:00");        // a Saturday: the director sleeps, the sea is free
     await pg.waitForFunction(() => !!window.Deckhand);
-    await pg.click("#launchBtn");
+    await launch(pg);
     // the boat is nested: drift on #boat, the swell wrapper, the chop wrapper, then the rig
     const nest = await pg.evaluate(() => !!document.querySelector("#boat > .btSwell > .btChop > .btSvg .btRig"));
     ok(nest, "boat wrappers missing");
@@ -113,7 +113,7 @@ test.describe("the boat and the residents", () => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await pg.goto(dh.url + "#t=2026-09-26T12:00");
     await pg.waitForFunction(() => !!window.Deckhand);
-    await pg.click("#launchBtn");
+    await launch(pg);
     await pg.click("#boat", { force: true });
     await expect(pg.locator("#boat")).toHaveClass(/hop/);
     const first = await pg.evaluate(() => window.Deckhand.seaModule.lastStaged());
@@ -138,7 +138,7 @@ test.describe("the boat and the residents", () => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await pg.goto(dh.url + "#t=2026-09-26T12:00");
     await pg.waitForFunction(() => !!window.Deckhand);
-    await pg.click("#launchBtn");
+    await launch(pg);
     const knobs = await pg.evaluate(() => {
       const S = window.Deckhand.seaModule, out = {};
       ["calm", "breezy", "windy"].forEach(w => {
@@ -216,17 +216,19 @@ test.describe("v7.5.1 — the audits' evening one", () => {
     // TODAY → Wednesday times mid-class must not start a settle-in, nor must undoing it fire the Pledge
     await page.evaluate(() => window.Deckhand.setToday("wednesday", []));
     await page.waitForTimeout(700);
-    ok(!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api.running())), "a schedule change mid-class started the settle-in");
+    ok(!(await page.evaluate(() => window.Deckhand.settle.running())), "a schedule change mid-class started the settle-in");
     await page.evaluate(() => window.Deckhand.setToday("regular", []));
     await page.waitForTimeout(700);
-    ok(!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())), "undoing the change fired the Pledge");
+    ok(!(await page.evaluate(() => window.Deckhand.settle._pledgeUntil())), "undoing the change fired the Pledge");
     // Lunch is not a class
     await dh.openAt("#t=2026-09-28T12:41:55");
     await dh.launch();
     await page.waitForTimeout(6500);
-    ok(!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api.running())), "the settle-in ran at Lunch");
+    ok(!(await page.evaluate(() => window.Deckhand.settle.running())), "the settle-in ran at Lunch");
     // a bell behind the landing page opens the board
     await dh.openAt("#t=2026-09-28T13:14:56");
+    await dh.home();
+    await expect(page.locator("body")).toHaveClass(/landing/);
     await expect(page.locator("main#canvas")).toBeVisible({ timeout: 8000 });
   });
 });

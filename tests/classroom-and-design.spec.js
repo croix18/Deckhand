@@ -3,7 +3,7 @@
  * targets, grouped menu, motion, phone viewport, fixes).
  * Ported from test_deckhand_v6.js lines 2586–2967.
  */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 
 /* The suite is meant to run under reduced motion, but `reducedMotion` at the
  * top level of a project's `use` is not a runner option (@playwright/test only
@@ -18,7 +18,7 @@ async function bootPage(pg, dh, hash) {
   await pg.bringToFront();                     // a background tab throttles rAF (motion tests)
   await pg.goto(dh.url + (hash || ""));
   await pg.waitForSelector("#launchBtn", { state: "attached" });
-  await pg.click("#launchBtn");
+  await launch(pg);
   await expect(pg.locator("main#canvas")).toBeVisible();
 }
 
@@ -294,13 +294,13 @@ test.describe("v6.13 design pass", () => {
   test("v6.13 motion: focus glides for motion-lovers; boat rides the waves", async ({ dh }) => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await bootPage(pg, dh, "");
-    // v6.29: default = settle. The glide lasts 260ms, so the mid-flight sample
+    // v7.7: default = the clock alone. The glide lasts 260ms, so the mid-flight sample
     // is taken in-page, synchronously after the click: a forced layout right
     // then reads the transition's START width (a teleport would already be
     // full-width). A round trip through the driver can outlast the whole glide.
     const mid = await pg.evaluate(() => {
       const c = document.getElementById("canvas").getBoundingClientRect();
-      const el = document.querySelector(".w-settle");
+      const el = document.getElementById("clockWidget");
       el.querySelector(".wFocus").click();
       return { gliding: el.classList.contains("gliding"),
                midflight: el.getBoundingClientRect().width < c.width - 8 };
@@ -309,7 +309,7 @@ test.describe("v6.13 design pass", () => {
     ok(mid.midflight, "focus teleported despite motion preference");
     await expect.poll(() => pg.evaluate(() => {
       const c = document.getElementById("canvas").getBoundingClientRect();
-      const w = document.querySelector(".w-settle").getBoundingClientRect();
+      const w = document.getElementById("clockWidget").getBoundingClientRect();
       return Math.abs(w.width - c.width) < 2;
     }), { message: "glide never arrived", timeout: 3000 }).toBe(true);
     ok(await pg.evaluate(() => {

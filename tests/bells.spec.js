@@ -27,6 +27,7 @@ test.describe("landing", () => {
 
   test("manual chip overrides the auto pick for the day", async ({ page, dh }) => {
     await dh.openAt("#t=2026-08-31T10:30");       // auto = Black
+    await dh.home();                             // v7.7: the landing page is skipped on a rotation-picked week
     await page.keyboard.press("1");               // override to Teal
     await dh.launch();
     const line = await dh.bellText();
@@ -80,6 +81,7 @@ test.describe("2026-27 bell math", () => {
 
   test("No bells (chip 3) hides readout; debug API agrees", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-08T12:50");
+    await dh.home();                             // v7.7: the landing page is skipped on a rotation-picked week
     await page.keyboard.press("3");
     await dh.launch();
     ok(await page.locator("#bellWrap").isHidden(), "readout visible");
@@ -188,6 +190,7 @@ test.describe("settings", () => {
 
   test("no-op Apply preserves explicit No bells", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-08T10:30");
+    await dh.home();                             // v7.7: the landing page is skipped on a rotation-picked week
     await page.keyboard.press("3");
     await dh.launch();
     ok(await page.locator("#bellWrap").isHidden(), "precondition");
@@ -239,6 +242,7 @@ test.describe("settings", () => {
 
   test("renaming the ANCHOR group does not disturb a No-bells pick", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-01T10:00");       // Black week auto
+    await dh.home();                             // v7.7: the landing page is skipped on a rotation-picked week
     await page.keyboard.press("3");               // No bells
     await dh.launch();
     ok(await page.locator("#bellWrap").isHidden(), "precondition");
@@ -252,6 +256,7 @@ test.describe("settings", () => {
 
   test("turning rotation OFF preserves the current pick", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-01T10:00");
+    await dh.home();                             // v7.7: the landing page is skipped on a rotation-picked week
     await page.keyboard.press("3");               // No bells
     await dh.launch();
     await page.click("#setBtn");
@@ -308,12 +313,14 @@ test.describe("weekend rollover", () => {
     ok(await activeIndex(page) === 1, "precondition");
     // cross into Monday (Teal week)
     await expect.poll(() => activeIndex(page), { timeout: 8000, message: "did not adopt new week" }).toBe(0);
+    await dh.home();                              // v7.7: Home rebuilds the chips
     const pressed = await page.locator('#schedChips .chip[aria-pressed="true"]').textContent();
     ok(pressed.trim() === "Teal Week", "landing chips stale: " + pressed);
   });
 
   test("weekend rollover respects a manual override", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-06T23:59:57");
+    await dh.home();                             // v7.7: the landing page is skipped on a rotation-picked week
     await page.keyboard.press("3");               // No bells, manually
     ok(await activeIndex(page) === -1, "precondition");
     // the landing dateline ticks every 250ms — wait for Monday, then let one

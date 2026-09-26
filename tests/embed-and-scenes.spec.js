@@ -3,7 +3,7 @@
  * Every test boots its own board; the local iframe targets the embed tests
  * need are written into dh.fixtureDir (per-test temp dir) and opened over
  * file://. */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 const { chromium } = require("@playwright/test");
 const path = require("path");
 const fs = require("fs");
@@ -608,7 +608,7 @@ test.describe("noise game", () => {
       await p3.goto(dh.url + "#t=2026-09-08T10:30");   // 2nd period owns this round
       await p3.waitForSelector("#launchBtn", { state: "attached" });
       await p3.waitForTimeout(350);
-      await p3.click("#launchBtn");
+      await launch(p3);
       await p3.click("#addBtn");
       await p3.click("#addMeterBtn");
       // a controllable oscillator plays the part of the classroom

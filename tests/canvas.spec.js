@@ -25,15 +25,15 @@ const dragBy = async (page, loc, dx, dy, steps) => {
 };
 
 test.describe("canvas", () => {
-  test("canvas: default scene renders clock + settle-in, dock ready, settle selected", async ({ page, dh }) => {
+  test("canvas: default scene renders the clock alone (the settle-in is its moment), dock ready", async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
     ok(await page.inputValue("#sceneSel") === "Daily Board",
       "scene: " + await page.inputValue("#sceneSel"));
-    ok(await page.locator("#canvas .widget:visible").count() === 2, "widget count");
+    ok(await page.locator("#canvas .widget:visible").count() === 1, "widget count");
     ok(!(await page.locator("#clockWidget").isHidden()), "clock hidden");
-    // v6.29: the settle-in replaced the default timer (Croix)
-    ok(await page.locator(".w-settle.sel").count() === 1, "settle not selected");
+    // v6.29: the settle-in replaced the default timer; v7.7: it is a moment of the clock, no card
+    ok(await page.locator(".w-settle").count() === 0, "a settle card is on the board");
     ok(await page.locator(".w-timer").count() === 0, "a timer snuck back in");
     ok(await page.evaluate(() => window.Deckhand.scene) === "Daily Board", "api scene");
     // the summoned-timer path still hands out the legacy ids
@@ -181,9 +181,7 @@ test.describe("canvas", () => {
     await expect(page.locator(".w-timer.sel .tStart")).toHaveText("Pause");
     ok(await dh.text("#startBtn") === "Start", "unselected timer started");
     await page.keyboard.press(" ");            // pause Timer 2
-    await page.keyboard.press("s");            // cycle → the settle-in (v6.29 default)
-    ok(await page.locator(".w-settle.sel").count() === 1, "S skipped the settle");
-    await page.keyboard.press("s");            // …then around to the first timer
+    await page.keyboard.press("s");            // cycle → around to the first timer (v7.7: no settle card in the ring)
     ok(await page.locator(".w-timer.sel #timer").count() === 1, "S did not cycle");
     await page.keyboard.press("7");            // digits go to the selected timer
     ok(await dh.text("#timer") === "0:07", "entry: " + await dh.text("#timer"));
@@ -200,9 +198,8 @@ test.describe("canvas", () => {
     ok(await page.locator(".w-timer").count() === 1, "widget lingers");
     const after = await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.length);
     ok(after === before - 1, "config kept it: " + before + "->" + after);
-    // v6.29: the settle-in is on the board and next in line — recovery
-    // may hand the selection to it (close taps select the dying widget first)
-    ok(await page.locator(".w-timer.sel, .w-stopwatch.sel, .w-settle.sel")
+    // recovery hands the selection to the next timerish card (close taps select the dying widget first)
+    ok(await page.locator(".w-timer.sel, .w-stopwatch.sel")
       .count() === 1, "selection not recovered");
   });
 
@@ -357,17 +354,17 @@ test.describe("scenes", () => {
     // it is an ordinary card again, dropped by the next switch like the rest
     await page.selectOption("#sceneSel", "Daily Board");
     await page.waitForTimeout(400);
-    ok(await page.locator("#canvas .widget:visible").count() === 3, "the running station was not carried");
+    ok(await page.locator("#canvas .widget:visible").count() === 2, "the running station was not carried");
     ok(await page.locator(".w-timer").count() === 1 && await page.evaluate(() => document.querySelector(".w-timer")._entry.carried === true), "carried timer");
     await page.evaluate(() => document.querySelector(".w-timer")._entry.api.reset());
     await page.selectOption("#sceneSel", "Stations");
     await expect(page.locator("#canvas .widget:visible")).toHaveCount(5);   // no duplicate station
     await page.selectOption("#sceneSel", "Daily Board");
     await page.waitForTimeout(400);            // destroyed timer must not tick or ring
-    ok(await page.locator("#canvas .widget:visible").count() === 2, "residue widgets");
-    // v6.29: the Daily Board carries a settle-in, not a timer
+    ok(await page.locator("#canvas .widget:visible").count() === 1, "residue widgets");
+    // v6.29: the Daily Board carries no timer; v7.7: no settle card either
     ok(await page.locator(".w-timer").count() === 0, "timer residue");
-    ok(await page.locator(".w-settle").count() === 1, "settle count");
+    ok(await page.locator(".w-settle").count() === 0, "settle count");
     ok(await page.evaluate(() => window.Deckhand.config.activeScene) === "Daily Board",
       "config scene");
   });

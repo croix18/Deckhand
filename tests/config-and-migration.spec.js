@@ -6,7 +6,7 @@
  * the app through dh.loadFixture (a NEW page), so the stored()/flush()
  * helpers below take that page explicitly.
  */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 const path = require("path");
 const fs = require("fs");
 
@@ -51,7 +51,7 @@ const storedOn = pg => pg.evaluate(() => {
 const flushOn = pg => pg.evaluate(() => window.Deckhand.flush());
 const cfgOn = pg => pg.evaluate(() => window.Deckhand.config);
 const launchOn = async pg => {
-  await pg.click("#launchBtn");
+  await launch(pg);
   await expect(pg.locator("main#canvas")).toBeVisible();
 };
 
@@ -61,7 +61,7 @@ test.describe("migrations", () => {
     let c = await cfgOn(pg);
     ok(c.schemaVersion === 4 && c.bell.groups.length === 2, "groups: " + c.bell.groups.length);
     ok(c.scenes.length === 1 && c.scenes[0].name === "Daily Board" &&
-       c.scenes[0].widgets.length === 2, "scenes not defaulted");
+       c.scenes[0].widgets.length === 1 && c.scenes[0].widgets[0].type === "clock", "scenes not defaulted");   // v7.7: clock only
     ok(c.bell.groups[0].name === "Blue Week" && c.bell.groups[0].wednesday.length === 1,
       "pairing: " + JSON.stringify(c.bell.groups[0].name));
     ok(c.bell.nudgeSeconds === 30, "nudge: " + c.bell.nudgeSeconds);
@@ -118,13 +118,14 @@ test.describe("migrations", () => {
     const c = await cfgOn(pg);
     ok(c.schemaVersion === 4, "schema: " + c.schemaVersion);
     ok(c.scenes.length === 1 && c.scenes[0].name === "Daily Board" &&
-       c.scenes[0].widgets.length === 2, "scenes: " + JSON.stringify(c.scenes));
+       c.scenes[0].widgets.length === 1, "scenes: " + JSON.stringify(c.scenes));   // v7.7: clock only
     ok(c.activeScene === "Daily Board" && c.ui.locked === false, "ui defaults");
     ok(c.bell.groups.length === 2 && c.bell.autoWeek === true &&
        c.bell.nudgeSeconds === 120, "bell lost");
     ok(c.timer.style === "tide" && c.clock.showSeconds === true, "prefs lost");
     await launchOn(pg);
-    await expect(pg.locator(".w-settle")).toHaveCount(1);
+    await expect(pg.locator(".w-settle")).toHaveCount(0);       // v7.7: the settle-in is the clock's moment
+    ok(c.bell.settle && c.bell.settle.on === true, "settle-in not on by default");
     await pg.close();
   });
 });
@@ -187,9 +188,9 @@ test.describe("saved scenes and pins", () => {
     // can clear it under us — compare config snapshots instead
     const snap = () => pg.evaluate(() => JSON.stringify(window.Deckhand.config));
     const before = await snap();
-    await pg.click(".w-settle .wPin");           // pin… (v6.29: default = settle)
+    await pg.click("#clockWidget .wPin");        // pin… (v7.7: default = the clock alone)
     ok((await snap()) !== before, "pin did not change the config");
-    await pg.click(".w-settle .wPin");           // …and undo
+    await pg.click("#clockWidget .wPin");        // …and undo
     ok((await snap()) === before, "pin round trip left a phantom change");
     await pg.close();
   });
@@ -465,7 +466,7 @@ test.describe("v7.0 boot and apply guards", () => {
   test("v7.0: a malformed #t= hash still boots", async ({ page, dh }) => {
     await dh.openAt("#t=%");
     ok(await page.evaluate(() => !!window.Deckhand), "window.Deckhand missing");
-    await expect(page.locator("#launchBtn")).toBeVisible();
+    await expect(page.locator("main#canvas")).toBeVisible();     // v7.7: straight to the board
   });
 
   test("v7.0: bell-schedule lists refuse a 21st block at Apply", async ({ page, dh }) => {

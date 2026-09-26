@@ -1,14 +1,14 @@
 # Deckhand
 
 A single-file classroom OS for Mr. Shaffer's 7th-grade math room at Windy Hill Middle
-School — clock, bell schedule, settle-in countdown, timers, agenda, picker, sketch,
+School — clock, bell schedule, the settle-in moment at the bell, timers, agenda, picker, sketch,
 YouTube/slides embeds, lofi tape, and a small sea. Built for a Promethean IR-touch
 panel driven by a managed Chromebox, opened either from Google Drive over `file://`
 or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.6.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.7.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts.
 
 Since v7.0 the board **saves itself on the device**: layout, bells, and class rosters
@@ -17,6 +17,11 @@ open, on the file and on the hosted URL alike. The config block baked into the f
 the seed for a new device and the target of *Settings → Use this file's settings*.
 *Settings → Export a copy* still writes a complete Deckhand file with everything baked
 in — a backup, or the way to carry a board to another machine.
+
+Since v7.7 the board is one chrome bar: the date lives on the clock, the settle-in is a
+moment of the clock (Settings → Bells), the teacher's buttons sit under the dock's ⋮,
+and on a day the week rotation already decided, the landing page is skipped (Home / H
+brings it back).
 
 `docs/HANDOFF.md` is the project memory — every version's story, the design rules, the
 known constraints (YouTube Error 153 over `file://`, the iframe drag shield,
@@ -49,7 +54,7 @@ Chart backup…** takes its exported JSON anywhere. Apply to keep.
 
 ## Tests
 
-`tests/` — a Playwright suite (`@playwright/test`), 204 tests split by feature, each in
+`tests/` — a Playwright suite (`@playwright/test`), 210 tests split by feature, each in
 its own fresh browser context, run in parallel.
 
 ```sh

@@ -2,7 +2,7 @@
  * scoreboard, event countdown, tally, agenda, QR, sketch pad, noise meter,
  * plus the + Add menu, z-order and landing-page checks that live with them.
  * Ported from test_deckhand_v6.js (old lines 1229–1883). */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 const { chromium } = require("@playwright/test");
 const jsQR = require("../node_modules/jsqr/dist/jsQR.js");
 
@@ -457,6 +457,7 @@ test.describe("event countdown + agenda", () => {
 test.describe("landing, alarm, add menu, z-order", () => {
   test("landing: the board never paints over the landing page (canvas hidden)", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-11T10:15");         // layout that used to collide
+    await dh.home();
     const m = await page.evaluate(() => {
       const lb = document.getElementById("launchBtn");
       const r = lb.getBoundingClientRect();
@@ -627,7 +628,7 @@ test.describe("QR, sketch pad, noise meter", () => {
       });
       await p2.goto(dh.url);
       await p2.waitForSelector("#launchBtn", { state: "attached" });
-      await p2.click("#launchBtn");
+      await launch(p2);
       await p2.click("#addBtn");
       await p2.click("#addMeterBtn");
       await p2.click(".w-meter .mtBtn");

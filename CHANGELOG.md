@@ -2,6 +2,41 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.7.0 — 2026-09-28
+
+**The room-facing release** (batch B of the audit plan; the design-lens review's three
+big asks, in the order Croix chose them).
+
+**The settle-in is a moment of the clock.** The Settle-in card is gone. At a bell the
+clock card takes the stage and *becomes* the count — "Find your seat · 30 · seconds" —
+or, at the day's first bell, the flag alone; runs the routine exactly as before (the
+swelling ticks, the soft note, the consequence spell, per-period seconds, the Pledge
+minutes); hands off to a Slides card; and the face comes back. Between bells the clock is
+just the clock — no "AT THE BELL 30s" stale instruction on 40% of the wall all period.
+While it runs, Space restarts it and R stands it down. Its settings moved to **Settings →
+Bells → Settle-in at the bell** (on/off, seconds, message, flag on/minutes, seconds by
+period). A board opened from an older file keeps its card's settings (migrated into
+`bell.settle`); a board whose owner had removed the card gets the routine off. A scene
+needs a clock to run it. The default Daily Board is the clock (58%) with the right of the
+board left to the teacher.
+
+**One chrome bar.** The navy header is gone: the date is on the clock (with the SIM badge
+on a simulated clock); Settings is a dock pill (its coral dot is still the store's health
+light); Home, Sound and Fullscreen live under the dock's new ⋮ with the brand. The board
+gained the header's height. On the landing page the dock keeps only Settings and ⋮.
+
+**The landing page asks only when there is a question.** When the week rotation already
+picked the week (or there is only one week type, or no bells), the board opens straight
+away and says hello in one line — "Good morning, Mr. Shaffer · Black Week · tap anywhere
+for sound" — which the first tap takes away. The sound nudge is real: the page has no
+gesture until you tap, and the settle-in's ticks need one. Rotation off with two week
+types still asks. Home (H, or ⋮ → Home) opens the page any time; the TODAY row lives
+there as before.
+
+**Also.** A long press on the drifting boat now captures the pointer (the hold survives
+the drift); the version nudge is a box, not a circle, on a phone. Tests: `v77.spec.js`
+(6 new) and the settle/Pledge/landing tests rewritten for the moment model; 210 green.
+
 ## 7.6.0 — 2026-09-28
 
 **Robustness, no visible change.** Batch A of the audit round's plan (`docs/reviews/audit-2026-09-27-*`);

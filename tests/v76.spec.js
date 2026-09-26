@@ -4,7 +4,7 @@
  * of ours, not window.prompt; the Ink overlay draws incrementally; the
  * scoreboard sanitizer filters before it slices; the bathroom pill is
  * never coral. */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 
 test.describe("v7.6 robustness", () => {
   test("v7.6: a scene switch carries a RUNNING timer along and hands it back; an idle one stays put", async ({ page, dh }) => {
@@ -46,7 +46,7 @@ test.describe("v7.6 robustness", () => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });   // the face loop is off under reduced motion
     await pg.goto(dh.url + "#t=2026-09-24T10:30");
     await pg.waitForFunction(() => !!window.Deckhand);
-    await pg.click("#launchBtn");
+    await launch(pg);
     await pg.click("#addBtn"); await pg.click("#addTimerBtn");
     for (const style of ["ring", "tide"]){
       await pg.evaluate(s => {
@@ -75,7 +75,7 @@ test.describe("v7.6 robustness", () => {
       bell: { groups: [] }
     });
     const pg = await dh.loadFixture("tmp_absent.html", cfg, { hash: "#t=2026-09-24T10:30" });
-    await pg.click("#launchBtn");
+    await launch(pg);
     await pg.evaluate(() => window.Deckhand.absent.toggle("1st", "Synth B"));
     ok((await pg.evaluate(() => window.Deckhand.absent.isOut("1st", "Synth B"))) === true, "mark not taken");
     ok((await pg.evaluate(() => window.Deckhand.absent.presentFor("1st").join(","))) === "Synth A,Synth C", "present list wrong");
@@ -185,7 +185,7 @@ test.describe("v7.6 robustness", () => {
     const pg = await dh.loadFixture("tmp_score.html", cfg, { hash: "#t=2026-09-24T10:25" });
     const teams = await pg.evaluate(() => window.Deckhand.config.scenes[0].widgets[1].teams.map(t => t.name + ":" + t.score).join(" "));
     ok(teams === "Red:3 Blue:5 Green:1 Gold:2", "junk cost a real team its place: " + teams);
-    await pg.click("#launchBtn");
+    await launch(pg);
     await expect(pg.locator("#bathPill")).toHaveClass("closed");
     const bg = await pg.evaluate(() => getComputedStyle(document.getElementById("bathPill")).backgroundColor);
     ok(bg === "rgb(230, 213, 184)", "closed pill is not sand: " + bg);   // --sand #E6D5B8; coral is for alarms

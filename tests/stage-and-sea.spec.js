@@ -17,7 +17,7 @@ const path = require("path");
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
 test.describe("v6.14 stage mode", () => {
-  test("v6.14 stage mode: focus hides the header, survives Home, Exit restores", async ({ page, dh }) => {
+  test("v6.14 stage mode: focus folds the dock (v7.7: there is no header), survives Home, Exit restores", async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
     await dh.addTimer();
@@ -26,33 +26,28 @@ test.describe("v6.14 stage mode", () => {
     await page.click(".w-timer .wFocus");
     const staged = await page.evaluate(() => ({
       mode: document.body.classList.contains("focusMode"),
-      header: getComputedStyle(document.querySelector("header")).display,
+      header: document.querySelector("header"),                 // v7.7: gone for good
+      dockMin: document.body.classList.contains("dockMin"),
       width: document.querySelector(".w-timer").getBoundingClientRect().width,
       top: document.querySelector(".w-timer").getBoundingClientRect().top,
       barBtns: document.querySelectorAll("#focusBar button").length,
       barHidden: document.getElementById("focusBar").hidden
     }));
-    ok(staged.mode && staged.header === "none", "header still up: " + JSON.stringify(staged));
+    ok(staged.mode && staged.header === null && staged.dockMin, "stage not struck: " + JSON.stringify(staged));
     ok(staged.width > before * 2 && staged.top < 20,
       "deck did not take the screen: " + JSON.stringify(staged));
     ok(staged.barBtns === 3 && !staged.barHidden, "focus bar incomplete");   // Timer · Draw (v7.2) · Exit
-    // Home mid-focus: the landing gets its header back…
-    await page.keyboard.press("Escape");         // …but first: Esc fully restores
+    await page.keyboard.press("Escape");         // Esc fully restores
     const restored = await page.evaluate(() => ({
       mode: document.body.classList.contains("focusMode"),
-      header: getComputedStyle(document.querySelector("header")).display
+      dockMin: document.body.classList.contains("dockMin")
     }));
-    ok(!restored.mode && restored.header !== "none", "stage never struck: "
-      + JSON.stringify(restored));
+    ok(!restored.mode && !restored.dockMin, "stage never struck: " + JSON.stringify(restored));
     await page.click(".w-timer .wFocus");        // re-focus, then go Home
     await page.keyboard.press("h");
-    ok(await page.evaluate(() =>
-      getComputedStyle(document.querySelector("header")).display) !== "none",
-      "landing lost its header to stage mode");
+    ok(await page.evaluate(() => document.body.classList.contains("landing")), "Home did not open");
     await dh.launch();                           // back to the board: still staged
-    ok(await page.evaluate(() =>
-      getComputedStyle(document.querySelector("header")).display) === "none",
-      "stage dropped across Home/launch");
+    ok(await page.evaluate(() => document.body.classList.contains("focusMode")), "stage dropped across Home/launch");
     await page.keyboard.press("Escape");
   });
 

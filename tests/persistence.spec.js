@@ -53,17 +53,17 @@ test.describe("autosave on the device", () => {
     await expect(page.locator("#setErrors")).toHaveText("Applied.");
     await page.click("#closeBtn");
     await page.evaluate(() => {
-      const en = document.querySelector(".w-settle")._entry;
-      en.cfg.x = 50; en.cfg.y = 10;
+      const en = document.getElementById("clockWidget")._entry;   // v7.7: the clock is the only default card
+      en.cfg.x = 30; en.cfg.y = 10; en.cfg.w = 50;
     });
     await dh.flush();
     await dh.reopen("#t=2026-09-21T10:30");
     const back = await page.evaluate(() => ({
       rosters: window.Deckhand.config.rosters,
-      settle: window.Deckhand.config.scenes[0].widgets.filter(w => w.type === "settle")[0]
+      clock: window.Deckhand.config.scenes[0].widgets.filter(w => w.type === "clock")[0]
     }));
     ok(back.rosters.length === 1 && back.rosters[0].names.join() === "Ava,Ben,Cai", "rosters lost: " + JSON.stringify(back.rosters));
-    ok(back.settle.x === 50 && back.settle.y === 10, "layout lost: " + JSON.stringify(back.settle));
+    ok(back.clock.x === 30 && back.clock.y === 10 && back.clock.w === 50, "layout lost: " + JSON.stringify(back.clock));
 
     await dh.openAt("#t=2026-09-21T10:30");           // helpers clear the store: the file's seed again
     ok((await page.evaluate(() => window.Deckhand.config.rosters.length)) === 0, "store not cleared on fresh boot");
@@ -95,7 +95,8 @@ test.describe("autosave on the device", () => {
     // arming disarms itself; a second tap inside the window reloads on the file
     await page.evaluate(() => { try { sessionStorage.setItem("dh.keepStore", "1"); } catch (e) {} window.name = "dh.keepStore"; });
     await Promise.all([page.waitForNavigation(), page.click("#setResetBtn")]);
-    await page.waitForSelector("#launchBtn");
+    await page.waitForFunction(() => !!window.Deckhand);
+    await dh.home();
     await expect(page.locator("#greet")).toContainText("Mr. Shaffer");
     // (the init script clears storage on that navigation anyway; the real proof is Store.clear ran before reload)
   });
@@ -208,8 +209,9 @@ test.describe("autosave on the device", () => {
     });
     const p = dh.writeFixture("broken.html", "{ this is not json");
     await page.goto("file://" + p + "#t=2026-09-21T10:30");
-    await page.waitForSelector("#launchBtn");
+    await page.waitForFunction(() => !!window.Deckhand);
     ok(await page.evaluate(() => window.Deckhand.configSource) === "device", "device copy should rescue a broken file");
+    await dh.home();
     await expect(page.locator("#greet")).toContainText("Ms. Device");
     ok(await page.evaluate(() => !document.getElementById("cfgWarn")), "no defaults banner when the device copy is good");
     await dh.launch();
@@ -267,6 +269,7 @@ test.describe("rosters from the Seating Chart", () => {
 test.describe("review fixes", () => {
   test("v7.0: a manual week override expires at the date change (rotation resumes)", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-08T23:59:57");        // Tuesday of a Teal week (auto = 0)
+    await dh.home();                                   // v7.7: the landing page is on demand
     await page.keyboard.press("2");                    // override to Black for the day
     ok((await page.evaluate(() => window.Deckhand.activeIndex)) === 1, "override not applied");
     await expect.poll(() => page.evaluate(() => window.Deckhand.activeIndex), { timeout: 9000 }).toBe(0);
@@ -292,7 +295,7 @@ test.describe("review fixes", () => {
     // the text widget builds a ResizeObserver at mount — make that constructor throw
     await page.addInitScript(() => { window.ResizeObserver = function () { throw new Error("boom: sabotaged RO"); }; });
     await page.goto("file://" + p + "#t=2026-09-21T10:30");
-    await page.waitForSelector("#launchBtn");
+    await page.waitForFunction(() => !!window.Deckhand);
     await dh.launch();
     const state = await page.evaluate(() => ({
       widgets: document.querySelectorAll("main#canvas .widget:not([hidden])").length,

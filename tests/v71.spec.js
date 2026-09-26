@@ -1,13 +1,14 @@
 /* v7.1 — the week-of-notes release: today override + day editor, noise
    game tally, embed shelf/library/paste box/fullscreen delegation, the
    Pledge flag, and the sea's new visitors. */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 const fs = require("fs");
 const path = require("path");
 
 test.describe("today override + day editor", () => {
   test("v7.1: Wednesday times on a Thursday, regular again the next day, custom day with No bells", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-24T10:30");          // Thursday, Teal
+    await dh.home();                                  // v7.7: the TODAY row lives on the landing page, now on demand
     await expect(page.locator('#todayChips [data-today="regular"]')).toHaveAttribute("aria-pressed", "true");
     await page.click('[data-today="wednesday"]');
     await dh.launch();
@@ -42,6 +43,7 @@ test.describe("today override + day editor", () => {
 
   test("v7.1: the day editor validates — blank rows ignored, end before start and overlaps refused", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-24T10:30");
+    await dh.home();
     await page.click('[data-today="custom"]');
     await page.click("#dayEditorAdd");
     await page.fill("#dayEditorBlocks .blkRow:last-child .blkLabel", "Assembly");
@@ -152,9 +154,10 @@ test.describe("embed", () => {
     await expect(page.locator("body")).toHaveClass(/focusMode/);
     await page.click("#unfocusBtn");
     await expect(page.locator(".w-embed")).toBeHidden();
-    // the bell routine: settle takes the stage, then the shelved deck
-    await page.evaluate(() => { const en = document.querySelector(".w-settle")._entry; en.cfg.seconds = 5; en.api._doneMs(1200); });
-    await expect(page.locator(".w-settle")).toHaveClass(/wFull/, { timeout: 15000 });
+    // the bell routine: the clock takes the stage as the count, then the shelved deck
+    await page.evaluate(() => { window.Deckhand.config.bell.settle.seconds = 5; window.Deckhand.settle._doneMs(1200); });
+    await expect(page.locator("#clockWidget")).toHaveClass(/wFull/, { timeout: 15000 });
+    await expect(page.locator("#clockWidget")).toHaveClass(/stLive/);
     await expect(page.locator(".w-embed")).toHaveClass(/wFull/, { timeout: 12000 });
     await expect(page.locator(".w-embed")).toBeVisible();
     await dh.flush();
@@ -193,66 +196,96 @@ test.describe("the Pledge", () => {
     await page.click(".w-embed .embLoad");
     await page.click(".w-embed .wEdit"); await page.check(".w-embed .embShelfCk"); await page.click(".w-embed .wEdit");
     await page.evaluate(() => {
-      const en = document.querySelector(".w-settle")._entry;
-      en.cfg.seconds = 5; en.cfg.pledge.minutes = 1; en.api._doneMs(1200);
+      const st = window.Deckhand.config.bell.settle;
+      st.seconds = 5; st.pledge.minutes = 1; window.Deckhand.settle._doneMs(1200);
     });
-    await expect(page.locator(".w-settle")).toHaveClass(/wFull/, { timeout: 30000 });
-    await expect(page.locator(".w-settle .stFlag")).toBeVisible();
-    await expect(page.locator(".w-settle")).toHaveClass(/stPledgeOnly/);
-    ok(!!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())), "pledge window not opened");
+    await expect(page.locator("#clockWidget")).toHaveClass(/wFull/, { timeout: 30000 });
+    await expect(page.locator("#clockSettle .stFlag")).toBeVisible();
+    await expect(page.locator("#clockWidget")).toHaveClass(/stPledgeOnly/);
+    ok(!!(await page.evaluate(() => window.Deckhand.settle._pledgeUntil())), "pledge window not opened");
     // v7.2: no count runs and nothing is written — the flag has the screen to itself
-    ok((await page.evaluate(() => document.querySelector(".w-settle")._entry.api.running())) === false, "the count ran during the Pledge");
-    await expect(page.locator(".w-settle .stTop")).toHaveText("");
-    await expect(page.locator(".w-settle .stBig")).toHaveText("");
-    await expect(page.locator(".w-settle .stStart")).toBeHidden();
-    const sway = await page.evaluate(() => getComputedStyle(document.querySelector(".w-settle .flagWave")).animationName);
+    ok((await page.evaluate(() => window.Deckhand.settle.running())) === false, "the count ran during the Pledge");
+    await expect(page.locator("#clockSettle .stTop")).toHaveText("");
+    await expect(page.locator("#clockSettle .stBig")).toHaveText("");
+    ok((await page.evaluate(() => getComputedStyle(document.getElementById("clockFace")).display)) === "none", "the clock face showed under the flag");
+    const sway = await page.evaluate(() => getComputedStyle(document.querySelector("#clockSettle .flagWave")).animationName);
     ok(sway === "none" || /flagSway/.test(sway), "flag wave rule missing: " + sway);   // reduced motion in the suite → none
     await expect(page.locator(".w-embed")).not.toHaveClass(/wFull/);
-    // …and hands off when the minute is up
+    // …and hands off when the minute is up; the clock is a clock again
     await expect(page.locator(".w-embed")).toHaveClass(/wFull/, { timeout: 70000 });
-    await expect(page.locator(".w-settle .stTop")).toHaveText("At the bell");
-    await expect(page.locator(".w-settle .stFlag")).toBeHidden();
+    await expect(page.locator("#clockWidget")).not.toHaveClass(/stLive/);
+    await expect(page.locator("#clockSettle .stFlag")).toBeHidden();
   });
 
   test("v7.2: on a reversed (Black) week the flag flies for 6th at 9:20, never for 1st at 3:07 — and 1st gets its own 25 seconds", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-28T15:06:52");        // Black Monday: 1st is the LAST block
     await dh.launch();
-    await page.evaluate(() => { const en = document.querySelector(".w-settle")._entry; en.cfg.perPeriod = { "1st": 25 }; });
-    await expect(page.locator(".w-settle .stBig")).toHaveText("25s", { timeout: 6000 });   // armed readout follows the period
-    await expect(page.locator(".w-settle")).toHaveClass(/wFull/, { timeout: 15000 });
-    await expect(page.locator(".w-settle .stFlag")).toBeHidden();
-    ok((await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())) === null, "flag flew for 1st at the end of the day");
-    await expect(page.locator(".w-settle .stTop")).toHaveText("Find your seat");
-    const secs = await page.evaluate(() => +document.querySelector(".w-settle .stBig").textContent);
+    await page.evaluate(() => { window.Deckhand.config.bell.settle.perPeriod = { "1st": 25 }; });
+    ok((await page.evaluate(() => window.Deckhand.settle.secsFor("1st"))) === 25, "per-period seconds not honoured");
+    await expect(page.locator("#clockWidget")).toHaveClass(/wFull/, { timeout: 15000 });
+    await expect(page.locator("#clockSettle .stFlag")).toBeHidden();
+    ok((await page.evaluate(() => window.Deckhand.settle._pledgeUntil())) === null, "flag flew for 1st at the end of the day");
+    await expect(page.locator("#clockSettle .stTop")).toHaveText("Find your seat");
+    const secs = await page.evaluate(() => +document.querySelector("#clockSettle .stBig").textContent);
     ok(secs >= 20 && secs <= 25, "1st did not get 25 seconds: " + secs);
     await dh.flush();
-    ok((await dh.stored()).cfg.scenes[0].widgets.filter(w => w.type === "settle")[0].perPeriod["1st"] === 25, "perPeriod not saved");
-    // the ✎ row shows one box per period; a blank box means the default
-    await page.click("#unfocusBtn");
+    ok((await dh.stored()).cfg.bell.settle.perPeriod["1st"] === 25, "perPeriod not saved");
+    // Settings → Bells shows one box per period; a blank box means the default
     await page.keyboard.press("r");
-    await page.click(".w-settle .stEdit");
-    await expect(page.locator(".w-settle .stPerCell")).toHaveCount(7);   // the bell periods, Lunch excluded
-    await page.fill('.w-settle .stPerCell input[aria-label="Seconds for 1st"]', "");
-    await page.locator('.w-settle .stPerCell input[aria-label="Seconds for 1st"]').dispatchEvent("blur");
-    ok(!("1st" in (await page.evaluate(() => document.querySelector(".w-settle")._entry.cfg.perPeriod))), "blank did not clear the override");
-    await expect(page.locator(".w-settle .stBig")).toHaveText("30s");
+    await page.click("#setBtn");
+    await dh.tab("bells");
+    await expect(page.locator("#sStPer .stPerCell")).toHaveCount(7);   // the bell periods, Lunch excluded
+    ok(await page.inputValue('#sStPer input[data-period="1st"]') === "25", "override not shown");
+    await page.fill('#sStPer input[data-period="1st"]', "");
+    await page.click("#applyBtn");
+    await expect(page.locator("#setErrors")).toHaveText("Applied.");
+    ok(!("1st" in (await page.evaluate(() => window.Deckhand.config.bell.settle.perPeriod))), "blank did not clear the override");
+    ok((await page.evaluate(() => window.Deckhand.settle.secsFor("1st"))) === 30, "default not restored");
+    await page.click("#closeBtn");
   });
 
   test("v7.1: a later bell shows no flag; the ✎ row turns the Pledge off; sanitize bounds the minutes", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-24T10:15:52");        // 2nd period — not the first bell
     await dh.launch();
-    await page.evaluate(() => { const en = document.querySelector(".w-settle")._entry; en.cfg.seconds = 5; en.cfg.perPeriod = {}; });
-    await expect(page.locator(".w-settle")).toHaveClass(/wFull/, { timeout: 15000 });
-    await expect(page.locator(".w-settle .stFlag")).toBeHidden();
-    ok((await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())) === null, "pledge opened on a later bell");
-    await page.click("#unfocusBtn");
-    await page.click(".w-settle .stEdit");
-    await expect(page.locator(".w-settle .stPledgeCk")).toBeChecked();
-    await page.uncheck(".w-settle .stPledgeCk");
-    await page.fill(".w-settle .stPledgeMin", "40");
-    await page.locator(".w-settle .stPledgeMin").dispatchEvent("blur");
-    const p = await page.evaluate(() => document.querySelector(".w-settle")._entry.cfg.pledge);
+    await page.evaluate(() => { const st = window.Deckhand.config.bell.settle; st.seconds = 5; st.perPeriod = {}; });
+    await expect(page.locator("#clockWidget")).toHaveClass(/wFull/, { timeout: 15000 });
+    await expect(page.locator("#clockSettle .stFlag")).toBeHidden();
+    ok((await page.evaluate(() => window.Deckhand.settle._pledgeUntil())) === null, "pledge opened on a later bell");
+    await page.keyboard.press("r");
+    await page.click("#setBtn");
+    await dh.tab("bells");
+    await expect(page.locator("#sStPledge")).toBeChecked();
+    await page.uncheck("#sStPledge");
+    await page.fill("#sStPledgeMin", "40");
+    await page.click("#applyBtn");
+    await expect(page.locator("#setErrors")).toContainText("Flag minutes");   // Settings refuses 40; sanitize would clamp a file's
+    await page.fill("#sStPledgeMin", "10");
+    await page.click("#applyBtn");
+    await expect(page.locator("#setErrors")).toHaveText("Applied.");
+    const p = await page.evaluate(() => window.Deckhand.config.bell.settle.pledge);
     ok(p.on === false && p.minutes === 10, "pledge cfg: " + JSON.stringify(p));
+    // sanitize bounds a file's minutes and keeps a retired settle CARD's settings (the v7.6 → 7.7 migration)
+    const pg = await dh.loadFixture("tmp_settle_mig.html", JSON.stringify({
+      schemaVersion: 4, appVersion: "7.6.0", ownerName: "",
+      scenes: [{ name: "Daily Board", widgets: [
+        { type: "clock", x: 0, y: 0, w: 58, h: 100 },
+        { type: "settle", x: 61, y: 0, w: 39, h: 100, label: "Settle-in", seconds: 45, msgDone: "Sit.", pledge: { on: true, minutes: 40 }, perPeriod: { "2nd": 20 } }
+      ]}],
+      bell: { groups: [] }
+    }));
+    const mig = await pg.evaluate(() => ({ st: window.Deckhand.config.bell.settle, widgets: window.Deckhand.config.scenes[0].widgets.map(w => w.type) }));
+    ok(mig.widgets.join() === "clock", "the settle card survived migration: " + mig.widgets.join());
+    ok(mig.st.on === true && mig.st.seconds === 45 && mig.st.msgDone === "Sit." && mig.st.pledge.minutes === 10 && mig.st.perPeriod["2nd"] === 20,
+      "card settings not carried into bell.settle: " + JSON.stringify(mig.st));
+    await pg.close();
+    // a board whose owner had REMOVED the card gets the routine off
+    const pg2 = await dh.loadFixture("tmp_settle_off.html", JSON.stringify({
+      schemaVersion: 4, appVersion: "7.6.0", ownerName: "",
+      scenes: [{ name: "Daily Board", widgets: [{ type: "clock", x: 0, y: 0, w: 58, h: 100 }] }],
+      bell: { groups: [] }
+    }));
+    ok((await pg2.evaluate(() => window.Deckhand.config.bell.settle.on)) === false, "a card-less board turned the routine on");
+    await pg2.close();
   });
 });
 
@@ -261,7 +294,7 @@ test.describe("the sea", () => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await pg.goto(dh.url + "#t=2026-09-24T10:30");
     await pg.waitForFunction(() => !!window.Deckhand);
-    await pg.click("#launchBtn");
+    await launch(pg);
     const things = await pg.evaluate(() => [...document.querySelectorAll("#sea .seaThing")].map(t => t.id.replace("sea-", "")));
     ok(things.sort().join() === "serpent,fish,turtle,school,paper,attack,whale,buoy,dolphins".split(",").sort().join(),
        "visitors: " + things.join());                      // v7.4: the bottle became a paper boat; v7.5: dolphins

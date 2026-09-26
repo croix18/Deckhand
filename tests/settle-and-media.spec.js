@@ -5,7 +5,7 @@
  * clock did NOT start", "the sea stayed quiet") — nothing else can prove
  * that time passed with nothing happening.
  */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 const fs = require("fs");
 const path = require("path");
 
@@ -19,27 +19,40 @@ const stubYouTube = async page => {
   }));
 };
 
+/* v7.7: the settle-in is a MOMENT OF THE CLOCK — no card, no ✎ row, no Start
+ * chip. Its state is window.Deckhand.settle; its settings are
+ * config.bell.settle (Settings → Bells); the clock card (#clockWidget) is
+ * .stLive while the count / spell / flag has it, and .wFull when the bell
+ * staged it. */
 const settle = page => ({
-  running: () => page.evaluate(() => document.querySelector(".w-settle")._entry.api.running()),
-  big: () => page.locator(".w-settle .stBig"),
-  top: () => page.locator(".w-settle .stTop"),
-  sub: () => page.locator(".w-settle .stSub")
+  running: () => page.evaluate(() => window.Deckhand.settle.running()),
+  live: () => page.evaluate(() => window.Deckhand.settle.live()),
+  start: () => page.evaluate(() => window.Deckhand.settle.start()),
+  reset: () => page.evaluate(() => window.Deckhand.settle.reset()),
+  doneMs: ms => page.evaluate(ms => window.Deckhand.settle._doneMs(ms), ms),
+  seconds: n => page.evaluate(n => { window.Deckhand.config.bell.settle.seconds = n; }, n),
+  big: () => page.locator("#clockSettle .stBig"),
+  top: () => page.locator("#clockSettle .stTop"),
+  sub: () => page.locator("#clockSettle .stSub")
 });
 
 test.describe("settle-in routine", () => {
 
-  test("v6.23 settle-in: arms quietly, counts down, flips to the consequence, re-arms", async ({ page, dh }) => {
+  test("v6.23 → v7.7 settle-in: armed it is just the clock; a re-pick never fires it; Settings → Bells edits it; the count runs and the face comes back", async ({ page, dh }) => {
     const st = settle(page);
     await dh.openAt("#t=2026-09-08T10:30");       // mid 2nd period: must NOT autostart
-    await dh.launch();                             // v6.29: default board has the settle
+    await dh.launch();
     await page.waitForTimeout(600);                // a few bell-watch ticks (negative check)
     const armed = await page.evaluate(() => ({
-      big: document.querySelector(".stBig").textContent,
-      top: document.querySelector(".stTop").textContent,
-      running: document.querySelector(".w-settle")._entry.api.running()
+      live: window.Deckhand.settle.live(),
+      running: window.Deckhand.settle.running(),
+      stLive: document.getElementById("clockWidget").classList.contains("stLive"),
+      face: getComputedStyle(document.getElementById("clockFace")).display,
+      stage: getComputedStyle(document.getElementById("clockSettle")).display,
+      big: document.querySelector("#clockSettle .stBig").textContent
     }));
-    ok(!armed.running && armed.big === "30s" && /bell/i.test(armed.top),
-      "not armed on a mid-period boot: " + JSON.stringify(armed));
+    ok(!armed.live && !armed.running && !armed.stLive && armed.face !== "none" && armed.stage === "none" && armed.big === "",
+      "armed, the clock should be just the clock: " + JSON.stringify(armed));
     // a WEEK RE-PICK mid-period flips the label with no bell — never fire
     await page.evaluate(() => {
       const cur = window.Deckhand.activeIndex;
@@ -52,56 +65,50 @@ test.describe("settle-in routine", () => {
     await page.evaluate(() => window.Deckhand.setSchedule(0));   // …and back
     await page.waitForTimeout(800);                // (negative check)
     ok(!(await st.running()), "No-bells → bells-back fired the clock");
-    // ✎: 5 seconds and a custom message, committed into config
-    await page.click(".w-settle .stEdit");
-    await page.fill(".w-settle .stSecs", "5");
-    await page.fill(".w-settle .stMsg", "Cards out if standing");
-    await page.click(".w-settle .stEdit");         // close (blur commits)
-    const cw = await page.evaluate(() =>
-      window.Deckhand.config.scenes[0].widgets.find(x => x.type === "settle"));
-    ok(cw.seconds === 5 && cw.msgDone === "Cards out if standing",
+    // Settings → Bells: 5 seconds and a custom message, committed into config
+    await page.click("#setBtn");
+    await dh.tab("bells");
+    await page.fill("#sStSecs", "5");
+    await page.fill("#sStMsg", "Cards out if standing");
+    await page.click("#applyBtn");
+    await expect(page.locator("#setErrors")).toHaveText("Applied.");
+    const cw = await page.evaluate(() => window.Deckhand.config.bell.settle);
+    ok(cw.seconds === 5 && cw.msgDone === "Cards out if standing" && cw.on === true,
       "edit did not commit: " + JSON.stringify(cw));
-    // an EMPTIED seconds field is not a choice — it must revert, not clamp
-    await page.click(".w-settle .stEdit");         // reopen
-    await page.fill(".w-settle .stSecs", "");
-    await page.click(".w-settle .stMsg");          // blur commits
-    ok(await page.evaluate(() =>
-      window.Deckhand.config.scenes[0].widgets.find(x => x.type === "settle")
-        .seconds) === 5, "blank seconds overwrote the value");
-    await page.click(".w-settle .stEdit");         // close again
-    // Start chip: counts down, hits zero, shows the consequence, re-arms
-    await page.evaluate(() =>
-      document.querySelector(".w-settle")._entry.api._doneMs(1200));
-    await page.click(".w-settle .stStart");
+    // an EMPTIED seconds field is not a choice — Apply refuses it, the value stands
+    await page.fill("#sStSecs", "");
+    await page.click("#applyBtn");
+    await expect(page.locator("#setErrors")).toContainText("Settle-in seconds");
+    ok((await page.evaluate(() => window.Deckhand.config.bell.settle.seconds)) === 5, "blank seconds overwrote the value");
+    await page.click("#closeBtn");
+    // a run: the clock becomes the count, hits zero, shows the consequence, then is the clock again
+    await st.doneMs(1200);
+    await st.start();
     await expect(st.top()).toHaveText(/seat/i);
     const run = await page.evaluate(() => ({
-      top: document.querySelector(".stTop").textContent,
-      big: document.querySelector(".stBig").textContent,
-      running: document.querySelector(".w-settle")._entry.api.running()
+      top: document.querySelector("#clockSettle .stTop").textContent,
+      big: document.querySelector("#clockSettle .stBig").textContent,
+      running: window.Deckhand.settle.running(),
+      stLive: document.getElementById("clockWidget").classList.contains("stLive"),
+      face: getComputedStyle(document.getElementById("clockFace")).display
     }));
-    ok(run.running && /seat/i.test(run.top) && +run.big >= 1 && +run.big <= 5,
+    ok(run.running && run.stLive && run.face === "none" && /seat/i.test(run.top) && +run.big >= 1 && +run.big <= 5,
       "countdown wrong: " + JSON.stringify(run));
-    // v6.24: a MANUAL start never steals the screen
-    ok(await page.evaluate(() =>
-      document.querySelectorAll(".widget.wFull").length) === 0,
-      "manual Start took over the stage");
     // past zero → consequence up
     await expect(st.big()).toHaveText("Cards out if standing", { timeout: 10000 });
-    // done spell ends → re-armed
-    await expect(st.big()).toHaveText("5s", { timeout: 10000 });
-    // LOCKED: Start still works (play action, like +1); ✎ hides
+    // done spell ends → the face is back
+    await expect(page.locator("#clockWidget")).not.toHaveClass(/stLive/, { timeout: 10000 });
+    ok(!(await st.live()), "still live after the spell");
+    // LOCKED: the routine is a play action — it runs; R stands it down
     await page.click("#lockBtn");
-    ok(await page.evaluate(() =>
-      getComputedStyle(document.querySelector(".w-settle .stEdit"))
-        .display === "none"), "✎ visible while locked");
-    await page.click(".w-settle .stStart");
-    ok(await st.running(), "Start dead while locked");
+    await st.start();
+    ok(await st.running(), "start dead while locked");
+    await page.keyboard.press("r");
+    ok(!(await st.live()), "R did not stand the moment down");
     await dh.unlock();
-    await page.keyboard.press("r");                // tap selected it; R re-arms
-    await page.click(".w-settle .wClose");
   });
 
-  test("v6.23/24 settle-in: the BELL starts it FULL SCREEN, then hands the stage to the slides", async ({ page, dh }) => {
+  test("v6.23/24 settle-in: the BELL makes the CLOCK the count FULL SCREEN, then hands the stage to the slides", async ({ page, dh }) => {
     const st = settle(page);
     // 10s before 2nd period (10:16). The old suite booted at 10:15:56; a
     // 4s pre-bell window is eaten by a loaded CI box before the widget is
@@ -109,34 +116,29 @@ test.describe("settle-in routine", () => {
     await dh.openAt("#t=2026-09-08T10:15:50");
     await dh.launch();
     await dh.addW("addEmbedBtn");                  // the deck the routine hands to
-    // v6.29: the default board already carries the settle — configure IT
-    await page.evaluate(() => {
-      const en = document.querySelector(".w-settle")._entry;
-      en.cfg.seconds = 3;                          // quick routine for the test
-      en.api._doneMs(700);
-      if (document.activeElement) document.activeElement.blur();
-    });
+    await st.seconds(3);                           // quick routine for the test
+    await st.doneMs(700);
+    await page.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     ok(!(await st.running()), "started before the bell");
     // the bell rings at 10:16:00
     await expect.poll(() => st.running(), { timeout: 15000 }).toBe(true);
     const auto = await page.evaluate(() => ({
-      running: document.querySelector(".w-settle")._entry.api.running(),
-      top: document.querySelector(".stTop").textContent,
-      stagedSettle: !!document.querySelector(".w-settle.wFull"),
+      running: window.Deckhand.settle.running(),
+      top: document.querySelector("#clockSettle .stTop").textContent,
+      stagedClock: document.getElementById("clockWidget").classList.contains("wFull") &&
+                   document.getElementById("clockWidget").classList.contains("stLive"),
       mode: document.body.classList.contains("focusMode")
     }));
     ok(auto.running && /seat/i.test(auto.top),
       "bell did not start the settle clock: " + JSON.stringify(auto));
-    ok(auto.stagedSettle && auto.mode,
+    ok(auto.stagedClock && auto.mode,
       "bell start did not take the screen: " + JSON.stringify(auto));
-    // 3s count + 0.7s spell → the slides own the stage
+    // 3s count + 0.7s spell → the slides own the stage; the clock is a clock again
     await expect(page.locator(".w-embed.wFull")).toHaveCount(1, { timeout: 10000 });
+    await expect(page.locator("#clockWidget")).not.toHaveClass(/stLive/);
     await page.click("#unfocusBtn");               // staged embed owns Escape
     ok(await page.evaluate(() =>
       !document.body.classList.contains("focusMode")), "Exit did not exit");
-    // (no wClose here: on the FULL default board the cascade stacks the
-    // settle under the embed, so its ✕ is covered — the fresh page per
-    // test is the cleanup; destroy-cleanliness is covered in test #1)
   });
 
   test("v6.24 hardening: bell beats a manual run, reclaims keys, restarts hand off, ghosts ride along", async ({ page, dh }) => {
@@ -154,22 +156,20 @@ test.describe("settle-in routine", () => {
       w[w.length - 1].url = u;
       document.querySelector(".w-embed .embFrame").src = u;
     }, target);
-    await page.evaluate(() => {                    // v6.29: default settle
-      const en = document.querySelector(".w-settle")._entry;
-      en.cfg.seconds = 40;
-      en.api._doneMs(700);
-      en.api.startPause();                         // a kid taps Start pre-bell…
-    });
-    await page.click(".w-embed .wFocus");          // …while the DECK is staged
+    await st.seconds(40);
+    await st.doneMs(700);
+    await st.start();                              // a run is already in flight pre-bell…
+    await page.click("#unfocusBtn");               // (the clock came back to the front, over the deck's strip)
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());   // …while the DECK is staged
     ok(await page.evaluate(() =>
       document.activeElement &&
       document.activeElement.classList.contains("embFrame")),
       "precondition: deck should own the keys");
     // 10:16:00 — the bell
-    await expect(page.locator(".w-settle.wFull")).toHaveCount(1, { timeout: 15000 });
+    await expect(page.locator("#clockWidget.wFull.stLive")).toHaveCount(1, { timeout: 15000 });
     const bell = await page.evaluate(() => ({
-      staged: !!document.querySelector(".w-settle.wFull"),
-      running: document.querySelector(".w-settle")._entry.api.running(),
+      staged: document.getElementById("clockWidget").classList.contains("wFull"),
+      running: window.Deckhand.settle.running(),
       keysInFrame: document.activeElement &&
         document.activeElement.classList.contains("embFrame")
     }));
@@ -180,10 +180,9 @@ test.describe("settle-in routine", () => {
     await page.click("#focusTimerBtn");
     await page.click('#focusTimerMenu [data-min="1"]');
     // …and a MANUAL restart mid-routine (Space) must still hand off
-    await page.mouse.click(200, 300);              // select the settle, not the timer
-    await page.evaluate(() =>
-      document.querySelector(".w-settle")._entry.cfg.seconds = 2);
-    await page.keyboard.press(" ");                // restart at 2s (keys work now)
+    await page.mouse.click(200, 300);
+    await st.seconds(2);
+    await page.keyboard.press(" ");                // restart at 2s (Space while live = the routine's)
     // 2s + 0.7s spell → the slides own the stage
     await expect(page.locator(".w-embed.wFull")).toHaveCount(1, { timeout: 10000 });
     const after = await page.evaluate(() => {
@@ -204,30 +203,22 @@ test.describe("settle-in routine", () => {
     // ghostSync tick
     await expect(page.locator(".w-timer")).toHaveClass(/wGhost/, { timeout: 6000 });
     await page.click("#unfocusBtn");
-    // R while the settle itself is staged: the stage stands DOWN
+    // R while the clock is the count: the stage stands DOWN and the face returns
     await dh.openAt("#t=2026-09-08T10:30");
-    await dh.launch();                             // v6.29: default settle is on board
-    await page.evaluate(() => {                    // park it clear of the deck
-      const en = document.querySelector(".w-settle")._entry;
-      en.cfg.x = 2; en.cfg.y = 2; en.cfg.w = 30; en.cfg.h = 45;
-      en.el.style.left = "2%"; en.el.style.top = "2%";
-      en.el.style.width = "30%"; en.el.style.height = "45%";
-    });
-    await page.click(".w-settle .wFocus");         // teacher stages it by hand
-    await page.click(".w-settle .stStart");        // runs (chips live staged)
+    await dh.launch();
+    await st.start();
+    await expect(page.locator("#clockWidget")).toHaveClass(/wFull/);
     await page.keyboard.press("r");                // …and stands the stage down
     ok(await page.evaluate(() =>
       !document.body.classList.contains("focusMode")),
-      "R left the stage stuck on the settle");
+      "R left the stage stuck on the clock");
+    await expect(page.locator("#clockWidget")).not.toHaveClass(/stLive/);
   });
 
   test("v6.29/30: ticks swell to zero, one SOFT note lands, no lyrics anywhere", async ({ page, dh }) => {
     const st = settle(page);
     await dh.openAt("#t=2026-09-08T10:30");       // mid-period: no bell interference
     await dh.launch();
-    ok(await page.evaluate(() =>
-      /seat/i.test(document.querySelector(".stSub").textContent)),
-      "armed sub is not the plain instruction");
     // instrument the tick + both end-sounds (levels are the CALL args;
     // the audio itself is gated inside Sound)
     await page.evaluate(() => {
@@ -237,24 +228,23 @@ test.describe("settle-in routine", () => {
       S.tick = function (l) { window.__ticks.push(l); return oT(l); };
       S.soft = function () { window.__soft++; return oS(); };
       S.chime = function () { window.__chime++; return oC(); };
-      const en = document.querySelector(".w-settle")._entry;
-      en.cfg.seconds = 8;
-      en.api._doneMs(1500);
     });
-    await page.click(".w-settle .stStart");
+    await st.seconds(8);
+    await st.doneMs(1500);
+    await st.start();
     await expect.poll(() => page.evaluate(() =>          // mid-count
-      +document.querySelector(".stBig").textContent), { timeout: 8000 }).toBeLessThanOrEqual(4);
+      +document.querySelector("#clockSettle .stBig").textContent), { timeout: 8000 }).toBeLessThanOrEqual(4);
     // v6.30/31: no lyrics — the sub just says what the number IS
     const mid = await page.evaluate(() => ({
-      big: document.querySelector(".stBig").textContent,
-      sub: document.querySelector(".stSub").textContent
+      big: document.querySelector("#clockSettle .stBig").textContent,
+      sub: document.querySelector("#clockSettle .stSub").textContent
     }));
     ok(/^\d+$/.test(mid.big) && (mid.sub === "seconds" || (mid.big === "1" && mid.sub === "second")),
       "mid-count sub is not the units line: " + JSON.stringify(mid));
     // zero → the consequence spell
     await expect(st.top()).toHaveText(/time.s up/i, { timeout: 10000 });
     const done = await page.evaluate(() => ({
-      top: document.querySelector(".stTop").textContent,
+      top: document.querySelector("#clockSettle .stTop").textContent,
       soft: window.__soft, chime: window.__chime
     }));
     // v6.30: ONE pleasant note — the soft bell, never the 3-note chime
@@ -267,14 +257,14 @@ test.describe("settle-in routine", () => {
     ok(ticks[0] < 0.15, "first tick was not a whisper: " + ticks[0]);
     ok(Math.max.apply(null, ticks) > 0.6,
       "the swell never got loud: " + Math.max.apply(null, ticks));
-    // after the spell it re-arms with the plain instruction back
-    await expect(st.big()).toHaveText("8s", { timeout: 10000 });
+    // after the spell the clock is the clock again — nothing written on the stage
+    await expect(page.locator("#clockWidget")).not.toHaveClass(/stLive/, { timeout: 10000 });
     const rearmed = await page.evaluate(() => ({
-      big: document.querySelector(".stBig").textContent,
-      sub: document.querySelector(".stSub").textContent
+      big: document.querySelector("#clockSettle .stBig").textContent,
+      face: getComputedStyle(document.getElementById("clockFace")).display
     }));
-    ok(rearmed.big === "8s" && /seat/i.test(rearmed.sub),
-      "spell did not re-arm cleanly: " + JSON.stringify(rearmed));
+    ok(rearmed.big === "" && rearmed.face !== "none",
+      "spell did not hand the card back: " + JSON.stringify(rearmed));
   });
 
   test("v6.32: ticks hold their tongue until 10 remain, whatever the length", async ({ page, dh }) => {
@@ -286,25 +276,22 @@ test.describe("settle-in routine", () => {
       const S = window.Deckhand.sound;
       const orig = S.tick;
       S.tick = function (l) { window.__ticks2.push(l); return orig(l); };
-      const en = document.querySelector(".w-settle")._entry;
-      en.cfg.seconds = 14;
-      en.api._doneMs(700);
     });
-    await page.click(".w-settle .stStart");
+    await st.seconds(14);
+    await st.doneMs(700);
+    await st.start();
     // (the count is polled as a NUMBER, not an exact second: a starved
     // runner can skip a repaint, and 14 → 12 must not fail the test)
-    const rem = () => page.evaluate(() => +document.querySelector(".stBig").textContent);
+    const rem = () => page.evaluate(() => +document.querySelector("#clockSettle .stBig").textContent);
     const snap = () => page.evaluate(() => ({
-      rem: +document.querySelector(".stBig").textContent,
+      rem: +document.querySelector("#clockSettle .stBig").textContent,
       n: window.__ticks2.length,
       max: window.__ticks2.length ? Math.max.apply(null, window.__ticks2) : -1,
       ticks: window.__ticks2.slice()
     }));
     await expect.poll(rem, { timeout: 6000 }).toBeLessThanOrEqual(13);   // ~1s in
-    // a mid-run ✎ edit must not matter either — the window is on remS
-    await page.evaluate(() => {
-      document.querySelector(".w-settle")._entry.cfg.seconds = 300;
-    });
+    // a mid-run settings edit must not matter either — the window is on remS
+    await st.seconds(300);
     await expect.poll(rem, { timeout: 6000 }).toBeLessThanOrEqual(11);   // remS 11: still SILENT
     const quiet = await snap();
     ok(quiet.rem <= 10 || quiet.n === 0,             // (a skip past 11 may legitimately have ticked)
@@ -314,8 +301,7 @@ test.describe("settle-in routine", () => {
     ok(m.n >= 1 && m.n <= 4, "window entry miscounted: " + JSON.stringify(m));
     ok(m.max >= 0 && m.max < 0.3,
       "early-window ticks are not whispers: " + JSON.stringify(m));
-    await page.evaluate(() =>
-      document.querySelector(".w-settle")._entry.api.reset());
+    await st.reset();
   });
 });
 
@@ -759,7 +745,7 @@ test.describe("embeds", () => {
       document.querySelector(".w-yt .ytFrame").getAttribute("src") === null),
       "yt iframe kept its src on the landing page");
     // …and Enter/launch brings the same player back
-    await page.click("#launchBtn");
+    await dh.launch();
     await expect(page.locator("body")).not.toHaveClass(/landing/);
     await expect(frame).toHaveAttribute("src", url);
     ok(await page.evaluate(() => ({
@@ -781,7 +767,7 @@ test.describe("embeds", () => {
       document.querySelector(".w-embed .embFrame").getAttribute("src") === null &&
       document.querySelector(".w-yt .ytFrame").getAttribute("src") === null),
       "a card kept its src on the second trip Home");
-    await page.click("#launchBtn");
+    await dh.launch();
     await expect(page.locator(".w-embed .embFrame")).toHaveAttribute("src", deck);
     await expect(frame).toHaveAttribute("src", url);
   });
@@ -793,7 +779,7 @@ test.describe("motion", () => {
     const pg = await dh.newPage({ reducedMotion: "no-preference" });
     await pg.goto(dh.url);
     await pg.waitForSelector("#launchBtn", { state: "attached" });
-    await pg.click("#launchBtn");
+    await launch(pg);
     await expect(pg.locator("main#canvas")).toBeVisible();
     await pg.evaluate(() => window.Deckhand.sea("serpent"));
     ok(await pg.evaluate(() => {
@@ -819,7 +805,7 @@ test.describe("motion", () => {
       document.getElementById("sea-whale").classList.remove("go"));
     // staged: entering stage ENDS a live show (display:none cancels the
     // animation; a leftover .go would pop out mid-screen after Exit)…
-    await pg.click(".w-settle .wFocus");           // v6.29: default = settle
+    await pg.click("#clockWidget .wFocus");         // v7.7: default = the clock alone
     ok(await pg.evaluate(() =>
       !document.getElementById("sea-serpent").classList.contains("go")),
       "stage entry left the serpent playing");

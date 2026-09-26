@@ -25,6 +25,12 @@ const APP_URL = "file://" + APP;
 const SRC = fs.readFileSync(APP, "utf8");
 
 const ok = (cond, msg) => { if (!cond) throw new Error(msg || "assertion failed"); };
+/* v7.7: open the board on any page — the landing page is skipped when the
+   week rotation already picked the week, so the launch button may not be there */
+const launch = async pg => {
+  if (await pg.evaluate(() => document.body.classList.contains("landing"))) await pg.click("#launchBtn");
+  await pg.waitForTimeout(150);
+};
 
 const inject = (src, cfgText) => src.replace(
   /(<script id="deckhand-config"[^>]*>)[\s\S]*?(<\/script>)/,
@@ -91,7 +97,19 @@ const test = base.test.extend({
         await page.waitForFunction(() => !!window.Deckhand);   // booted (the script runs after the markup parses)
         await page.waitForTimeout(150);
       },
-      launch: async () => { await page.click("#launchBtn"); await page.waitForTimeout(150); },
+      /* v7.7: a board whose rotation picked the week skips the landing page —
+         launch() is then a no-op (the board is already up) */
+      launch: async () => {
+        if (await page.evaluate(() => document.body.classList.contains("landing"))){
+          await page.click("#launchBtn");
+        }
+        await page.waitForTimeout(150);
+      },
+      /** v7.7: the landing page on demand (Home) */
+      home: async () => {
+        await page.evaluate(() => window.Deckhand.landing.show());
+        await page.waitForTimeout(100);
+      },
       addW: async id => { await page.click("#addBtn"); await page.click("#" + id); },
       summonCard: async () => {
         await page.click("#focusTimerBtn");
@@ -172,4 +190,4 @@ const test = base.test.extend({
   }
 });
 
-module.exports = { test, expect: base.expect, ok, inject, SRC, APP, APP_URL, ROOT };
+module.exports = { test, expect: base.expect, ok, launch, inject, SRC, APP, APP_URL, ROOT };

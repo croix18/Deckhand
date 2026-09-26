@@ -1,12 +1,12 @@
 /* v7.2 — the pennant and the Ink overlay. (The Pledge rework and the
    per-period settle seconds live in v71.spec.js next to the routine.) */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, launch } = require("./helpers");
 
 test("v7.2: the boat runs up a '<name> Rules' pennant now and then, and it follows the greeting name", async ({ page, dh }) => {
   const pg = await dh.newPage({ reducedMotion: "no-preference" });
   await pg.goto(dh.url + "#t=2026-09-24T10:30");
   await pg.waitForFunction(() => !!window.Deckhand);
-  await pg.click("#launchBtn");
+  await launch(pg);
   ok((await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btPen")).visibility)) === "hidden", "pennant showing at rest");
   await pg.evaluate(() => window.Deckhand.sea("pennant"));
   await expect(pg.locator("#boat")).toHaveClass(/pennant/);
@@ -45,9 +45,10 @@ test("v7.2: Ink — draw over the board, Done keeps the ink and the board stays 
   await expect(page.locator("body")).not.toHaveClass(/inking/);
   ok((await page.evaluate(() => window.Deckhand.ink.count())) === 2, "Done erased the ink");
   ok((await page.evaluate(() => getComputedStyle(document.getElementById("ink")).pointerEvents)) === "none", "overlay still armed");
-  await page.click(".w-settle .stStart");
-  await expect.poll(() => page.evaluate(() => document.querySelector(".w-settle")._entry.api.running())).toBe(true);
+  await page.evaluate(() => window.Deckhand.settle.start());           // v7.7: the clock becomes the count
+  await expect.poll(() => page.evaluate(() => window.Deckhand.settle.running())).toBe(true);
   await page.keyboard.press("r");
+  await expect(page.locator("#clockWidget")).not.toHaveClass(/stLive/);
   // D arms, Undo/Clear, Escape disarms
   await page.keyboard.press("d");
   await expect(page.locator("body")).toHaveClass(/inking/);
@@ -58,7 +59,7 @@ test("v7.2: Ink — draw over the board, Done keeps the ink and the board stays 
   await page.keyboard.press("Escape");
   await expect(page.locator("body")).not.toHaveClass(/inking/);
   // a staged deck has its own Draw button; the overlay sits above the stage
-  await page.click(".w-settle .wFocus");
+  await page.click("#clockWidget .wFocus");
   await expect(page.locator("#inkBtnStage")).toBeVisible();
   await page.click("#inkBtnStage");
   await expect(page.locator("body")).toHaveClass(/inking/);

@@ -23,14 +23,13 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.6.0",
+  "appVersion": "7.7.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
   "scenes": [
     { "name": "Daily Board", "widgets": [
-      { "type": "clock", "x": 0, "y": 0, "w": 58, "h": 100 },
-      { "type": "settle", "x": 61, "y": 0, "w": 39, "h": 100, "label": "Settle-in" }
+      { "type": "clock", "x": 0, "y": 0, "w": 58, "h": 100 }
     ]},
     { "name": "Stations", "widgets": [
       { "type": "clock", "x": 0, "y": 0, "w": 42, "h": 54 },
@@ -53,6 +52,7 @@
     "showNextClass": true,
     "warnMinutes": 5,
     "bathroom": { "enabled": true, "firstMinutes": 10, "lastMinutes": 10 },
+    "settle": { "on": true, "seconds": 30, "msgDone": "", "pledge": { "on": true, "minutes": 2 }, "perPeriod": {} },
     "autoWeek": true,
     "anchorMonday": "2026-08-31",
     "anchorWeekName": "Black Week",
@@ -137,30 +137,17 @@
     overflow:hidden;
   }
 
-  header{
-    margin:24px 28px 0;
-    background:var(--navy);
-    border-radius:18px;
-    box-shadow:6px 8px 0 var(--shadow);
-    padding:16px 28px;
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    flex-shrink:0;
-  }
-  #dateline{color:var(--white); font-weight:700; font-size:clamp(18px, 2.6vw, 30px);}
-  #headerRight{display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:flex-end;}
+  /* v7.7: the header is gone — the date lives on the clock, the brand and
+     the teacher's buttons under the dock's ⋮ (one chrome bar) */
   #brand{color:var(--turq); font-weight:900; letter-spacing:.14em; font-size:14px; white-space:nowrap;}
   #brand small{color:var(--white); opacity:.55; font-weight:700; letter-spacing:.05em; margin-left:7px; font-size:12px;}
-  #brand .sim{color:var(--coral); margin-left:8px; letter-spacing:.08em;}
+  #brand .sim, #dateline .sim{color:var(--coral); margin-left:8px; letter-spacing:.08em; font-size:.6em; vertical-align:middle;}
   .pill{
     background:var(--turq); color:var(--navy); border:none; cursor:pointer;
     font:inherit; font-weight:700; font-size:14px;
     padding:11px 18px; min-height:40px; border-radius:999px;   /* v7.0: IR-panel finger size */
   }
-  #soundBtn{background:var(--sand);}
-  #soundBtn[aria-pressed="false"]{
-    background:transparent; color:var(--white);
-    border:2px solid var(--sand); padding:9px 16px;
-  }
+  #soundBtn[aria-pressed="false"]{background:var(--cream); box-shadow:inset 0 0 0 2px var(--sand);}
   #setBtn{background:var(--paleturq);}
   #setBtn.dirty::after{
     content:""; display:inline-block; width:9px; height:9px; border-radius:50%;
@@ -187,6 +174,12 @@
 
   /* clock */
   #clockBody{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 20px;}
+  #clockFace{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; width:100%; min-height:0;}
+  #dateline{color:var(--teal); font-weight:700; font-size:clamp(14px, 3.2cqw, 28px); letter-spacing:.02em;}
+  /* the settle MOMENT: the face steps aside, the count (or the flag) has the card */
+  .w-clock.stLive #clockFace{display:none;}
+  #clockSettle[hidden]{display:none;}
+  .w-clock.stLive #clockSettle{display:flex;}
   #clock{
     font-weight:900; font-variant-numeric:tabular-nums;
     font-size:clamp(64px, 13vw, 190px); line-height:1;
@@ -321,7 +314,6 @@
      canvas is z-index:1 — painted OVER the landing page whenever the
      layouts happened to overlap. The id-strength repeat wins it back. */
   body.landing main#canvas{display:none;}
-  body.landing #homeBtn{display:none;}
   #greet{font-weight:900; font-size:clamp(40px, 6.5vw, 96px); line-height:1.05;}
   #landDate{color:var(--teal); font-weight:700; font-size:clamp(18px, 2.4vw, 30px);}
   .landLabel{font-weight:900; letter-spacing:.14em; font-size:14px; opacity:.6; margin-top:14px;}
@@ -554,6 +546,16 @@
   }
 
   /* v7.0 update nudge: a new release opened over an older device copy */
+  #greetToast{
+    position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:16;
+    background:var(--navy); color:var(--white); border-radius:999px;
+    padding:10px 22px; font-weight:700; font-size:clamp(13px, 1.2vw, 18px);
+    box-shadow:4px 6px 0 var(--shadow); pointer-events:none; white-space:nowrap;
+    max-width:calc(100vw - 40px); overflow:hidden; text-overflow:ellipsis;
+  }
+  #greetToast[hidden]{display:none;}
+  body.waveMotion #greetToast{animation:toastIn .4s cubic-bezier(.2,.9,.3,1.2);}
+  @keyframes toastIn{from{opacity:0; transform:translateX(-50%) translateY(-12px);} to{opacity:1; transform:translateX(-50%);}}
   #verNudge{
     /* bottom 84: never shares the dock's row on a narrow projector */
     position:fixed; left:50%; transform:translateX(-50%); bottom:84px; z-index:25;
@@ -682,7 +684,6 @@
   /* ===== v6.14 STAGE MODE: direct instruction gets the WHOLE screen =====
      (Croix, field: "look at all the space the date and top bar are
      taking even though they aren't needed during direct instruction") */
-  body.focusMode:not(.landing) header{display:none;}
   body.focusMode:not(.landing) #waves{display:none;}
   body.focusMode:not(.landing) #boat{display:none;}
   body.focusMode:not(.landing) .wvLayer{display:none;}
@@ -1084,8 +1085,8 @@
     .w-music.muOn .muBars i:nth-child(5){animation-delay:.6s;}
   }
   .w-music.muOn .muBars i{background:var(--teal);}
-  /* ===== settle-in (v6.23): find your seat before the count hits 0 ===== */
-  .w-settle .strip{background:var(--paleturq); color:var(--navy);}
+  /* ===== settle-in (v6.23): find your seat before the count hits 0 =====
+     v7.7: a moment of the CLOCK card (.w-clock.stLive), no longer a card of its own */
   .stStage{
     flex:1; min-height:0; width:100%; align-self:stretch;
     display:flex; flex-direction:column;
@@ -1134,9 +1135,8 @@
     border-radius:6px; overflow:hidden; box-shadow:3px 4px 0 var(--shadow);}
   .stFlag[hidden]{display:none;}
   .stFlag svg{width:100%; height:auto; display:block;}
-  .w-settle.stPledgeOnly .stFlag{width:min(92%, 78cqh * 1.9); margin:0 auto;}
-  .w-settle.stPledgeOnly .stTop, .w-settle.stPledgeOnly .stBig, .w-settle.stPledgeOnly .stSub,
-  .w-settle.stPledgeOnly .chips, .w-settle.stPledgeOnly .tHint, .w-settle.stPledgeOnly .stRow{display:none;}
+  .w-clock.stPledgeOnly .stFlag{width:min(92%, 78cqh * 1.9); margin:0 auto;}
+  .w-clock.stPledgeOnly .stTop, .w-clock.stPledgeOnly .stBig, .w-clock.stPledgeOnly .stSub{display:none;}
   .flagWave{position:relative; transform-origin:0% 50%; overflow:hidden; border-radius:6px;}
   .flagSheen{
     position:absolute; inset:0; pointer-events:none; z-index:1;
@@ -1155,14 +1155,14 @@
   .stPerCell{display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:700; color:var(--navy);}
   .stPerCell input{width:64px; min-height:36px; font:inherit; font-weight:700; color:var(--navy);
     border:2px solid var(--grid); border-radius:8px; padding:4px 6px; font-variant-numeric:tabular-nums;}
-  .w-settle.stPledgeOnly .stBig.stPledgeT{font-size:clamp(28px, 14cqmin, 120px); color:var(--navy);}
-  .w-settle.wFull.stPledgeOnly .stBig.stPledgeT{font-size:clamp(60px, 14cqh, 220px);}
-  .w-settle.wFull .stFlag{width:min(60%, 36cqh * 1.9);}
-  .w-settle.wFull.stPledgeOnly .stFlag{width:min(86%, 84cqh * 1.9);}
-  .w-settle.wFull .stTop{font-size:clamp(20px, 4cqw, 64px);}
-  .w-settle.wFull .stBig{font-size:clamp(80px, 34cqh, 560px);}
-  .w-settle.wFull .stBig.stMsgB{font-size:clamp(32px, 8cqw, 150px);}
-  .w-settle.wFull .stSub{font-size:clamp(16px, 2.4cqw, 40px);}
+  .w-clock.stPledgeOnly .stBig.stPledgeT{font-size:clamp(28px, 14cqmin, 120px); color:var(--navy);}
+  .w-clock.wFull.stPledgeOnly .stBig.stPledgeT{font-size:clamp(60px, 14cqh, 220px);}
+  .w-clock.wFull .stFlag{width:min(60%, 36cqh * 1.9);}
+  .w-clock.wFull.stPledgeOnly .stFlag{width:min(86%, 84cqh * 1.9);}
+  .w-clock.wFull .stTop{font-size:clamp(20px, 4cqw, 64px);}
+  .w-clock.wFull .stBig{font-size:clamp(80px, 34cqh, 560px);}
+  .w-clock.wFull .stBig.stMsgB{font-size:clamp(32px, 8cqw, 150px);}
+  .w-clock.wFull .stSub{font-size:clamp(16px, 2.4cqw, 40px);}
   .w-event .strip{background:var(--paleturq); color:var(--navy);}
   .w-tally .strip{background:var(--turq); color:var(--navy);}
   .w-agenda .strip{background:var(--teal); color:var(--white);}
@@ -1506,7 +1506,7 @@
     .w-clock #bellWrap{gap:0.9cqh; margin-top:0.5cqh;}
   }
   @container (max-height: 340px){
-    .w-clock #bellBar, .w-clock #weekTag{display:none;}
+    .w-clock #bellBar, .w-clock #weekTag, .w-clock #dateline{display:none;}
     .w-clock #clock{font-size:clamp(26px, min(20cqw, 26cqh), 120px);}
     .w-clock #periodNow{font-size:clamp(16px, 5.4cqw, 34px);}
     .w-clock #bellSub{font-size:clamp(12px, 3.4cqw, 24px);}
@@ -1525,8 +1525,17 @@
     background:var(--navy); border-radius:999px; box-shadow:4px 6px 0 var(--shadow);
     padding:8px 14px; display:flex; align-items:center; gap:10px;
   }
-  body.landing #dock{display:none;}
+  /* v7.7: the dock is the ONE chrome bar — on the landing page it keeps
+     only Settings and ⋮ (the header used to carry those) */
+  body.landing #dock > :not(#setBtn):not(#moreWrap){display:none;}
+  body.landing #dock{opacity:.9;}
   #dock .pill{font-size:13px; padding:10px 14px; min-height:40px;}
+  #moreWrap{position:relative;}
+  #moreMenu{display:flex; flex-direction:column; min-width:260px; left:auto; right:0;}
+  #moreMenu .strip{justify-content:center;}
+  #moreMenu .popSub .kbd{opacity:.7;}
+  #moreMenu .popItem{min-height:52px;}
+  body.landing #homeBtn{display:none;}
   /* collapsible dock (Croix, field: it sat exactly on the Slides player's
      ‹ › arrows) — a chevron folds it to a small quiet handle; stage mode
      auto-collapses it */
@@ -1570,7 +1579,7 @@
     /* a short viewport must scroll the menu, never clip its top section */
     max-height:calc(100vh - 120px); overflow-y:auto;
   }
-  .pop[hidden], #addMenu[hidden], #sceneMenu[hidden]{display:none;}
+  .pop[hidden], #addMenu[hidden], #sceneMenu[hidden], #moreMenu[hidden]{display:none;}
   .pop .strip{
     position:sticky; top:0; z-index:1;
     background:var(--navy); color:var(--white); padding:12px 16px;
@@ -2158,7 +2167,6 @@
   @media (max-width: 780px), (max-height: 540px){
     html, body{height:auto; min-height:100%;}
     body{overflow:auto;}
-    header{margin:14px 14px 0; padding:12px 16px;}
     main#canvas{flex:none; height:auto; overflow:visible; margin:14px;}
     .widget{
       position:static !important; width:auto !important; height:auto !important;
@@ -2178,14 +2186,13 @@
     .wvLayer{display:none;}
     #sea{display:none;}
     .tplGrid{grid-template-columns:1fr;}
-    /* phone header: no keyboard on a phone — don't advertise shortcuts,
-       and don't burn 224px of an 844px screen on four stacked pills */
-    #headerRight .pill{font-size:12px; padding:6px 12px;}
+    /* a phone has no keyboard — don't advertise shortcuts; no fullscreen pill */
     .kbd{display:none;}
     #fsBtn{display:none;}
     /* menus PIN inside the viewport — the absolute popover overflowed to
        518px in a 390px viewport and caused real mis-adds */
-    #addMenu, #sceneMenu{
+    #verNudge{border-radius:18px; width:calc(100vw - 28px); left:14px; transform:none; bottom:14px;}   /* a pill wraps into a circle here */
+    #addMenu, #sceneMenu, #moreMenu{
       position:fixed; left:14px; right:14px; bottom:76px;
       width:auto; max-height:calc(100dvh - 100px); overflow-y:auto;
     }
@@ -2206,6 +2213,7 @@
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
     <symbol id="i-reload" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.7 4.3v5h-5"/></symbol>
     <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.5" cy="12" r="1.9"/></symbol>
+    <symbol id="i-vdots" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="18.5" r="1.9"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9.5 3h5"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
     <!-- v7.2: the + Add tiles (24px, 2px stroke, same hand as above) -->
@@ -2231,16 +2239,6 @@
   </defs>
 </svg>
 
-<header>
-  <div id="dateline">—</div>
-  <div id="headerRight">
-    <div id="brand">DECKHAND<small id="brandVer">v7</small></div>
-    <button class="pill" id="homeBtn" type="button">Home <span class="kbd">(H)</span></button>
-    <button class="pill" id="setBtn" type="button">Settings</button>
-    <button class="pill" id="soundBtn" type="button" aria-pressed="true">Sound On</button>
-    <button class="pill" id="fsBtn" type="button">Fullscreen <span class="kbd">(F)</span></button>
-  </div>
-</header>
 
 <div id="landing">
   <h1 id="greet">—</h1>
@@ -2257,6 +2255,10 @@
   <div id="landHint">Enter opens the board</div>
 </div>
 
+<!-- v7.7: the landing page, folded to one line when the rotation already
+     picked the week (skip the page; say hello; nudge for the sound tap) -->
+<div id="greetToast" role="status" hidden></div>
+
 <main id="canvas">
   <div id="focusBar" hidden>
     <div id="focusTimerWrap">
@@ -2271,17 +2273,28 @@
   <section class="card widget w-clock" id="clockWidget" aria-label="Current time and bell schedule">
     <div class="strip"><span class="wLabel">CLOCK</span><div class="wSize" aria-hidden="true"><svg class="wIcon"><use href="#i-resize"/></svg></div><button class="wFocus" type="button" aria-label="Fill the board" aria-pressed="false"><svg class="wIcon"><use href="#i-expand"/></svg></button><button class="wPin" type="button" aria-label="Keep on top" aria-pressed="false"><svg class="wIcon"><use href="#i-pin"/></svg></button><button class="wClose" type="button" aria-label="Remove clock"><svg class="wIcon"><use href="#i-x"/></svg></button></div>
     <div class="wBody" id="clockBody">
-      <div id="clock">--:--</div>
-      <div id="clockSub">--</div>
-      <div id="bellWrap" hidden>
-        <div id="periodLine">
-          <span id="periodNow">—</span>
-          <span id="weekTag">—</span>
+      <div id="clockFace">
+        <div id="dateline">&mdash;</div>
+        <div id="clock">--:--</div>
+        <div id="clockSub">--</div>
+        <div id="bellWrap" hidden>
+          <div id="periodLine">
+            <span id="periodNow">—</span>
+            <span id="weekTag">—</span>
+          </div>
+          <div id="bellSub" aria-live="polite">—</div>
+          <div id="bellBar"><div id="bellFill"></div></div>
+          <div id="dayStrip" hidden></div>
+          <div id="bathPill" hidden>—</div>
         </div>
-        <div id="bellSub" aria-live="polite">—</div>
-        <div id="bellBar"><div id="bellFill"></div></div>
-        <div id="dayStrip" hidden></div>
-        <div id="bathPill" hidden>—</div>
+      </div>
+      <!-- v7.7: the settle-in is a MOMENT of the clock — at the bell the card
+           becomes the count (or the flag), then the face comes back -->
+      <div id="clockSettle" class="stStage" hidden>
+        <div class="stFlag" hidden></div>
+        <div class="stTop"></div>
+        <div class="stBig"></div>
+        <div class="stSub"></div>
       </div>
     </div>
     <div class="wHandle hSE" data-dir="se" aria-hidden="true"></div>
@@ -2330,7 +2343,6 @@
       <button class="tile" id="addScoreBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-score"/></svg><span class="tName">Scoreboard</span><span class="tDesc">Points for teams</span></button>
       <button class="tile" id="addTallyBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-tally"/></svg><span class="tName">Tally</span><span class="tDesc">Big tap counters</span></button>
       <div class="menuLabel">Classroom</div>
-      <button class="tile" id="addSettleBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-settle"/></svg><span class="tName">Settle-in</span><span class="tDesc">Seated by the bell</span></button>
       <button class="tile" id="addMusicBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-music"/></svg><span class="tName">Music</span><span class="tDesc">Quiet lo-fi for work</span></button>
       <button class="tile" id="addWorkBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-work"/></svg><span class="tName">Work Mode</span><span class="tDesc">Silent to group work</span></button>
       <button class="tile" id="addMeterBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-meter"/></svg><span class="tName">Noise Meter</span><span class="tDesc">Quiet streaks, records</span></button>
@@ -2347,6 +2359,24 @@
   <div id="shelf" aria-label="Stage-only widgets"></div>
   <button class="pill" id="lockBtn" type="button" aria-pressed="false">Lock</button>
   <button class="pill" id="inkBtn" type="button" aria-pressed="false" aria-label="Draw over the board"><svg class="wIcon"><use href="#i-pencil"/></svg> Draw</button>
+  <!-- v7.7: the header folded into the dock — one chrome bar. Settings stays a
+       pill (its coral dot is the store's health light); Home, Sound and
+       Fullscreen live under ⋮ with the brand. -->
+  <button class="pill" id="setBtn" type="button">Settings</button>
+  <div id="moreWrap">
+    <button class="pill" id="moreBtn" type="button" aria-expanded="false" aria-haspopup="true"
+      aria-label="More"><svg class="wIcon dots"><use href="#i-vdots"/></svg></button>
+    <div id="moreMenu" class="pop" role="group" aria-label="More" hidden>
+      <div class="strip"><span id="brand">DECKHAND<small id="brandVer">v7</small></span></div>
+      <div class="popBody">
+        <div class="popList">
+          <button class="popItem" id="homeBtn" type="button">Home <span class="popSub">pick the week <span class="kbd">(H)</span></span></button>
+          <button class="popItem" id="soundBtn" type="button" aria-pressed="true">Sound On</button>
+          <button class="popItem" id="fsBtn" type="button">Fullscreen <span class="popSub"><span class="kbd">(F)</span></span></button>
+        </div>
+      </div>
+    </div>
+  </div>
 </nav>
 
 <!-- v6.18: the sea keeps small secrets. Rare, subtle, at the edge of
@@ -2735,6 +2765,29 @@
               <div class="fHint">What the clock shows under the time. &ldquo;Next class after hours&rdquo; counts down to the next school day once the last bell has rung.</div>
             </div>
             <div class="fGroup">
+              <div class="fSection">Settle-in at the bell</div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sStOn"> Run the settle-in at each bell</label>
+                <div class="fField">
+                  <label class="fLabel" for="sStSecs">Seconds to be seated</label>
+                  <input class="setInput" type="number" id="sStSecs" step="5" min="5" max="300">
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sStMsg">When time is up</label>
+                  <input class="setInput" type="text" id="sStMsg" maxlength="60" placeholder="Still standing? Comment card.">
+                </div>
+              </div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sStPledge"> Flag alone at the day&rsquo;s first bell</label>
+                <div class="fField">
+                  <label class="fLabel" for="sStPledgeMin">&hellip;for (min), then the slides</label>
+                  <input class="setInput" type="number" id="sStPledgeMin" step="1" min="1" max="10">
+                </div>
+              </div>
+              <div class="stPer" id="sStPer" aria-label="Seconds per period"></div>
+              <div class="fHint">The clock becomes the count when a class begins (Lunch excepted), then hands off to a Slides card if the scene has one. While it runs, Space restarts it and R stands it down. A scene needs a clock to run it.</div>
+            </div>
+            <div class="fGroup">
               <div class="fSection">Bathroom window</div>
               <div class="fGrid c3">
                 <label class="fCheck"><input type="checkbox" id="sBath"> Bathroom window</label>
@@ -2994,15 +3047,17 @@ var SOURCE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
 /* ---------------- config load ---------------- */
 var DEFAULT_SCENES = [
   /* v6.29 (Croix): the settle-in IS the daily board's second act — the
-     timer came off the default (the ⏱ summon makes one in a tap) */
+     timer came off the default (the ⏱ summon makes one in a tap).
+     v7.7: the settle-in is a MOMENT of the clock (cfg.bell.settle), not
+     a card; the right of the board is the teacher's (a Slides card, a timer). */
   { name: "Daily Board", widgets: [
-    { type: "clock", x: 0, y: 0, w: 58, h: 100, label: "", pin: false },
-    { type: "settle", x: 61, y: 0, w: 39, h: 100, label: "Settle-in", pin: false }
+    { type: "clock", x: 0, y: 0, w: 58, h: 100, label: "", pin: false }
   ]}
 ];
+var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.6.0",
+  appVersion: "7.7.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies" },
   activeScene: "Daily Board",
@@ -3016,6 +3071,7 @@ var DEFAULTS = {
     countdownSeconds: false, showDayStrip: true,
     showNextClass: true, warnMinutes: 5, warnChime: false,
     bathroom: { enabled: true, firstMinutes: 10, lastMinutes: 10 },
+    settle: DEFAULT_SETTLE,
     autoWeek: false, anchorMonday: "2026-08-31", anchorWeekName: "",
     defaultGroup: "none", groups: []
   }
@@ -3077,6 +3133,7 @@ function sanitize(c){
   }
   var scenes = [];
   var seenScene = Object.create(null);
+  var settleSeen = null;                          // v7.7: a retired settle card's settings
   (Array.isArray(c.scenes) ? c.scenes : []).slice(0, 8).forEach(function(sc, si){
     if (!isObj(sc)) return;
     var nm = str(sc.name, "Scene " + (si+1)).slice(0, 24) || ("Scene " + (si+1));
@@ -3095,6 +3152,12 @@ function sanitize(c){
                  "text","work","dice","score","qr","meter","draw","embed",
                  "event","tally","agenda","settle","music","yt"].indexOf(w.type) !== -1) ? w.type : null;
       if (!ty) return;
+      /* v7.7: the settle-in card is gone — its settings move to bell.settle
+         (the first card's win); its place on the board is left to the teacher */
+      if (ty === "settle"){
+        if (!settleSeen) settleSeen = w;
+        return;
+      }
       if (ty === "clock"){
         if (clockSeen) return;
         clockSeen = true;
@@ -3210,25 +3273,6 @@ function sanitize(c){
           }
         }
       }
-      if (ty === "settle"){
-        wc.seconds = Math.round(numIn(w.seconds, 5, 300, 30));
-        wc.msgDone = str(w.msgDone, "").trim().slice(0, 60);
-        /* v7.1 the Pledge: at the day's FIRST bell the flag shows for
-           N minutes, then the routine hands off to the slides */
-        var pl = isObj(w.pledge) ? w.pledge : {};
-        wc.pledge = { on: bool(pl.on, true), minutes: Math.round(numIn(pl.minutes, 1, 10, 2)) };
-        /* v7.2: per-period seconds ("25s for 1st at the end of the day")
-           — blank = the widget's default */
-        wc.perPeriod = {};
-        if (isObj(w.perPeriod)){
-          Object.keys(w.perPeriod).slice(0, 12).forEach(function(k){
-            var kk = String(k).trim().slice(0, 20);
-            if (!kk || kk === "__proto__") return;
-            var v = w.perPeriod[k];
-            if (typeof v === "number" && isFinite(v)) wc.perPeriod[kk] = Math.max(5, Math.min(300, Math.round(v)));
-          });
-        }
-      }
       if (ty === "music"){
         wc.channel = "lofi";   // mozart returns when the real audio lands
         wc.volume = numIn(w.volume, 0, 1, 0.5);
@@ -3305,6 +3349,32 @@ function sanitize(c){
     });
     scenes.push({ name: nm, widgets: ws });
   });
+  /* v7.7 the settle-in: bell.settle if the config has it; else migrated from
+     the first settle card found; else on for a fresh board, off for a board
+     whose owner had removed the card */
+  var settle = (function(){
+    var src = isObj(b.settle) ? b.settle : (settleSeen || null);
+    var on = isObj(b.settle) ? bool(b.settle.on, true)
+           : (settleSeen ? true : !Array.isArray(c.scenes));
+    src = src || {};
+    var pl = isObj(src.pledge) ? src.pledge : {};
+    var per = {};
+    if (isObj(src.perPeriod)){
+      Object.keys(src.perPeriod).slice(0, 12).forEach(function(k){
+        var kk = String(k).trim().slice(0, 20);
+        if (!kk || kk === "__proto__") return;
+        var v = src.perPeriod[k];
+        if (typeof v === "number" && isFinite(v)) per[kk] = Math.max(5, Math.min(300, Math.round(v)));
+      });
+    }
+    return {
+      on: on,
+      seconds: Math.round(numIn(src.seconds, 5, 300, 30)),
+      msgDone: str(src.msgDone, "").trim().slice(0, 60),
+      pledge: { on: bool(pl.on, true), minutes: Math.round(numIn(pl.minutes, 1, 10, 2)) },
+      perPeriod: per
+    };
+  })();
   if (!scenes.length) scenes = JSON.parse(JSON.stringify(DEFAULT_SCENES));
   var rosters = [];
   var seenPeriod = Object.create(null);
@@ -3354,6 +3424,7 @@ function sanitize(c){
         firstMinutes: Math.max(0, Math.min(45, Math.round(num(ba.firstMinutes, 10)))),
         lastMinutes: Math.max(0, Math.min(45, Math.round(num(ba.lastMinutes, 10))))
       },
+      settle: settle,                             // v7.7: the moment of the clock
       autoWeek: bool(b.autoWeek, false) && groups.length >= 2,
       anchorMonday: /^\d{4}-\d{2}-\d{2}$/.test(b.anchorMonday) ? b.anchorMonday : DEFAULTS.bell.anchorMonday,
       anchorWeekName: (groups[1] && groups[1].name === b.anchorWeekName) || (groups[0] && groups[0].name === b.anchorWeekName)
@@ -3760,7 +3831,7 @@ function wireButton(btn, fn){
 var Clock = (function(){
   var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  function tick(){
+  function tick0(){
     var n = now();
     var h = n.getHours(), m = n.getMinutes(), s = n.getSeconds();
     var ap = h >= 12 ? "PM" : "AM";
@@ -3773,11 +3844,17 @@ var Clock = (function(){
     el.dateline.textContent = dateStr;
     el.landDate.textContent = dateStr;
   }
+  var simEl = null;
+  function tick(){
+    tick0();
+    if (simEl && simEl.parentNode !== el.dateline) el.dateline.appendChild(simEl);   // the date repaints; the badge rides it
+  }
   return { init: function(){
     if (simOffset !== 0){
       var sim = document.createElement("span");
       sim.className = "sim"; sim.textContent = "SIM";
       el.brand.appendChild(sim);
+      simEl = sim.cloneNode(true);               // v7.7: on the board too (the date is on the clock now)
     }
     tick(); setInterval(tick, 250);
   }};
@@ -4420,6 +4497,41 @@ var Landing = (function(){
   }
   function isShowing(){ return document.body.classList.contains("landing"); }
   function pick(i){ if (i >= 0 && i < chipEls.length) chipEls[i].click(); }
+  /* v7.7: the landing page asks one question — Teal or Black? — and on a
+     board whose rotation answers it, it asks nothing: skip straight to the
+     board and say hello in one line instead (the week the rotation picked,
+     and a nudge for the tap that wakes the sound). Home (H) still opens it. */
+  function needsPick(){
+    return cfg.bell.groups.length >= 2 && !cfg.bell.autoWeek;
+  }
+  var toastTid = null;
+  function toast(){
+    var h = now().getHours();
+    var g = h < 12 ? "Good morning" : (h < 17 ? "Good afternoon" : "Good evening");
+    var parts = [cfg.ownerName ? g + ", " + cfg.ownerName : g];
+    var gi = Bell.getActive();
+    if (gi >= 0 && cfg.bell.groups[gi] && cfg.bell.groups.length > 1) parts.push(cfg.bell.groups[gi].name);
+    var asleep = false;
+    try { asleep = Sound.isOn() && !Sound.primed(); } catch(e){}
+    if (asleep) parts.push("tap anywhere for sound");
+    var t = $("greetToast");
+    t.textContent = parts.join(" \u00b7 ");
+    t.hidden = false;
+    clearTimeout(toastTid);
+    toastTid = setTimeout(dismissToast, 12000);
+  }
+  function dismissToast(){
+    clearTimeout(toastTid);
+    var t = $("greetToast");
+    if (t) t.hidden = true;
+  }
+  function autoOpen(){
+    if (!isShowing()) return false;
+    if (needsPick()) return false;
+    hide();
+    toast();
+    return true;
+  }
   return {
     init: function(){
       $("todayChips").querySelectorAll(".chip").forEach(function(c){
@@ -4431,6 +4543,8 @@ var Landing = (function(){
       });
       wireButton(el.launchBtn, hide);
       wireButton(el.homeBtn, show);
+      document.addEventListener("pointerdown", dismissToast, true);
+      document.addEventListener("keydown", dismissToast, true);
       setInterval(function(){ if (isShowing()) greet(); }, 30000);
       document.addEventListener("deckhand:weekchange", function(){
         if (isShowing()) buildChips();   // weekend rollover: re-press chips
@@ -4438,6 +4552,7 @@ var Landing = (function(){
       show();
     },
     show: show, hide: hide, isShowing: isShowing, pick: pick,
+    needsPick: needsPick, autoOpen: autoOpen, dismissToast: dismissToast,
     refresh: function(){ if (isShowing()){ greet(); buildChips(); } paintToday(); }
   };
 })();
@@ -4542,8 +4657,10 @@ var Sound = (function(){
   }
   function toggle(){ on = !on; paint(); }
   function setOn(v){ on = !!v; paint(); }
+  function primed(){ return !!ctx && ctx.state === "running"; }   // v7.7: has a gesture woken the audio yet?
   return { init: function(){ paint(); wireButton(el.soundBtn, toggle); },
-           toggle: toggle, setOn: setOn, chime: chime, tick: tick, soft: soft };
+           toggle: toggle, setOn: setOn, chime: chime, tick: tick, soft: soft,
+           isOn: function(){ return on; }, primed: primed };
 })();
 
 /* ============ Timer & Stopwatch widget factories (v6) ============
@@ -6382,53 +6499,37 @@ var FLAG_SVG = (function(){
   return out.join("");
 })();
 
-function makeSettle(host, wcfg){
-  if (typeof wcfg.seconds !== "number" || !isFinite(wcfg.seconds)) wcfg.seconds = 30;
-  if (typeof wcfg.msgDone !== "string") wcfg.msgDone = "";
-  if (!isObj(wcfg.pledge)) wcfg.pledge = { on: true, minutes: 2 };
-  if (!isObj(wcfg.perPeriod)) wcfg.perPeriod = {};
+/* v7.7: the settle-in is a MOMENT OF THE CLOCK (the design lens: "40% of
+   the wall showing a stale instruction" all period). Nothing shows while it
+   is armed — the clock is the clock. At a bell the clock card takes the
+   stage and becomes the count (or, at the day's first bell, the flag),
+   runs the routine exactly as the card did, hands off to the slides, and
+   the face comes back. Its settings live in cfg.bell.settle (Settings →
+   Bells). Space restarts and R stands it down while it is live. */
+var Settle = (function(){
+  var host = $("clockWidget");
+  var stage = $("clockSettle");
+  var top = stage.querySelector(".stTop"), big = stage.querySelector(".stBig"),
+      sub = stage.querySelector(".stSub"), flag = stage.querySelector(".stFlag");
   var DEF_DONE = "Still standing? Comment card.";
   var DONE_MS = 20000;
-  host.insertAdjacentHTML("beforeend",
-    '<div class="wBody">' +
-      '<div class="stStage">' +
-        '<div class="stFlag" hidden><div class="flagWave"><div class="flagSheen"></div>' + FLAG_SVG + '</div></div>' +
-        '<div class="stTop"></div>' +
-        '<div class="stBig"></div>' +
-        '<div class="stSub"></div>' +
-      '</div>' +
-      '<div class="stRow" hidden>' +
-        '<label class="stLab">Seconds <input type="number" class="stSecs" min="5" max="300" step="5"></label>' +
-        '<input type="text" class="stMsg" maxlength="60">' +
-        '<label class="stLab"><input type="checkbox" class="stPledgeCk"> Flag alone at the first bell for ' +
-          '<input type="number" class="stPledgeMin" min="1" max="10" step="1" aria-label="Pledge minutes"> min, then the slides</label>' +
-        '<div class="stPer" aria-label="Seconds per period"></div>' +
-      '</div>' +
-      '<div class="chips">' +
-        '<button type="button" class="chip stStart">Start</button>' +
-        '<button type="button" class="chip stEdit" aria-label="Edit seconds and message">' +
-          '<svg class="wIcon"><use href="#i-pencil"/></svg></button>' +
-      '</div>' +
-      '<div class="tHint">Starts itself at the bell · Space restarts</div>' +
-    '</div>');
-  var q = function(s){ return host.querySelector(s); };
-  var top = q(".stTop"), big = q(".stBig"), sub = q(".stSub"), flag = q(".stFlag");
-  var row = q(".stRow"), secsIn = q(".stSecs"), msgIn = q(".stMsg");
-  var pledgeCk = q(".stPledgeCk"), pledgeMin = q(".stPledgeMin");
   var t = { endAt: null, tid: null };
   var doneUntil = null, doneTid = null;
   /* v7.1 the Pledge window: set only by the day's FIRST bell; the
      flag rides the count, then holds the stage until this passes */
   var pledgeUntil = null, pledgeTid = null;
   var destroyed = false;
-  function fmtMS(ms){
-    var sec = Math.max(0, Math.ceil(ms / 1000));
-    return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+  function S(){ return (cfg.bell && isObj(cfg.bell.settle)) ? cfg.bell.settle : DEFAULT_SETTLE; }
+  function live(){
+    return !!t.endAt || !!doneUntil || (pledgeUntil !== null && Date.now() < pledgeUntil);
   }
   /* v6.30: the Hamilton quote ladder is GONE (Croix changed his mind).
      The audible swell stays — the count speaks with sound, not lyrics. */
   function paint(){
     var pledging = pledgeUntil !== null && Date.now() < pledgeUntil;
+    var on = live();
+    stage.hidden = !on;
+    host.classList.toggle("stLive", on);
     flag.hidden = !pledging;
     host.classList.toggle("stPledge", pledging);
     host.classList.toggle("stPledgeOnly", pledging && !t.endAt && !doneUntil);
@@ -6444,7 +6545,7 @@ function makeSettle(host, wcfg){
       sub.textContent = rem === 1 ? "second" : "seconds";
     } else if (doneUntil){
       top.textContent = "Time’s up";
-      big.textContent = wcfg.msgDone || DEF_DONE;   // user data: textContent only
+      big.textContent = S().msgDone || DEF_DONE;    // user data: textContent only
       big.className = "stBig stMsgB";
       sub.textContent = "";
     } else if (pledging){
@@ -6453,12 +6554,8 @@ function makeSettle(host, wcfg){
       big.className = "stBig stPledgeT";
       sub.textContent = "";
     } else {
-      var lbl = null;
-      try { lbl = currentPeriodLabel(); } catch(e){}
-      top.textContent = "At the bell";
-      big.textContent = secsFor(lbl) + "s";
-      big.className = "stBig stArmed";
-      sub.textContent = "to be in your seat";
+      top.textContent = ""; big.textContent = ""; sub.textContent = "";
+      big.className = "stBig";
     }
   }
   /* v6.24: a BELL-started run is the class routine — it takes the whole
@@ -6474,14 +6571,22 @@ function makeSettle(host, wcfg){
       { detail: { phase: phase, host: host } })); } catch(e){}
   }
   /* v7.2: seconds for THIS class — a per-period override wins over the
-     widget's default (Croix: "25 seconds… only for 1st period at the
-     end of the day. I'd like to be able to adjust that as I please") */
+     default (Croix: "25 seconds… only for 1st period at the end of the
+     day. I'd like to be able to adjust that as I please") */
   function secsFor(label){
-    var pp = wcfg.perPeriod || {};
+    var pp = S().perPeriod || {};
     if (label && hasOwn(pp, label) && pp[label] >= 5) return pp[label];
-    return wcfg.seconds || 30;
+    return S().seconds || 30;
+  }
+  /* the moment needs its card: no clock in this scene, no routine (the
+     ticks would play to an empty stage) */
+  function hasCard(){
+    try { return Canvas.clockMounted(); } catch(e){ return !host.hidden; }
   }
   function start(auto, firstBell){
+    if (!hasCard()) return;
+    if (auto === true && !S().on) return;
+    try { Landing.dismissToast(); } catch(e){}    // the greeting yields the top of the screen
     doneUntil = null; clearTimeout(doneTid);
     clearTimeout(t.tid); clearTimeout(halfTid);
     lastTickSec = null;
@@ -6490,10 +6595,10 @@ function makeSettle(host, wcfg){
        day's first bell (auto only) no count runs — the flag takes the
        stage, and when its minutes are up the routine hands off to the
        slides. Later bells run the count as always. */
-    if (auto === true && firstBell === true && wcfg.pledge && wcfg.pledge.on){
+    if (auto === true && firstBell === true && S().pledge && S().pledge.on){
       clearTimeout(pledgeTid);
       t.endAt = null;
-      pledgeUntil = Date.now() + (wcfg.pledge.minutes || 2) * 60000;
+      pledgeUntil = Date.now() + (S().pledge.minutes || 2) * 60000;
       pledgeTid = setTimeout(pledgeOver, pledgeUntil - Date.now());
       tell("start");
       paint();
@@ -6503,7 +6608,7 @@ function makeSettle(host, wcfg){
     var label = null;
     try { label = currentPeriodLabel(); } catch(e){}
     t.endAt = Date.now() + secsFor(label) * 1000;
-    if (auto === true) tell("start");
+    tell("start");                               // v7.7: a manual run takes the stage too — it has no card of its own
     loop();
   }
   function clearPledge(){
@@ -6518,9 +6623,6 @@ function makeSettle(host, wcfg){
     paint();
     if (wasHolding) tell("end");                 // → the slides
   }
-  var pledgePaintTid = setInterval(function(){
-    if (!t.endAt && !doneUntil) paint();         // armed: the per-period figure follows the bells
-  }, 5000);
   /* v6.29→32, Croix: "as the clock gets closer to zero the louder the
      seconds gets" … "make the clock only audibly start ticking at 10
      then keep the fast sounding ticks at 5." The count is SILENT until
@@ -6578,11 +6680,11 @@ function makeSettle(host, wcfg){
     tell("reset");                               // a staged routine stands down
   }
   /* the BELL WATCH: fire only on a TRANSITION into a period — booting
-     (or adding the widget) mid-period must never start the clock.
-     A SCHEDULE re-pick (Home → different week, No bells → back, a
-     Settings Apply) flips the label instantly with no bell anywhere —
-     re-baseline on those instead of firing (adversarial find: picking
-     Black Week mid-2nd started the comment-card clock on the class). */
+     mid-period must never start the clock. A SCHEDULE re-pick (Home →
+     different week, No bells → back, a Settings Apply) flips the label
+     instantly with no bell anywhere — re-baseline on those instead of
+     firing (adversarial find: picking Black Week mid-2nd started the
+     comment-card clock on the class). */
   var prevIn = null, prevSched = null, booted = false;
   function bellWatch(){
     var s = null, sched = null;
@@ -6607,121 +6709,24 @@ function makeSettle(host, wcfg){
     }
     prevIn = cur;
   }
-  var watchTid = setInterval(bellWatch, 250);
-  bellWatch();
-  wireButton(q(".stStart"), start);
-  wireButton(q(".stEdit"), function(){
-    row.hidden = !row.hidden;
-    if (!row.hidden){
-      secsIn.value = wcfg.seconds || 30;
-      msgIn.value = wcfg.msgDone || "";
-      msgIn.placeholder = DEF_DONE;
-      pledgeCk.checked = !!wcfg.pledge.on;
-      pledgeMin.value = wcfg.pledge.minutes || 2;
-      renderPer();
-    }
-  });
-  /* v7.2: one small box per bell period — blank means the default */
-  var perEl = q(".stPer");
-  function renderPer(){
-    perEl.innerHTML = "";
-    var labels = [];
-    try { labels = bellPeriodLabels(); } catch(e){}
-    Object.keys(wcfg.perPeriod || {}).forEach(function(k){ if (labels.indexOf(k) === -1) labels.push(k); });
-    if (!labels.length){ perEl.hidden = true; return; }
-    perEl.hidden = false;
-    var cap = document.createElement("span");
-    cap.className = "stPerCap"; cap.textContent = "Seconds by period (blank = default)";
-    perEl.appendChild(cap);
-    labels.forEach(function(label){
-      var wrap = document.createElement("label");
-      wrap.className = "stPerCell";
-      var t2 = document.createElement("span"); t2.textContent = label;   // user data: textContent
-      var inp = document.createElement("input");
-      inp.type = "number"; inp.min = 5; inp.max = 300; inp.step = 5;
-      inp.placeholder = String(wcfg.seconds || 30);
-      inp.setAttribute("aria-label", "Seconds for " + label);
-      if (hasOwn(wcfg.perPeriod, label)) inp.value = wcfg.perPeriod[label];
-      function commitPer(){
-        var raw = String(inp.value).trim();
-        if (label === "__proto__") return;
-        if (raw === ""){ delete wcfg.perPeriod[label]; }
-        else {
-          var v = Math.round(+raw);
-          if (isFinite(v)){
-            if (Object.keys(wcfg.perPeriod).length < 12 || hasOwn(wcfg.perPeriod, label)){
-              wcfg.perPeriod[label] = Math.max(5, Math.min(300, v));
-              inp.value = wcfg.perPeriod[label];
-            }
-          } else inp.value = hasOwn(wcfg.perPeriod, label) ? wcfg.perPeriod[label] : "";
-        }
-        paint();
-      }
-      inp.addEventListener("change", commitPer);
-      inp.addEventListener("blur", commitPer);
-      inp.addEventListener("keydown", function(e){
-        if (Alarm.isOn()) return;
-        e.stopPropagation();
-        if (e.key === "Enter" || e.key === "Escape") inp.blur();
-      });
-      wrap.appendChild(t2); wrap.appendChild(inp);
-      perEl.appendChild(wrap);
-    });
-  }
-  pledgeCk.addEventListener("change", function(){ wcfg.pledge.on = this.checked; });
-  function commitPledgeMin(){
-    var v = Math.round(+String(pledgeMin.value).trim());
-    if (isFinite(v) && v >= 1) wcfg.pledge.minutes = Math.min(10, v);
-    pledgeMin.value = wcfg.pledge.minutes;
-  }
-  pledgeMin.addEventListener("change", commitPledgeMin);
-  pledgeMin.addEventListener("blur", commitPledgeMin);
-  function commitSecs(){
-    /* an EMPTIED field is not a choice: "" coerces to 0 and clamped to
-       5s — a 5-second settle window nobody asked for (adversarial
-       find). Blank or junk reverts to what the teacher had. */
-    var raw = String(secsIn.value).trim();
-    var v = Math.round(+raw);
-    if (raw !== "" && isFinite(v)){
-      wcfg.seconds = Math.max(5, Math.min(300, v));
-    }
-    secsIn.value = wcfg.seconds;
-    paint();
-  }
-  function commitMsg(){
-    wcfg.msgDone = msgIn.value.trim().slice(0, 60);
-    paint();
-  }
-  secsIn.addEventListener("change", commitSecs);
-  secsIn.addEventListener("blur", commitSecs);
-  msgIn.addEventListener("change", commitMsg);
-  msgIn.addEventListener("blur", commitMsg);
-  [secsIn, msgIn, pledgeMin].forEach(function(inp){
-    inp.addEventListener("keydown", function(e){
-      if (Alarm.isOn()) return;                    // never shield the alarm
-      e.stopPropagation();
-      if (e.key === "Enter" || e.key === "Escape") inp.blur();
-    });
-  });
-  paint();
+  var watchTid = null;
   return {
-    kind: "settle",
-    label: function(){ return wcfg.label || "Settle-in"; },
-    startPause: start,                             // Space = (re)start
-    reset: reset,                                  // R = back to armed
+    init: function(){
+      flag.innerHTML = '<div class="flagWave"><div class="flagSheen"></div>' + FLAG_SVG + '</div>';
+      watchTid = setInterval(bellWatch, 250);
+      bellWatch();
+      paint();
+    },
+    start: function(){ start(false); },          // Space (while live) / the API: run the count now
+    reset: reset,                                // R = the face comes back
     running: function(){ return !!t.endAt; },
-    canEnter: function(){ return false; },
-    entryActive: function(){ return false; },
-    rebuild: paint, resync: function(){},
+    live: live,                                  // the card is the count, the spell or the flag
+    secsFor: secsFor,
     _doneMs: function(ms){ DONE_MS = ms; },        // test hook
     _pledgeUntil: function(){ return pledgeUntil; }, // test hook
-    destroy: function(){
-      destroyed = true;
-      clearInterval(watchTid); clearInterval(pledgePaintTid);
-      clearTimeout(t.tid); clearTimeout(doneTid); clearTimeout(halfTid); clearTimeout(pledgeTid);
-    }
+    _bellWatch: bellWatch                          // test hook
   };
-}
+})();
 
 /* Music (v6.25, reworked v6.26 after Croix's field notes: "The scratchy
    under the lofi is annoying… maybe a little underdeveloped… the mozart
@@ -8912,6 +8917,9 @@ var Sea = (function(){
     b.addEventListener("pointerdown", function(e){
       held = false; downAt = Date.now();
       clearTimeout(holdTid);
+      /* v7.7: the boat drifts under a held finger — capture the pointer so
+         the hold survives the drift and the up lands back on the boat */
+      try { b.setPointerCapture(e.pointerId); } catch(_){}
       holdTid = setTimeout(function(){ held = true; earned(); }, 1500);
     });
     var up = function(){ clearTimeout(holdTid); };
@@ -8922,7 +8930,6 @@ var Sea = (function(){
       else summon();
     });
     b.addEventListener("pointercancel", up);
-    b.addEventListener("pointerleave", up);
   }
   return {
     init: function(){
@@ -8972,7 +8979,7 @@ var WIDGET_NAMES = {
   dice: "Dice", score: "Scoreboard", qr: "QR Code", meter: "Noise Meter",
   draw: "Sketch", embed: "Slides",
   event: "Countdown", tally: "Tally", agenda: "Agenda",
-  settle: "Settle-in", music: "Music", yt: "YouTube"
+  music: "Music", yt: "YouTube"
 };
 var WIDGET_MAKERS = {
   stopwatch: makeStopwatch, bell: makeBellTimer, picker: makePicker,
@@ -8980,7 +8987,7 @@ var WIDGET_MAKERS = {
   dice: makeDice, score: makeScore, qr: makeQR, meter: makeMeter,
   draw: makeDraw, embed: makeEmbed,
   event: makeEvent, tally: makeTally, agenda: makeAgenda,
-  settle: makeSettle, music: makeMusic, yt: makeYT
+  music: makeMusic, yt: makeYT
 };
 
 var Canvas = (function(){
@@ -9362,7 +9369,10 @@ var Canvas = (function(){
     var i = sc.widgets.indexOf(en.cfg);
     if (i !== -1) sc.widgets.splice(i, 1);
     if (en === focusedEntry) setFocus(null);
-    if (en.type === "clock"){ en.el.hidden = true; }
+    if (en.type === "clock"){
+      en.el.hidden = true;
+      try { if (Settle.live()) Settle.reset(); } catch(e){}   // v7.7: no card, no moment
+    }
     else { en.api.destroy(); en.el.remove(); }
     var j = entries.indexOf(en);
     if (j !== -1) entries.splice(j, 1);
@@ -9700,7 +9710,7 @@ var Canvas = (function(){
     ["addTimerBtn","addWatchBtn","addBellBtn","addPickerBtn","addGroupsBtn",
      "addTextBtn","addWorkBtn","addDiceBtn","addScoreBtn",
      "addQrBtn","addMeterBtn","addDrawBtn","addEmbedBtn",
-     "addEventBtn","addTallyBtn","addAgendaBtn","addSettleBtn",
+     "addEventBtn","addTallyBtn","addAgendaBtn",
      "addMusicBtn","addYtBtn"].forEach(function(id){
       $(id).disabled = locked || full;
     });
@@ -9753,7 +9763,7 @@ var Canvas = (function(){
     document.body.classList.toggle("dockMin", v);
     $("dockTog").setAttribute("aria-expanded", v ? "false" : "true");
     $("dockTog").setAttribute("aria-label", v ? "Expand the dock" : "Collapse the dock");
-    if (v){ hideAddMenu(); hideSceneMenu(); refocusDeck(); }
+    if (v){ hideAddMenu(); hideSceneMenu(); hideMoreMenu(); refocusDeck(); }
   }
   function hideAddMenu(){
     $("addMenu").hidden = true;
@@ -9827,9 +9837,20 @@ var Canvas = (function(){
   }
   function toggleAddMenu(){
     var open = $("addMenu").hidden;
-    hideSceneMenu();
+    hideSceneMenu(); hideMoreMenu();
     $("addMenu").hidden = !open;
     $("addBtn").setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  /* v7.7: ⋮ — the old header's Home / Sound / Fullscreen, and the brand */
+  function hideMoreMenu(){
+    $("moreMenu").hidden = true;
+    $("moreBtn").setAttribute("aria-expanded", "false");
+  }
+  function toggleMoreMenu(){
+    var open = $("moreMenu").hidden;
+    hideAddMenu(); hideSceneMenu();
+    $("moreMenu").hidden = !open;
+    $("moreBtn").setAttribute("aria-expanded", open ? "true" : "false");
   }
   function hideSceneMenu(){
     $("sceneMenu").hidden = true;
@@ -9840,7 +9861,7 @@ var Canvas = (function(){
   }
   function toggleSceneMenu(){
     var open = $("sceneMenu").hidden;
-    hideAddMenu();
+    hideAddMenu(); hideMoreMenu();
     if (!open){ hideSceneMenu(); return; }        // close path disarms delete too
     $("sceneMenu").hidden = false;
     $("sceneBtn").setAttribute("aria-expanded", "true");
@@ -9929,13 +9950,18 @@ var Canvas = (function(){
        ["addScoreBtn","score"], ["addQrBtn","qr"], ["addMeterBtn","meter"],
        ["addDrawBtn","draw"], ["addEmbedBtn","embed"], ["addEventBtn","event"],
        ["addTallyBtn","tally"], ["addAgendaBtn","agenda"],
-       ["addSettleBtn","settle"], ["addMusicBtn","music"],
+       ["addMusicBtn","music"],
        ["addYtBtn","yt"]].forEach(function(pair){
         wireButton($(pair[0]), function(){ addWidget(pair[1]); hideAddMenu(); });
+      });
+      wireButton($("moreBtn"), toggleMoreMenu);
+      ["homeBtn", "soundBtn", "fsBtn"].forEach(function(id){   // a pick closes ⋮
+        $(id).addEventListener("click", hideMoreMenu);
       });
       document.addEventListener("pointerdown", function(e){
         if (!$("addMenu").hidden && !e.target.closest("#addWrap")) hideAddMenu();
         if (!$("sceneMenu").hidden && !e.target.closest("#sceneWrap")) hideSceneMenu();
+        if (!$("moreMenu").hidden && !e.target.closest("#moreWrap")) hideMoreMenu();
         if (!$("focusTimerMenu").hidden && !e.target.closest("#focusTimerWrap")) hideTimerMenu();
       });
       wireButton($("sceneBtn"), toggleSceneMenu);
@@ -10032,8 +10058,8 @@ var Canvas = (function(){
       /* returns whether anything was open — Escape peels ONE layer:
          an open menu first, the stage only on the next press */
       var any = !$("addMenu").hidden || !$("sceneMenu").hidden ||
-                !$("focusTimerMenu").hidden;
-      hideAddMenu(); hideSceneMenu(); hideTimerMenu();
+                !$("focusTimerMenu").hidden || !$("moreMenu").hidden;
+      hideAddMenu(); hideSceneMenu(); hideTimerMenu(); hideMoreMenu();
       return any;
     },
     unfocus: function(){ setFocus(null); },
@@ -10041,10 +10067,16 @@ var Canvas = (function(){
     /* v7.5: the sea's director asks — a running timer or settle-in means
        a working room, so only the quiet visitors play */
     timerRunning: function(){
-      return entries.some(function(en){
+      var settle = false;
+      try { settle = Settle.running(); } catch(e){}
+      return settle || entries.some(function(en){
         var k = en.api && en.api.kind;
-        return (k === "timer" || k === "countdown" || k === "settle") && en.api.running && en.api.running();
+        return (k === "timer" || k === "countdown") && en.api.running && en.api.running();
       });
+    },
+    /* v7.7: the settle moment needs the clock card in THIS scene */
+    clockMounted: function(){
+      return entries.some(function(en){ return en.type === "clock"; });
     },
 
     applyTimerSettings: function(){
@@ -10086,11 +10118,40 @@ var Settings = (function(){
     seaWeather: $("sSeaWeather"),
     warn: $("sWarn"), warnChime: $("sWarnChime"),
     bath: $("sBath"), bathFirst: $("sBathFirst"), bathLast: $("sBathLast"),
+    stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"),
+    stPledge: $("sStPledge"), stPledgeMin: $("sStPledgeMin"), stPer: $("sStPer"),
     nudge: $("sNudge"), presets: $("sPresets"), errors: $("setErrors"),
     grpNames: [$("sGrpName1"), $("sGrpName2"), $("sGrpName3"), $("sGrpName4")],
     grpReg: [$("taGrpReg1"), $("taGrpReg2"), $("taGrpReg3"), $("taGrpReg4")],
     grpWed: [$("taGrpWed1"), $("taGrpWed2"), $("taGrpWed3"), $("taGrpWed4")]
   };
+
+  /* v7.7: one small box per bell period — blank means the default */
+  function renderSettlePer(st){
+    var perEl = f.stPer;
+    perEl.innerHTML = "";
+    var labels = [];
+    try { labels = bellPeriodLabels(); } catch(e){}
+    Object.keys(st.perPeriod || {}).forEach(function(k){ if (labels.indexOf(k) === -1) labels.push(k); });
+    if (!labels.length){ perEl.hidden = true; return; }
+    perEl.hidden = false;
+    var cap = document.createElement("span");
+    cap.className = "stPerCap"; cap.textContent = "Seconds by period (blank = default)";
+    perEl.appendChild(cap);
+    labels.slice(0, 12).forEach(function(label){
+      var wrap = document.createElement("label");
+      wrap.className = "stPerCell";
+      var t2 = document.createElement("span"); t2.textContent = label;   // user data: textContent
+      var inp = document.createElement("input");
+      inp.type = "number"; inp.min = 5; inp.max = 300; inp.step = 5;
+      inp.placeholder = String(st.seconds || 30);
+      inp.dataset.period = label;
+      inp.setAttribute("aria-label", "Seconds for " + label);
+      if (hasOwn(st.perPeriod || {}, label)) inp.value = st.perPeriod[label];
+      wrap.appendChild(t2); wrap.appendChild(inp);
+      perEl.appendChild(wrap);
+    });
+  }
 
   /* ---- v7.2: the tab rail — one panel at a time ---- */
   var TABS = ["general", "bells", "timer", "rosters", "scheds", "device"];
@@ -10211,6 +10272,13 @@ var Settings = (function(){
     f.bath.checked = !!cfg.bell.bathroom.enabled;
     f.bathFirst.value = cfg.bell.bathroom.firstMinutes;
     f.bathLast.value = cfg.bell.bathroom.lastMinutes;
+    var st = cfg.bell.settle || DEFAULT_SETTLE;   // v7.7
+    f.stOn.checked = !!st.on;
+    f.stSecs.value = st.seconds;
+    f.stMsg.value = st.msgDone || "";
+    f.stPledge.checked = !!st.pledge.on;
+    f.stPledgeMin.value = st.pledge.minutes;
+    renderSettlePer(st);
     f.sound.checked = !!cfg.sound.enabled;
     f.auto.checked = !!cfg.bell.autoWeek;
     f.anchor.value = cfg.bell.anchorMonday || "";
@@ -10383,6 +10451,18 @@ var Settings = (function(){
     var bathLast = parseInt(f.bathLast.value, 10);
     if (isNaN(bathFirst) || bathFirst < 0 || bathFirst > 45) errors.push("Bathroom first-minutes: 0 to 45");
     if (isNaN(bathLast) || bathLast < 0 || bathLast > 45) errors.push("Bathroom last-minutes: 0 to 45");
+    var stSecs = parseInt(f.stSecs.value, 10);
+    if (isNaN(stSecs) || stSecs < 5 || stSecs > 300) errors.push("Settle-in seconds: 5 to 300");
+    var stPledgeMin = parseInt(f.stPledgeMin.value, 10);
+    if (isNaN(stPledgeMin) || stPledgeMin < 1 || stPledgeMin > 10) errors.push("Flag minutes: 1 to 10");
+    var stPer = {};
+    f.stPer.querySelectorAll("input[data-period]").forEach(function(inp){
+      var raw = String(inp.value).trim();
+      if (raw === "") return;
+      var v = parseInt(raw, 10);
+      if (isNaN(v) || v < 5 || v > 300){ errors.push("Settle-in seconds for " + inp.dataset.period + ": 5 to 300"); return; }
+      if (inp.dataset.period !== "__proto__" && Object.keys(stPer).length < 12) stPer[inp.dataset.period] = v;
+    });
     var vol = parseInt(f.volume.value, 10);
     if (isNaN(vol) || vol < 0 || vol > 100) vol = 25;
 
@@ -10450,6 +10530,12 @@ var Settings = (function(){
     cfg.bell.bathroom.enabled = f.bath.checked;
     cfg.bell.bathroom.firstMinutes = bathFirst;
     cfg.bell.bathroom.lastMinutes = bathLast;
+    cfg.bell.settle = {                          // v7.7: the moment of the clock
+      on: f.stOn.checked, seconds: stSecs,
+      msgDone: f.stMsg.value.trim().slice(0, 60),
+      pledge: { on: f.stPledge.checked, minutes: stPledgeMin },
+      perPeriod: stPer
+    };
     cfg.sound.volume = vol / 100;
     cfg.clock.showSeconds = f.seconds.checked;
     cfg.ui.motion = ["auto","on","off"].indexOf(f.motion.value) !== -1
@@ -11110,9 +11196,13 @@ var Keys = (function(){
     if (isButton && (k === " " || k === "Enter")) return;
     var lk = k.length === 1 ? k.toLowerCase() : k;
     if (Ink.isArmed() && k === "Escape"){ Ink.arm(false); e.preventDefault(); return; }
-    if (k === " "){ if (sel) sel.startPause(); e.preventDefault(); }
+    /* v7.7: while the clock IS the settle count, Space restarts it and R
+       stands it down (the card's old chips) — the selected timer waits */
+    var settleLive = false;
+    try { settleLive = Settle.live(); } catch(_){}
+    if (k === " "){ if (settleLive) Settle.start(); else if (sel) sel.startPause(); e.preventDefault(); }
     else if (lk === "d"){ Ink.toggle(); }
-    else if (lk === "r"){ if (sel) sel.reset(); }
+    else if (lk === "r"){ if (settleLive) Settle.reset(); else if (sel) sel.reset(); }
     else if (lk === "f"){ FS.toggle(); }
     else if (lk === "m"){ Sound.toggle(); }
     else if (lk === "s"){ Canvas.cycleSel(); }
@@ -11126,13 +11216,15 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
 
-/* the header badge shows the real release, not a frozen "v6" */
+/* the ⋮ badge shows the real release, not a frozen "v6" */
 try { document.getElementById("brandVer").textContent = "v" + String(cfg.appVersion).split(".")[0]; } catch(e){}
+/* v7.7: on a normal day nothing needs deciding — open the board */
+try { Landing.autoOpen(); } catch(e){}
 
 /* Debug/preview API (documented in handoff; harmless in class) */
 window.Deckhand = {
@@ -11157,6 +11249,8 @@ window.Deckhand = {
   seaModule: Sea,                               // v7.5: the director, weather, plan(), residents (tests + the aquarium)
   canvas: Canvas,                               // v7.5: timerRunning() for the sea's director (tests)
   absent: Absent,                               // v7.6: date-keyed marks (tests)
+  settle: Settle,                               // v7.7: the settle-in, a moment of the clock (tests)
+  landing: Landing,                             // v7.7: needsPick()/show() (tests)
   shiftClock: function(ms){ simOffset += ms; }, // test hook (v7.6): move the simulated clock
   qr: qrMatrix,                                 // test hook: decode-verified in CI
   settings: {                                   // v7.2: the settings tab rail
