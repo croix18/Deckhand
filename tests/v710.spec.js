@@ -1,8 +1,10 @@
 /* v7.10 — October (Croix: "spiderwebs, pumpkins, stuff like that"). The
  * Season module sets body.october from the board's clock for the month;
- * the web and spider on the clock, small webs on the other cards, three
- * pumpkins on the sand, a black pennant, two October-only sea acts and a
- * haunted lofi side hang off that one class. */
+ * the web and spider on the clock, three pumpkins on the sand, the boat's
+ * swallow-tail, the October sea acts and a haunted lofi side hang off that
+ * one class. (v7.11 redrew every piece — docs/reviews/october-2.0-*.md —
+ * and the assertions here follow: two faces, no webs on the other cards,
+ * a streamer instead of a black burgee; v711.spec.js has the new toys.) */
 const { test, expect, ok } = require("./helpers");
 
 test.describe("v7.10 October", () => {
@@ -35,15 +37,15 @@ test.describe("v7.10 October", () => {
     await pg.close();
   });
 
-  test("v7.10: the pieces — web on the clock (not during the settle moment), small webs on cards, pumpkins on the sand (not on the landing page or the stage), a black pennant", async ({ page, dh }) => {
+  test("v7.10: the pieces — web on the clock (not during the settle moment), pumpkins on the sand (not on the landing page or the stage), the boat's swallow-tail", async ({ page, dh }) => {
     await dh.openAt("#t=2026-10-14T10:30");
     await dh.launch();
     await dh.addTimer();
     const vis = sel => page.evaluate(s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== "none"; }, sel);
     ok(await vis("#clockWidget .ocWeb"), "no web on the clock");
-    ok(await vis(".w-timer .ocCorner"), "no small web on the timer card");
+    ok(!(await page.$(".w-timer .ocCorner")), "v7.11 dropped the small webs on the other cards");
     ok(await vis("#ocPumpkins"), "no pumpkins");
-    ok((await page.evaluate(() => getComputedStyle(document.querySelector("#boat .btBurgee")).fill)) === "rgb(17, 26, 38)", "the pennant is not black");
+    ok(await vis("#boat .btStreamer") && !(await vis("#boat .btBurgee")), "October flies the swallow-tail, not the burgee");
     // the settle moment owns the clock card: the web steps aside
     await page.evaluate(() => window.Deckhand.settle.start());
     await expect(page.locator("#clockWidget")).toHaveClass(/stLive/);
@@ -69,19 +71,20 @@ test.describe("v7.10 October", () => {
     const face0 = await pk.getAttribute("data-face");
     ok(!(await pk.evaluate(e => e.classList.contains("lit"))), "first pumpkin lit before any tap");
     await pk.dispatchEvent("pointerdown");
-    ok((await pk.getAttribute("data-face")) === String((+face0 + 1) % 3), "face did not change");
     ok(await pk.evaluate(e => e.classList.contains("lit")), "tap did not light it");
-    await pk.dispatchEvent("pointerdown"); await pk.dispatchEvent("pointerdown");
-    ok((await pk.getAttribute("data-face")) === face0, "three taps should come round");
-    ok((await page.evaluate(() => getComputedStyle(document.querySelector("#ocPumpkins .ocPumpkin.lit .ocFace.f" + document.querySelector("#ocPumpkins .ocPumpkin.lit").dataset.face)).fill)) === "rgb(255, 228, 92)", "lit face is not the lamp colour");
+    await expect(pk).toHaveAttribute("data-face", String((+face0 + 1) % 2));   // v7.11: the flip lands 70 ms in, at the flattest frame
+    await page.waitForTimeout(500);
+    await pk.dispatchEvent("pointerdown");
+    await expect(pk).toHaveAttribute("data-face", face0);                      // two faces come round
+    ok((await page.evaluate(() => getComputedStyle(document.querySelector("#ocPumpkins .ocPumpkin.lit .ocFace.f" + document.querySelector("#ocPumpkins .ocPumpkin.lit").dataset.face + " .ocCut")).fill)) === "rgb(255, 228, 92)", "lit cuts are not the lamp colour");
     await page.locator("#ocWeb .ocSpider").dispatchEvent("pointerdown");
     await expect(page.locator("#ocWeb .ocSpiderRig")).toHaveClass(/drop/);
-    await expect(page.locator("#ocWeb .ocSpiderRig")).not.toHaveClass(/drop/, { timeout: 7000 });
+    await expect(page.locator("#ocWeb .ocSpiderRig")).not.toHaveClass(/drop/, { timeout: 8000 });
     ok(await page.evaluate(() => window.Deckhand.config.ui.locked), "a tap unlocked the board");
     await dh.unlock();
   });
 
-  test("v7.10: the sea's October acts — bats and a ghost ship — play in October only, and the director schedules them; the tape gains a haunted side", async ({ page, dh }) => {
+  test("v7.10: the sea's October acts play in October only, and the director schedules them; the tape gains a haunted side", async ({ page, dh }) => {
     await dh.openAt("#t=2026-10-14T10:30");
     await dh.launch();
     await page.evaluate(() => { window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); });
@@ -101,8 +104,10 @@ test.describe("v7.10 October", () => {
       return { oct: [...oct], nov: [...nov] };
     });
     const sets = await S();
-    ok(sets.oct.includes("bats") && sets.oct.includes("ghost"), "October plans never cast the new acts: " + sets.oct.join());
-    ok(!sets.nov.includes("bats") && !sets.nov.includes("ghost"), "November plans cast October acts: " + sets.nov.join());
+    for (const a of ["bats", "ghost", "castaway", "bones", "haunt"]){
+      ok(sets.oct.includes(a), "October plans never cast " + a + ": " + sets.oct.join());
+      ok(!sets.nov.includes(a), "November plans cast " + a + ": " + sets.nov.join());
+    }
     // the tape
     await dh.addW("addMusicBtn");
     const octSides = await page.evaluate(() => window.Deckhand.lofiSides());

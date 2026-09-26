@@ -1,0 +1,222 @@
+<!doctype html><html><head><meta charset="utf-8"><title>October 1.0 — proof sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#1B2E45; --turq:#40E0D0; --paleturq:#D8F6F1; --cream:#F8F2E4; --sand:#E6D5B8; --teal:#127A85; --white:#fff; --grid:#EADFC6; --coral:#FF7F6A;}
+body{font-family:"DM Sans",system-ui,sans-serif; background:var(--cream); color:var(--navy); margin:0; padding:24px;}
+h1{font-size:20px; margin:0 0 6px} .cap{font-size:12px; color:var(--teal); margin:0 0 18px}
+.row{display:flex; gap:28px; align-items:flex-end; flex-wrap:wrap; margin-bottom:28px}
+.cell{background:#fff; border-radius:16px; padding:18px; box-shadow:8px 10px 0 #D8C5A0}
+.cell h2{font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--teal); margin:0 0 10px}
+  /* ===== v7.10 OCTOBER (body.october, set by Season) ==================
+     Decoration at the edges only: the clock's corner web (and a small web on
+     every other card), three jack-o'-lanterns on the sand, a bat flock and a
+     ghost ship for the director, a black pennant on the boat. The pumpkins'
+     orange (--oct) is the one colour outside the palette in this file. */
+  :root{--oct:#E8862A; --octDeep:#C46A16; --octLit:#FFE45C;}
+  #ocPumpkins{
+    position:fixed; right:7vw; bottom:24px; width:clamp(150px, 15vw, 300px); height:auto;
+    z-index:2; display:none; overflow:visible;
+  }
+  body.october:not(.landing):not(.focusMode) #ocPumpkins{display:block;}
+  .ocPumpkin{cursor:pointer; pointer-events:auto; transform-box:fill-box;}
+  .ocBody{fill:var(--oct); stroke:var(--octDeep); stroke-width:3;}
+  .ocRib{fill:none; stroke:var(--octDeep); stroke-width:2; opacity:.7;}
+  .ocStem{fill:var(--teal);}
+  .ocFace{display:none; fill:var(--navy);}
+  .ocPumpkin[data-face="0"] .f0, .ocPumpkin[data-face="1"] .f1, .ocPumpkin[data-face="2"] .f2{display:block;}
+  .ocPumpkin.lit .ocFace{fill:var(--octLit);}
+  body.waveMotion .ocPumpkin.lit .ocFace{animation:ocFlicker 2.8s ease-in-out infinite;}
+  @keyframes ocFlicker{0%,100%{opacity:1;} 37%{opacity:.72;} 52%{opacity:.95;} 71%{opacity:.6;}}
+  .ocPumpkin.tapped{animation:ocSquash .35s ease;}
+  @keyframes ocSquash{40%{transform:scale(1.06, .92);} 100%{transform:none;}}
+  /* the web: a corner drawing at 35% ink, the spider on a thread */
+  .ocWeb{
+    position:absolute; top:0; right:0; width:clamp(90px, 22cqmin, 170px); height:auto;
+    display:none; pointer-events:none; overflow:visible; z-index:4;
+  }
+  body.october .w-clock:not(.stLive) .ocWeb{display:block;}
+  body:not(.locked) .ocWeb{top:30px;}          /* under the handle band while editing */
+  .ocStrands path{fill:none; stroke:var(--navy); stroke-width:1; opacity:.32; vector-effect:non-scaling-stroke;}
+  .ocThread{stroke:var(--navy); stroke-width:.8; opacity:.45; transform-box:fill-box; transform-origin:50% 0;}
+  .ocSpider{pointer-events:auto; cursor:pointer;}
+  .ocSpider circle{fill:var(--navy);}
+  .ocSpider .ocEye{fill:var(--turq);}
+  .ocLegs{fill:none; stroke:var(--navy); stroke-width:1.2; stroke-linecap:round;}
+  /* the spider slides on its own group; the thread stretches from its anchor
+     on the web — two motions, two elements (the Chrome rule) */
+  body.waveMotion .ocSpiderRig .ocSpider{animation:ocDangle 150s ease-in-out infinite;}
+  body.waveMotion .ocSpiderRig.drop .ocSpider{animation:ocDropNow 4.5s ease-in-out 1;}
+  @keyframes ocDangle{0%,92%{translate:0 0;} 95%{translate:0 46px;} 97%{translate:0 40px;} 100%{translate:0 0;}}
+  @keyframes ocDropNow{0%{translate:0 0;} 30%{translate:0 70px;} 55%{translate:0 62px;} 100%{translate:0 0;}}
+  .ocSpiderRig .ocThread{transform:scaleY(1);}
+  body.waveMotion .ocSpiderRig .ocThread{animation:ocThread 150s ease-in-out infinite;}
+  body.waveMotion .ocSpiderRig.drop .ocThread{animation:ocThreadNow 4.5s ease-in-out 1;}
+  @keyframes ocThread{0%,92%{transform:scaleY(1);} 95%{transform:scaleY(2.65);} 97%{transform:scaleY(2.4);} 100%{transform:scaleY(1);}}
+  @keyframes ocThreadNow{0%{transform:scaleY(1);} 30%{transform:scaleY(3.5);} 55%{transform:scaleY(3.2);} 100%{transform:scaleY(1);}}
+  /* the small web every other card wears in its top-left corner */
+  .ocCorner{position:absolute; top:0; left:0; width:clamp(44px, 14cqmin, 84px); height:auto; display:none; pointer-events:none; z-index:4; transform:scaleX(-1);}
+  body.october .widget:not(.w-clock):not(.wFull) .ocCorner{display:block;}
+  .ocCorner path{fill:none; stroke:var(--navy); stroke-width:1; opacity:.22; vector-effect:non-scaling-stroke;}
+  /* the boat flies black for the month */
+  body.october .btBurgee{fill:#111A26; transform:scale(1.5);}
+  /* BATS (9s): five cross right to left above the water, each on its own bob, wings on their own beat */
+  #sea-bats{bottom:70px; left:0; width:100vw; height:170px; pointer-events:none;}
+  .ocBat{position:absolute; left:0; bottom:var(--by); width:38px; opacity:0; --by:60px;}
+  .ocBat.b1{--by:96px;} .ocBat.b2{--by:70px;} .ocBat.b3{--by:120px;} .ocBat.b4{--by:44px;} .ocBat.b5{--by:88px;}
+  .ocBat svg{display:block; width:100%;}
+  .ocBat path{fill:var(--navy);}
+  .ocWingL, .ocWingR{transform-box:fill-box;}
+  .ocWingL{transform-origin:100% 50%;} .ocWingR{transform-origin:0% 50%;}
+  body.waveMotion #sea-bats.go .ocBat{animation:ocBatFly 9s linear both;}
+  body.waveMotion #sea-bats.go .b2{animation-delay:.35s;} body.waveMotion #sea-bats.go .b3{animation-delay:.7s;}
+  body.waveMotion #sea-bats.go .b4{animation-delay:1.1s;} body.waveMotion #sea-bats.go .b5{animation-delay:1.5s;}
+  body.waveMotion #sea-bats.go .ocBob{animation:ocBob 1.1s ease-in-out infinite alternate;}
+  body.waveMotion #sea-bats.go .b2 .ocBob{animation-duration:.9s;} body.waveMotion #sea-bats.go .b4 .ocBob{animation-duration:1.3s;}
+  body.waveMotion #sea-bats.go .ocWingL{animation:ocFlapL .22s ease-in-out infinite alternate;}
+  body.waveMotion #sea-bats.go .ocWingR{animation:ocFlapR .22s ease-in-out infinite alternate;}
+  @keyframes ocBatFly{0%{transform:translateX(calc(100vw + 60px)); opacity:0;} 4%{opacity:1;} 96%{opacity:1;} 100%{transform:translateX(-120px); opacity:0;}}
+  @keyframes ocBob{from{translate:0 -9px;} to{translate:0 9px;}}
+  @keyframes ocFlapL{from{transform:rotate(-38deg);} to{transform:rotate(30deg);}}
+  @keyframes ocFlapR{from{transform:rotate(38deg);} to{transform:rotate(-30deg);}}
+  /* GHOST SHIP (40s): far out, half there, drifts right to left on the swell, a lamp that won't stay lit */
+  #sea-ghost{bottom:2px; left:auto; right:-320px; width:300px; height:168px;}
+  .ghHeave{transform-origin:50% 100%;}
+  /* a silhouette in fog: pale fills, navy lines at half strength — a pale
+     shape alone vanished against the cream sky */
+  .ghShip{opacity:.5;}
+  .ghHull{fill:var(--paleturq); stroke:var(--navy); stroke-width:1.2; vector-effect:non-scaling-stroke;}
+  .ghSail{fill:var(--cream); stroke:var(--navy); stroke-width:1; vector-effect:non-scaling-stroke;}
+  .ghMast, .ghRig{fill:none; stroke:var(--navy); stroke-width:1.2; vector-effect:non-scaling-stroke;}
+  .ghLamp{fill:var(--octLit); stroke:var(--navy); stroke-width:.6;}
+  body.waveMotion #sea-ghost.go{animation:ghDrift 40s linear both;}
+  body.waveMotion #sea-ghost.go .ghHeave{animation:thingHeave calc(var(--T1) / 2) var(--sine) infinite alternate;}
+  body.waveMotion #sea-ghost.go .ghShip{animation:ghFade 40s linear both;}
+  body.waveMotion #sea-ghost.go .ghLamp{animation:ghLamp 3.1s steps(1) infinite;}
+  body.waveMotion #sea-ghost.go .ghLamp.l2{animation-delay:1.3s;}
+  @keyframes ghDrift{from{transform:translateX(0) scale(var(--ls, 1));} to{transform:translateX(calc(-100vw - 360px)) scale(var(--ls, 1));}}
+  @keyframes ghFade{0%{opacity:0;} 10%{opacity:.55;} 46%{opacity:.5;} 50%{opacity:.18;} 54%{opacity:.5;} 90%{opacity:.55;} 100%{opacity:0;}}
+  @keyframes ghLamp{0%,55%{opacity:1;} 56%,63%{opacity:.15;} 64%,100%{opacity:1;}}
+
+
+#ocPumpkins{position:static; display:block !important; width:640px}
+.ocWeb{position:static; display:block !important; width:280px}
+.bat{width:160px} .bat path{fill:var(--navy)} .bat .ocWingL{transform-origin:100% 50%} 
+.ghost{width:480px} .ghost .ghShip{opacity:.5}
+.sm{display:flex; gap:18px; align-items:center}
+.tiny .ocWeb{width:90px} .tiny #ocPumpkins{width:150px} .tiny .bat{width:38px} .tiny .ghost{width:210px}
+</style></head><body>
+<h1>October 1.0 — the current drawings, at scale and at board size</h1>
+<p class="cap">Left: enlarged. Right: at the size the room sees (1080p). Board palette; the pumpkin orange is the one colour outside it.</p>
+<div class="row"><div class="cell"><h2>Pumpkins (face 0 · 1 · 2 lit)</h2><svg id="ocPumpkins" viewBox="0 0 320 110" aria-hidden="true">
+  <g class="ocPumpkin" data-face="0" transform="translate(0 14) scale(.9)">
+    <path class="ocStem" d="M52,14 C50,6 54,2 60,4 C57,8 57,12 58,16 Z"/>
+    <ellipse class="ocBody" cx="55" cy="58" rx="46" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="24" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="42" ry="38"/>
+    <g class="ocFace f0"><path d="M32,46 L46,40 L44,54 Z M78,46 L64,40 L66,54 Z M55,52 L61,62 L49,62 Z M28,68 Q55,92 82,68 L76,70 L72,78 L64,72 L58,80 L52,72 L44,80 L40,72 L34,74 Z"/></g>
+    <g class="ocFace f1"><path d="M30,46 L46,42 L42,56 Z M80,46 L64,42 L68,56 Z M55,50 L61,60 L49,60 Z"/><ellipse cx="55" cy="76" rx="9" ry="11"/></g>
+    <g class="ocFace f2"><path d="M30,50 L46,44 L46,52 Z M80,50 L64,44 L64,52 Z M55,54 L60,62 L50,62 Z M30,70 L80,66 L76,74 L68,70 L60,76 L52,72 L44,78 L36,72 Z"/></g>
+  </g>
+  <g class="ocPumpkin big" data-face="1" transform="translate(96 0) scale(1.08)">
+    <path class="ocStem" d="M52,14 C50,6 54,2 60,4 C57,8 57,12 58,16 Z"/>
+    <ellipse class="ocBody" cx="55" cy="58" rx="46" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="24" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="42" ry="38"/>
+    <g class="ocFace f0"><path d="M32,46 L46,40 L44,54 Z M78,46 L64,40 L66,54 Z M55,52 L61,62 L49,62 Z M28,68 Q55,92 82,68 L76,70 L72,78 L64,72 L58,80 L52,72 L44,80 L40,72 L34,74 Z"/></g>
+    <g class="ocFace f1"><path d="M30,46 L46,42 L42,56 Z M80,46 L64,42 L68,56 Z M55,50 L61,60 L49,60 Z"/><ellipse cx="55" cy="76" rx="9" ry="11"/></g>
+    <g class="ocFace f2"><path d="M30,50 L46,44 L46,52 Z M80,50 L64,44 L64,52 Z M55,54 L60,62 L50,62 Z M30,70 L80,66 L76,74 L68,70 L60,76 L52,72 L44,78 L36,72 Z"/></g>
+  </g>
+  <g class="ocPumpkin lit" data-face="2" transform="translate(214 26) scale(.72)">
+    <path class="ocStem" d="M52,14 C50,6 54,2 60,4 C57,8 57,12 58,16 Z"/>
+    <ellipse class="ocBody" cx="55" cy="58" rx="46" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="24" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="42" ry="38"/>
+    <g class="ocFace f0"><path d="M32,46 L46,40 L44,54 Z M78,46 L64,40 L66,54 Z M55,52 L61,62 L49,62 Z M28,68 Q55,92 82,68 L76,70 L72,78 L64,72 L58,80 L52,72 L44,80 L40,72 L34,74 Z"/></g>
+    <g class="ocFace f1"><path d="M30,46 L46,42 L42,56 Z M80,46 L64,42 L68,56 Z M55,50 L61,60 L49,60 Z"/><ellipse cx="55" cy="76" rx="9" ry="11"/></g>
+    <g class="ocFace f2"><path d="M30,50 L46,44 L46,52 Z M80,50 L64,44 L64,52 Z M55,54 L60,62 L50,62 Z M30,70 L80,66 L76,74 L68,70 L60,76 L52,72 L44,78 L36,72 Z"/></g>
+  </g>
+</svg>
+</div><div class="cell tiny"><h2>at board size</h2><svg id="ocPumpkins" viewBox="0 0 320 110" aria-hidden="true">
+  <g class="ocPumpkin" data-face="0" transform="translate(0 14) scale(.9)">
+    <path class="ocStem" d="M52,14 C50,6 54,2 60,4 C57,8 57,12 58,16 Z"/>
+    <ellipse class="ocBody" cx="55" cy="58" rx="46" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="24" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="42" ry="38"/>
+    <g class="ocFace f0"><path d="M32,46 L46,40 L44,54 Z M78,46 L64,40 L66,54 Z M55,52 L61,62 L49,62 Z M28,68 Q55,92 82,68 L76,70 L72,78 L64,72 L58,80 L52,72 L44,80 L40,72 L34,74 Z"/></g>
+    <g class="ocFace f1"><path d="M30,46 L46,42 L42,56 Z M80,46 L64,42 L68,56 Z M55,50 L61,60 L49,60 Z"/><ellipse cx="55" cy="76" rx="9" ry="11"/></g>
+    <g class="ocFace f2"><path d="M30,50 L46,44 L46,52 Z M80,50 L64,44 L64,52 Z M55,54 L60,62 L50,62 Z M30,70 L80,66 L76,74 L68,70 L60,76 L52,72 L44,78 L36,72 Z"/></g>
+  </g>
+  <g class="ocPumpkin big" data-face="1" transform="translate(96 0) scale(1.08)">
+    <path class="ocStem" d="M52,14 C50,6 54,2 60,4 C57,8 57,12 58,16 Z"/>
+    <ellipse class="ocBody" cx="55" cy="58" rx="46" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="24" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="42" ry="38"/>
+    <g class="ocFace f0"><path d="M32,46 L46,40 L44,54 Z M78,46 L64,40 L66,54 Z M55,52 L61,62 L49,62 Z M28,68 Q55,92 82,68 L76,70 L72,78 L64,72 L58,80 L52,72 L44,80 L40,72 L34,74 Z"/></g>
+    <g class="ocFace f1"><path d="M30,46 L46,42 L42,56 Z M80,46 L64,42 L68,56 Z M55,50 L61,60 L49,60 Z"/><ellipse cx="55" cy="76" rx="9" ry="11"/></g>
+    <g class="ocFace f2"><path d="M30,50 L46,44 L46,52 Z M80,50 L64,44 L64,52 Z M55,54 L60,62 L50,62 Z M30,70 L80,66 L76,74 L68,70 L60,76 L52,72 L44,78 L36,72 Z"/></g>
+  </g>
+  <g class="ocPumpkin lit" data-face="2" transform="translate(214 26) scale(.72)">
+    <path class="ocStem" d="M52,14 C50,6 54,2 60,4 C57,8 57,12 58,16 Z"/>
+    <ellipse class="ocBody" cx="55" cy="58" rx="46" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="24" ry="38"/>
+    <ellipse class="ocRib" cx="55" cy="58" rx="42" ry="38"/>
+    <g class="ocFace f0"><path d="M32,46 L46,40 L44,54 Z M78,46 L64,40 L66,54 Z M55,52 L61,62 L49,62 Z M28,68 Q55,92 82,68 L76,70 L72,78 L64,72 L58,80 L52,72 L44,80 L40,72 L34,74 Z"/></g>
+    <g class="ocFace f1"><path d="M30,46 L46,42 L42,56 Z M80,46 L64,42 L68,56 Z M55,50 L61,60 L49,60 Z"/><ellipse cx="55" cy="76" rx="9" ry="11"/></g>
+    <g class="ocFace f2"><path d="M30,50 L46,44 L46,52 Z M80,50 L64,44 L64,52 Z M55,54 L60,62 L50,62 Z M30,70 L80,66 L76,74 L68,70 L60,76 L52,72 L44,78 L36,72 Z"/></g>
+  </g>
+</svg>
+</div></div>
+<div class="row"><div class="cell"><h2>Corner web + spider</h2><svg class="ocWeb" id="ocWeb" viewBox="0 0 140 140" aria-hidden="true">
+      <g class="ocStrands">
+        <path d="M140,0 L0,0 M140,0 L0,26 M140,0 L8,56 M140,0 L30,84 M140,0 L60,106 M140,0 L96,122 M140,0 L140,140"/>
+        <path d="M110,0 Q111,18 118,28 Q125,36 140,32 M80,0 Q83,32 100,52 Q118,66 140,64 M52,0 Q58,46 82,76 Q108,98 140,96 M24,0 Q34,60 66,98 Q100,128 140,128"/>
+      </g>
+      <g class="ocSpiderRig">
+        <line class="ocThread" x1="88" y1="34" x2="88" y2="62"/>
+        <g class="ocSpider">
+          <path class="ocLegs" d="M84,66 L74,60 M84,68 L72,68 M84,70 L74,78 M85,72 L78,82 M92,66 L102,60 M92,68 L104,68 M92,70 L102,78 M91,72 L98,82"/>
+          <circle cx="88" cy="64" r="3.2"/><circle cx="88" cy="71" r="5"/>
+          <circle class="ocEye" cx="86.6" cy="63.4" r=".8"/><circle class="ocEye" cx="89.4" cy="63.4" r=".8"/>
+        </g>
+      </g>
+    </svg>
+</div><div class="cell tiny"><h2>at board size</h2><svg class="ocWeb" id="ocWeb" viewBox="0 0 140 140" aria-hidden="true">
+      <g class="ocStrands">
+        <path d="M140,0 L0,0 M140,0 L0,26 M140,0 L8,56 M140,0 L30,84 M140,0 L60,106 M140,0 L96,122 M140,0 L140,140"/>
+        <path d="M110,0 Q111,18 118,28 Q125,36 140,32 M80,0 Q83,32 100,52 Q118,66 140,64 M52,0 Q58,46 82,76 Q108,98 140,96 M24,0 Q34,60 66,98 Q100,128 140,128"/>
+      </g>
+      <g class="ocSpiderRig">
+        <line class="ocThread" x1="88" y1="34" x2="88" y2="62"/>
+        <g class="ocSpider">
+          <path class="ocLegs" d="M84,66 L74,60 M84,68 L72,68 M84,70 L74,78 M85,72 L78,82 M92,66 L102,60 M92,68 L104,68 M92,70 L102,78 M91,72 L98,82"/>
+          <circle cx="88" cy="64" r="3.2"/><circle cx="88" cy="71" r="5"/>
+          <circle class="ocEye" cx="86.6" cy="63.4" r=".8"/><circle class="ocEye" cx="89.4" cy="63.4" r=".8"/>
+        </g>
+      </g>
+    </svg>
+</div></div>
+<div class="row"><div class="cell"><h2>Bat</h2><div class="bat"><svg viewBox="0 0 40 20"><g class="ocWingL"><path d="M18,10 C14,3 8,2 2,6 C6,7 8,9 8,11 C11,10 14,10 18,12 Z"/></g><g class="ocWingR"><path d="M22,10 C26,3 32,2 38,6 C34,7 32,9 32,11 C29,10 26,10 22,12 Z"/></g><path d="M18,7 L19,4 L20,7 L21,4 L22,7 C24,9 24,14 20,15 C16,14 16,9 18,7 Z"/></svg></div></div><div class="cell tiny"><h2>at board size</h2><div class="bat"><svg viewBox="0 0 40 20"><g class="ocWingL"><path d="M18,10 C14,3 8,2 2,6 C6,7 8,9 8,11 C11,10 14,10 18,12 Z"/></g><g class="ocWingR"><path d="M22,10 C26,3 32,2 38,6 C34,7 32,9 32,11 C29,10 26,10 22,12 Z"/></g><path d="M18,7 L19,4 L20,7 L21,4 L22,7 C24,9 24,14 20,15 C16,14 16,9 18,7 Z"/></svg></div></div>
+<div class="cell"><h2>Ghost ship</h2><div class="ghost"><svg viewBox="0 0 160 90">
+        <g class="ghShip">
+          <path class="ghHull" d="M6,66 L18,84 L136,84 L156,62 L146,64 L146,58 L136,60 L128,64 L20,66 Z"/>
+          <path class="ghMast" d="M52,64 L52,10 M104,64 L104,4"/>
+          <path class="ghSail" d="M52,14 L20,26 L26,34 L18,44 L30,54 L52,58 Z"/>
+          <path class="ghSail" d="M104,8 L70,20 L78,30 L66,42 L82,52 L104,58 Z"/>
+          <path class="ghSail" d="M52,16 L84,26 L74,36 L86,48 L52,56 Z"/>
+          <path class="ghSail" d="M104,10 L138,22 L128,32 L140,46 L104,56 Z"/>
+          <path class="ghRig" d="M52,10 L104,4 M52,10 L6,66 M104,4 L156,62"/>
+          <circle class="ghLamp" cx="150" cy="60" r="2.6"/><circle class="ghLamp l2" cx="12" cy="64" r="2.2"/>
+        </g>
+      </svg></div></div><div class="cell tiny"><h2>at board size (far lane ≈ 70%)</h2><div class="ghost"><svg viewBox="0 0 160 90">
+        <g class="ghShip">
+          <path class="ghHull" d="M6,66 L18,84 L136,84 L156,62 L146,64 L146,58 L136,60 L128,64 L20,66 Z"/>
+          <path class="ghMast" d="M52,64 L52,10 M104,64 L104,4"/>
+          <path class="ghSail" d="M52,14 L20,26 L26,34 L18,44 L30,54 L52,58 Z"/>
+          <path class="ghSail" d="M104,8 L70,20 L78,30 L66,42 L82,52 L104,58 Z"/>
+          <path class="ghSail" d="M52,16 L84,26 L74,36 L86,48 L52,56 Z"/>
+          <path class="ghSail" d="M104,10 L138,22 L128,32 L140,46 L104,56 Z"/>
+          <path class="ghRig" d="M52,10 L104,4 M52,10 L6,66 M104,4 L156,62"/>
+          <circle class="ghLamp" cx="150" cy="60" r="2.6"/><circle class="ghLamp l2" cx="12" cy="64" r="2.2"/>
+        </g>
+      </svg></div></div></div>
+</body></html>

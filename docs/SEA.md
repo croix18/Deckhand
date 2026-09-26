@@ -113,6 +113,11 @@ a navy outline with `vector-effect: non-scaling-stroke` so the line weight survi
 | whale | uncommon | 24 s | far | a footprint on the water, surfaces with an overshoot, a puff then a shot from the blowhole, a breath, rolls forward and the fluke lifts LATE and hangs, slips under, bubbles, a foam ring where it will come up, the BREACH (fastest at the surface, a hang at the apex, a fast fall), a crown splash, the ripple reaches the boat, and a wave of the fluke goodbye |
 | attack | rare | 20 s | far | bubbles 200 px right of the boat; the periscope (just the head) rises, looks, sinks; four slither strokes in, head low, never stopping; parks 40 px short; sees the boat; rears with an overshoot; a wind-up and ONE hit at 12.0 s (jaw snaps shut on contact, the boat is shoved, spray off the sail); a coil and a MISS at 13.6 s into the water beside the boat that leaned away; the head turns to the room (a front face, two eyes); a head-first dive, the coils following one by one with rings; the burgee flicks in victory |
 | scatter | rare | 28 s | — | the school, then the whale surfaces under them 3.5 s later |
+| bats *(October)* | uncommon, loud | 10.6 s | far | five individuals in one crossing, right to left in the strip under the board: each its own wingbeat rate and bob; the leader dips to the water near the boat and pulls up; b4 plods low and last; b5 peels up and out behind the board's edge; the gull leaves first |
+| ghost *(October, from the 12th)* | rare | 44 s | far | a slate-grey galleon sized to the strip (150 × 81, its own scale, never `--ls`): cut in at the right edge already ghosted, gone at 6 s, back at 8.8, slows to a **hang centred behind the boat** at 22–30 s with the lamp snuffed and the sails swinging, the boat wears `haunted` (streamer lashes, rig heels, the gull stares), relights with a flare, leaves left, a last wink |
+| castaway *(October)* | common, greeting | 46 s | far / near | a carved pumpkin adrift, lit, listing, rocking on the chop against the boat's roll on the swell; in windy weather it goes over mid-screen (23 s), the candle drowns, it drifts on its side |
+| bones *(October)* | uncommon | 12 s | far | a bone fish on the school's clock: darts in behind them, jaw open, three tail beats, coasts |
+| haunt *(October)* | uncommon | 14.7 s | — | the school, then the bone fish 2.2 s behind |
 
 Timings the JavaScript depends on: `ACTS[k].dur` is the CSS length plus 500 ms. The
 attack's hit (60%), miss (68%) and the boat's `btStruck` keyframes share the 20 s clock;
@@ -127,6 +132,7 @@ period always give the same show and every period sees a different one. The arc:
 - a **greeting** (turtle, school or paper) 45 s after the bell, as kids sit down;
 - **hush** through the first ten minutes (instruction);
 - then an act every 3–7 minutes, weighted by tier (common 1, uncommon .4, rare .12),
+  and in October by the day of the month (`octoberWeight`: ×.12 on the 1st–11th, ×1 from the 12th, ×1.8 from the 26th, ×2.5 on Halloween — the 31st or the last weekday before it); at most two October crossings a period (three on Halloween) plus the ghost once, in a last third only, never before the 12th; on Halloween the castaway greets every period and the ghost is promised to every period of 30 minutes or more,
   thinned by **memory** (×0.5 per sighting of that act by that period in the last five
   school days, kept in `localStorage["deckhand.sea"]`, never in the config) and by
   repeats within the plan (×0.3 each);

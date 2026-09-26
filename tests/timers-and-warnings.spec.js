@@ -203,7 +203,10 @@ test.describe("settings keyboard and focus", () => {
     ok(await page.evaluate(() => window.Deckhand.settings.currentTab()) === "bells", "ArrowDown did not switch");
     ok(await page.evaluate(() => document.activeElement.id) === "tabBells", "focus not on the new tab");
     await page.keyboard.press("Tab");
-    ok(await page.evaluate(() => document.activeElement.id) === "sDefault",
+    /* v7.8.1 disables "Bells at startup" while the rotation picks the week, so Tab
+       lands on the first ENABLED field of the panel */
+    const firstEnabled = await page.evaluate(() => document.getElementById("sDefault").disabled ? "sNudge" : "sDefault");
+    ok(await page.evaluate(() => document.activeElement.id) === firstEnabled,
       "Tab from the rail went to " + await page.evaluate(() => document.activeElement.id));
     await page.keyboard.press("Escape");
   });

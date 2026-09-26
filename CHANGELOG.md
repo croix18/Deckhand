@@ -2,6 +2,31 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.11.0 — 2026-09-26
+
+**October 2.0.** Croix, on the first October: "I need better than that last effort. I
+don't want this to be some half assed thing. I want well thought out and intelligent
+designs." Two expert reviews first — an illustrator's (`docs/reviews/october-2.0-design.md`)
+and a character animator's (`-animation.md`) — and then every piece redrawn to them.
+The **pumpkins** are three individuals on a vine, two faces each, a squash-and-pop on a tap
+that flips the face at the flattest frame, a candle that breathes when lit (unequal
+breaths, one gutter), the third one nudging the vine's sprout; two load lit from the
+26th, all three on Halloween. The **web** is a spun orb web with an orb weaver on its
+dragline: an idle cycle with a twitch, a curl and one excursion; a tap drops it with
+weight (three decreasing bounces, a turn, four tiring pulls home); a tap while it hangs
+lets it go again from *there*; three re-drops a minute, then a leg twitch. The small webs
+on the other cards are gone. The boat flies a **swallow-tail** on the sail's wind instead
+of a black burgee. The **sea** gets five October acts under the month's own rules: a
+flock of five **bats** with five rhythms (the gull leaves first), a slate-grey **ghost
+galleon** that cuts in and out and hangs behind the boat with its lamp snuffed while the
+boat's streamer lashes and the gull stares, a lit **castaway** pumpkin adrift that
+capsizes in windy weather, a **bone fish** on the school's clock, and the **haunt**. The
+director builds the month — a rumour in the first third, itself from the 12th, a lit
+week from the 26th, and Halloween (the 31st or the last weekday before it: Friday the
+30th this year) with the castaway greeting every period and a ghost promised to every
+period's last third. Every act is fitted to the strip of sea under the full-board clock.
+Eight October tests; 228 green.
+
 ## 7.10.0 — 2026-09-28
 
 **October.** Croix: "Can you add some October theming? Like spiderwebs, pumpkins, stuff
