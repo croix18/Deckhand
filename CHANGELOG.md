@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.8.1 — 2026-09-28
+
+**Batch C — the verify list, and the design lens's small words.** The school-hosting
+mirror (`hosting/apps-script/`) left the public repo (it is with Croix; `.gitignore`
+keeps it out) and the README and handoff no longer describe it. The lock pill says
+"Hold to unlock" while locked; the widgets' keyboard hints ("Space rolls · R clears")
+hide in the locked, room-facing view; "Bells at startup" is disabled with a note while
+the week rotation is picking. One test added; 217 green. Still open, and only Croix can
+answer it: whether Teal/Black alternate by calendar week or by school week across a break.
+
 ## 7.8.0 — 2026-09-28
 
 **The math room's tools** (batch C of the audit plan — the two things Croix asked to

@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.8.0",
+  "appVersion": "7.8.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -853,6 +853,7 @@
   .widget .btn{font-size:clamp(12px, 3.2cqw, 23px); padding:1.6cqh 3.4cqw;}
   .widget .row{gap:1.6cqw;}
   .widget .tHint{font-size:clamp(9px, 1.8cqw, 13px); color:var(--teal); font-weight:500; text-align:center; min-height:1.2em;}
+  body.locked .widget .tHint{display:none;}   /* v7.8.1: shortcut hints are for the teacher, not the room */
   .w-timer .strip{background:var(--teal); color:var(--white);}
   .w-stopwatch .strip{background:var(--navy); color:var(--white);}
   .w-clock .strip{background:var(--turq); color:var(--navy);}
@@ -2777,6 +2778,7 @@
                 <div class="fField">
                   <label class="fLabel" for="sDefault">Bells at startup</label>
                   <select class="setSelect" id="sDefault"></select>
+                  <div class="fHint" id="sDefaultHint" hidden>The week rotation picks this (below).</div>
                 </div>
                 <div class="fField">
                   <label class="fLabel" for="sNudge">Bell nudge (seconds)</label>
@@ -3112,7 +3114,7 @@ var DEFAULT_SCENES = [
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.8.0",
+  appVersion: "7.8.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies" },
   activeScene: "Daily Board",
@@ -10178,7 +10180,7 @@ var Canvas = (function(){
     sel.disabled = false;
     var lb = $("lockBtn");
     lb.setAttribute("aria-pressed", locked ? "true" : "false");
-    lb.textContent = locked ? "Unlock" : "Lock";
+    lb.textContent = locked ? "Hold to unlock" : "Lock";   // v7.8.1 (design lens): the hold is the affordance — say so
     document.body.classList.toggle("locked", locked);
   }
   function setLocked(v){
@@ -10686,6 +10688,12 @@ var Settings = (function(){
       f.def.appendChild(o);
     });
     f.def.value = cfg.bell.defaultGroup || "none";
+    /* v7.8.1 (design lens): "Bells at startup: Teal Week" read as a lie while the
+       rotation was picking Black — the rotation owns the pick, so say so */
+    var rot = !!cfg.bell.autoWeek;
+    f.def.disabled = rot;
+    var hint = $("sDefaultHint");
+    if (hint){ hint.hidden = !rot; }
   }
   function rebuildAnchorOptions(){
     f.anchorWeek.innerHTML = "";
@@ -11187,6 +11195,10 @@ var Settings = (function(){
   return {
     init: function(){
       wireButton(el.setBtn, open);
+      f.auto.addEventListener("change", function(){   // v7.8.1: the startup pick follows the rotation box live
+        f.def.disabled = this.checked;
+        var hint = $("sDefaultHint"); if (hint) hint.hidden = !this.checked;
+      });
       /* the tab rail */
       Array.prototype.forEach.call(wrap.querySelectorAll(".setTab"), function(b){
         wireButton(b, function(){ showTab(b.dataset.tab); });

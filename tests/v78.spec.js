@@ -223,3 +223,27 @@ test.describe("v7.8 the probability kit", () => {
     await pg.close();
   });
 });
+
+test.describe("v7.8.1 the panel's small words", () => {
+  test("v7.8.1: the lock says how to open it; shortcut hints leave the room while locked; the startup pick yields to the rotation", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T10:30");
+    await dh.launch();
+    await dh.addTimer();
+    await expect(page.locator("#lockBtn")).toHaveText("Lock");
+    ok((await page.evaluate(() => getComputedStyle(document.querySelector(".w-timer .tHint")).display)) !== "none", "hint hidden while editing");
+    await page.click("#lockBtn");
+    await expect(page.locator("#lockBtn")).toHaveText("Hold to unlock");
+    ok((await page.evaluate(() => getComputedStyle(document.querySelector(".w-timer .tHint")).display)) === "none", "keyboard hint shown to the room");
+    await dh.unlock();
+    await expect(page.locator("#lockBtn")).toHaveText("Lock");
+    await page.click("#setBtn");
+    await dh.tab("bells");
+    await expect(page.locator("#sDefault")).toBeDisabled();          // the seed rotates weeks
+    await expect(page.locator("#sDefaultHint")).toBeVisible();
+    await page.uncheck("#sAuto");
+    await expect(page.locator("#sDefault")).toBeEnabled();
+    await expect(page.locator("#sDefaultHint")).toBeHidden();
+    await page.check("#sAuto");
+    await page.click("#closeBtn");
+  });
+});

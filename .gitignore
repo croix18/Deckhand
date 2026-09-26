@@ -13,3 +13,6 @@ Deckhand*configured*.html
 Deckhand*export*.html
 .DS_Store
 /tests/tmp_fx_*.html
+
+# v7.8.1: the school-hosting mirror lives outside the public repo (see HANDOFF)
+hosting/

@@ -9,7 +9,7 @@ or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.8.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.8.1; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts.
 
 Since v7.0 the board **saves itself on the device**: layout, bells, and class rosters
@@ -55,7 +55,7 @@ Chart backup…** takes its exported JSON anywhere. Apply to keep.
 
 ## Tests
 
-`tests/` — a Playwright suite (`@playwright/test`), 216 tests split by feature, each in
+`tests/` — a Playwright suite (`@playwright/test`), 217 tests split by feature, each in
 its own fresh browser context, run in parallel.
 
 ```sh
@@ -81,11 +81,8 @@ check, commits, pushes, and verifies the remote head. Serving from a real `https
 origin is what fixes YouTube's embedded-playback refusal (Error 153 — embeds from
 `file://` send no referrer).
 
-**School note (Sep 2026):** `github.io` is blocked on the classroom Chromebox, so
-the Pages copy is the public source and the home/laptop copy, not the panel's.
-`hosting/apps-script/` has a mirror that serves the same file from Google's domain
-via a web app deployed from a personal account — see its README for the four things
-to verify on the panel before trusting it.
+A managed device may not reach the Pages copy; the file opened from Drive over
+`file://` is the one that always works, and it saves on the device like any other.
 
 `.github/workflows/test.yml` runs the privacy check and the suite on every push; it's a
 signal, not a gate — Pages deploys from the branch regardless, so run the suite locally
