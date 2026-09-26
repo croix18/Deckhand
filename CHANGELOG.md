@@ -2,6 +2,13 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.11.2 — 2026-09-26
+
+**Wilson, to scale.** Croix: "he's massive next to the sailboat." He was more than twice
+the hull. He is now the boat's size — a big pumpkin beside a small boat — and the navy rim on
+his lit cuts is what keeps the face legible at that size. He still surfaces beside the boat,
+still drifts away and still ends up behind the sand pumpkins.
+
 ## 7.11.1 — 2026-09-26
 
 **Wilson.** Croix: "I really like the idea of wilson pumpkin. He was poorly implemented in
