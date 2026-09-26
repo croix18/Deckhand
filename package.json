@@ -1,5 +1,20 @@
 {
-  "dependencies": {
+  "name": "deckhand",
+  "version": "7.0.0",
+  "private": true,
+  "description": "Single-file classroom OS for a 7th-grade math room: clock, bells, timers, widgets, embeds.",
+  "license": "MIT",
+  "scripts": {
+    "test": "playwright test",
+    "test:file": "playwright test --project=file",
+    "test:touch": "playwright test --project=touch",
+    "test:http": "playwright test --project=http",
+    "test:headed": "playwright test --project=file --headed",
+    "check": "sh tools/check.sh",
+    "serve": "node tools/serve.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0",
     "jsqr": "^1.4.0",
     "qrcode": "^1.5.4"
   }
