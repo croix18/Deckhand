@@ -7579,7 +7579,16 @@ var FS = (function(){
     if (document.fullscreenElement) document.exitFullscreen();
     else document.documentElement.requestFullscreen().catch(function(){});
   }
-  return { init: function(){ wireButton(el.fsBtn, toggle); }, toggle: toggle };
+  return {
+    init: function(){
+      /* inside a frame that wasn't granted allowfullscreen (an Apps Script
+         web app, say) the API is present but refuses — hide the pill
+         instead of leaving a button that silently does nothing */
+      if (document.fullscreenEnabled === false) el.fsBtn.hidden = true;
+      wireButton(el.fsBtn, toggle);
+    },
+    toggle: toggle
+  };
 })();
 
 /* ================= Settings module ================= */

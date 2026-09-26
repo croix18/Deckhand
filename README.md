@@ -74,6 +74,12 @@ check, commits, pushes, and verifies the remote head. Serving from a real `https
 origin is what fixes YouTube's embedded-playback refusal (Error 153 — embeds from
 `file://` send no referrer).
 
+**School note (Sep 2026):** `github.io` is blocked on the classroom Chromebox, so
+the Pages copy is the public source and the home/laptop copy, not the panel's.
+`hosting/apps-script/` has a mirror that serves the same file from Google's domain
+via a web app deployed from a personal account — see its README for the four things
+to verify on the panel before trusting it.
+
 `.github/workflows/test.yml` runs the privacy check and the suite on every push; it's a
 signal, not a gate — Pages deploys from the branch regardless, so run the suite locally
 before pushing.
