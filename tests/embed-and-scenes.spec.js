@@ -336,9 +336,9 @@ test.describe("persistence", () => {
       page.waitForEvent("download"),
       page.click("#dlBtn")
     ]);
-    ok(dl.suggestedFilename() === "Deckhand_v6.html", "export name: " + dl.suggestedFilename());
+    ok(dl.suggestedFilename() === "Deckhand.html", "export name: " + dl.suggestedFilename());
     await dl.delete();
-    ok((await dh.text("#setErrors")).startsWith("Applied. Exported Deckhand_v6.html"),
+    ok((await dh.text("#setErrors")).startsWith("Applied. Exported Deckhand.html"),
       "export message: " + await dh.text("#setErrors"));
     await page.click("#closeBtn");
     ok(await page.evaluate(() => window.Deckhand.dirty) === false, "export left changes pending");

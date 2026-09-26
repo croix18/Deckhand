@@ -8,7 +8,7 @@ or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand_v6.html`** — the current release (v7.0). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts.
 
 Since v7.0 the board **saves itself on the device**: layout, bells, and class rosters
@@ -68,7 +68,7 @@ adversarial review with fixes and regression tests.
 
 ## Hosting (GitHub Pages)
 
-Pages serves `main` from the repo root; `index.html` forwards to `Deckhand_v6.html`.
+Pages serves `main` from the repo root; `index.html` forwards to `Deckhand.html`.
 **Every push to `main` deploys**, so `tools/push.sh` is the deploy: it runs the privacy
 check, commits, pushes, and verifies the remote head. Serving from a real `https://`
 origin is what fixes YouTube's embedded-playback refusal (Error 153 — embeds from
@@ -81,7 +81,7 @@ before pushing.
 ## Layout
 
 ```
-Deckhand_v6.html        the release
+Deckhand.html        the release
 index.html              Pages forwarder
 tests/                  Playwright suite + helpers
 tools/                  check.sh (privacy guard) · push.sh (deploy) · serve.js (local origin)

@@ -32,6 +32,8 @@ outline are all navy-on-coral or teal now (turquoise-on-white was 1.64:1, coral-
 names, iframes have titles, the dock is a `nav`, popovers are groups, the bell line is a
 live region. Last off-palette colors tokenized; four dead v5 rules removed.
 
+**Name.** The release file is `Deckhand.html` (version-free); `Deckhand_v6.html` and `index.html` forward to it, and Export writes `Deckhand.html`. The header badge reads the real version.
+
 **Repo.** Test suite ported to `@playwright/test` (feature files, fresh context per test,
 parallel, traces on failure, `touch` and `http` projects). GitHub Actions runs the
 privacy guard and the suite. `tools/check.sh` refuses to push a configured copy.

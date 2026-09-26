@@ -1,7 +1,7 @@
 // Deckhand test configuration (@playwright/test).
 //
 // Three projects, one suite:
-//   file  — Deckhand_v6.html over file://, mouse input. The classroom
+//   file  — Deckhand.html over file://, mouse input. The classroom
 //           Chromebox opens the file from Drive exactly this way.
 //   touch — same, with a touch-capable context (pointerType "touch"),
 //           for the Promethean IR panel. Only specs tagged @touch run.
@@ -45,7 +45,7 @@ module.exports = defineConfig({
   ],
   webServer: {
     command: "node tools/serve.js 4173",
-    url: "http://localhost:4173/Deckhand_v6.html",
+    url: "http://localhost:4173/Deckhand.html",
     reuseExistingServer: !process.env.CI,
     timeout: 20_000
   }

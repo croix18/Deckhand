@@ -20,7 +20,7 @@ const fs = require("fs");
 const os = require("os");
 
 const ROOT = path.resolve(__dirname, "..");
-const APP = path.join(ROOT, "Deckhand_v6.html");
+const APP = path.join(ROOT, "Deckhand.html");
 const APP_URL = "file://" + APP;
 const SRC = fs.readFileSync(APP, "utf8");
 
@@ -57,7 +57,7 @@ const test = base.test.extend({
     };
     watch(page);
     await page.emulateMedia({ reducedMotion: "reduce" });   // belt + braces (see playwright.config.js)
-    const url = baseURL ? baseURL + "Deckhand_v6.html" : APP_URL;
+    const url = baseURL ? baseURL + "Deckhand.html" : APP_URL;
     const fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), "deckhand-fx-"));
     const ignore = [];
 

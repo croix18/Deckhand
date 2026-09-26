@@ -637,7 +637,10 @@ test.describe("QR, sketch pad, noise meter", () => {
                       return ws[ws.length - 1].limit; })()
       }));
       await expect.poll(async () => { const o = await state(); return o.s === "TOO LOUD" && o.cls; },
-        { message: "limit not enforced", timeout: 8000 }).toBe(true);
+        /* the fake device beeps in bursts and the meter needs a sustained
+           window over the limit — under a loaded 3-worker run 8s was not
+           always enough to catch a burst (passes 12/12 alone) */
+        { message: "limit not enforced", timeout: 20000 }).toBe(true);
       const over = await state();
       ok(over.cfg === 10, "limit not saved: " + over.cfg);
     } finally {

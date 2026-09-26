@@ -1,7 +1,7 @@
 // Tiny static server for the "http" test project and for trying the
 // board the way GitHub Pages serves it (a real origin: referrer sent,
 // storage per origin, no file:// quirks). No dependencies.
-//   node tools/serve.js [port]   -> http://localhost:4173/Deckhand_v6.html
+//   node tools/serve.js [port]   -> http://localhost:4173/Deckhand.html
 const http = require("http"), fs = require("fs"), path = require("path");
 const root = path.resolve(__dirname, "..");
 const port = +(process.argv[2] || process.env.PORT || 4173);
@@ -17,4 +17,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": types[path.extname(f)] || "application/octet-stream" });
     res.end(data);
   });
-}).listen(port, () => console.log("Deckhand at http://localhost:" + port + "/Deckhand_v6.html"));
+}).listen(port, () => console.log("Deckhand at http://localhost:" + port + "/Deckhand.html"));

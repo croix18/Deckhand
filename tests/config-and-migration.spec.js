@@ -433,8 +433,8 @@ test.describe("round trip", () => {
     ]);
     // v6.12: STABLE filename — same name in, same name out, so the browser
     // offers to replace the old copy instead of forcing a rename ritual
-    ok(dl.suggestedFilename() === "Deckhand_v6.html", "filename: " + dl.suggestedFilename());
-    await expect(page.locator("#setErrors")).toContainText("Applied. Exported Deckhand_v6.html");
+    ok(dl.suggestedFilename() === "Deckhand.html", "filename: " + dl.suggestedFilename());
+    await expect(page.locator("#setErrors")).toContainText("Applied. Exported Deckhand.html");
     ok((await page.evaluate(() => window.Deckhand.dirty)) === false, "dirty after export");
     const html = fs.readFileSync(await dl.path(), "utf8");
     const saved = path.join(dh.fixtureDir, "tmp_rt.html");
