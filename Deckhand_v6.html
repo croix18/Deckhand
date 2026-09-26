@@ -8,16 +8,21 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900&display=swap" rel="stylesheet">
 
 <!-- ============================================================
-     DECKHAND CONFIG — this JSON block IS the saved state.
-     Edit via the in-app Settings panel, then "Download configured
-     copy" to bake changes into a new file. Hand-editable too.
+     DECKHAND CONFIG — the SEED state baked into this file.
+     Since v7.0 the board autosaves to this browser (localStorage,
+     key "deckhand.config") and the device copy wins over this block
+     at boot. This block is what a fresh device starts from, what
+     "Use this file's settings" resets to, and what "Export a copy"
+     rewrites. Hand-editable too.
      Times use school convention: 6:00-11:59 = AM, 12:00-5:59 = PM.
      Baked in: WHMS 2026-27 bell schedule, 7th-grade lunch track.
+     PUBLIC COPY RULE: this block must never carry rosters, decks or
+     names beyond "Mr. Shaffer" (tools/check.sh enforces it on push).
      ============================================================ -->
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "6.33.0",
+  "appVersion": "7.0.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -108,6 +113,8 @@
     --cream:#F8F2E4; --grid:#EADFC6; --sand:#E6D5B8; --shadow:#D8C5A0;
     --turq:#40E0D0; --paleturq:#D8F6F1; --teal:#127A85;
     --navy:#17324D; --coral:#FF7F6A; --white:#FFFFFF;
+    /* v7.0: the last off-palette literals, named (waves + urgent states) */
+    --turq-light:#BFEFEA; --turq-mid:#8FE5DC; --coral-deep:#E85F4A; --coral-pale:#FFC2B5;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html{overflow-x:clip;}   /* the board must never scroll sideways */
@@ -146,12 +153,12 @@
   .pill{
     background:var(--turq); color:var(--navy); border:none; cursor:pointer;
     font:inherit; font-weight:700; font-size:14px;
-    padding:8px 18px; border-radius:999px;
+    padding:11px 18px; min-height:40px; border-radius:999px;   /* v7.0: IR-panel finger size */
   }
   #soundBtn{background:var(--sand);}
   #soundBtn[aria-pressed="false"]{
     background:transparent; color:var(--white);
-    border:2px solid var(--sand); padding:6px 16px;
+    border:2px solid var(--sand); padding:9px 16px;
   }
   #setBtn{background:var(--paleturq);}
   #setBtn.dirty::after{
@@ -178,8 +185,6 @@
   }
 
   /* clock */
-  #clockCard{flex:1.5;}
-  #clockCard .strip{background:var(--turq); color:var(--navy);}
   #clockBody{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 20px;}
   #clock{
     font-weight:900; font-variant-numeric:tabular-nums;
@@ -224,10 +229,13 @@
   }
   #bathPill[hidden]{display:none;}
   #bathPill.closed{background:var(--coral); color:var(--white);}
-  #bathPill.open{background:var(--paleturq); color:var(--teal);}
+  #bathPill.open{background:var(--paleturq); color:var(--navy);}
 
   /* end-of-class warning */
-  #bellWrap.warn #bellSub{color:var(--coral);}
+  #bellWrap.warn #bellSub{
+    color:var(--navy); background:var(--coral);
+    padding:.05em .45em; border-radius:.35em;
+  }
   #bellWrap.warn #bellFill{background:var(--coral); animation:warnPulse 1s ease-in-out infinite alternate;}
   @keyframes warnPulse{from{opacity:1;} to{opacity:.45;}}
 
@@ -237,15 +245,9 @@
 
   @media (prefers-reduced-motion: reduce){
     #bellWrap.warn #bellFill{animation:none;}
-    #tideWaves{animation:none;}
   }
 
-  /* timer card with mode tabs */
-  #timerCard{flex:1;}
-  #timerCard .strip{
-    background:var(--teal); color:var(--white);
-    display:flex; gap:22px; padding:0 26px;
-  }
+  /* timer strip tabs (legacy v5 mode tabs; .tab still styles chips) */
   .tab{
     background:none; border:none; cursor:pointer;
     color:var(--white); opacity:.5;
@@ -257,7 +259,6 @@
   .tab[aria-pressed="true"]{opacity:1; border-bottom-color:var(--turq);}
   .tab:focus-visible{outline:3px solid var(--white); outline-offset:-3px;}
 
-  #timerBody{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:20px;}
   .chips{display:flex; gap:12px; flex-wrap:wrap; justify-content:center;}
   .chip{
     background:var(--paleturq); color:var(--navy);
@@ -284,7 +285,7 @@
   .pill:active, .btn:active, .chip:active:not(:disabled), .scB:active,
   .tab:active, .agItem:active, .abName:active, .scName:active,
   .wClose:active, .wEdit:active, .wFocus:active, .wPin:active,
-  .dwTool:active, #focusBar button:active, #saveNudge:active{
+  .dwTool:active, #focusBar button:active, #verNudge button:active{
     transform:translateY(1px) scale(.97);
   }
   #launchBtn:active{transform:translate(3px, 4px); box-shadow:3px 4px 0 var(--shadow);}
@@ -298,6 +299,7 @@
     padding:16px 38px;
   }
   .btn:focus-visible, .chip:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
+  .btnSm{font-size:14px; padding:10px 16px; min-height:44px; background:var(--paleturq); color:var(--navy);}
   /* v5's id-based button rules are gone: the legacy ids ride on the FIRST
      timer's buttons, and id specificity was overriding the widget sizing
      (a #resetBtn padding kept one Reset from ever shrinking). Colors and
@@ -342,11 +344,11 @@
     cursor:pointer;
   }
   #alarm.on{display:flex; animation:pulse 1s ease-in-out infinite alternate;}
-  /* navy ink on the coral ground: 13.1:1 — white-on-coral was 2.47:1 on
+  /* navy ink on the coral ground: 5.31:1 — white-on-coral was 2.47:1 on
      the single most important screen in the room */
   #alarm h1{color:var(--navy); font-weight:900; font-size:clamp(60px, 12vw, 170px); letter-spacing:.02em;}
   #alarm p{color:var(--navy); font-weight:700; font-size:clamp(16px,2.2vw,26px);}
-  @keyframes pulse{from{background:var(--coral);} to{background:#E85F4A;}}
+  @keyframes pulse{from{background:var(--coral);} to{background:var(--coral-deep);}}
   @media (prefers-reduced-motion: reduce){ #alarm.on{animation:none;} }
   /* De-escalated badge (45s un-dismissed): a corner pill that persists
      until tapped — the board is usable again behind it */
@@ -390,21 +392,38 @@
   }
   details.setSec > summary:focus-visible{outline:3px solid var(--turq); outline-offset:2px;}
   details.setSec > *:not(summary){margin-top:12px;}
-  #setErrors{color:var(--coral); font-weight:700; font-size:14px; white-space:pre-line;}
-  #setErrors.ok{color:var(--teal);}
+  #setErrors{font-weight:700; font-size:14px; white-space:pre-line; color:var(--navy);}
+  #setErrors:not(:empty){background:var(--coral); padding:10px 14px; border-radius:10px;}
+  #setErrors.ok:not(:empty){background:var(--paleturq); color:var(--navy);}
 
-  /* end-of-day save nudge: last bell + unsaved changes = one gentle pill */
-  #saveNudge{
+  /* v7.0 sticky action row: Apply / Export / Reset / Close ride the
+     bottom of the scrolling panel — at 1080p they used to sit below the
+     fold, so the one row that matters was invisible on open */
+  #setActions{
+    position:sticky; bottom:-22px; margin:0 -26px -22px; padding:14px 26px 16px;
+    background:var(--white); border-top:2px solid var(--grid);
+    display:flex; flex-direction:column; gap:10px; align-items:center;
+  }
+  #setActions .setNote{text-align:center;}
+  #setActions .setNote.warn{color:var(--navy); background:var(--coral); padding:6px 12px; border-radius:8px; font-weight:700;}
+  #resetBtn.armed{background:var(--coral) !important; border-color:var(--coral) !important;}
+
+  /* v7.0 update nudge: a new release opened over an older device copy */
+  #verNudge{
     /* bottom 84: never shares the dock's row on a narrow projector */
     position:fixed; left:50%; transform:translateX(-50%); bottom:84px; z-index:25;
     background:var(--navy); color:var(--white);
     border:2px solid var(--turq); border-radius:999px;
     font:inherit; font-weight:700; font-size:15px;
-    padding:12px 24px; cursor:pointer;
-    box-shadow:4px 6px 0 var(--shadow);
+    padding:10px 12px 10px 22px; box-shadow:4px 6px 0 var(--shadow);
+    display:flex; gap:10px; align-items:center; max-width:94vw;
   }
-  #saveNudge b{color:var(--turq); margin-left:8px; font-size:17px;}
-  #saveNudge[hidden]{display:none;}
+  #verNudge[hidden]{display:none;}
+  #verNudge button{
+    font:inherit; font-weight:700; cursor:pointer; border:0; border-radius:999px;
+    padding:8px 14px; min-height:40px; background:var(--turq); color:var(--navy);
+  }
+  #verNudge #verNudgeKeep{background:transparent; color:var(--turq); font-size:20px; padding:6px 10px;}
 
   /* config-fallback banner: below the alarm (30), above everything else */
   #cfgWarn{
@@ -573,9 +592,9 @@
   body.locked .wHandle{display:none;}
   /* resize affordances measured 1.69:1 (functionally invisible) — they
      turn turquoise when the widget is SELECTED, quiet otherwise */
-  .widget.sel .wHandle.hSE, .widget.sel .wHandle.hSW{border-color:var(--turq);}
+  .widget.sel .wHandle.hSE, .widget.sel .wHandle.hSW{border-color:var(--teal);}
   .widget.sel .wHandle.hE::after, .widget.sel .wHandle.hW::after,
-  .widget.sel .wHandle.hS::after{background:var(--turq);}
+  .widget.sel .wHandle.hS::after{background:var(--teal);}
   /* v6.28: the ⤡ STRIP GRIP — the finger-sized resize (Croix, tablet:
      "the ability to stretch tiles didn't seem to work"). Drag it like
      the SE corner; it lives in the strip, so it can never cover a
@@ -587,7 +606,8 @@
   }
   body.locked .wSize{display:none;}
   .widget.wFull .wSize{display:none;}
-  .widget.sel{outline:3px solid var(--turq); outline-offset:-3px;}
+  /* selection must be VISIBLE (S cycles it): turquoise on white was 1.64:1 */
+  .widget.sel{outline:3px solid var(--teal); outline-offset:-3px;}
   .widget.dragging{will-change:transform; cursor:grabbing;}
   .widget.dragging .strip{cursor:grabbing;}
   /* v6.32: while ANY drag is live, iframes must not hit-test — a loaded
@@ -873,10 +893,14 @@
     font-variant-numeric:tabular-nums;
     font-size:clamp(40px, 34cqw, 130px);
   }
-  .stBig.stArmed{color:var(--turq);}
-  .stBig.low{color:var(--coral);}
+  /* v7.0 contrast pass: turquoise text on white was 1.64:1 and coral on
+     white 2.47:1 — the two states a class actually reads. Teal ink for
+     "armed"; the urgent states go navy-on-coral like the alarm. */
+  .stBig.stArmed{color:var(--teal);}
+  .stBig.low{color:var(--navy); background:var(--coral); padding:0 .22em; border-radius:.18em; line-height:1.1;}
   .stBig.stMsgB{
-    font-size:clamp(17px, 9cqw, 40px); line-height:1.2; color:var(--coral);
+    font-size:clamp(17px, 9cqw, 40px); line-height:1.2; color:var(--navy);
+    background:var(--coral); padding:.25em .5em; border-radius:.35em;
     max-width:100%; overflow-wrap:break-word;
   }
   .stSub{font-weight:700; font-size:clamp(11px, 5cqw, 17px); color:var(--navy); opacity:.7;}
@@ -1168,7 +1192,8 @@
   .tideWaves path{fill:var(--paleturq);}
   @keyframes tideSlide{to{transform:translateX(-50%);}}
   .visWrap.low .tideWater{background:var(--coral);}
-  .visWrap.low .tideWaves path{fill:#FFC2B5;}
+  .visWrap.low .tideWaves path{fill:var(--coral-pale);}
+  .wvSand{fill:var(--sand);} .wvLight{fill:var(--turq-light);} .wvMid{fill:var(--turq-mid);}
   @media (prefers-reduced-motion: reduce){ .tideWaves{animation:none;} }
 
   /* Short widgets shed chrome so the content ALWAYS fits under the strip
@@ -1230,7 +1255,7 @@
     padding:8px 14px; display:flex; align-items:center; gap:10px;
   }
   body.landing #dock{display:none;}
-  #dock .pill{font-size:13px; padding:6px 14px;}
+  #dock .pill{font-size:13px; padding:10px 14px; min-height:40px;}
   /* collapsible dock (Croix, field: it sat exactly on the Slides player's
      ‹ › arrows) — a chevron folds it to a small quiet handle; stage mode
      auto-collapses it */
@@ -1511,7 +1536,7 @@
       <button id="focusTimerBtn" type="button" aria-label="Timer over the board"
               aria-haspopup="true" aria-expanded="false"><svg class="wIcon"><use href="#i-timer"/></svg> Timer</button>
       <!-- v6.17: pick a preset, get JUST the running wheel — never the card -->
-      <div id="focusTimerMenu" role="menu" hidden></div>
+      <div id="focusTimerMenu" role="group" aria-label="Timer presets" hidden></div>
     </div>
     <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
   </div>
@@ -1525,7 +1550,7 @@
           <span id="periodNow">—</span>
           <span id="weekTag">—</span>
         </div>
-        <div id="bellSub">—</div>
+        <div id="bellSub" aria-live="polite">—</div>
         <div id="bellBar"><div id="bellFill"></div></div>
         <div id="dayStrip" hidden></div>
         <div id="bathPill" hidden>—</div>
@@ -1539,14 +1564,14 @@
   </section>
 </main>
 
-<div id="dock">
+<nav id="dock" aria-label="Board tools">
   <button class="pill" id="dockTog" type="button" aria-label="Collapse the dock"
     aria-expanded="true"><svg class="wIcon"><use href="#i-chev"/></svg></button>
   <div id="sceneWrap">
     <select id="sceneSel" aria-label="Scene"></select>
     <button class="pill" id="sceneBtn" type="button" aria-expanded="false"
       aria-haspopup="true" aria-label="Manage scenes"><svg class="wIcon dots"><use href="#i-dots"/></svg></button>
-    <div id="sceneMenu" role="menu" hidden>
+    <div id="sceneMenu" role="group" aria-label="Scene manager" hidden>
       <input id="sceneName" type="text" maxlength="24" spellcheck="false"
         placeholder="Scene name&hellip;">
       <button class="pill" id="sceneNewBtn" type="button">New scene</button>
@@ -1557,7 +1582,7 @@
   </div>
   <div id="addWrap">
     <button class="pill" id="addBtn" type="button" aria-expanded="false" aria-haspopup="true">+ Add</button>
-    <div id="addMenu" role="menu" hidden>
+    <div id="addMenu" role="group" aria-label="Add a widget" hidden>
       <div class="menuLabel">Time</div>
       <button class="pill" id="addTimerBtn" type="button">Timer</button>
       <button class="pill" id="addWatchBtn" type="button">Stopwatch</button>
@@ -1585,7 +1610,7 @@
     </div>
   </div>
   <button class="pill" id="lockBtn" type="button" aria-pressed="false">Lock</button>
-</div>
+</nav>
 
 <!-- v6.18: the sea keeps small secrets. Rare, subtle, at the edge of
      vision like the boat — and quietly mathematical: a serpent whose
@@ -1646,14 +1671,14 @@
   <path class="btHull" d="M5 27h30l-7 8H12z"/>
 </svg>
 <svg id="waves" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
-  <path d="M0,55 C240,25 480,85 720,55 C960,25 1200,85 1440,55 C1680,25 1820,70 1920,50 L1920,120 L0,120 Z" fill="#E6D5B8"/>
-  <path d="M0,80 C260,50 520,105 780,78 C1040,50 1300,105 1560,78 C1720,62 1840,88 1920,75 L1920,120 L0,120 Z" fill="#BFEFEA"/>
-  <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" fill="#8FE5DC"/>
+  <path d="M0,55 C240,25 480,85 720,55 C960,25 1200,85 1440,55 C1680,25 1820,70 1920,50 L1920,120 L0,120 Z" class="wvSand"/>
+  <path d="M0,80 C260,50 520,105 780,78 C1040,50 1300,105 1560,78 C1720,62 1840,88 1920,75 L1920,120 L0,120 Z" class="wvLight"/>
+  <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" class="wvMid"/>
 </svg>
 <!-- the FRONT wave again, painted ABOVE the boat and the sea things:
      hulls and humps dip into the water instead of hovering on it -->
 <svg id="wavesFront" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
-  <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" fill="#8FE5DC"/>
+  <path d="M0,100 C300,78 600,118 900,98 C1200,78 1500,118 1800,98 C1850,95 1900,98 1920,96 L1920,120 L0,120 Z" class="wvMid"/>
 </svg>
 
 <!-- settings -->
@@ -1761,7 +1786,13 @@
 
       <details class="setSec" id="secRosters">
         <summary>Class Rosters</summary>
-        <div class="setNote">One box per period &mdash; student first names separated by commas or new lines. The name picker and group maker follow the bell schedule automatically; leave a box empty to skip that period. Download a configured copy to keep rosters in the file. <b>Privacy:</b> a copy with rosters carries student names inside it &mdash; keep those copies in your own Drive, and never upload one to the public website (GitHub).</div>
+        <div class="setNote">One box per period &mdash; student first names separated by commas or new lines. The name picker and group maker follow the bell schedule automatically; leave a box empty to skip that period. To move a student, cut the name from one box and paste it into another. Rosters save on this device like everything else. <b>Privacy:</b> an exported copy carries student names inside it &mdash; keep exports in your own Drive, and never upload one to the public website (GitHub).</div>
+        <div class="setFlex" id="rosterImportRow">
+          <button class="btn btnSm" id="rosterImportBtn" type="button">Import from Seating Chart</button>
+          <button class="btn btnSm" id="rosterImportFileBtn" type="button">Import a Seating Chart backup&hellip;</button>
+          <input type="file" id="rosterImportFile" accept=".json,application/json" hidden>
+          <span class="setNote">Pulls first names from the Seating Chart tool by period number, into the boxes below. Apply to keep.</span>
+        </div>
         <div id="rosterGrid" class="tplGrid"></div>
       </details>
 
@@ -1803,12 +1834,15 @@
 
       <div id="setErrors" role="alert"></div>
 
-      <div class="row">
-        <button class="btn" id="applyBtn" type="button" style="background:var(--turq); color:var(--navy)">Apply</button>
-        <button class="btn" id="dlBtn" type="button" style="background:var(--sand); color:var(--navy)">Download configured copy</button>
-        <button class="btn" id="closeBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy); padding:11px 28px">Close</button>
+      <div id="setActions">
+        <div class="row">
+          <button class="btn" id="applyBtn" type="button" style="background:var(--turq); color:var(--navy)">Apply</button>
+          <button class="btn" id="dlBtn" type="button" style="background:var(--sand); color:var(--navy)">Export a copy</button>
+          <button class="btn" id="resetBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--sand); padding:11px 20px">Use this file&rsquo;s settings</button>
+          <button class="btn" id="closeBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy); padding:11px 28px">Close</button>
+        </div>
+        <div class="setNote" id="storeNote">Changes save automatically on this device.</div>
       </div>
-      <div class="setNote">"Download configured copy" saves a new Deckhand file with these settings baked in — replace your old file with it and the settings are permanent. Nothing is stored in the browser.</div>
 
     </div>
   </div>
@@ -1820,9 +1854,11 @@
   <p>Click anywhere to dismiss</p>
 </div>
 
-<button id="saveNudge" type="button" hidden>
-  The board changed today &mdash; Settings &rarr; Download configured copy before shutdown. <b>&times;</b>
-</button>
+<div id="verNudge" role="status" hidden>
+  <span id="verNudgeText">Deckhand updated &mdash; your saved board and rosters were kept.</span>
+  <button type="button" id="verNudgeBells">Use the new bell schedule</button>
+  <button type="button" id="verNudgeKeep" aria-label="Dismiss">&times;</button>
+</div>
 
 <script>
 (function(){
@@ -1854,7 +1890,7 @@ var DEFAULT_SCENES = [
 ];
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "6.33.0",
+  appVersion: "7.0.0",
   ownerName: "",
   ui: { locked: false, motion: "auto" },
   activeScene: "Daily Board",
@@ -1873,6 +1909,9 @@ var DEFAULTS = {
   }
 };
 function isObj(x){ return x && typeof x === "object" && !Array.isArray(x); }
+/* period labels key several maps (decks/pages/records); a label like
+   "constructor" must never read Object.prototype through a bare obj[k] */
+function hasOwn(o, k){ return !!o && Object.prototype.hasOwnProperty.call(o, k); }
 
 /* Sanitize the raw config: every field is type-checked and coerced with a
    per-field fallback, so a hand-edited config that is valid JSON but the
@@ -2257,10 +2296,16 @@ function migrate(raw){
   return {};
 }
 var cfg;
-var cfgFallback = false;
+var cfgFallback = false;                         // booted on defaults
+var fileBroken = false;                          // this file's own block is unreadable
 try {
   var rawCfg = JSON.parse(document.getElementById("deckhand-config").textContent);
-  cfg = sanitize(migrate(rawCfg));
+  var migCfg = migrate(rawCfg);
+  /* v7.0: an unrecognized schemaVersion used to migrate to {} — a
+     silent factory reset with Download still ENABLED, the exact
+     data-loss path the banner below exists to stop. Unknown = corrupt. */
+  if (!isObj(migCfg) || !Object.keys(migCfg).length) throw new Error("unrecognized schemaVersion");
+  cfg = sanitize(migCfg);
 } catch(e){
   /* corrupted block (usually a hand-edit gone wrong): defaults, bells
      off — and SAY SO. Silence here once looked like total data loss,
@@ -2268,13 +2313,84 @@ try {
      descendant copy. */
   cfg = sanitize({});
   cfgFallback = true;
+  fileBroken = true;
 }
+/* ================= Device store (v7.0) =================
+   Persistence used to be download-only ("no browser storage" was a hard
+   constraint from the artifact-iteration era). Croix's other classroom
+   tools keep rosters in the browser and they survive restarts on his
+   devices, and the hosted copy (GitHub Pages) has no other way to keep
+   a board at all — so the config now AUTOSAVES to localStorage.
+   Precedence at boot: the device's saved config wins over the file's
+   baked block (the file is the seed / the factory reset). "Export a
+   copy" still bakes everything into a fresh file for backups and for
+   moving between machines. Every call is wrapped: storage can be
+   absent, full, or policy-blocked, and the board must not care. */
+var Store = (function(){
+  var KEY = "deckhand.config";
+  var ok = false;
+  var lastErr = null;
+  try {
+    var probe = "deckhand.probe";
+    localStorage.setItem(probe, "1");
+    localStorage.removeItem(probe);
+    ok = true;
+  } catch(e){ ok = false; lastErr = e; }
+  function read(){
+    if (!ok) return null;
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      return isObj(o) && isObj(o.cfg) ? o : null;
+    } catch(e){ lastErr = e; return null; }
+  }
+  function write(c){
+    if (!ok) return false;
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        v: 1, savedAt: new Date().toISOString(),
+        fileVersion: DEFAULTS.appVersion, cfg: c
+      }));
+      lastErr = null;
+      return true;
+    } catch(e){ lastErr = e; return false; }
+  }
+  function clear(){
+    if (!ok) return;
+    try { localStorage.removeItem(KEY); } catch(e){ lastErr = e; }
+  }
+  return { ok: ok, read: read, write: write, clear: clear, key: KEY,
+           lastError: function(){ return lastErr; } };
+})();
+
+var cfgSource = "file";                          // "file" | "device" | "defaults"
+var storedFileVersion = null;                    // which release last saved it
+(function(){
+  var st = Store.read();
+  if (!st) return;
+  try {
+    var mig = migrate(st.cfg);
+    if (!isObj(mig) || !Object.keys(mig).length) throw new Error("unrecognized stored schemaVersion");
+    cfg = sanitize(mig);
+    cfgSource = "device";
+    storedFileVersion = typeof st.fileVersion === "string" ? st.fileVersion : null;
+    cfgFallback = false;                         // the device copy is good even if the file isn't
+  } catch(e){
+    /* a corrupt device copy is ignored, never deleted here — Settings
+       says so and offers the reset; the file's config carries on */
+    try { console.error("Deckhand: stored config unreadable, using the file's", e); } catch(_){}
+  }
+})();
+if (cfgSource !== "device" && !cfgFallback) cfgSource = "file";
+if (cfgFallback) cfgSource = "defaults";
+
 if (cfgFallback){
   var cfgWarn = document.createElement("div");
   cfgWarn.id = "cfgWarn";
   cfgWarn.textContent = "⚠ Couldn't read this copy's saved settings — running on defaults. " +
     "Your file on disk is unchanged: undo the recent edit, or open a known-good copy. " +
-    "Downloading is disabled so the problem can't spread.";
+    "Exporting is disabled so the problem can't spread.";
   document.body.appendChild(cfgWarn);
 }
 
@@ -2285,8 +2401,12 @@ var simOffset = 0;
 (function(){
   var m = location.hash.match(/[#&]t=([^&]+)/);
   if (m){
-    var d = new Date(decodeURIComponent(m[1]));
-    if (!isNaN(d.getTime())) simOffset = d.getTime() - Date.now();
+    /* a malformed escape ("#t=%") made decodeURIComponent throw inside
+       this top-level IIFE and took the whole board down — blank page */
+    try {
+      var d = new Date(decodeURIComponent(m[1]));
+      if (!isNaN(d.getTime())) simOffset = d.getTime() - Date.now();
+    } catch(e){}
   }
 })();
 function now(){ return new Date(Date.now() + simOffset); }
@@ -2580,8 +2700,14 @@ var Bell = (function(){
   var lastDayKey = null;
   function rolloverCheck(n){
     var dk = n.getFullYear() + "-" + n.getMonth() + "-" + n.getDate();
+    /* v7.0: a manual chip tap "overrides for the day" (Settings copy) —
+       so it EXPIRES at the date change and the rotation resumes. Before,
+       any override stuck for the whole session, while the next-class
+       preview kept using auto parity: Friday's "Next: Monday" named one
+       week and Monday morning ran the other. No-bells (-1) and the
+       manual-only week types (index 2+) are never touched. */
     if (lastDayKey !== null && dk !== lastDayKey &&
-        cfg.bell.autoWeek && lastAutoIdx !== null && active === lastAutoIdx){
+        cfg.bell.autoWeek && active >= 0 && active < 2){
       var ai = autoIndexFor(n);
       if (ai !== null && ai !== active){
         active = ai;
@@ -2608,16 +2734,6 @@ var Bell = (function(){
          ("Advisory" AM + PM) still chimes each block once */
       var ck = n.toDateString() + "|" + st.label + "|" + st.s;
       if (chimedFor !== ck){ chimedFor = ck; Sound.chime(); }
-    }
-    /* last bell of the day just rang: if the board has unsaved changes,
-       surface the one nudge that protects download-only persistence */
-    if (prevStType === "in" && st.type === "next"){
-      try {
-        if (typeof SaveState !== "undefined" && SaveState.isDirty()){
-          var sn = document.getElementById("saveNudge");
-          if (sn) sn.hidden = false;
-        }
-      } catch(e){}
     }
     prevStType = st.type;
     el.bellWrap.classList.toggle("passing", st.type === "passing");
@@ -5172,7 +5288,7 @@ function makeYT(host, wcfg){
         '<span class="ytTip">If the player shows &ldquo;Error 153&rdquo; on this ' +
         'machine, tap &#8599; Tab &mdash; it opens on YouTube itself and keeps ' +
         'playing while you work the board.</span></div>' +
-      '<iframe class="embFrame ytFrame" allowfullscreen hidden></iframe>' +
+      '<iframe class="embFrame ytFrame" title="YouTube player" allowfullscreen hidden></iframe>' +
       '<div class="chips ytStations" role="group" aria-label="Saved stations"></div>' +
       '<div class="ytLib" hidden></div>' +
       '<div class="row ytRow">' +
@@ -5335,6 +5451,17 @@ function makeYT(host, wcfg){
   if (wcfg.url){ frame.src = wcfg.url; frame.hidden = false; empty.hidden = true; }
   input.value = wcfg.url;
   renderStations();
+  /* v7.0: Home hides the board; like the Slides card, a video must not
+     keep talking under the landing page (the yt card had no listener —
+     only Slides went quiet). Board restores whatever was loaded. */
+  function onHome(){ try { frame.removeAttribute("src"); } catch(e){} }
+  function onBoard(){
+    if (wcfg.url && frame.getAttribute("src") !== wcfg.url){
+      frame.src = wcfg.url; frame.hidden = false; empty.hidden = true;
+    }
+  }
+  document.addEventListener("deckhand:home", onHome);
+  document.addEventListener("deckhand:board", onBoard);
   return {
     kind: "yt",
     label: function(){ return wcfg.label || "YouTube"; },
@@ -5346,6 +5473,8 @@ function makeYT(host, wcfg){
     destroy: function(){
       /* a removed card must go QUIET — the iframe outliving the widget
          would keep singing from nowhere */
+      document.removeEventListener("deckhand:home", onHome);
+      document.removeEventListener("deckhand:board", onBoard);
       try { frame.src = "about:blank"; } catch(e){}
     }
   };
@@ -5785,7 +5914,9 @@ function makeMeter(host, wcfg){
       streakEl.textContent = fmtStreak(shown);
     }
     if (curPeriod && curPeriod !== "__proto__" &&
-        Math.floor(sec) > (wcfg.records[curPeriod] || 0)){
+        Math.floor(sec) > (hasOwn(wcfg.records, curPeriod) ? wcfg.records[curPeriod] : 0) &&
+        /* sanitize keeps 12 records on reload — never write a 13th live */
+        (hasOwn(wcfg.records, curPeriod) || Object.keys(wcfg.records).length < 12)){
       wcfg.records[curPeriod] = Math.floor(sec);
       paintGame();                               // live record chase
     }
@@ -5996,6 +6127,14 @@ function embedURL(u){
     if (list) return "https://www.youtube-nocookie.com/embed/videoseries?list=" + list[1];
     return "";                                   // a YouTube page with no usable id
   }
+  /* v7.0: any OTHER YouTube page (@channel, /c/, /user/, results…) used
+     to fall through as-is and frame a blank, unframeable page — the
+     "clean rejection" promised above. Only the embed player frames. */
+  if (/^https?:\/\/(?:www\.|m\.|music\.)?(?:youtube\.com|youtu\.be)(?:\/|$)/i.test(u)) return "";
+  if (/^https?:\/\/(?:www\.)?youtube-nocookie\.com(?:\/|$)/i.test(u)){
+    return /^https:\/\/www\.youtube-nocookie\.com\/embed\/(?:videoseries\?list=[\w-]{5,64}|[\w-]{5,20}(?:\?list=[\w-]{5,64})?)$/.test(u)
+      ? u : "";
+  }
   return u;
 }
 function makeEmbed(host, wcfg){
@@ -6010,8 +6149,7 @@ function makeEmbed(host, wcfg){
         'Paste a Google Slides link below — the edit link works, or ' +
         'File &rarr; Share &rarr; Publish to web for the cleanest player. ' +
         'YouTube, PhET, GeoGebra and Desmos links work too.</div>' +
-      '<iframe class="embFrame" allowfullscreen hidden ' +
-        'title="Embedded content"></iframe>' +
+      '<iframe class="embFrame" title="Embedded slides" allowfullscreen hidden></iframe>' +
       '<div class="embKeys" hidden>&#9000; Keys are in the slides &mdash; tap the board background to give them back to Deckhand</div>' +
       '<div class="embRow">' +
         '<label class="embPP" title="A different deck for each class, following the bells">' +
@@ -6872,11 +7010,31 @@ var Canvas = (function(){
       '<div class="wHandle hE" data-dir="e" aria-hidden="true"></div>' +
       '<div class="wHandle hW" data-dir="w" aria-hidden="true"></div>' +
       '<div class="wHandle hS" data-dir="s" aria-hidden="true"></div>';
-    elx.querySelector(".wLabel").textContent =
-      (wcfg.label || WIDGET_NAMES[wcfg.type] || "Widget").toUpperCase();
+    var wname = wcfg.label || WIDGET_NAMES[wcfg.type] || "Widget";
+    elx.querySelector(".wLabel").textContent = wname.toUpperCase();
+    elx.setAttribute("aria-label", wname);
+    elx.querySelector(".wClose").setAttribute("aria-label", "Remove " + wname);
     cEl.appendChild(elx);
     var mk = WIDGET_MAKERS[wcfg.type] || makeStopwatch;
-    var api = wcfg.type === "timer" ? makeTimer(elx, wcfg, assignIds) : mk(elx, wcfg);
+    var api;
+    try {
+      api = wcfg.type === "timer" ? makeTimer(elx, wcfg, assignIds) : mk(elx, wcfg);
+    } catch(err){
+      /* v7.0: one throwing factory used to abort loadScene halfway —
+         half-mounted board, stale dock, Keys booting against it. A bad
+         widget now fails ALONE, visibly, and the rest of the scene lives. */
+      try { console.error("Deckhand: widget failed to build", wcfg.type, err); } catch(_){}
+      var body = document.createElement("div");
+      body.className = "wBody wBroken";
+      body.textContent = "This widget couldn't load. Remove it with ✕ and add it again.";
+      elx.appendChild(body);
+      api = {
+        kind: wcfg.type, label: function(){ return wcfg.label || "Widget"; },
+        startPause: function(){}, reset: function(){},
+        canEnter: function(){ return false; }, entryActive: function(){ return false; },
+        rebuild: function(){}, resync: function(){}, destroy: function(){}
+      };
+    }
     var en = { cfg: wcfg, el: elx, api: api, type: wcfg.type };
     elx._entry = en;
     applyBox(en); wire(en); entries.push(en);
@@ -7342,6 +7500,11 @@ var Canvas = (function(){
         var lb = $("lockBtn");
         var holdTid = null, held = false, relabelTid = null;
         lb.addEventListener("pointerdown", function(e){
+          /* v7.0: reset BEFORE the locked check — a finger that slid off
+             after a completed hold never clicked, so `held` stayed true
+             and ate the next Lock tap. (Touch fires pointerleave before
+             click, so this is the only safe place to clear it.) */
+          held = false;
           if (!cfg.ui.locked) return;
           /* a pending "Hold to unlock…" relabel mid-hold would resize
              the button out from under a stationary finger */
@@ -7498,8 +7661,10 @@ var Settings = (function(){
     }
     renderRosters();
     setMsg("", false);
-    /* the coral dot led here: point straight at the save button */
-    if (typeof SaveState !== "undefined" && SaveState.isDirty()){
+    disarmReset();
+    paintStoreNote();
+    /* a failed device save led here: point straight at Export */
+    if (SaveState.failed() || !Store.ok){
       var dl = $("dlBtn");
       dl.classList.add("dlNudge");
       setTimeout(function(){ dl.classList.remove("dlNudge"); }, 2600);
@@ -7605,6 +7770,9 @@ var Settings = (function(){
       blocks.push({ label: m[1].slice(0, 20), start: m[2], end: m[3], _s: st, _e: en });
     });
     blocks.sort(function(a,b){ return a._s - b._s; });
+    /* v7.0: the same cap sanitize applies on reload (20 per list) — a
+       21st block used to Apply fine, then silently vanish next open */
+    if (blocks.length > 20) errors.push(name + ": at most 20 blocks (you have " + blocks.length + ")");
     for (var i = 1; i < blocks.length; i++){
       if (blocks[i]._s < blocks[i-1]._e){
         errors.push(name + ': "' + blocks[i-1].label + '" and "' + blocks[i].label + '" overlap');
@@ -7723,9 +7891,9 @@ var Settings = (function(){
 
   /* ---- download configured copy: this file serializes itself ---- */
   function download(){
-    if (cfgFallback){
-      setMsg("Download disabled: this copy booted on defaults because its settings " +
-        "block couldn't be read. Fix the file (or start from a good copy) first.", false);
+    if (fileBroken){
+      setMsg("Export disabled: this copy's own settings block couldn't be read, so a " +
+        "copy made from it could carry the damage. Export from a good copy instead.", false);
       return;
     }
     if (!apply()) return;                       // never bake invalid config
@@ -7751,10 +7919,130 @@ var Settings = (function(){
     a.click();
     a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
-    setMsg("Applied. Downloaded " + name + " — replace your old file with it.", true);
-    var sn = document.getElementById("saveNudge");
-    if (sn) sn.hidden = true;                   // the nudge did its job
-    SaveState.markSaved();                      // the file on disk now matches
+    setMsg("Applied. Exported " + name + " — a full copy with these settings (and rosters) baked in. " +
+      "Keep it in your Drive as a backup or to move the board to another machine.", true);
+    SaveState.flush();                          // the export matches the device copy
+  }
+
+  /* ---- v7.0: reset to this file's baked settings (two-tap) ---- */
+  var resetArmed = null;
+  function disarmReset(){
+    if (resetArmed !== null){ clearTimeout(resetArmed); resetArmed = null; }
+    var b = $("resetBtn");
+    b.classList.remove("armed");
+    b.textContent = "Use this file\u2019s settings";
+  }
+  function resetToFile(){
+    var b = $("resetBtn");
+    if (resetArmed === null){
+      b.classList.add("armed");
+      b.textContent = "Really replace the device copy?";
+      setMsg("This forgets everything saved on this device — layout, bells AND rosters — and " +
+        "reloads with the settings baked into this file. Export a copy first if unsure.", false);
+      resetArmed = setTimeout(disarmReset, 6000);
+      return;
+    }
+    disarmReset();
+    Store.clear();
+    SaveState.suspend();                        // never re-save the old cfg on the way out
+    location.reload();
+  }
+
+  /* ---- v7.0: rosters from the Seating Chart tool ----
+     Croix's seating chart keeps its data in localStorage under
+     "seatingchart.v1" ({periods:[{id,name:"Period N"}], students:[{periodId,
+     first,last,nick,active}]}) and exports the same object as a backup
+     JSON. Same-origin (both opened over file:// on one machine) reads the
+     store directly; anywhere else, the backup file works. Names land in
+     the roster boxes by period NUMBER ("Period 3" -> "3rd"); Apply
+     commits, so a bad import is one Close away from harmless. */
+  function seatingToRosters(S){
+    if (!isObj(S) || !Array.isArray(S.periods) || !Array.isArray(S.students)) return null;
+    var byId = Object.create(null);
+    S.periods.forEach(function(p){
+      if (!isObj(p) || typeof p.id !== "string") return;
+      var m = String(p.name || "").match(/(\d{1,2})/);
+      if (m) byId[p.id] = +m[1];
+    });
+    var labels = rosterLabels();
+    var labelFor = Object.create(null);
+    labels.forEach(function(l){
+      var m = l.match(/^(\d{1,2})/);
+      if (m && !hasOwn(labelFor, +m[1])) labelFor[+m[1]] = l;
+    });
+    var out = Object.create(null), n = 0;
+    S.students.forEach(function(st){
+      if (!isObj(st) || st.active === false) return;
+      var num = byId[st.periodId]; if (num === undefined) return;
+      var label = labelFor[num]; if (!label) return;
+      var name = String(st.nick || st.first || "").trim();
+      if (!name) return;
+      (out[label] = out[label] || []).push(name.slice(0, 40));
+      n++;
+    });
+    return { rosters: out, count: n };
+  }
+  function applySeatingImport(S, from){
+    var r = seatingToRosters(S);
+    if (!r || !r.count){
+      setMsg("No students found" + (from ? " in " + from : "") +
+        " — periods must be named with a number (\"Period 3\") to match the bell schedule.", false);
+      return;
+    }
+    var filled = 0;
+    $("rosterGrid").querySelectorAll("textarea").forEach(function(ta){
+      var names = r.rosters[ta.dataset.period];
+      if (names){
+        /* same first name twice in one class: keep both, the teacher
+           can add an initial by hand */
+        ta.value = names.slice(0, 80).join(", ");
+        filled++;
+      }
+    });
+    setMsg("Loaded " + r.count + " students into " + filled + " period" + (filled === 1 ? "" : "s") +
+      " from the Seating Chart. Check the boxes, then Apply.", true);
+  }
+  function importSeatingLocal(){
+    var raw = null;
+    try { raw = localStorage.getItem("seatingchart.v1"); } catch(e){}
+    if (!raw){
+      setMsg("No Seating Chart data on this device. Open the Seating Chart here first (same machine, " +
+        "same way — both as files or both on the web), or pick its backup file.", false);
+      return;
+    }
+    try { applySeatingImport(JSON.parse(raw), "this device\u2019s Seating Chart"); }
+    catch(e){ setMsg("Couldn\u2019t read the Seating Chart data on this device.", false); }
+  }
+  function importSeatingFile(file){
+    if (!file) return;
+    var rd = new FileReader();
+    rd.onload = function(){
+      try { applySeatingImport(JSON.parse(String(rd.result)), file.name); }
+      catch(e){ setMsg("That file isn\u2019t a Seating Chart backup.", false); }
+    };
+    rd.onerror = function(){ setMsg("Couldn\u2019t read that file.", false); };
+    rd.readAsText(file);
+  }
+
+  function paintStoreNote(){
+    var n = $("storeNote");
+    if (!n) return;
+    n.classList.remove("warn");
+    if (fileBroken && cfgSource === "device"){
+      n.textContent = "Running on this device\u2019s saved settings \u2014 this file\u2019s own settings block is damaged. Export is off; open a good copy to export.";
+      n.classList.add("warn");
+    } else if (!Store.ok){
+      n.textContent = "This browser blocks saving. Changes last until the page closes \u2014 Export a copy to keep them.";
+      n.classList.add("warn");
+    } else if (SaveState.failed()){
+      n.textContent = "Saving to this device FAILED (storage full or blocked). Export a copy so nothing is lost.";
+      n.classList.add("warn");
+    } else {
+      var when = SaveState.lastSavedAt();
+      n.textContent = "Changes save automatically on this device" +
+        (when ? " \u00b7 last saved " + when : "") +
+        ". Export a copy for a backup or to move the board to another machine.";
+    }
   }
 
   return {
@@ -7762,52 +8050,123 @@ var Settings = (function(){
       wireButton(el.setBtn, open);
       wireButton($("applyBtn"), apply);
       wireButton($("dlBtn"), download);
+      wireButton($("resetBtn"), resetToFile);
       wireButton($("closeBtn"), function(e){ close(!e || e.detail === 0); });
       $("settingsBack").addEventListener("click", function(){ close(false); });
+      wireButton($("rosterImportBtn"), importSeatingLocal);
+      wireButton($("rosterImportFileBtn"), function(){ $("rosterImportFile").click(); });
+      $("rosterImportFile").addEventListener("change", function(){
+        importSeatingFile(this.files && this.files[0]);
+        this.value = "";
+      });
     },
     isOpen: isOpen, open: open, close: close, trapTab: trapTab
   };
 })();
 
-/* ================= Save-state tracker =================
-   Persistence is download-only by design; this makes the gap VISIBLE:
-   a coral dot on Settings whenever the live board differs from the
-   file on disk, and a leave-page warning so an arranged board is never
-   lost to a casual tab close. */
+/* ================= Save-state tracker (v7.0: autosave) =================
+   Every 2.5s the live config is compared to what was last persisted; a
+   difference is written to the device store at once. The coral dot on
+   Settings now means the one thing worth a teacher's attention: a save
+   FAILED (storage blocked or full) — export a copy. pagehide flushes so
+   a change made in the last two seconds before a power-off survives. */
 var SaveState = (function(){
   var baseline = "";
+  var failed = false;
+  var suspended = false;
+  var lastSaved = null;
   function snap(){
-    /* the noise game writes a record every quiet SECOND — history worth
-       keeping, not "unsaved work". Excluded here so the dirty dot only
-       lights for changes the teacher chose to make (a dot that's always
-       on is a dot nobody reads). Records still ride along in downloads. */
-    try {
-      return JSON.stringify(cfg, function(k, v){
-        return k === "records" ? undefined : v;
-      });
-    } catch(e){ return ""; }
+    try { return JSON.stringify(cfg); } catch(e){ return ""; }
   }
   function isDirty(){ return snap() !== baseline; }
+  function flush(){
+    if (suspended) return false;
+    var cur = snap();
+    if (cur === baseline) return true;
+    if (!Store.ok){ failed = true; paint(); return false; }
+    var okw = Store.write(cfg);
+    if (okw){ baseline = cur; failed = false; lastSaved = new Date(); }
+    else failed = true;
+    paint();
+    return okw;
+  }
   function paint(){
-    var dirty = isDirty();
-    el.setBtn.classList.toggle("dirty", dirty);
-    el.setBtn.title = dirty
-      ? "Unsaved changes — Settings → Download configured copy to keep them"
+    var bad = (failed || !Store.ok) && isDirty();
+    el.setBtn.classList.toggle("dirty", bad);
+    el.setBtn.title = bad
+      ? "Changes could not be saved on this device — Settings → Export a copy to keep them"
       : "";
   }
-  function markSaved(){ baseline = snap(); paint(); }
+  function fmtWhen(d){
+    var h = d.getHours(), m = d.getMinutes();
+    return ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
+  }
   return {
     init: function(){
-      markSaved();
-      setInterval(paint, 2500);
-      window.addEventListener("beforeunload", function(e){
-        if (isDirty()){ e.preventDefault(); e.returnValue = ""; }
+      baseline = snap();
+      /* a file-seeded boot (first open on this device, or a device copy
+         that was just reset) persists at once so the next open is the
+         same board */
+      if (Store.ok && cfgSource !== "device" && !fileBroken){
+        if (Store.write(cfg)){ lastSaved = new Date(); cfgSource = "device"; }
+      }
+      setInterval(flush, 2500);
+      window.addEventListener("pagehide", flush);
+      document.addEventListener("visibilitychange", function(){
+        if (document.visibilityState === "hidden") flush();
       });
-      var sn = document.getElementById("saveNudge");
-      if (sn) sn.addEventListener("click", function(){ sn.hidden = true; });
+      window.addEventListener("beforeunload", function(e){
+        /* only when the device can't hold the changes — otherwise a
+           tab close is safe and the prompt is noise */
+        if ((failed || !Store.ok) && isDirty()){ e.preventDefault(); e.returnValue = ""; }
+      });
+      /* v7.0 update nudge: this release is newer than the one that last
+         saved the device copy. Keep everything (default) or adopt the
+         file's bell schedule — the one thing a new release usually
+         changes that a saved board would otherwise mask. */
+      try {
+        if (cfgSource === "device" && storedFileVersion !== null &&
+            storedFileVersion !== DEFAULTS.appVersion){
+          var vn = document.getElementById("verNudge");
+          document.getElementById("verNudgeText").textContent =
+            "Deckhand " + DEFAULTS.appVersion + " \u2014 your saved board and rosters were kept.";
+          vn.hidden = false;
+          var fileBells = null;
+          try {
+            var fileCfg = sanitize(migrate(JSON.parse(
+              document.getElementById("deckhand-config").textContent)));
+            fileBells = fileCfg.bell;
+          } catch(e){}
+          var bellBtn = document.getElementById("verNudgeBells");
+          if (!fileBells || JSON.stringify(fileBells.groups) === JSON.stringify(cfg.bell.groups)){
+            bellBtn.hidden = true;               // nothing to adopt
+          }
+          wireButton(bellBtn, function(){
+            cfg.bell.groups = fileBells.groups;
+            cfg.bell.anchorMonday = fileBells.anchorMonday;
+            cfg.bell.anchorWeekName = fileBells.anchorWeekName;
+            cfg.bell.autoWeek = fileBells.autoWeek;
+            cfg.bell.defaultGroup = fileBells.defaultGroup;
+            Bell.reResolve(null);
+            Landing.refresh();
+            vn.hidden = true;
+            flush();
+          });
+          wireButton(document.getElementById("verNudgeKeep"), function(){
+            vn.hidden = true; flush();
+          });
+          /* either way the device copy re-stamps to this release — a
+             direct write, because flush() is a no-op when nothing changed */
+          if (Store.ok && Store.write(cfg)){ baseline = snap(); lastSaved = new Date(); }
+        }
+      } catch(e){}
     },
-    markSaved: markSaved,
-    isDirty: isDirty
+    flush: flush,
+    markSaved: function(){ baseline = snap(); paint(); },
+    isDirty: isDirty,
+    failed: function(){ return failed; },
+    suspend: function(){ suspended = true; },
+    lastSavedAt: function(){ return lastSaved ? fmtWhen(lastSaved) : null; }
   };
 })();
 
@@ -7918,6 +8277,9 @@ window.Deckhand = {
   get scene(){ return cfg.activeScene; },
   setSchedule: function(i){ Bell.setActive(i); },
   get dirty(){ return SaveState.isDirty(); },
+  get configSource(){ return cfgSource; },
+  store: Store,                                 // v7.0: device persistence (test hook)
+  flush: SaveState.flush,                       // v7.0: persist now
   alarmCalmMs: Alarm._setCalmMs,                // test hook: shrink the 45s
   ghostFuseMs: function(ms){ Canvas._setGhostFuse(ms); },  // test hook
   sound: Sound,                                 // test hook: tick swell is wrapped
