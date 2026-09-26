@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.5.0",
+  "appVersion": "7.5.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -350,6 +350,8 @@
   #alarm h1{color:var(--navy); font-weight:900; font-size:clamp(60px, 12vw, 170px); letter-spacing:.02em;}
   #alarm p{color:var(--navy); font-weight:700; font-size:clamp(16px,2.2vw,26px);}
   @keyframes pulse{from{background:var(--coral);} to{background:var(--coral-deep);}}
+  #lockBtn.nod{animation:lockNod .8s ease-in-out;}   /* v7.5.1: "Settings is behind the lock" */
+  @keyframes lockNod{0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);} 60%{transform:translateX(-4px);} 80%{transform:translateX(3px);}}
   @media (prefers-reduced-motion: reduce){ #alarm.on{animation:none;} }
   /* De-escalated badge (45s un-dismissed): a corner pill that persists
      until tapped — the board is usable again behind it */
@@ -361,7 +363,7 @@
     animation:none;
   }
   #alarm.calm h1{font-size:clamp(16px, 2vw, 24px); color:var(--navy);}
-  #alarm.calm #alarmWho{font-size:clamp(13px, 1.6vw, 19px); color:var(--white);}
+  #alarm.calm #alarmWho{font-size:clamp(13px, 1.6vw, 19px); color:var(--navy);}
   #alarm.calm p:last-child{display:none;}
 
   /* v7.1 sheets: one modal look for the day editor, scene manager and
@@ -532,7 +534,7 @@
   .btnPri{background:var(--turq); color:var(--navy);}
   .btnSand{background:var(--sand); color:var(--navy);}
   .btnOutline{background:var(--white); color:var(--navy); border:3px solid var(--sand);}
-  #resetBtn.armed{background:var(--coral) !important; border-color:var(--coral) !important;}
+  #setResetBtn.armed{background:var(--coral) !important; border-color:var(--coral) !important;}
   @media (max-width: 700px){
     #settingsCard{width:96vw; height:92vh;}
     #setLayout{flex-direction:column;}
@@ -773,6 +775,31 @@
   .widget.sel{outline:3px solid var(--teal); outline-offset:-3px;}
   .widget.dragging{will-change:transform; cursor:grabbing;}
   .widget.dragging .strip{cursor:grabbing;}
+  /* ===== v7.5.1: the strips (Croix: "A lot of wasted screen space it seems to have the clock label.
+     We all know it's a clock.") =====
+     TEACHING (locked): no strip — the card is its content, 30px taller. A custom name ("Station 2")
+     shows as a small caption inside the card; ⛶ Stage stays as a faint round button at the top-right
+     that brightens (and says "Stage") for four seconds when the card is tapped — a view action, live
+     while locked. EDITING (unlocked): a slim neutral handle band with a grabber mark; the label only
+     for custom names; the icons keep 40px hit boxes. Per-type strip colours are retired. */
+  .card.widget .strip{padding:0 12px; min-height:30px; height:30px; background:var(--grid); color:var(--navy);
+    font-size:11px; letter-spacing:.1em; position:relative; justify-content:flex-end; gap:2px;}
+  .card.widget .strip::before{content:""; position:absolute; left:50%; top:50%; width:40px; height:5px; margin:-2.5px 0 0 -20px;
+    border-radius:3px; background:var(--navy); opacity:.28; pointer-events:none;}
+  .widget .wLabel{opacity:0; font-weight:900; margin-right:auto;}   /* opacity, not visibility: the label is still the drag surface */
+  .widget.wNamed .wLabel{opacity:.7;}
+  .widget .wClose, .widget .wEdit, .widget .wFocus, .widget .wPin, .widget .wSize{margin:-7px -2px; min-width:44px; min-height:44px;}   /* 44px hit boxes on a 30px band */
+  .widget .strip .wIcon{width:16px; height:16px;}
+  body.locked .widget .strip{position:absolute; left:0; right:0; top:0; height:0; min-height:0; padding:0; background:transparent;
+    overflow:visible; pointer-events:none; z-index:3;}
+  body.locked .widget .strip::before, body.locked .widget .wLabel{display:none;}
+  body.locked .widget .strip .wFocus{display:inline-flex; position:absolute; top:8px; right:8px; margin:0; min-width:44px; min-height:44px;
+    padding:0; border-radius:999px; background:rgba(27,46,69,.9); color:var(--white); opacity:.38; pointer-events:auto; gap:8px;
+    transition:opacity .2s, padding .2s;}
+  body.locked .widget.wChip .strip .wFocus, body.locked .widget .strip .wFocus:hover{opacity:1; padding:0 16px 0 12px;}
+  body.locked .widget.wChip .strip .wFocus::after{content:"Stage"; font-weight:900; font-size:15px; letter-spacing:.02em;}
+  body.locked .widget.wNamed::before{content:attr(data-label); position:absolute; top:10px; left:14px; z-index:2; font-weight:700;
+    color:var(--teal); text-transform:uppercase; letter-spacing:.08em; font-size:clamp(12px, 2.4cqw, 20px); pointer-events:none;}
   /* v6.32: while ANY drag is live, iframes must not hit-test — a loaded
      cross-origin embed (YouTube, slides) otherwise swallows the pointer
      stream at the browser's input layer the moment the finger crosses
@@ -1603,7 +1630,7 @@
   #sceneDelBtn.confirm{background:var(--coral); color:var(--white);}
   #sceneDelBtn.confirm .popSub{color:var(--white); opacity:.85;}
 
-  #alarmWho{color:var(--white); font-weight:900; font-size:clamp(20px,3vw,40px); letter-spacing:.04em;}
+  #alarmWho{color:var(--navy); font-weight:900; font-size:clamp(20px,3vw,40px); letter-spacing:.04em;}   /* navy on coral 8:1 (white was 2.47:1) */
 
   /* ===== compact fallback: phones, and any window too short for the
      canvas (e.g. phone landscape). Widgets stack at natural height and
@@ -1650,7 +1677,8 @@
            transform-origin:50% 73.3px;}       /* the mean waterline (y=100 of 120) — amplitude scales about it */
   #wv1{--lam:-25%; --ss:var(--swell);}          /* λ = 40vw = 400 of 1600 → 25% of the layer */
   #wv2{--lam:-10%; --ss:var(--chop);}           /* λ = 16vw */
-  #wv3{--lam:-50%; --ss:1;}                     /* λ = 80vw */
+  #wv3{--lam:-33.333%; --ss:1;}                 /* λ = 80vw of a 240vw layer (three wavelengths: the scroll never uncovers the right edge) */
+  .wvLayer.wvWide{width:240vw;}
   .foam{--lam:-25%; --ss:var(--swell); opacity:0;}
   .foam path{fill:none; stroke:var(--white); stroke-width:2.6; stroke-linecap:round; vector-effect:non-scaling-stroke;}
   body.waveMotion #wv1{animation:wvScroll var(--T1) linear infinite;}
@@ -1663,7 +1691,7 @@
   @keyframes foamBreak{0%{opacity:0;} 20%{opacity:var(--foam);} 45%{opacity:calc(var(--foam) * .5);} 60%,100%{opacity:0;}}
 
   /* ---- the boat ---- */
-  #boat{position:fixed; bottom:6px; left:max(42vw, 300px); width:38px; height:38px; z-index:0;
+  #boat{position:fixed; bottom:6px; left:calc(max(42vw, 300px) - 19px); width:38px; height:38px; z-index:0;   /* the MAST (x=20 of 40) sits at 42vw — the wave troughs' reference */
         pointer-events:auto;                    /* the boat ANSWERS a tap (Sea.summon) and a long press (Sea.earned) */
         touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
   #boat .btSvg{width:38px; height:38px; overflow:visible; display:block;}
@@ -1780,11 +1808,13 @@
   .seaThing.near{--ls:1.4;}
   .seaThing svg{overflow:visible; display:block;}
   .ssSwim svg, .atRise svg{width:100%; height:100%;}
-  .ring{fill:none; stroke:var(--white); stroke-width:1.6; opacity:0; transform-box:fill-box; transform-origin:center; vector-effect:non-scaling-stroke;}
-  .bub{fill:var(--white); stroke:var(--navy); stroke-width:.7; opacity:0;}
-  .go .ring{animation:ring 1.3s cubic-bezier(.2,.6,.4,1) forwards;}   /* forwards, NOT both: 0% is visible */
-  @keyframes ring{0%{opacity:.95; transform:scale(.25,.2);} 100%{opacity:0; transform:scale(1.7,1.1);}}
-  @keyframes bub{0%{opacity:0; transform:translateY(4px);} 30%{opacity:.9;} 100%{opacity:0; transform:translateY(-10px) scale(1.5);}}
+  /* v7.5.1: every sea class is scoped under #sea — an unscoped `.ring` here matched the TIMER's ring
+     face (class "ring" too) and blanked every ring timer, Next Bell and the ghost timer on the stage */
+  #sea .seaRing{fill:none; stroke:var(--white); stroke-width:1.6; opacity:0; transform-box:fill-box; transform-origin:center; vector-effect:non-scaling-stroke;}
+  #sea .seaBub{fill:var(--white); stroke:var(--navy); stroke-width:.7; opacity:0;}
+  #sea .go .seaRing{animation:seaRing 1.3s cubic-bezier(.2,.6,.4,1) forwards;}   /* forwards, NOT both: 0% is visible */
+  @keyframes seaRing{0%{opacity:.95; transform:scale(.25,.2);} 100%{opacity:0; transform:scale(1.7,1.1);}}
+  @keyframes seaBub{0%{opacity:0; transform:translateY(4px);} 30%{opacity:.9;} 100%{opacity:0; transform:translateY(-10px) scale(1.5);}}
   /* floating visitors heave on the swell's clock (their phase is aligned by Sea.play at their start x) */
   @keyframes thingHeave{from{translate:0 calc(var(--h1) * 1px);} to{translate:0 calc(var(--h1) * -1px);}}
   @keyframes thingPitch{from{rotate:calc(var(--p1) * .6);} to{rotate:calc(var(--p1) * -.6);}}
@@ -1874,7 +1904,7 @@
   .whSpout circle{fill:var(--turq);}
   .whSplash{position:absolute; left:0; top:0; width:100%; height:100%; opacity:0; transform-origin:50% 88%;}
   .whSplash path{fill:none; stroke:var(--white); stroke-width:3.5; stroke-linecap:round;}
-  .whSplash .drop{fill:var(--white); stroke:none;}
+  .whSplash .seaDrop{fill:var(--white); stroke:none;}
   body.waveMotion #sea-whale.go{animation:thingHeave calc(var(--T1) / 2) var(--sine) infinite alternate;}
   body.waveMotion #sea-whale.go .whPrint{animation:whPrint 24s linear both;}
   body.waveMotion #sea-whale.go .whGlide{animation:whGlide 24s linear both;}
@@ -1883,12 +1913,12 @@
   body.waveMotion #sea-whale.go .whFin{animation:whFin 24s linear both;}
   body.waveMotion #sea-whale.go .whSpout{animation:whSpout 24s linear both;}
   body.waveMotion #sea-whale.go .whSplash{animation:whSplash 24s linear both;}
-  body.waveMotion #sea-whale.go .w0{animation:ringHold 1.6s cubic-bezier(.2,.6,.4,1) 13.4s forwards;}
+  body.waveMotion #sea-whale.go .w0{animation:seaRingHold 1.6s cubic-bezier(.2,.6,.4,1) 13.4s forwards;}
   body.waveMotion #sea-whale.go .w1{animation-delay:11.8s;} body.waveMotion #sea-whale.go .w2{animation-delay:12.5s;}
   body.waveMotion #sea-whale.go .w3{animation-delay:16.9s;} body.waveMotion #sea-whale.go .w4{animation-delay:17.4s;}
-  body.waveMotion #sea-whale.go .bub{animation:bub .8s ease-out forwards;}
+  body.waveMotion #sea-whale.go .seaBub{animation:seaBub .8s ease-out forwards;}
   body.waveMotion #sea-whale.go .b1{animation-delay:12.9s;} body.waveMotion #sea-whale.go .b2{animation-delay:13.15s;} body.waveMotion #sea-whale.go .b3{animation-delay:13.4s;}
-  @keyframes ringHold{0%{opacity:.9; transform:scale(.3,.25);} 60%{opacity:.9; transform:scale(1.1,.9);} 100%{opacity:0; transform:scale(1.4,1);}}
+  @keyframes seaRingHold{0%{opacity:.9; transform:scale(.3,.25);} 60%{opacity:.9; transform:scale(1.1,.9);} 100%{opacity:0; transform:scale(1.4,1);}}
   @keyframes whPrint{0%{opacity:0;} 3%{opacity:.8;} 9%{opacity:0;} 100%{opacity:0;}}
   @keyframes whGlide{0%{transform:translateX(50px); animation-timing-function:cubic-bezier(.25,.6,.4,1);} 10%{transform:translateX(0);}
     52%{transform:translateX(-60px);} 60%{transform:translateX(-90px); animation-timing-function:linear;} 70%{transform:translateX(-165px); animation-timing-function:cubic-bezier(.2,.6,.4,1);}
@@ -1947,7 +1977,7 @@
   /* THE ATTACK (20s): tell (bubbles), periscope look, slither (four strokes, never stopping), the rear with an
      overshoot, a wind-up and ONE hit at 12.0s (the boat is shoved), a MISS at 13.6s into the water, the look
      at the room, and a head-first dive with the coils following. Parks 40px short of the boat. */
-  #sea-attack{bottom:-4px; left:calc(max(42vw, 300px) + 20px); width:150px; height:90px;}
+  #sea-attack{bottom:-4px; left:calc(max(42vw, 300px) + 1px); width:150px; height:90px;}
   .atFx{position:absolute; left:0; top:0; width:100%; height:100%;}
   .atSlither{position:absolute; left:0; top:0; width:100%; height:100%; transform:translateX(62vw);}
   .atRise{position:absolute; left:0; top:0; width:100%; height:100%; transform:translateY(2px);}
@@ -1974,7 +2004,7 @@
   body.waveMotion #sea-attack.go .a3{animation:atCoil 2s ease-in-out -1.3s infinite;}
   body.waveMotion #sea-attack.go .atSeg{animation:atSink 20s linear both;}   /* the coils follow the head under, one by one */
   body.waveMotion #sea-attack.go .atSeg:nth-child(2){animation-delay:.3s;} body.waveMotion #sea-attack.go .atSeg:nth-child(1){animation-delay:.6s;}
-  body.waveMotion #sea-attack.go .bub{animation:bub .9s ease-out forwards;}
+  body.waveMotion #sea-attack.go .seaBub{animation:seaBub .9s ease-out forwards;}
   body.waveMotion #sea-attack.go .b1{animation-delay:.5s;} body.waveMotion #sea-attack.go .b2{animation-delay:1.1s;} body.waveMotion #sea-attack.go .b3{animation-delay:1.7s;}
   body.waveMotion #sea-attack.go .p0{animation-delay:4.9s;}     /* the periscope sinks */
   body.waveMotion #sea-attack.go .m0{animation-delay:13.6s;}    /* the miss hits the water */
@@ -2086,7 +2116,7 @@
   body.waveMotion #sea-paper.go .ppRock{animation:ppRock 6.9s var(--sine) infinite alternate;}
   body[data-sea="windy"].waveMotion #sea-paper.go .ppRock{animation:ppRock 6.9s var(--sine) infinite alternate, ppSink 50s linear both;}
   body[data-sea="windy"].waveMotion #sea-paper.go .ppRule{animation:ppSoak 50s linear both;}
-  body[data-sea="windy"].waveMotion #sea-paper.go .bub{animation:bub 1s ease-out forwards;}
+  body[data-sea="windy"].waveMotion #sea-paper.go .seaBub{animation:seaBub 1s ease-out forwards;}
   body[data-sea="windy"].waveMotion #sea-paper.go .b1{animation-delay:46s;} body[data-sea="windy"].waveMotion #sea-paper.go .b2{animation-delay:46.6s;}
   @keyframes ppDrift{from{transform:translateX(0) scale(var(--ls, 1));} to{transform:translateX(calc(100vw + 120px)) scale(var(--ls, 1));}}
   @keyframes ppRock{from{transform:rotate(-7deg) translateY(0);} to{transform:rotate(6deg) translateY(2px);}}
@@ -2329,8 +2359,8 @@
      · acts are beat-timed keyframes (see the CSS) driven by Sea.play();
        the boat's reactions run on the SAME animation clock as the act. -->
 <!-- the back travelling layer: light water, the slowest and longest swell, behind everything afloat -->
-<svg id="wv3" class="wvLayer" viewBox="0 0 1600 120" preserveAspectRatio="none" aria-hidden="true">
-  <path class="wvLight" d="M-580.0,82.0 C-434.3,82.0 -325.7,74.0 -180.0,74.0 C-34.3,74.0 74.3,82.0 220.0,82.0 C365.7,82.0 474.3,74.0 620.0,74.0 C765.7,74.0 874.3,82.0 1020.0,82.0 C1165.7,82.0 1274.3,74.0 1420.0,74.0 C1565.7,74.0 1674.3,82.0 1820.0,82.0 C1965.7,82.0 2074.3,74.0 2220.0,74.0 L2220.0,140 L-580.0,140 Z"/>
+<svg id="wv3" class="wvLayer wvWide" viewBox="0 0 2400 120" preserveAspectRatio="none" aria-hidden="true">
+  <path class="wvLight" d="M-580.0,82.0 C-434.3,82.0 -325.7,74.0 -180.0,74.0 C-34.3,74.0 74.3,82.0 220.0,82.0 C365.7,82.0 474.3,74.0 620.0,74.0 C765.7,74.0 874.3,82.0 1020.0,82.0 C1165.7,82.0 1274.3,74.0 1420.0,74.0 C1565.7,74.0 1674.3,82.0 1820.0,82.0 C1965.7,82.0 2074.3,74.0 2220.0,74.0 C2365.7,74.0 2474.3,82.0 2620.0,82.0 C2765.7,82.0 2874.3,74.0 3020.0,74.0 L3020.0,140 L-580.0,140 Z"/>
 </svg>
 <div id="sea" aria-hidden="true" data-weather="breezy">
   <div class="seaFar">
@@ -2345,14 +2375,14 @@
           <path class="ssMouth" d="M122.5,15.4 Q114,16.2 106,15.2"/><circle class="ssEye" cx="111.5" cy="10.6" r="1.9"/></g></g>
       </svg>
     </div>
-    <svg class="ssFx" viewBox="0 0 132 44"><ellipse class="ring r0" cx="112" cy="36" rx="9" ry="2.6"/><ellipse class="ring r1" cx="58" cy="36" rx="9" ry="2.6"/><ellipse class="ring r2" cx="30" cy="36" rx="7" ry="2.2"/></svg>
+    <svg class="ssFx" viewBox="0 0 132 44"><ellipse class="seaRing r0" cx="112" cy="36" rx="9" ry="2.6"/><ellipse class="seaRing r1" cx="58" cy="36" rx="9" ry="2.6"/><ellipse class="seaRing r2" cx="30" cy="36" rx="7" ry="2.2"/></svg>
   </div>
   <!-- SKIPPER — a flying fish: four damped hops along a dotted parabola -->
   <div id="sea-fish" class="seaThing">
     <svg class="pfArc" viewBox="0 0 260 64">
       <path d="M8,58 Q38,14 68,58 Q98,26 128,58 Q158,36 188,58 Q218,44 248,58"/>
     </svg>
-    <svg class="pfFx" viewBox="0 0 260 64"><ellipse class="ring r0" cx="68" cy="59" rx="8" ry="2.4"/><ellipse class="ring r1" cx="128" cy="59" rx="7" ry="2.2"/><ellipse class="ring r2" cx="188" cy="59" rx="6" ry="2"/><ellipse class="ring r3" cx="248" cy="59" rx="5" ry="1.8"/></svg>
+    <svg class="pfFx" viewBox="0 0 260 64"><ellipse class="seaRing r0" cx="68" cy="59" rx="8" ry="2.4"/><ellipse class="seaRing r1" cx="128" cy="59" rx="7" ry="2.2"/><ellipse class="seaRing r2" cx="188" cy="59" rx="6" ry="2"/><ellipse class="seaRing r3" cx="248" cy="59" rx="5" ry="1.8"/></svg>
     <svg class="pfFish" viewBox="0 0 24 16">
       <path class="pfWing" d="M15.5,8.2 Q10.5,3.6 4.2,3.4 Q7.4,6.6 7,9.4 Q11,8.4 15.5,8.9 Z"/>
       <path class="pfBody" d="M21,8 Q15,1 8,8 Q15,15 21,8 Z"/>
@@ -2374,12 +2404,12 @@
   <div id="sea-whale" class="seaThing">
     <svg class="whFx" viewBox="0 0 160 80">
       <ellipse class="whPrint" cx="80" cy="62" rx="26" ry="3"/>
-      <ellipse class="ring w0" cx="70" cy="62" rx="14" ry="3.2"/>
-      <ellipse class="ring w1" cx="18" cy="62" rx="12" ry="3"/>
-      <ellipse class="ring w2" cx="14" cy="62" rx="16" ry="3.4"/>
-      <ellipse class="ring w3" cx="-40" cy="62" rx="20" ry="4"/>
-      <ellipse class="ring w4" cx="-50" cy="62" rx="26" ry="4.4"/>
-      <circle class="bub b1" cx="-36" cy="60" r="1.4"/><circle class="bub b2" cx="-30" cy="59" r="1.1"/><circle class="bub b3" cx="-41" cy="58" r=".9"/>
+      <ellipse class="seaRing w0" cx="70" cy="62" rx="14" ry="3.2"/>
+      <ellipse class="seaRing w1" cx="18" cy="62" rx="12" ry="3"/>
+      <ellipse class="seaRing w2" cx="14" cy="62" rx="16" ry="3.4"/>
+      <ellipse class="seaRing w3" cx="-40" cy="62" rx="20" ry="4"/>
+      <ellipse class="seaRing w4" cx="-50" cy="62" rx="26" ry="4.4"/>
+      <circle class="seaBub b1" cx="-36" cy="60" r="1.4"/><circle class="seaBub b2" cx="-30" cy="59" r="1.1"/><circle class="seaBub b3" cx="-41" cy="58" r=".9"/>
     </svg>
     <div class="whGlide">
       <div class="whSurf">
@@ -2403,7 +2433,7 @@
       </div>
       <svg class="whSplash" viewBox="0 0 160 80">
         <path d="M22,70 Q34,42 46,70 M52,70 Q66,22 80,70 M86,70 Q100,30 114,70 M120,70 Q130,46 140,70"/>
-        <circle class="drop d1" cx="40" cy="44" r="2"/><circle class="drop d2" cx="80" cy="30" r="2.4"/><circle class="drop d3" cx="118" cy="40" r="1.8"/>
+        <circle class="seaDrop d1" cx="40" cy="44" r="2"/><circle class="seaDrop d2" cx="80" cy="30" r="2.4"/><circle class="seaDrop d3" cx="118" cy="40" r="1.8"/>
       </svg>
     </div>
   </div>
@@ -2411,7 +2441,7 @@
        one miss, a look at the room, and a head-first dive. Parks 40px short of the boat. -->
   <div id="sea-attack" class="seaThing">
     <svg class="atFx" viewBox="0 0 150 90">
-      <circle class="bub b1" cx="134" cy="80" r="3"/><circle class="bub b2" cx="142" cy="78" r="2.2"/><circle class="bub b3" cx="127" cy="77" r="1.8"/>
+      <circle class="seaBub b1" cx="134" cy="80" r="3"/><circle class="seaBub b2" cx="142" cy="78" r="2.2"/><circle class="seaBub b3" cx="127" cy="77" r="1.8"/>
       <!-- the periscope: just the head comes up where the bubbles were, looks at the boat, and sinks -->
       <g class="atPeri">
         <path d="M148,84 C150,70 146,58 132,50 L137,42 C158,54 160,72 156,84 Z"/>
@@ -2419,9 +2449,9 @@
         <path d="M130,49.5 C122,48.5 114,49.4 107,50.8 Q104.6,52.8 107.4,54.2 C114.5,55.6 123,54.6 131,52.8 Z"/>
         <circle class="atEye" cx="123" cy="40.4" r="2.1"/>
       </g>
-      <ellipse class="ring p0" cx="146" cy="82" rx="16" ry="3.4"/>
-      <ellipse class="ring m0" cx="-30" cy="82" rx="18" ry="3.6"/>
-      <ellipse class="ring r0" cx="24" cy="82" rx="14" ry="3.2"/><ellipse class="ring r1" cx="94" cy="82" rx="12" ry="3"/><ellipse class="ring r2" cx="132" cy="82" rx="10" ry="2.8"/><ellipse class="ring r3" cx="164" cy="82" rx="8" ry="2.4"/>
+      <ellipse class="seaRing p0" cx="146" cy="82" rx="16" ry="3.4"/>
+      <ellipse class="seaRing m0" cx="-30" cy="82" rx="18" ry="3.6"/>
+      <ellipse class="seaRing r0" cx="24" cy="82" rx="14" ry="3.2"/><ellipse class="seaRing r1" cx="94" cy="82" rx="12" ry="3"/><ellipse class="seaRing r2" cx="132" cy="82" rx="10" ry="2.8"/><ellipse class="seaRing r3" cx="164" cy="82" rx="8" ry="2.4"/>
     </svg>
     <div class="atSlither">
       <div class="atRise">
@@ -2490,7 +2520,7 @@
         <path class="ppFold" d="M8,26 L52,26 M30,3 L30,26"/>
       </svg>
     </div>
-    <svg class="ppFx" viewBox="0 0 60 44"><circle class="bub b1" cx="30" cy="30" r="1.6"/><circle class="bub b2" cx="35" cy="33" r="1.1"/></svg>
+    <svg class="ppFx" viewBox="0 0 60 44"><circle class="seaBub b1" cx="30" cy="30" r="1.6"/><circle class="seaBub b2" cx="35" cy="33" r="1.1"/></svg>
   </div>
   <!-- DOLPHINS — two on the same damped arc, a quarter-hop apart (a sine and a cosine). Travel right. -->
   <div id="sea-dolphins" class="seaThing">
@@ -2858,7 +2888,7 @@
         <div id="setActions">
           <div class="setActL">
             <button class="btn btnSand" id="dlBtn" type="button">Export a copy</button>
-            <button class="btn btnOutline" id="resetBtn" type="button">Use this file&rsquo;s settings</button>
+            <button class="btn btnOutline" id="setResetBtn" type="button">Use this file&rsquo;s settings</button>
           </div>
           <div class="setActR">
             <button class="btn btnGhost" id="closeBtn" type="button">Close</button>
@@ -2964,7 +2994,7 @@ var DEFAULT_SCENES = [
 ];
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.5.0",
+  appVersion: "7.5.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies" },
   activeScene: "Daily Board",
@@ -3591,10 +3621,13 @@ var Store = (function(){
     localStorage.removeItem(probe);
     ok = true;
   } catch(e){ ok = false; lastErr = e; }
+  var lastWritten = null, rawSeen = null;
   function read(){
-    if (!ok) return null;
+    /* v7.5.1: read even when the write probe failed — a full quota (the shared file://
+       origin) used to look like total data loss when the board was still right there */
     try {
       var raw = localStorage.getItem(KEY);
+      rawSeen = raw;
       if (!raw) return null;
       var o = JSON.parse(raw);
       return isObj(o) && isObj(o.cfg) ? o : null;
@@ -3603,27 +3636,42 @@ var Store = (function(){
   function write(c){
     if (!ok) return false;
     try {
-      localStorage.setItem(KEY, JSON.stringify({
+      var str = JSON.stringify({
         v: 1, savedAt: new Date().toISOString(),
         fileVersion: DEFAULTS.appVersion, cfg: c
-      }));
-      lastErr = null;
+      });
+      localStorage.setItem(KEY, str);
+      lastWritten = str; lastErr = null;
       return true;
     } catch(e){ lastErr = e; return false; }
+  }
+  /* v7.5.1: an unreadable device copy is QUARANTINED, never seeded over */
+  function quarantine(){
+    try { if (rawSeen) localStorage.setItem(KEY + ".bad-" + Date.now(), rawSeen); } catch(e){}
   }
   function clear(){
     if (!ok) return;
     try { localStorage.removeItem(KEY); } catch(e){ lastErr = e; }
   }
-  return { ok: ok, read: read, write: write, clear: clear, key: KEY,
+  return { ok: ok, read: read, write: write, clear: clear, key: KEY, quarantine: quarantine,
+           hasRaw: function(){ return !!rawSeen; },
+           wroteIt: function(str){ return str === lastWritten; },
            lastError: function(){ return lastErr; } };
 })();
 
 var cfgSource = "file";                          // "file" | "device" | "defaults"
 var storedFileVersion = null;                    // which release last saved it
+var storedUnreadable = false;                    // v7.5.1: a device copy exists but this file can't read it
+var storedNewer = false;                         // v7.5.1: the device copy was saved by a NEWER release
+function verNum(v){ var p = String(v || "0").split(".").map(function(x){ return parseInt(x, 10) || 0; }); return p[0] * 1e6 + (p[1] || 0) * 1e3 + (p[2] || 0); }
 (function(){
   var st = Store.read();
-  if (!st) return;
+  if (!st){ storedUnreadable = Store.hasRaw(); return; }
+  if (typeof st.fileVersion === "string" && verNum(st.fileVersion) > verNum(DEFAULTS.appVersion)){
+    /* an OLDER file over a newer board (last month's Export, say) must never write its
+       sanitized-down view over it — boot read-only from the file's seed and say so */
+    storedNewer = true; storedFileVersion = st.fileVersion; return;
+  }
   try {
     var mig = migrate(st.cfg);
     if (!isObj(mig) || !Object.keys(mig).length) throw new Error("unrecognized stored schemaVersion");
@@ -3634,6 +3682,7 @@ var storedFileVersion = null;                    // which release last saved it
   } catch(e){
     /* a corrupt device copy is ignored, never deleted here — Settings
        says so and offers the reset; the file's config carries on */
+    storedUnreadable = true;
     try { console.error("Deckhand: stored config unreadable, using the file's", e); } catch(_){}
   }
 })();
@@ -4408,7 +4457,7 @@ var Sound = (function(){
       o.type = "sine";
       o.frequency.value = freq;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(cfg.sound.volume, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0008, cfg.sound.volume), t + 0.03);   // a 0 ramp throws
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
       o.connect(g).connect(ctx.destination);
       o.start(t); o.stop(t + 0.32);
@@ -4438,7 +4487,7 @@ var Sound = (function(){
         o.type = "sine";
         o.frequency.value = root * p[0];
         g.gain.setValueAtTime(0.0001, t0);
-        g.gain.exponentialRampToValueAtTime(cfg.sound.volume * p[1], t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0008, cfg.sound.volume * p[1]), t0 + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.4);
         o.connect(g).connect(ctx.destination);
         o.start(t0); o.stop(t0 + 1.45);
@@ -4546,7 +4595,7 @@ function makeTimer(host, wcfg, assignIds){
       tank = q(".tideTank"), water = q(".tideWater"), digitsEl = q(".visDigits");
   if (assignIds){
     dEl.id = "timer"; chipsWrap.id = "chips"; startBtn.id = "startBtn";
-    plusBtn.id = "plusBtn"; resetBtn.id = "resetBtn"; hintEl.id = "hint";
+    plusBtn.id = "plusBtn"; resetBtn.id = "timerResetBtn"; hintEl.id = "hint";   // v7.5.1: was "resetBtn" — it shadowed Settings' reset (audit C4)
     visWrap.id = "visWrap"; progC.id = "visProgC"; tank.id = "tideTank";
     water.id = "tideWater"; digitsEl.id = "visDigits";
   }
@@ -6506,15 +6555,23 @@ function makeSettle(host, wcfg){
     var s = null, sched = null;
     try { s = Bell.statusAt(now()); sched = Bell.getActive(); } catch(e){}
     var cur = s && s.type === "in" ? s.label : null;
-    if (!booted || sched !== prevSched ||
+    /* v7.5.1: the schedule EPOCH — the week pick, the TODAY row (Wednesday times /
+       a custom day) and Settings all re-baseline the watch, so a schedule change
+       mid-class never reads as a bell (audit: "Wednesday times" at 10:08 started a
+       settle-in; undoing it fired the Pledge) */
+    var epoch = sched + "|" + (Bell.todayMode ? Bell.todayMode() : "");
+    if (!booted || epoch !== prevSched ||
         (typeof Settings !== "undefined" && Settings.isOpen())){
-      booted = true; prevSched = sched; prevIn = cur; return;
+      booted = true; prevSched = epoch; prevIn = cur; return;
     }
     /* the bell ALWAYS wins — a run already in flight (a kid tapping
        Start 20s early was a daily kill-switch, adversarial find) is
        simply restarted with the takeover */
-    /* the day's first block (idx 0) is the Pledge bell */
-    if (cur && cur !== prevIn) start(true, s.idx === 0);
+    /* the day's first block (idx 0) is the Pledge bell; Lunch is not a class */
+    if (cur && cur !== prevIn && !/lunch/i.test(cur)){
+      try { if (Landing.isShowing()) Landing.hide(); } catch(e){}   // a bell behind the landing page opens the board
+      start(true, s.idx === 0);
+    }
     prevIn = cur;
   }
   var watchTid = setInterval(bellWatch, 250);
@@ -6712,11 +6769,13 @@ function makeMusic(host, wcfg){
     o2.type = "sine"; o2.frequency.value = midiHz(midi) * 2.003;
     env(g, t, 0.01, vel, dur);
     env(g2, t, 0.01, vel * 0.22, dur * 0.35);
-    var trem = ctx.createOscillator(), tg = ctx.createGain();
-    trem.type = "sine"; trem.frequency.value = 4.2; tg.gain.value = vel * 0.25;
-    trem.connect(tg); tg.connect(g.gain);
-    o.connect(g); o2.connect(g2); g.connect(bus); g2.connect(bus);
-    if (send && echoIn) g.connect(echoIn);
+    /* the tremolo is its OWN gain stage in series (audit: added into the envelope's
+       gain it held every note on a −18 dB plateau and cut off with a click) */
+    var trem = ctx.createOscillator(), tg = ctx.createGain(), tremG = ctx.createGain();
+    trem.type = "sine"; trem.frequency.value = 4.2; tg.gain.value = 0.25; tremG.gain.value = 1;
+    trem.connect(tg); tg.connect(tremG.gain);
+    o.connect(g); g.connect(tremG); tremG.connect(bus); o2.connect(g2); g2.connect(bus);
+    if (send && echoIn) tremG.connect(echoIn);
     o.start(t); o2.start(t); trem.start(t);
     o.stop(t + dur + 0.3); o2.stop(t + dur + 0.3); trem.stop(t + dur + 0.3);
   }
@@ -6733,7 +6792,8 @@ function makeMusic(host, wcfg){
   }
   function bass(midi, t, dur, vel, slide){
     var o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = "sine"; o.frequency.value = midiHz(midi);
+    o.type = "triangle"; o.frequency.value = midiHz(midi);   // odd harmonics: a panel's speakers can't play a 40 Hz sine
+    vel *= 0.8;
     if (slide){                                  // a little scoop into the note
       o.frequency.setValueAtTime(midiHz(midi - 2), t);
       o.frequency.exponentialRampToValueAtTime(midiHz(midi), t + 0.09);
@@ -6787,7 +6847,7 @@ function makeMusic(host, wcfg){
     [[48,52,55,59],[45,52,55,60],[50,53,57,60],[43,53,59,62]],   // Imaj7 vi7 ii7 V7 (the standard turnaround)
     [[45,52,55,60],[53,57,60,64],[48,52,55,59],[43,53,59,62]],   // vi7 IVmaj7 Imaj7 V7 (the four-chord)
     [[48,52,55,59],[53,57,60,64],[53,56,60,63],[48,52,55,59]],   // Imaj7 IVmaj7 iv(m7) Imaj7 (the borrowed iv)
-    [[45,52,55,60],[41,48,52,57],[48,52,55,59],[43,47,50,55]]    // vi7 IV(add9) Imaj7 V (minor-leaning)
+    [[45,52,55,60],[41,48,52,57],[48,52,55,59],[43,47,50,55]]    // vi7 IVmaj7 Imaj7 V (minor-leaning)
   ];
   var LO_MOTIFS = [   /* [midi, beat-in-2-bars, durBeats] */
     [[76,0.5,0.7],[74,1.5,0.7],[72,2.5,1.3],[69,5,1.5]],
@@ -6812,7 +6872,7 @@ function makeMusic(host, wcfg){
     { name: "Library",        key: -4, bpm: 70, prog: 0, motif: 3, voice: "ep",     drums: "boombap",  hats: .9,  echo: 1,   tone: 5000, slide: false },
     { name: "Glass rhodes",   key: -1, bpm: 66, prog: 3, motif: 4, voice: "rhodes", drums: "halftime", hats: .5,  echo: 1.4, tone: 6200, slide: true  },
     { name: "Kalimba",        key: 2,  bpm: 78, prog: 4, motif: 7, voice: "pluck",  drums: "boombap",  hats: 1.2, echo: 1.6, tone: 6500, slide: false },
-    { name: "Brushes",        key: -3, bpm: 64, prog: 5, motif: 5, voice: "rhodes", drums: "brush",    hats: .6,  echo: 1.1, tone: 4600, slide: true  },
+    { name: "Brushes",        key: -3, bpm: 64, prog: 3, motif: 5, voice: "rhodes", drums: "brush",    hats: .6,  echo: 1.1, tone: 4600, slide: true  },
     { name: "Bossa",          key: 1,  bpm: 82, prog: 4, motif: 6, voice: "pluck",  drums: "bossa",    hats: .7,  echo: .9,  tone: 5800, slide: false },
     { name: "Fog",            key: -5, bpm: 60, prog: 6, motif: 5, voice: "pad",    drums: "none",     hats: 0,   echo: 1.8, tone: 3800, slide: false },
     { name: "Corner store",   key: 4,  bpm: 74, prog: 3, motif: 6, voice: "ep",     drums: "halftime", hats: 1.1, echo: .8,  tone: 5400, slide: true  }
@@ -6926,7 +6986,7 @@ function makeMusic(host, wcfg){
          soft echo of the motif a third down */
       if (p8 === 6 && tr.voice === "pluck" && Math.random() < 0.6){
         LO_MOTIFS[tr.motif].forEach(function(n){
-          keys(tr, n[0] + tr.key - 3, t + (n[1] + 0.5) * spb, n[2] * spb * 0.8, 0.02, true);
+          keys(tr, n[0] + tr.key - 12, t + (n[1] + 0.5) * spb, n[2] * spb * 0.8, 0.02, true);   // an octave below (a "third" was three semitones)
         });
       }
     }
@@ -8397,6 +8457,11 @@ var Alarm = (function(){
     el.alarm.classList.toggle("calm", v);
   }
   function ring(api){
+    /* v7.5.1: a deck or video fullscreened INSIDE its iframe sits above every z-index —
+       the alarm must always be dismissable, so the ring leaves that fullscreen first */
+    try {
+      if (document.fullscreenElement && document.fullscreenElement !== document.documentElement) document.exitFullscreen();
+    } catch(e){}
     if (ringing.indexOf(api) === -1) ringing.push(api);
     document.getElementById("alarmWho").textContent =
       ringing.map(function(a){ return a.label(); }).join(" · ");
@@ -8535,11 +8600,13 @@ var Sea = (function(){
     catch(e){ return { hist: [] }; }
   }
   function saveMem(m){ try { localStorage.setItem(STORE_KEY, JSON.stringify(m)); } catch(e){} }
-  function seenFactor(mem, period, act){
-    /* 0.5 per sighting this period over the last five school days */
+  function seenFactor(mem, period, act, today){
+    /* 0.5 per sighting this period over the last five school days — never counting
+       TODAY, or a reload mid-period would re-plan the period's own show */
     var dates = [], n = 0;
     for (var i = mem.hist.length - 1; i >= 0; i--){
       var h = mem.hist[i];
+      if (h.d === today) continue;
       if (dates.indexOf(h.d) === -1){ if (dates.length >= 5) break; dates.push(h.d); }
       if (h.p === period && h.a === act) n++;
     }
@@ -8567,7 +8634,7 @@ var Sea = (function(){
         if (a.greeting && k === greeting) return;
         if (a.tier === "rare" && !lastThird) return;
         if (a.lastThird && !lastThird) return;
-        w[k] = TIER_W[a.tier] * (mem ? seenFactor(mem, period, k) : 1) * Math.pow(0.3, count[k] || 0);   // no encores within a period
+        w[k] = TIER_W[a.tier] * (mem ? seenFactor(mem, period, k, dateStr) : 1) * Math.pow(0.3, count[k] || 0);   // no encores within a period
       });
       var act = pickWeighted(r, w);
       if (!act) break;
@@ -9265,6 +9332,11 @@ var Canvas = (function(){
     elx.addEventListener("pointerdown", function(){
       var e2 = elx._entry;
       select(e2); bringToFront(e2);
+      if (cfg.ui.locked){                        // v7.5.1: a tap on a locked card brightens its ⛶ Stage chip for 4s
+        elx.classList.add("wChip");
+        clearTimeout(e2.chipTid);
+        e2.chipTid = setTimeout(function(){ elx.classList.remove("wChip"); }, 4000);
+      }
       /* any touch lifts a ghost so the controls come back; GHOST_FUSE of
          idle re-ghosts a still-running timer */
       e2.ghostHold = Date.now();
@@ -9312,6 +9384,12 @@ var Canvas = (function(){
       '<div class="wHandle hS" data-dir="s" aria-hidden="true"></div>';
     var wname = wcfg.label || WIDGET_NAMES[wcfg.type] || "Widget";
     elx.querySelector(".wLabel").textContent = wname.toUpperCase();
+    /* v7.5.1: only a CUSTOM name earns a label (the content says "timer" already) */
+    if (wcfg.label && wcfg.label.trim() &&
+        wcfg.label.trim().toLowerCase() !== String(WIDGET_NAMES[wcfg.type] || "").toLowerCase()){
+      elx.classList.add("wNamed");
+      elx.setAttribute("data-label", wcfg.label.trim());
+    }
     elx.setAttribute("aria-label", wname);
     elx.querySelector(".wClose").setAttribute("aria-label", "Remove " + wname);
     cEl.appendChild(elx);
@@ -10028,6 +10106,13 @@ var Settings = (function(){
     if (f.anchorWeek.options.length) f.anchorWeek.value = String(idx);
   }
   function open(){
+    /* v7.5.1 (audit): Lock is a boundary now — Settings (owner name, bells, rosters, the
+       device reset) waits for the hold-to-unlock. The lock pill nods to say so. */
+    if (cfg.ui.locked){
+      var lb = $("lockBtn");
+      if (lb){ lb.classList.remove("nod"); void lb.offsetWidth; lb.classList.add("nod"); setTimeout(function(){ lb.classList.remove("nod"); }, 900); }
+      return;
+    }
     f.name.value = cfg.ownerName || "";
     f.bar.checked = !!cfg.bell.showProgressBar;
     f.strip.checked = !!cfg.bell.showDayStrip;
@@ -10359,12 +10444,12 @@ var Settings = (function(){
   var resetArmed = null;
   function disarmReset(){
     if (resetArmed !== null){ clearTimeout(resetArmed); resetArmed = null; }
-    var b = $("resetBtn");
+    var b = $("setResetBtn");
     b.classList.remove("armed");
     b.textContent = "Use this file\u2019s settings";
   }
   function resetToFile(){
-    var b = $("resetBtn");
+    var b = $("setResetBtn");
     if (resetArmed === null){
       b.classList.add("armed");
       b.textContent = "Really replace the device copy?";
@@ -10522,7 +10607,7 @@ var Settings = (function(){
       });
       wireButton($("applyBtn"), apply);
       wireButton($("dlBtn"), download);
-      wireButton($("resetBtn"), resetToFile);
+      wireButton($("setResetBtn"), resetToFile);
       wireButton($("closeBtn"), function(e){ close(!e || e.detail === 0); });
       $("settingsBack").addEventListener("click", function(){ close(false); });
       wireButton($("rosterImportBtn"), importSeatingLocal);
@@ -10564,7 +10649,7 @@ var SaveState = (function(){
     return okw;
   }
   function paint(){
-    var bad = (failed || !Store.ok) && isDirty();
+    var bad = failed || !Store.ok || (suspended && isDirty());   // v7.5.1: a blocked store shows at once, not after the first edit
     el.setBtn.classList.toggle("dirty", bad);
     el.setBtn.title = bad
       ? "Changes could not be saved on this device — Settings → Export a copy to keep them"
@@ -10580,9 +10665,36 @@ var SaveState = (function(){
       /* a file-seeded boot (first open on this device, or a device copy
          that was just reset) persists at once so the next open is the
          same board */
-      if (Store.ok && cfgSource !== "device" && !fileBroken){
+      if (storedNewer || storedUnreadable){
+        /* v7.5.1: hands off the device copy. Newer: another release owns it — open that
+           file. Unreadable: keep it aside (quarantined) for a rescue instead of seeding over it. */
+        suspended = true;
+        if (storedUnreadable) Store.quarantine();
+        try {
+          var vn0 = document.getElementById("verNudge");
+          document.getElementById("verNudgeText").textContent = storedNewer
+            ? "This board was saved by Deckhand " + storedFileVersion + ", newer than this file (" + DEFAULTS.appVersion + "). Open the newer file — nothing will be saved from here."
+            : "The board saved on this device could not be read by this file. It was set aside, not replaced — nothing will be saved until Settings → Use this file’s settings.";
+          document.getElementById("verNudgeBells").hidden = true;
+          vn0.hidden = false;
+          wireButton(document.getElementById("verNudgeKeep"), function(){ vn0.hidden = true; });
+        } catch(e){}
+      } else if (Store.ok && cfgSource !== "device" && !fileBroken){
         if (Store.write(cfg)){ lastSaved = new Date(); cfgSource = "device"; }
       }
+      /* v7.5.1: two open copies must not erase each other — a write from another window
+         suspends this one and says so */
+      window.addEventListener("storage", function(e){
+        if (e.key !== Store.key || e.newValue === null || Store.wroteIt(e.newValue)) return;
+        suspended = true;
+        try {
+          var vn1 = document.getElementById("verNudge");
+          document.getElementById("verNudgeText").textContent = "This board was changed in another window. Reload to pick it up — nothing will be saved from here until then.";
+          document.getElementById("verNudgeBells").hidden = true;
+          vn1.hidden = false;
+        } catch(err){}
+      });
+      paint();
       setInterval(flush, 2500);
       window.addEventListener("pagehide", flush);
       document.addEventListener("visibilitychange", function(){
@@ -10599,7 +10711,7 @@ var SaveState = (function(){
          changes that a saved board would otherwise mask. */
       try {
         if (cfgSource === "device" && storedFileVersion !== null &&
-            storedFileVersion !== DEFAULTS.appVersion){
+            verNum(storedFileVersion) < verNum(DEFAULTS.appVersion)){
           var vn = document.getElementById("verNudge");
           document.getElementById("verNudgeText").textContent =
             "Deckhand " + DEFAULTS.appVersion + " \u2014 your saved board and rosters were kept.";
@@ -10884,6 +10996,7 @@ window.Deckhand = {
   get activeIndex(){ return Bell.getActive(); },
   get scene(){ return cfg.activeScene; },
   setSchedule: function(i){ Bell.setActive(i); },
+  setToday: function(mode, blocks){ Bell.setToday(mode, blocks); },   // v7.5.1: the TODAY row (tests)
   get dirty(){ return SaveState.isDirty(); },
   get configSource(){ return cfgSource; },
   store: Store,                                 // v7.0: device persistence (test hook)

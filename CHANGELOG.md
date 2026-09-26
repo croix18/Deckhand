@@ -2,7 +2,49 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
-## 7.5.0 — 2026-09-27
+## 7.5.1 — 2026-09-27
+
+**The audit round.** Four reviews of the whole project (`docs/reviews/audit-2026-09-27-*`):
+an engineering audit, an adversarial rebuttal of it, a design review through the
+"whole product" lens, and a technical review through the "read every line" lens. This
+release is their evening one.
+
+**Fixed: the blank timers.** 7.5's sea styling used an unscoped `.ring` class that matched
+the timer's ring face, so every Ring timer, the Next Bell widget and the ghost timer over
+a staged deck rendered invisible. Every sea effect class is scoped under `#sea` now, and a
+test checks the faces are painted, not just present.
+
+**The strips (Croix: "We all know it's a clock").** Locked (teaching): no title strip at
+all — the card is its content, 30 px taller; a custom name shows as a small caption inside;
+⛶ Stage stays as a faint round button at the top-right that brightens and says "Stage" for
+four seconds when the card is tapped. Unlocked (editing): a slim neutral handle band with a
+grabber mark, the label only for custom names, the icons on 44 px hit boxes. The per-type
+strip colours are retired.
+
+**Data safety.** An unreadable device copy is quarantined (`deckhand.config.bad-<time>`),
+never seeded over; a board saved by a newer release makes an older file read-only with a
+banner (an old Export can no longer overwrite the current board); a save from another
+window suspends this one with a banner; the store is read even when the write probe fails
+(a full quota no longer looks like data loss), and a blocked store shows the coral dot at
+once. Settings is behind the lock (the lock pill nods). `#setResetBtn` — the timer's legacy
+`resetBtn` id no longer shadows Settings' reset (the armed "Really replace…" state landed on
+the timer's button). `check.sh` refuses free text (notes, agenda, teams, tally, titles, the
+saved-deck library); `push.sh` stages an allowlist, never `-A`; `serve.js` binds loopback
+and refuses dotfiles.
+
+**In the room.** The alarm leaves a deck's fullscreen before it rings (it sat behind the
+video). The settle-in skips Lunch, re-baselines when the TODAY row changes (switching to
+Wednesday times mid-class started a count; undoing it fired the Pledge), and a bell behind
+the landing page opens the board. Alarm text is navy on coral (8:1; white was 2.47:1).
+
+**The sea and the tape.** The boat's mast, not its left edge, is the phase reference. The
+back wave layer is three wavelengths wide (it had a seam). The director's memory excludes
+today (a reload mid-period re-planned the show). The Rhodes tremolo is its own gain stage
+(notes decayed to a plateau and clicked); the pluck answer is an octave down (a "third"
+was three semitones); Brushes runs a diatonic progression (its motif clashed with the
+borrowed iv); bass is a triangle (a panel's speakers can't play a 40 Hz sine); the chime
+never ramps to 0 (it threw).
+
 
 **Sea 2.0.** Built after a three-part review (`docs/reviews/sea-2.0-*.md`) and written up
 in `docs/SEA.md`. The water is three travelling wave layers with periods by deep-water

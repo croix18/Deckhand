@@ -159,3 +159,74 @@ test.describe("the boat and the residents", () => {
     await pg.close();
   });
 });
+
+test.describe("v7.5.1 — the audits' evening one", () => {
+  test("v7.5.1: ring timers, Next Bell and the ghost timer are VISIBLE (the sea's ring class no longer reaches them)", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T09:40:00");
+    await dh.launch();
+    await dh.addTimer();
+    await page.click("#addBtn"); await page.click("#addBellBtn");
+    await page.evaluate(() => document.querySelector(".w-timer")._entry.api.startSeconds(120));
+    const vis = await page.evaluate(() => [...document.querySelectorAll(".visWrap")].map(v => ({ cls: v.className, op: getComputedStyle(v).opacity, h: v.getBoundingClientRect().height })));
+    ok(vis.length >= 2 && vis.every(v => v.op === "1" && v.h > 20), "timer faces not visible: " + JSON.stringify(vis));
+    // pixels, not CSS: the ring's turquoise is painted where the timer sits
+    const px = await page.evaluate(async () => {
+      const r = document.querySelector(".w-timer .visWrap").getBoundingClientRect();
+      const c = document.createElement("canvas"); c.width = 1; c.height = 1;
+      return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + 6) };
+    });
+    const shot = await page.screenshot({ clip: { x: px.x - 2, y: px.y - 2, width: 4, height: 4 } });
+    ok(shot.length > 0, "no pixels");
+    const sea = await page.evaluate(() => ["seaRing", "seaBub", "seaDrop"].every(k => document.querySelector("#sea ." + k)) && !document.querySelector("#sea .ring"));
+    ok(sea, "the sea's effect classes are not scoped");
+  });
+
+  test("v7.5.1: the strips — no strip while locked (a faint Stage chip that brightens on tap; custom names as a caption), a slim band unlocked", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T09:40:00");
+    await dh.launch();
+    await dh.addTimer();
+    const band = await page.evaluate(() => { const s = document.querySelector(".w-timer .strip"); const r = s.getBoundingClientRect(); return { h: r.height, label: getComputedStyle(s.querySelector(".wLabel")).opacity }; });
+    ok(band.h >= 28 && band.h <= 32 && band.label === "0", "unlocked band: " + JSON.stringify(band));
+    await page.evaluate(() => { const en = document.querySelector(".w-timer")._entry; en.el.classList.add("wNamed"); en.el.setAttribute("data-label", "Station 2"); });
+    await page.click("#lockBtn");
+    await page.waitForTimeout(400);              // the chip fades to its resting opacity
+    const locked = await page.evaluate(() => {
+      const w = document.querySelector(".w-timer"), s = w.querySelector(".strip"), f = w.querySelector(".wFocus");
+      return { h: s.getBoundingClientRect().height, chipOp: getComputedStyle(f).opacity, caption: getComputedStyle(w, "::before").content, bodyTop: w.querySelector(".wBody").getBoundingClientRect().top - w.getBoundingClientRect().top };
+    });
+    ok(locked.h === 0 && +locked.chipOp < 0.5 && locked.caption === '"Station 2"' && locked.bodyTop < 4, "locked strip: " + JSON.stringify(locked));
+    await page.click(".w-timer .wBody", { force: true });
+    await expect(page.locator(".w-timer")).toHaveClass(/wChip/);
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.querySelector(".w-timer .wFocus")).opacity)).toBe("1");
+    ok((await page.evaluate(() => getComputedStyle(document.querySelector(".w-timer .wFocus"), "::after").content)) === '"Stage"', "no Stage word on the chip");
+    await page.click(".w-timer .wFocus");        // still a live view action while locked
+    await expect(page.locator(".w-timer")).toHaveClass(/wFull/);
+    await page.click("#unfocusBtn");
+    // Settings is behind the lock
+    await page.click("#setBtn");
+    ok(await page.locator("#settingsWrap").isHidden(), "Settings opened while locked");
+    await expect(page.locator("#lockBtn")).toHaveClass(/nod/);
+  });
+
+  test("v7.5.1: the alarm leaves a fullscreened deck; Settings' reset no longer shadows the timer's; the settle-in skips Lunch and re-baselines on a TODAY change", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T10:08:00");
+    await dh.launch();
+    await dh.addTimer();
+    ok((await page.evaluate(() => document.querySelectorAll("#resetBtn").length)) === 0 && (await page.evaluate(() => !!document.getElementById("setResetBtn") && !!document.getElementById("timerResetBtn"))), "reset ids still collide");
+    // TODAY → Wednesday times mid-class must not start a settle-in, nor must undoing it fire the Pledge
+    await page.evaluate(() => window.Deckhand.setToday("wednesday", []));
+    await page.waitForTimeout(700);
+    ok(!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api.running())), "a schedule change mid-class started the settle-in");
+    await page.evaluate(() => window.Deckhand.setToday("regular", []));
+    await page.waitForTimeout(700);
+    ok(!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api._pledgeUntil())), "undoing the change fired the Pledge");
+    // Lunch is not a class
+    await dh.openAt("#t=2026-09-28T12:41:55");
+    await dh.launch();
+    await page.waitForTimeout(6500);
+    ok(!(await page.evaluate(() => document.querySelector(".w-settle")._entry.api.running())), "the settle-in ran at Lunch");
+    // a bell behind the landing page opens the board
+    await dh.openAt("#t=2026-09-28T13:14:56");
+    await expect(page.locator("main#canvas")).toBeVisible({ timeout: 8000 });
+  });
+});

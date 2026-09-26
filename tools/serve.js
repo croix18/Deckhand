@@ -8,13 +8,15 @@ const port = +(process.argv[2] || process.env.PORT || 4173);
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".json": "application/json",
   ".png": "image/png", ".md": "text/markdown; charset=utf-8", ".css": "text/css" };
 http.createServer((req, res) => {
-  let p = decodeURIComponent(req.url.split("?")[0].split("#")[0]);
+  let p;
+  try { p = decodeURIComponent(req.url.split("?")[0].split("#")[0]); } catch (e) { res.writeHead(400); return res.end("bad url"); }
   if (p.endsWith("/")) p += "index.html";
   const f = path.normalize(path.join(root, p));
-  if (!f.startsWith(root)) { res.writeHead(403); return res.end(); }
+  // v7.5.1 (audit): inside the repo, never a dotfile (.github-token lives here while pushing)
+  if (!f.startsWith(root) || p.split("/").some(seg => seg.startsWith("."))) { res.writeHead(403); return res.end(); }
   fs.readFile(f, (err, data) => {
     if (err) { res.writeHead(404); return res.end("not found"); }
     res.writeHead(200, { "Content-Type": types[path.extname(f)] || "application/octet-stream" });
     res.end(data);
   });
-}).listen(port, () => console.log("Deckhand at http://localhost:" + port + "/Deckhand.html"));
+}).listen(port, "127.0.0.1", () => console.log("Deckhand at http://localhost:" + port + "/Deckhand.html"));   // loopback only

@@ -7,6 +7,7 @@
 # Checks every tracked or untracked *.html (outside node_modules):
 #   - the <script id="deckhand-config"> block parses
 #   - rosters are empty, no widget carries a url/decks/stations
+#   - no widget carries free text (notes, agenda, teams, tally, titles, saved decks)
 #   - ownerName is the shipped default
 #   - no tmp_*.html fixture is staged
 #
@@ -37,9 +38,21 @@ for (const f of files) {
     Object.values(w.decks || {}).forEach(u => urls.push(u));
     (w.stations || []).forEach(t => t && t.url && urls.push(t.url));
   }));
+  /* v7.5.1 (audit): free text is where student names end up — notes, agenda items, team and
+     tally names, event titles, the settle message, the saved-deck library. Any content refuses. */
+  const TEXT_KEYS = ["html", "text", "saved", "teams", "items", "names", "title", "msgDone", "lines", "pages", "decks"];
+  const texty = [];
+  (c.scenes || []).forEach(s => (s.widgets || []).forEach(w => {
+    if (!w) return;
+    TEXT_KEYS.forEach(k => {
+      const v = w[k];
+      if (typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length : (v && typeof v === "object" && Object.keys(v).length))
+        texty.push(w.type + "." + k);
+    });
+  }));
   const owner = c.ownerName;
-  if (names.length || urls.length || (owner && owner !== "Mr. Shaffer")) {
-    console.error(`${f}: REFUSED — ${names.length} roster names, ${urls.length} URLs, owner=${JSON.stringify(owner)}`);
+  if (names.length || urls.length || texty.length || (owner && owner !== "Mr. Shaffer")) {
+    console.error(`${f}: REFUSED — ${names.length} roster names, ${urls.length} URLs, content in [${texty.join(", ")}], owner=${JSON.stringify(owner)}`);
     bad++;
   }
 }

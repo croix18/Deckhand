@@ -79,7 +79,7 @@ test.describe("autosave on the device", () => {
     });
     ok(vis, "action row is below the fold");
     await expect(page.locator("#dlBtn")).toHaveText("Export a copy");
-    await expect(page.locator("#resetBtn")).toBeVisible();
+    await expect(page.locator("#setResetBtn")).toBeVisible();
   });
 
   test("v7.0: Use this file's settings is two-tap and wipes the device copy", async ({ page, dh }) => {
@@ -89,12 +89,12 @@ test.describe("autosave on the device", () => {
     await page.fill("#sName", "Ms. Test");
     await page.click("#applyBtn");
     await dh.flush();
-    await page.click("#resetBtn");
-    await expect(page.locator("#resetBtn")).toHaveClass(/armed/);
+    await page.click("#setResetBtn");
+    await expect(page.locator("#setResetBtn")).toHaveClass(/armed/);
     await expect(page.locator("#setErrors")).toContainText("forgets everything");
     // arming disarms itself; a second tap inside the window reloads on the file
     await page.evaluate(() => { try { sessionStorage.setItem("dh.keepStore", "1"); } catch (e) {} window.name = "dh.keepStore"; });
-    await Promise.all([page.waitForNavigation(), page.click("#resetBtn")]);
+    await Promise.all([page.waitForNavigation(), page.click("#setResetBtn")]);
     await page.waitForSelector("#launchBtn");
     await expect(page.locator("#greet")).toContainText("Mr. Shaffer");
     // (the init script clears storage on that navigation anyway; the real proof is Store.clear ran before reload)
@@ -142,13 +142,58 @@ test.describe("autosave on the device", () => {
     await expect(page.locator("#verNudge")).toBeHidden();
   });
 
-  test("v7.0: a corrupt device copy is ignored and the file's config boots (never a defaults board)", async ({ page, dh }) => {
+  test("v7.0/7.5.1: a corrupt device copy boots the file's config (never a defaults board) — and is QUARANTINED, never seeded over", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-21T10:30");
     await page.evaluate(() => localStorage.setItem("deckhand.config", "{not json"));
     await dh.reopen("#t=2026-09-21T10:30");
-    ok(await page.evaluate(() => window.Deckhand.configSource) === "device", "file config should re-seed after a corrupt store");
+    ok(await page.evaluate(() => window.Deckhand.configSource) === "file", "should boot from the file, hands off the device copy");
     ok(await page.evaluate(() => !document.getElementById("cfgWarn")), "corrupt STORE must not raise the corrupt FILE banner");
     await expect(page.locator("#greet")).toContainText("Mr. Shaffer");
+    await expect(page.locator("#verNudge")).toBeVisible();
+    await expect(page.locator("#verNudgeText")).toContainText("could not be read");
+    const st = await page.evaluate(() => ({
+      raw: localStorage.getItem("deckhand.config"),
+      bad: Object.keys(localStorage).filter(k => k.startsWith("deckhand.config.bad-")).length
+    }));
+    ok(st.raw === "{not json" && st.bad === 1, "the unreadable copy was overwritten or not quarantined: " + JSON.stringify(st));
+    // and the autosave stays suspended: an edit changes nothing on the device
+    await page.evaluate(() => { window.Deckhand.config.ownerName = "Ms. Edit"; window.Deckhand.flush(); });
+    ok((await page.evaluate(() => localStorage.getItem("deckhand.config"))) === "{not json", "a suspended board still wrote");
+    // the escape hatch: Use this file's settings clears it and reboots on the seed
+    await dh.launch();
+    await page.click("#setBtn");
+    await dh.tab("device");
+    await page.click("#setResetBtn");
+    await page.evaluate(() => { try { sessionStorage.setItem("dh.keepStore", "1"); } catch (e) {} window.name = "dh.keepStore"; });
+    await Promise.all([page.waitForNavigation(), page.click("#setResetBtn")]);
+    await page.waitForFunction(() => !!window.Deckhand);
+    await expect.poll(() => page.evaluate(() => window.Deckhand.configSource)).toBe("device");
+  });
+
+  test("v7.5.1: an OLDER file never writes over a board saved by a newer release; another window's save suspends this one", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-21T10:30");
+    await page.evaluate(() => {
+      const o = JSON.parse(localStorage.getItem("deckhand.config"));
+      o.fileVersion = "99.0.0"; o.cfg.ownerName = "Ms. Future"; o.cfg.rosters = [{ period: "2nd", names: ["Ava"] }];
+      localStorage.setItem("deckhand.config", JSON.stringify(o));
+    });
+    await dh.reopen("#t=2026-09-21T10:30");
+    await expect(page.locator("#verNudgeText")).toContainText("newer than this file");
+    await page.evaluate(() => { window.Deckhand.config.ownerName = "Ms. Old"; window.Deckhand.flush(); });
+    await page.waitForTimeout(300);
+    const kept = await page.evaluate(() => JSON.parse(localStorage.getItem("deckhand.config")));
+    ok(kept.fileVersion === "99.0.0" && kept.cfg.ownerName === "Ms. Future" && kept.cfg.rosters.length === 1, "the newer board was overwritten: " + JSON.stringify(kept).slice(0, 200));
+    // a second window: simulate its write with a storage event
+    await dh.openAt("#t=2026-09-21T10:30");
+    await dh.launch();
+    await page.evaluate(() => {
+      const o = JSON.parse(localStorage.getItem("deckhand.config")); o.cfg.ownerName = "Ms. Other";
+      const str = JSON.stringify(o); localStorage.setItem("deckhand.config", str);
+      window.dispatchEvent(new StorageEvent("storage", { key: "deckhand.config", newValue: str, oldValue: "x" }));
+    });
+    await expect(page.locator("#verNudgeText")).toContainText("another window");
+    await page.evaluate(() => { window.Deckhand.config.ownerName = "Ms. Stale"; window.Deckhand.flush(); });
+    ok((await page.evaluate(() => JSON.parse(localStorage.getItem("deckhand.config")).cfg.ownerName)) === "Ms. Other", "the stale window overwrote the other window's save");
   });
 
   test("v7.0: a broken file block with a good device copy runs on the device copy and refuses export", async ({ page, dh }) => {

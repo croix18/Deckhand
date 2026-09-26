@@ -424,10 +424,11 @@ test.describe("round trip", () => {
     await dh.launch();
     await page.selectOption("#sceneSel", "Stations");
     await expect.poll(() => page.evaluate(() => window.Deckhand.scene)).toBe("Stations");
-    await page.click("#lockBtn");
     await page.click("#setBtn");
     await dh.tab("bells");
     await page.fill("#sNudge", "45");
+    // v7.5.1: Settings is behind the lock now, so the locked state is set after it opened
+    await page.evaluate(() => { window.Deckhand.config.ui.locked = true; document.body.classList.add("locked"); });
     const [dl] = await Promise.all([
       page.waitForEvent("download"),
       page.click("#dlBtn")
