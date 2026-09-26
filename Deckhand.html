@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.11.0",
+  "appVersion": "7.11.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2573,30 +2573,61 @@
   @keyframes ghSwingSmall{from{transform:skewX(-1.5deg);} to{transform:skewX(2deg);}}
   @keyframes ghStream{from{transform:skewY(calc(var(--flut) * -1.3)) scaleX(1);} to{transform:skewY(var(--flut)) scaleX(.94);}}
 
-  /* ---- CASTAWAY (46 s, far/near): flotsam, drifts right, a candle that can drown ---- */
-  #sea-castaway{bottom:4px; left:-70px; width:60px;}
-  #sea-castaway.far{bottom:15px;}  #sea-castaway.near{bottom:0;}
+  /* ---- WILSON (46 s, near): surfaces beside the boat, is looked at, drifts away; in wind he goes over ----
+     Croix: "I really like the idea of wilson pumpkin" — a character, not flotsam. His own
+     size (never the lane's), a rim on the lit cuts so the face reads at eight metres, and a
+     beat with the boat: the gull peers down, the bow dips after him. */
+  #sea-castaway{bottom:6px; left:calc(max(42vw, 300px) + 50px); width:72px; --ls:1.35;}
+  #sea-castaway.far, #sea-castaway.near{bottom:6px; --ls:1.35;}
   .cwFx{position:absolute; left:0; top:0; width:100%;}
   .cwWater{fill:var(--turq-light);}
   #sea-castaway .ocFace.lit{display:block;}
+  #sea-castaway .ocCut{fill:var(--octLit); stroke:var(--navy); stroke-width:1.1; stroke-linejoin:round; paint-order:stroke;}
+  #sea-castaway .ocLeak{opacity:.9;}
   .cwRoll, .cwList, .cwSway{transform-box:view-box; transform-origin:30px 30px;}
-  body.waveMotion #sea-castaway.go{animation:cwDrift 46s linear, thingHeave calc(var(--T1) / 2) var(--sine) infinite alternate;}
+  .cwRise{transform-box:view-box;}
+  body.waveMotion #sea-castaway.go{animation:cwDrift 46s linear both, thingHeave calc(var(--T1) / 2) var(--sine) infinite alternate;}
+  body.waveMotion #sea-castaway.go .cwRise{animation:cwSurface 46s linear both;}
+  body.waveMotion #sea-castaway.go .cwRoll{animation:cwRight 46s linear both;}
   body.waveMotion #sea-castaway.go .cwSway{animation:cwRock calc(var(--T2) / 2) var(--sine) infinite alternate;}
+  body.waveMotion #sea-castaway.go .cwCandle{animation:cwCatch 46s linear both;}
   body.waveMotion #sea-castaway.go .ocFace{animation:ocBreath 15s linear infinite;}
   body.waveMotion #sea-castaway.go .ocFlame{animation:ocShiver 1.4s linear infinite;}
   body.waveMotion #sea-castaway.go .ocLeak{animation:ocLeakBreath 15s linear infinite;}
-  #sea-castaway .ocCut{fill:var(--octLit);}  #sea-castaway .ocLeak{opacity:.9;}
-  body.waveMotion #sea-castaway.go .seaRing{animation-delay:5.5s;}
+  body.waveMotion #sea-castaway.go .seaRing.r0{animation-delay:.15s;}
+  body.waveMotion #sea-castaway.go .seaRing.r1{animation-delay:.9s; animation-duration:1s;}
+  body.waveMotion #sea-castaway.go .seaBub{animation:seaBub .9s ease-out forwards;}
+  body.waveMotion #sea-castaway.go .seaBub.b2{animation-delay:.25s;}  body.waveMotion #sea-castaway.go .seaBub.b3{animation-delay:.5s;}
   body[data-sea="windy"].waveMotion #sea-castaway.go .cwList{animation:cwCapsize 46s linear both;}
-  body[data-sea="windy"].waveMotion #sea-castaway.go .ocCut, body[data-sea="windy"].waveMotion #sea-castaway.go .ocLeak{animation:cwDrown 46s linear both;}
-  @keyframes cwDrift{from{transform:translateX(0) scale(var(--ls, 1));} to{transform:translateX(calc(100vw + 140px)) scale(var(--ls, 1));}}
+  body[data-sea="windy"].waveMotion #sea-castaway.go .cwCandle{animation:cwCatchDrown 46s linear both;}
+  /* the boat's part: the gull leans over the masthead to look, straightens as he goes; the bow dips after him once */
+  body.waveMotion #boat.wilson.gull .glPerch{animation:glPeer 46s linear both;}
+  body.waveMotion #boat.wilson .btRig{animation:btNod 46s linear both;}
+  /* beats: 0–1.1 s bubbles and the ring; 1.1–2.4 he comes up with an overshoot and rolls
+     upright; 2.6 the candle catches; 3.7 s the current takes him; windy: over at 25 s */
+  /* the drift ends BEHIND the sand pumpkins (right 6vw, ~17vw wide): he goes out of sight
+     behind them, so the act can end there without a pop; the open water is the boat → the
+     pumpkins, and the windy capsize (50 %) lands in the middle of it */
+  @keyframes cwDrift{0%,8%{transform:translateX(0) scale(var(--ls, 1)); animation-timing-function:cubic-bezier(.4,0,.8,.6);}
+    14%{transform:translateX(calc(2vw + 10px)) scale(var(--ls, 1)); animation-timing-function:linear;}
+    100%{transform:translateX(calc(36vw + 10px)) scale(var(--ls, 1));}}
+  @keyframes cwSurface{0%,2.4%{translate:0 36px; animation-timing-function:cubic-bezier(.2,.6,.3,1);}
+    3.9%{translate:0 -5px; animation-timing-function:cubic-bezier(.4,0,.6,1);}  4.7%{translate:0 2px; animation-timing-function:ease-in-out;}
+    5.4%,93%{translate:0 0; animation-timing-function:ease-in;}  100%{translate:0 36px;}}   /* the last 3 s: under, behind the sand pumpkins, so the act ends unseen */
+  @keyframes cwRight{0%,2.4%{rotate:-35deg; animation-timing-function:cubic-bezier(.3,.5,.4,1);}
+    4.1%{rotate:9deg; animation-timing-function:ease-in-out;}  4.9%{rotate:-4deg; animation-timing-function:ease-in-out;}  5.6%,100%{rotate:0deg;}}
+  @keyframes cwCatch{0%,5.2%{opacity:0; animation-timing-function:cubic-bezier(.2,.8,.3,1);}  5.7%{opacity:1; animation-timing-function:ease-in;}
+    6.1%{opacity:.35; animation-timing-function:ease-out;}  6.6%{opacity:1; animation-timing-function:ease-in-out;}  7.1%{opacity:.8;}  7.6%,100%{opacity:1;}}
+  @keyframes cwCatchDrown{0%,5.2%{opacity:0; animation-timing-function:cubic-bezier(.2,.8,.3,1);}  5.7%{opacity:1; animation-timing-function:ease-in;}
+    6.1%{opacity:.35; animation-timing-function:ease-out;}  6.6%{opacity:1; animation-timing-function:ease-in-out;}  7.1%{opacity:.8;}  7.6%,65.4%{opacity:1; animation-timing-function:cubic-bezier(.6,0,1,.6);}  65.7%,100%{opacity:0;}}
   @keyframes cwRock{from{rotate:-3deg;} to{rotate:2.4deg;}}
-  /* it goes over mid-screen (23 s), past the boat and well before the sand pumpkins it
-     would otherwise capsize behind */
-  @keyframes cwCapsize{0%,50%{rotate:0deg; animation-timing-function:ease-in-out;} 56.5%{rotate:28deg; animation-timing-function:ease-in-out;}
-    58.7%{rotate:26deg; animation-timing-function:cubic-bezier(.6,0,.9,.5);} 61.3%{rotate:62deg; animation-timing-function:cubic-bezier(.2,.7,.3,1);}
-    62.8%{rotate:58deg; animation-timing-function:ease-in-out;} 64.8%,100%{rotate:60deg;}}
-  @keyframes cwDrown{0%,60.4%{opacity:1; animation-timing-function:cubic-bezier(.6,0,1,.6);} 60.7%,100%{opacity:0;}}
+  @keyframes cwCapsize{0%,55%{rotate:0deg; animation-timing-function:ease-in-out;} 61.5%{rotate:28deg; animation-timing-function:ease-in-out;}
+    63.7%{rotate:26deg; animation-timing-function:cubic-bezier(.6,0,.9,.5);} 66.3%{rotate:62deg; animation-timing-function:cubic-bezier(.2,.7,.3,1);}
+    67.8%{rotate:58deg; animation-timing-function:ease-in-out;} 69.8%,100%{rotate:60deg;}}
+  @keyframes glPeer{0%,4%{transform:rotate(0); animation-timing-function:cubic-bezier(.3,0,.5,1);} 6%{transform:rotate(18deg); animation-timing-function:ease-in-out;}
+    7%{transform:rotate(15deg);} 20%{transform:rotate(15deg); animation-timing-function:ease-in-out;} 26%{transform:rotate(6deg);} 58%{transform:rotate(6deg); animation-timing-function:ease-in-out;} 64%,100%{transform:rotate(0);}}
+  @keyframes btNod{0%,10%{rotate:0deg; animation-timing-function:cubic-bezier(.5,0,.7,.4);} 11.6%{rotate:3.2deg; animation-timing-function:ease-in-out;}
+    13.6%{rotate:-1.4deg; animation-timing-function:ease-in-out;} 15.2%{rotate:.5deg; animation-timing-function:ease-in-out;} 16.6%,100%{rotate:0deg;}}
 
   /* ---- BONE FISH (12 s, far): the school's ghost on the school's clock ---- */
   #sea-bones{bottom:12px; left:100vw; width:64px;}   /* above the front wave, level with the school */
@@ -3193,21 +3224,28 @@
   </div>
   <!-- CASTAWAY: a carved pumpkin adrift, lit, listing 12°, cut by its own still band of
        water so the waterline never changes as it bobs. Flotsam drifts right, like the buoy. -->
+  <!-- WILSON (v7.11.1): a carved pumpkin adrift, the sand pumpkins' sibling who went
+       sailing. He SURFACES beside the boat (a ring, bubbles, up with an overshoot, rolls
+       upright, the candle catches), the gull peers down at him, and the current takes him
+       away to the right while the boat's bow dips after him. In windy weather he goes over
+       in open water and the candle drowns. The pumpkin lives inside a clip at the waterline
+       so the rise comes up OUT of the water; .cwWater is the still band in front. -->
   <div id="sea-castaway" class="seaThing">
-    <svg class="cwFx" viewBox="0 0 60 40"><ellipse class="seaRing r0" cx="30" cy="30" rx="12" ry="2.8"/></svg>
+    <svg class="cwFx" viewBox="0 0 60 40"><ellipse class="seaRing r0" cx="30" cy="30" rx="14" ry="3.2"/><ellipse class="seaRing r1" cx="30" cy="30" rx="9" ry="2.2"/><circle class="seaBub b1" cx="25" cy="27" r="1.3"/><circle class="seaBub b2" cx="34" cy="25.5" r=".9"/><circle class="seaBub b3" cx="30" cy="28" r=".7"/></svg>
     <div class="cwBob"><svg viewBox="0 0 60 40">
-      <g class="cwRoll" transform="rotate(12 30 30)"><g class="cwList"><g class="cwSway">
-        <path class="ocStem" d="M25,9 C25,6 24,3 26,1 L31,0 C31,3 30,6 31,9 Q28,10.5 25,9 Z"/>
+      <defs><clipPath id="cwClip"><rect x="-40" y="-40" width="140" height="70.6"/></clipPath></defs>
+      <g clip-path="url(#cwClip)"><g class="cwRise"><g class="cwRoll" transform="rotate(12 30 30)"><g class="cwList"><g class="cwSway">
+        <path class="ocStem" d="M25,9 C25,5 23.5,2 26,-1 L31.5,-2 C31.5,2 30,6 31,9 Q28,10.5 25,9 Z"/>
         <path class="ocBody" d="M8,22 C8,12 17,6 26,7 C27.5,7.5 28,8.5 28.5,9.5 C29.5,8.5 31,7.5 33,7.5 C43,8 50,14 50,24 C50,27 49,30 47,32 L11,32 C9,30 8,26 8,22 Z"/>
         <path class="ocSeam" d="M27,10 C19,16 19,26 26,32 C21,26 21,16 27,10 Z M31,10 C40,16 40,26 33,32 C38,26 38,16 31,10 Z"/>
         <path class="ocLid" d="M18,12 L22,10 L27,12 L32,9.5 L37,12 L42,10.5"/>
         <path class="ocLeak" d="M18,12 L22,10 L27,12 L32,9.5 L37,12 L42,10.5"/>
-        <g class="ocFace f0 lit"><g class="ocFlame">
+        <g class="ocFace f0 lit"><g class="ocFlame"><g class="cwCandle">
           <path class="ocCut" d="M15,16 L23,13 L24,20 L16,21 Z"/>
           <path class="ocCut" d="M34,13 L44,16 L43,22 L34,21 Z"/>
           <path class="ocCut" d="M14,23 L24,22 L24,26 L28,26 L28,22 L44,23 L41,28 L17,28 Z"/>
-        </g></g>
-      </g></g></g>
+        </g></g></g>
+      </g></g></g></g></g>
       <path class="cwWater" d="M0,30 C10,28.5 20,31.5 30,30 C40,28.5 50,31.5 60,30 L60,40 L0,40 Z"/>
     </svg></div>
   </div>
@@ -3740,7 +3778,7 @@ var DEFAULT_SCENES = [
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.11.0",
+  appVersion: "7.11.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -9757,7 +9795,8 @@ var Sea = (function(){
     ghost:    { tier: "rare",     dur: 44500, lanes: ["far"], boat: "haunted", season: "october", w: .5,
                 incompatible: ["pennant", "attack", "whale"], notBefore: 12 },   /* rare by placement (a last
                 third, once, never before the 12th), so its draw weight is its own, not the tier's */
-    castaway: { tier: "common",   dur: 46500, lanes: ["far", "near"], greeting: true, season: "october" },
+    castaway: { tier: "common",   dur: 46500, lanes: ["near"], greeting: true, season: "october", boat: "wilson",
+                incompatible: ["ghost", "attack", "whale", "scatter"] },   /* v7.11.1 Wilson: surfaces beside the boat, drifts away */
     bones:    { tier: "uncommon", dur: 12500, lanes: ["far"], season: "october" },
     haunt:    { tier: "uncommon", combo: [["school", 0], ["bones", 2200]], dur: 14700, season: "october" }
   };
@@ -9902,7 +9941,7 @@ var Sea = (function(){
   }
   function busy(){
     var b = boat();
-    if (b && /\b(pennant|gullIn|gullOut|struck|rippled|haunted)\b/.test(b.className)) return true;
+    if (b && /\b(pennant|gullIn|gullOut|struck|rippled|haunted|wilson)\b/.test(b.className)) return true;
     return THINGS.some(function(n){ var th = elFor(n); return th && th.classList.contains("go"); });
   }
   function timerRunning(){
@@ -10022,7 +10061,7 @@ var Sea = (function(){
       clearTimeout(timers[n]);
     });
     var b = boat();
-    if (b) ["pennant", "gullIn", "gullOut", "struck", "rippled", "haunted", "hop"].forEach(function(c){
+    if (b) ["pennant", "gullIn", "gullOut", "struck", "rippled", "haunted", "wilson", "hop"].forEach(function(c){
       b.classList.remove(c); clearTimeout(timers["boat:" + c]);
     });
   }

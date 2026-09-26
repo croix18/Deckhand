@@ -2,6 +2,18 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.11.1 — 2026-09-26
+
+**Wilson.** Croix: "I really like the idea of wilson pumpkin. He was poorly implemented in
+that clip." He was: he entered behind the dock, he was small and two-thirds under water, and
+nothing on the board knew he was there. Now he is a character. He surfaces beside the boat
+(bubbles, a ring, up with an overshoot, rolls upright, the candle catches), the gull leans
+over the masthead to look down at him, and then the current takes him away while the boat's
+bow dips after him once — the Cast Away beat. His own size in either lane, a navy rim on the
+lit cuts so the face reads at eight metres, and the drift ends behind the sand pumpkins, where
+he slips under unseen. In windy weather he still goes over in open water and the candle drowns.
+He never shares the water with the ghost, the attack or the whale.
+
 ## 7.11.0 — 2026-09-26
 
 **October 2.0.** Croix, on the first October: "I need better than that last effort. I

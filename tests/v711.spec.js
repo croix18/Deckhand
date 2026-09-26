@@ -28,12 +28,12 @@ test.describe("v7.11 October 2.0", () => {
     await expect(rig).not.toHaveClass(/redrop/, { timeout: 7000 });
     // three re-drops a minute, then a twitch
     await spider.dispatchEvent("pointerdown");
-    await page.waitForTimeout(2200);
+    await page.waitForTimeout(2600);   // past the 1.7 s commit even on a loaded runner
     await spider.dispatchEvent("pointerdown");                         // re-drop 2
-    await page.waitForTimeout(2200);
+    await page.waitForTimeout(2600);   // past the 1.7 s commit even on a loaded runner
     await spider.dispatchEvent("pointerdown");                         // re-drop 3
     await expect(rig).toHaveClass(/redrop/);
-    await page.waitForTimeout(2200);
+    await page.waitForTimeout(2600);   // past the 1.7 s commit even on a loaded runner
     await spider.dispatchEvent("pointerdown");                         // the fourth: a poke only
     await expect(rig).toHaveClass(/poke/);
     await expect(rig).not.toHaveClass(/poke/, { timeout: 1500 });
