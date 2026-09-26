@@ -128,7 +128,7 @@ test.describe("the boat and the residents", () => {
     const box = await pg.locator("#boat").boundingBox();
     await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await pg.mouse.down();
-    await pg.waitForTimeout(1700);
+    await pg.waitForTimeout(2600);                 // a loaded runner can hold the pointerdown back a few hundred ms
     await pg.mouse.up();
     await expect.poll(() => pg.evaluate(() => (window.Deckhand.seaModule.lastStaged() || {}).act), { timeout: 4000 }).toMatch(/attack|scatter|whale/);
     await pg.close();

@@ -2,6 +2,28 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.10.0 — 2026-09-28
+
+**October.** Croix: "Can you add some October theming? Like spiderwebs, pumpkins, stuff
+like that" — and, given the choice, "go bigger," one real orange, small taps, all month.
+A Season module sets one body class from the board's own clock for the month and clears
+it on November 1 by itself; every piece hangs off that class and follows the sea's rules
+(never on the stage, never over an alarm, never on a phone, still under reduced motion).
+*Settings → General → Seasonal touches: Auto / Off.*
+
+The pieces: a **spiderweb** in the clock card's top-right corner, thin navy at a third
+strength, with a **spider** that lets itself down on its thread once in a long while and
+drops on a tap; a **small web** in the corner of every other card; three
+**jack-o'-lanterns** on the sand — the pumpkin orange is the one colour outside the
+palette in the whole file — one lit and flickering, and a tap lights any of them and
+changes its face (three faces, round and round); a **black pennant** on the boat for the
+month; two October-only acts for the sea's director — a **flock of bats** across the
+water (uncommon) and a **ghost ship** far out beyond the dune, half there, with a lamp
+that won't stay lit (rare, last third of a period) — which the plan casts in October and
+never otherwise; and an eleventh side on the lofi tape, **"Graveyard shift"** (a minor
+turnaround, a pad, half-time brushes, a long echo, a dark tape), in the deck only while
+it's October. Four tests; 224 green.
+
 ## 7.9.0 — 2026-09-28
 
 **The rotation counts school weeks.** Croix: "it alternates by school week." A week with

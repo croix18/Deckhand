@@ -494,8 +494,7 @@ test.describe("embeds", () => {
     const libPick = await page.evaluate(() => ({
       closed: document.querySelector(".ytLib").hidden,
       src: document.querySelector(".ytFrame").src,
-      urls: window.Deckhand.config.scenes[0].widgets
-        .find(x => x.type === "yt").url
+      urls: document.querySelector(".w-yt")._entry.cfg.url
     }));
     ok(libPick.closed && /youtube-nocookie\.com\/embed\//.test(libPick.src),
       "library pick did not load: " + JSON.stringify(libPick));
@@ -508,7 +507,7 @@ test.describe("embeds", () => {
     await page.click(".ytSt");
     const tapped = await page.evaluate(() => ({
       src: document.querySelector(".ytFrame").src,
-      url: window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt").url,
+      url: document.querySelector(".w-yt")._entry.cfg.url,
       hidden: document.querySelector(".ytFrame").hidden
     }));
     ok(!tapped.hidden && /youtube-nocookie\.com\/embed\/jfKfPfyJRdk/.test(tapped.src) &&
@@ -551,7 +550,7 @@ test.describe("embeds", () => {
     // from a real resize regression)
     const gb = await page.locator(".w-yt .wSize").boundingBox();
     const before28 = await page.evaluate(() => {
-      const w = window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt");
+      const w = document.querySelector(".w-yt")._entry.cfg;
       return { x: w.x, y: w.y, w: w.w, h: w.h };
     });
     await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
@@ -570,7 +569,7 @@ test.describe("embeds", () => {
     await page.mouse.move(gb.x + gb.width / 2 + 160, gb.y + gb.height / 2 + 120, { steps: 3 });
     await page.mouse.up();
     const after28 = await page.evaluate(() => {
-      const w = window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt");
+      const w = document.querySelector(".w-yt")._entry.cfg;
       return { x: w.x, y: w.y, w: w.w, h: w.h };
     });
     ok(await page.evaluate(() =>
@@ -584,7 +583,7 @@ test.describe("embeds", () => {
     await page.mouse.move(hb32.x - 120, hb32.y - 90, { steps: 4 });
     await page.mouse.up();
     const after32 = await page.evaluate(() => {
-      const w = window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt");
+      const w = document.querySelector(".w-yt")._entry.cfg;
       return { w: w.w, h: w.h };
     });
     ok(after32.w < after28.w && after32.h < after28.h,
@@ -603,14 +602,14 @@ test.describe("embeds", () => {
     await page.fill(".ytName", "Mozart mix");
     await page.click(".ytSave");
     const saved = await page.evaluate(() =>
-      window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt").stations);
+      document.querySelector(".w-yt")._entry.cfg.stations);
     ok(saved.length === 2 && saved[1].name === "Mozart mix" &&
        /abc123defg4/.test(saved[1].url), "save: " + JSON.stringify(saved));
     // re-saving the same url renames instead of duplicating
     await page.fill(".ytName", "Wolfgang");
     await page.click(".ytSave");
     const renamed = await page.evaluate(() =>
-      window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt").stations);
+      document.querySelector(".w-yt")._entry.cfg.stations);
     ok(renamed.length === 2 && renamed[1].name === "Wolfgang",
       "re-save duplicated: " + JSON.stringify(renamed));
     // a non-YouTube link is refused with a note (keep-last-good)
@@ -620,7 +619,7 @@ test.describe("embeds", () => {
       inp.dispatchEvent(new Event("blur"));
     });
     const refused = await page.evaluate(() => ({
-      url: window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt").url,
+      url: document.querySelector(".w-yt")._entry.cfg.url,
       note: document.querySelector(".ytNote").hidden
     }));
     ok(/abc123defg4/.test(refused.url) && !refused.note,
@@ -628,7 +627,7 @@ test.describe("embeds", () => {
     // ✕ removes a station (unlocked only); locked hides ✕ + row, taps stay
     await page.click(".ytStations .ytDel:last-of-type");
     ok(await page.evaluate(() =>
-      window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt")
+      document.querySelector(".w-yt")._entry.cfg
         .stations.length) === 1, "✕ did not remove");
     await page.click("#lockBtn");
     const locked = await page.evaluate(() => ({
@@ -672,7 +671,7 @@ test.describe("embeds", () => {
       activeScene: "S"
     }));
     const cleaned = await pg2.evaluate(() => {
-      const w = window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt");
+      const w = document.querySelector(".w-yt")._entry.cfg;
       return { url: w.url, stations: w.stations };
     });
     ok(cleaned.url === "" && cleaned.stations.length === 1 &&
@@ -750,7 +749,7 @@ test.describe("embeds", () => {
     await expect(frame).toHaveAttribute("src", url);
     ok(await page.evaluate(() => ({
       hidden: document.querySelector(".w-yt .ytFrame").hidden,
-      url: window.Deckhand.config.scenes[0].widgets.find(x => x.type === "yt").url
+      url: document.querySelector(".w-yt")._entry.cfg.url
     })).then(s => !s.hidden && s.url === url), "player not restored on the board");
     // the Slides card does the same (it always did — a regression fence)
     await dh.addW("addEmbedBtn");
