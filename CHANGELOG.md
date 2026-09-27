@@ -2,6 +2,13 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.11.3 — 2026-09-27
+
+**The ghost's first vanish, where it can be seen.** The galleon enters behind the sand
+pumpkins (they stand in front of the far lane), so its first cut-out at six seconds was
+happening out of sight. It now cuts out at eleven seconds, in open water, and comes back at
+fourteen — the same beat, now visible.
+
 ## 7.11.2 — 2026-09-26
 
 **Wilson, to scale.** Croix: "he's massive next to the sailboat." He was more than twice

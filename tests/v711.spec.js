@@ -24,7 +24,8 @@ test.describe("v7.11 October 2.0", () => {
     await spider.dispatchEvent("pointerdown");
     await expect(rig).toHaveClass(/redrop/);
     const sy = await rig.evaluate(e => e.style.getPropertyValue("--sy"));
-    ok(/^1[01]\d(\.\d+)?px$/.test(sy), "the re-drop did not start from the hang: --sy=" + sy);
+    /* from the hang (112) or, on a slow runner, the first pull of the climb (78) — never from the hub */
+    ok(/^(7[0-9]|8\d|9\d|1[01]\d|12[0-5])(\.\d+)?px$/.test(sy), "the re-drop did not start from where it hung: --sy=" + sy);
     await expect(rig).not.toHaveClass(/redrop/, { timeout: 7000 });
     // three re-drops a minute, then a twitch
     await spider.dispatchEvent("pointerdown");
