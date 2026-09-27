@@ -2,6 +2,42 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.13.0 — 2026-09-27
+
+**Touch and survival** — the tools audit's second release (items 9–15 of
+`docs/reviews/tools-audit-2026-09-27.md`). The **timer** works by touch: a tap on the face
+opens a keypad (digits, ⌫, ×, Start); presets take seconds ("0:30, 1:30" in Settings) and the
+chips read m:ss; the chips hide while it runs; the ring's last ten seconds no longer paint a
+coral band behind the digits. **Work survives a scene switch**: a per-day, session-only store
+(`DayStore`) keeps the picker's round (one round per class today, shared by every picker on
+the board), the groups just made, the tallies under the dice/coin/spinner/cards, the sketch and
+the Noise Meter's round; a new day starts clean. **The Noise Meter plays by hand** when the mic
+is refused (the Chromebox denies it to `file://`) or on request: the quiet streak runs on its
+own, a big ✖ (or Space) adds a strike with Undo, the record board and the per-period tally
+still count. **Probability**: ×10 and ×100 at once on Roll/Flip/Spin/Draw (with Undo), and each
+outcome grows a relative-frequency bar with the theoretical share drawn across it — the
+two-dice triangle is the picture (the bars arrive when the card is taller than its spawn size).
+**The countdown counts school days** (weekends and no-school weeks skipped) with the calendar
+days beside it; a card already counting calendar days keeps doing so; a chip in the editor
+switches. **Work Mode drives the room**: a mode sets the meter's limit (35/50/65/80) and, when
+told to, starts or stops the music (quiet modes play); modes can be reworded with ✎; Settings →
+Timer → "Play the Music card while a timer runs". **Sketch Pad**: three pen widths, Undo (the
+strokes are kept as paths), Clear with Undo, the number line takes a range and a step (0 to 1
+by 0.1, 0 to 100 by 10). Seven tests; 244. Not done from the audit, on purpose: preset chips
+still SET the timer rather than set-and-start (two suites and a habit rely on it).
+
+## 7.12.0 — 2026-09-27
+
+**Read from the back row** — the tools audit's first release (the S items). The spinner
+fits its card with the result in the hub and no coral sector; every tally stacks the face over
+the count ("8 1" used to read as 81); the Group Maker prints one name per line at a readable
+size and the button becomes Shuffle; a type-scale pass on every secondary payoff (the dice
+total, the countdown, the meter's streak, the Next Bell, the scoreboard's digits); Clear/Reset
+buttons with a five-second Undo on the probability kit, the Scoreboard and the Tally; setup
+controls hide with the lock and the room's messages survive it; one name per tool; 44/48 px
+targets; no sticky hover on the panel; twenty dead strip rules gone; the + Add menu regrouped
+in six rows below the clock's digits; new cards spawn in the corners, never on "10:30".
+
 ## 7.11.6 — 2026-09-27
 
 **The +1 that threw the number away.** Since 7.2, tapping +1 on the Scoreboard or the Tally

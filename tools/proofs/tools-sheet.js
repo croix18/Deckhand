@@ -6,8 +6,8 @@ const { chromium } = require("playwright");
 const path = require("path"), fs = require("fs");
 const OUT = path.resolve(__dirname, "out/tools"); fs.mkdirSync(OUT, { recursive: true });
 const URL = "file://" + path.resolve(__dirname, "../../Deckhand.html");
-const TOOLS = ["addTimerBtn","addWatchBtn","addBellBtn","addEventBtn","addPickerBtn","addGroupsBtn","addScoreBtn","addTallyBtn",
-  "addMusicBtn","addWorkBtn","addMeterBtn","addAgendaBtn","addTextBtn","addQrBtn","addEmbedBtn","addYtBtn","addDrawBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn"];
+const TOOLS = (process.env.ONLY ? process.env.ONLY.split(",") : ["addTimerBtn","addWatchBtn","addBellBtn","addEventBtn","addPickerBtn","addGroupsBtn","addScoreBtn","addTallyBtn",
+  "addMusicBtn","addWorkBtn","addMeterBtn","addAgendaBtn","addTextBtn","addQrBtn","addEmbedBtn","addYtBtn","addDrawBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn"]);
 (async () => {
   const br = await chromium.launch();
   const ctx = await br.newContext({ viewport: { width: 1920, height: 1080 }, reducedMotion: "reduce" });
@@ -38,15 +38,18 @@ const TOOLS = ["addTimerBtn","addWatchBtn","addBellBtn","addEventBtn","addPicker
     try {
       if (id === "addPickerBtn"){ await page.selectOption(".w-picker .pkSel", "5th"); await page.click(".w-picker .pkGo"); await page.waitForTimeout(1200); }
       if (id === "addGroupsBtn"){ await page.selectOption(".w-groups .pkSel", "5th"); const b = await page.$(".w-groups .btn"); if (b) await b.click(); await page.waitForTimeout(500); }
-      if (id === "addDiceBtn"){ await page.click(".w-dice .btn >> nth=0"); await page.waitForTimeout(800); }
-      if (id === "addCoinBtn"){ await page.click(".w-coin .btn >> nth=0"); await page.waitForTimeout(800); }
+      if (id === "addDiceBtn"){ await page.click('.w-dice .chip[data-batch="100"]'); await page.click(".w-dice .btn >> nth=0"); await page.waitForTimeout(800); }   // v7.13: bars vs theory
+      if (id === "addCoinBtn"){ await page.click('.w-coin .chip[data-batch="10"]'); await page.click(".w-coin .btn >> nth=0"); await page.waitForTimeout(800); }
+      if (id === "addMeterBtn"){ await page.click(".w-meter .mtBtn"); await page.waitForTimeout(2500); await page.click(".w-meter .mtStrike"); await page.waitForTimeout(1000); }   // v7.13: by hand
+      if (id === "addWorkBtn"){ await page.click('.w-work .chip[data-mode="whisper"]'); }
       if (id === "addCardsBtn"){ await page.click(".w-cards .cdGo"); await page.waitForTimeout(500); }
       if (id === "addSpinBtn"){ await page.click(".w-spin .spGo"); await page.waitForTimeout(2500); }
       if (id === "addTallyBtn"){ for (let i = 0; i < 3; i++) await page.click(".w-tally .scB:not(.minus) >> nth=0"); }
       if (id === "addScoreBtn"){ for (let i = 0; i < 2; i++) await page.click(".w-score .scB:not(.minus) >> nth=0"); }
       if (id === "addAgendaBtn"){ await page.click(".w-agenda .wEdit"); await page.fill(".w-agenda .agArea", "Warm-up: ratios\nNotes: unit rates\nPractice p. 42\nExit ticket"); await page.click(".w-agenda .agBtn"); await page.click(".w-agenda .agItem >> nth=0"); }
       if (id === "addTextBtn"){ await page.click(".w-text .wEdit"); await page.keyboard.type("Homework: p. 42 #1-15 odd"); await page.click(".w-text .wEdit"); }
-      if (id === "addEventBtn"){ /* default */ }
+      if (id === "addEventBtn"){ await page.click(".w-event .wEdit"); await page.fill(".w-event .evName", "Unit 2 test"); await page.fill(".w-event .evDate", "2026-10-12"); await page.click(".w-event .evBtn"); }   // v7.13: school days
+      if (id === "addDrawBtn"){ await page.selectOption(".w-draw .dwBgSel", "line"); await page.waitForTimeout(300); const c = await page.$(".w-draw .dwCanvas"); const b = await c.boundingBox(); await page.mouse.move(b.x + 60, b.y + 60); await page.mouse.down(); await page.mouse.move(b.x + 220, b.y + 140, { steps: 6 }); await page.mouse.up(); }
       if (id === "addQrBtn"){ const i = await page.$(".w-qr input"); if (i){ await i.fill("https://example.org/exit-ticket"); await page.keyboard.press("Enter"); } await page.waitForTimeout(300); }
       if (id === "addTimerBtn"){ await page.keyboard.press("5"); await page.keyboard.press("Enter"); await page.waitForTimeout(400); }
       if (id === "addWatchBtn"){ await page.keyboard.press(" "); await page.waitForTimeout(1300); }

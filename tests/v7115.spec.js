@@ -240,3 +240,240 @@ test.describe("v7.12", () => {
     ok(clear.ok, "the new card covers the clock's digits: " + JSON.stringify(clear));
   });
 });
+
+/* v7.13 — "Touch and survival" (tools audit §3, items 9–15, Croix: "Do it!"). */
+test.describe("v7.13", () => {
+  const toolLayout = page => page.evaluate(() => {
+    const ws = window.Deckhand.config.scenes[0].widgets, pos = { dice: [1, 2, 30, 46], coin: [32, 2, 22, 40], spin: [55, 2, 22, 50], cards: [78, 2, 21, 50], picker: [1, 50, 30, 45], groups: [32, 50, 40, 45], draw: [1, 2, 40, 60], work: [42, 2, 28, 45], meter: [71, 2, 28, 45], music: [42, 48, 28, 30], event: [71, 48, 28, 30], timer: [1, 63, 40, 34] };
+    ws.forEach(w => { if (pos[w.type]) [w.x, w.y, w.w, w.h] = pos[w.type]; });
+    window.Deckhand.canvas.loadScene();
+  });
+  const rosters = page => page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee","Eli","Fay","Gus","Hal"] }]; });
+
+  test("v7.13: the timer by touch — a tap on the face opens a keypad, digits and Start run it, the chips hide while it runs, presets take seconds", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addTimerBtn");
+    await page.keyboard.press("Escape");
+    const w = page.locator(".w-timer");
+    await w.locator(".tDisplay:visible, .visWrap:visible").first().click();
+    await expect(w).toHaveClass(/padOpen/);
+    ok(await w.locator(".tChips").isHidden(), "the chips stayed under the keypad");
+    for (const k of ["1", "3", "0"]) await w.locator('.tPad [data-k="' + k + '"]').click();
+    await expect(w.locator(".tDisplay")).toHaveText("1:30");
+    await w.locator('.tPad [data-k="bs"]').click();
+    await expect(w.locator(".tDisplay")).toHaveText("0:13");
+    await w.locator('.tPad [data-k="0"]').click();
+    await w.locator('.tPad [data-k="go"]').click();
+    await expect(w).toHaveClass(/running/);
+    await expect(w).not.toHaveClass(/padOpen/);
+    ok((await w.locator(".tChips").evaluate(e => getComputedStyle(e).visibility)) === "hidden", "the chips showed while running");
+    await page.keyboard.press("r");
+    await expect(w).not.toHaveClass(/running/);
+    // seconds presets: 0:30 parses, the chip reads m:ss, the ⏱ menu reads words
+    const parsed = await page.evaluate(() => ["0:30", "1:30", "3", "0.5", "x", "0:05"].map(s => window.Deckhand.parsePresetToken ? window.Deckhand.parsePresetToken(s) : null));
+    if (parsed[0] !== null) ok(parsed.join() === "0.5,1.5,3,0.5,,0.08333333333333333", "preset parsing: " + parsed.join());
+    await page.evaluate(() => { window.Deckhand.config.timer.presetsMinutes = [0.5, 1, 3]; window.Deckhand.canvas.loadScene(); });
+    await expect(page.locator(".w-timer .tChips .chip").first()).toHaveText("0:30");
+    await page.locator(".w-timer .tChips .chip").first().click();
+    await expect(page.locator(".w-timer .tDisplay")).toHaveText("0:30");
+    // the ring's last ten seconds carry no coral band (the ring itself goes coral)
+    await page.evaluate(() => { window.Deckhand.config.timer.style = "ring"; window.Deckhand.canvas.loadScene(); });
+    const band = await page.evaluate(() => { const w = document.querySelector(".w-timer .visWrap"); w.classList.add("low"); return getComputedStyle(w.querySelector(".visDigits")).backgroundImage + "|" + getComputedStyle(w.querySelector(".visDigits")).backgroundColor; });
+    ok(/none\|rgba\(0, 0, 0, 0\)/.test(band), "the ring's low band is back: " + band);
+  });
+
+  test("v7.13: work survives a scene switch — the picker's round (one per class, shared by every picker), the groups, the tallies under dice/coin/spinner/cards, the sketch, the meter's round by hand", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await rosters(page);
+    for (const id of ["addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn","addPickerBtn","addGroupsBtn"]){ await dh.addW(id); await page.keyboard.press("Escape"); }
+    await toolLayout(page);
+    await page.click('.w-dice .chip[data-batch="100"]');
+    await page.click('.w-coin .chip[data-batch="10"]');
+    await page.click('.w-spin .chip[data-batch="10"]');
+    await page.click('.w-cards .chip[data-batch="10"]');
+    await page.selectOption(".w-picker .pkSel", "5th");
+    await page.click(".w-picker .pkGo"); await page.waitForTimeout(1100);
+    await page.click(".w-picker .pkGo"); await page.waitForTimeout(1100);
+    await page.selectOption(".w-groups .pkSel", "5th");
+    await page.click(".w-groups .gpGo");
+    const state = () => page.evaluate(() => ({
+      dice: document.querySelector(".w-dice")._entry.api.tally().rolls, coin: document.querySelector(".w-coin")._entry.api.tally().flips,
+      spin: document.querySelector(".w-spin")._entry.api.tally().spins, cards: document.querySelector(".w-cards")._entry.api.tally().draws,
+      pk: document.querySelector(".w-picker .pkName").textContent + "/" + document.querySelector(".w-picker .pkLeft").textContent,
+      gp: [...document.querySelectorAll(".w-groups .gpCard")].map(c => c.textContent).join("|"), gpBtn: document.querySelector(".w-groups .gpGo").textContent }));
+    const before = await state();
+    ok(before.dice === 100 && before.coin === 10 && before.spin === 10 && before.cards === 10, "batches: " + JSON.stringify(before));
+    ok(/6 of 8 left/.test(before.pk) && before.gp.length > 20 && before.gpBtn === "Shuffle", "round/groups: " + JSON.stringify(before));
+    const scenes = await page.evaluate(() => window.Deckhand.config.scenes.map(s => s.name));
+    await page.selectOption("#sceneSel", scenes[1]); await page.waitForTimeout(300);
+    await page.selectOption("#sceneSel", scenes[0]); await page.waitForTimeout(500);
+    ok(JSON.stringify(await state()) === JSON.stringify(before), "a scene switch lost work: " + JSON.stringify(await state()));
+    // a second picker on the board continues the SAME round for 5th
+    await dh.addW("addPickerBtn"); await page.keyboard.press("Escape");
+    await page.selectOption(".w-picker >> nth=1 >> .pkSel", "5th");
+    await expect(page.locator(".w-picker >> nth=1 >> .pkLeft")).toHaveText(/6 of 8 left/);
+    // the batch has Undo
+    await page.click('.w-dice .chip[data-batch="10"]');
+    ok((await page.evaluate(() => document.querySelector(".w-dice")._entry.api.tally().rolls)) === 110, "the batch did not add");
+    await page.click("#undoToast button");
+    ok((await page.evaluate(() => document.querySelector(".w-dice")._entry.api.tally().rolls)) === 100, "Undo did not take the batch back");
+    // tomorrow is a clean sheet (the store is for today only)
+    await dh.openAt("#t=2026-09-30T10:30");
+    await dh.launch();
+    ok((await page.evaluate(() => document.querySelectorAll(".w-dice").length)) === 0, "precondition: a fresh boot");
+  });
+
+  test("v7.13: the probability kit shows relative frequency against theory — a bar per outcome with the expected share as a line; the two-dice triangle", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addDiceBtn"); await page.keyboard.press("Escape");
+    await toolLayout(page);
+    const bars = await page.evaluate(() => [...document.querySelectorAll(".w-dice .prTally > span")].filter(s => s.querySelector(".prBar")).map(s => ({ k: [...s.childNodes].find(n => n.nodeType === 3).textContent, tick: parseFloat(s.querySelector(".prBar em").style.bottom), fill: parseFloat(s.querySelector(".prBar u").style.height) })));
+    ok(bars.length === 11 && bars[0].k === "2" && bars[10].k === "12", "two dice should list every total 2–12: " + JSON.stringify(bars));
+    ok(bars[5].tick > bars[0].tick && bars[5].tick > bars[10].tick && Math.abs(bars[0].tick - bars[10].tick) < 0.01, "the theoretical line is not the triangle: " + JSON.stringify(bars));
+    ok(bars.every(b => b.fill === 0), "bars filled before any roll");
+    await page.click('.w-dice .chip[data-batch="100"]');
+    const after = await page.evaluate(() => [...document.querySelectorAll(".w-dice .prTally > span")].filter(s => s.querySelector(".prBar")).map(s => parseFloat(s.querySelector(".prBar u").style.height)));
+    ok(after.some(f => f > 0) && after.every(f => f <= 100), "bars after 100 rolls: " + after.join());
+    // one die: six equal ticks and percentages (eleven columns drop the percent for room)
+    await page.click('.w-dice .chip[data-n="1"]');
+    await page.click('.w-dice .chip[data-batch="10"]');
+    ok(/\d+%/.test(await page.textContent(".w-dice .prTally")), "no percentages");
+    const one = await page.evaluate(() => [...document.querySelectorAll(".w-dice .prTally > span .prBar em")].map(e => e.style.bottom));
+    ok(one.length === 6 && new Set(one).size === 1, "one die: " + one.join());
+  });
+
+  test("v7.13: the Noise Meter plays by hand when the mic is refused — the streak runs, ✖ and Space add a strike (with Undo), the record and the per-period tally still count", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addMeterBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-meter .mtBtn");                   // headless: no mic → by hand
+    await expect.poll(() => page.evaluate(() => document.querySelector(".w-meter")._entry.api.manual())).toBe(true);
+    ok(/by hand/i.test(await page.textContent(".w-meter .mtStatus")), "status: " + await page.textContent(".w-meter .mtStatus"));
+    ok(await page.locator(".w-meter .mtTrack").isHidden(), "the level bar stayed with no mic");
+    await page.waitForTimeout(2300);
+    ok(/0:0[2-9]/.test(await page.textContent(".w-meter .mtStreak")), "the streak did not run: " + await page.textContent(".w-meter .mtStreak"));
+    await page.click(".w-meter .mtStrike");
+    await expect(page.locator(".w-meter .mtStrikes")).toHaveText("✖");
+    await expect(page.locator(".w-meter .mtTally")).toContainText("5th 1");
+    ok(/Record 0:0[2-9]/.test(await page.textContent(".w-meter .mtRecord")), "no record: " + await page.textContent(".w-meter .mtRecord"));
+    await page.keyboard.press(" ");                        // the meter is the selected card
+    await expect(page.locator(".w-meter .mtStrikes")).toHaveText("✖ ✖");
+    await page.click("#undoToast button");
+    await expect(page.locator(".w-meter .mtStrikes")).toHaveText("✖");
+    // "By hand" is also a choice before asking
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addMeterBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-meter .mtHand");
+    ok(await page.evaluate(() => document.querySelector(".w-meter")._entry.api.manual()), "By hand did not switch");
+  });
+
+  test("v7.13: the countdown counts school days (weekends and no-school weeks skipped) with the calendar days beside it; a card already counting calendar days keeps doing so", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");                // Tuesday
+    await dh.launch();
+    const sd = await page.evaluate(() => {
+      const B = window.Deckhand.bell;
+      const f = (a, b) => B.schoolDaysBetween(new Date(a), new Date(b));
+      return [f("2026-09-29T10:30", "2026-10-12"), f("2026-09-29T10:30", "2026-10-02"), f("2026-10-02T10:30", "2026-10-05"), f("2026-10-02T10:30", "2026-10-03"), f("2026-11-20T10:30", "2026-11-30")];
+    });
+    ok(sd.join() === "9,3,1,0,1", "school days: " + sd.join());   // Thanksgiving week (Nov 23) is a no-school week in the file
+    await dh.addW("addEventBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-event .wEdit");
+    await page.fill(".w-event .evName", "Unit test"); await page.fill(".w-event .evDate", "2026-10-12");
+    await page.click(".w-event .evBtn");
+    await expect(page.locator(".w-event .evBig")).toHaveText("9");
+    await expect(page.locator(".w-event .evUnit")).toHaveText("school days to go");
+    await expect(page.locator(".w-event .evSub")).toContainText("13 days");
+    await page.click(".w-event .wEdit");
+    await page.click(".w-event .evSchool");                // calendar days by choice
+    await page.click(".w-event .evBtn");
+    await expect(page.locator(".w-event .evBig")).toHaveText("13");
+    // a legacy card with an event keeps calendar days; a new empty one counts school days
+    const legacy = await page.evaluate(() => { const c = window.Deckhand.config; c.scenes[0].widgets.push({ type: "event", x: 60, y: 60, w: 30, h: 30, title: "Old", when: "2026-10-12" }); window.Deckhand.canvas.loadScene(); return [...document.querySelectorAll(".w-event .evBig")].map(e => e.textContent).join("|"); });
+    ok(legacy === "13|13", "a legacy countdown changed its number: " + legacy);
+    const san = await page.evaluate(() => JSON.stringify(window.Deckhand.sanitize({ scenes: [{ name: "S", widgets: [{ type: "event", when: "2026-10-12" }, { type: "event" }] }] }).scenes[0].widgets.map(w => w.schoolDays)));
+    ok(san === "[false,true]", "sanitize's default: " + san);
+  });
+
+  test("v7.13: the Work Mode card drives the room — the meter's limit follows the mode, the music plays for quiet modes when told to, modes can be reworded; the Music card plays while a timer runs when the setting is on", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    for (const id of ["addWorkBtn","addMeterBtn","addMusicBtn","addTimerBtn"]){ await dh.addW(id); await page.keyboard.press("Escape"); }
+    await toolLayout(page);
+    const limit = () => page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(w => w.type === "meter").limit);
+    const playing = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
+    await page.click('.w-work .chip[data-mode="groups"]');
+    ok((await limit()) === 80, "groups should set the limit to 80: " + await limit());
+    await page.click('.w-work .chip[data-mode="silent"]');
+    ok((await limit()) === 35 && !(await playing()), "silent: limit 35, music untouched until told");
+    await page.click('.w-work .chip[data-drive="music"]');
+    await expect.poll(playing).toBe(true);
+    await page.click('.w-work .chip[data-mode="partners"]');
+    await expect.poll(playing).toBe(false);
+    await page.click('.w-work .chip[data-drive="meter"]');   // off: the limit is the teacher's again
+    await page.click('.w-work .chip[data-mode="groups"]');
+    ok((await limit()) === 65, "the meter followed a mode after being told not to: " + await limit());
+    await page.click(".w-work .wEdit");
+    await page.fill(".w-work .wkName", "LEVEL 3"); await page.fill(".w-work .wkSubIn", "Outside voices, inside");
+    await page.click(".w-work .wkDone");
+    await expect(page.locator(".w-work .wkBadge")).toHaveText("LEVEL 3");
+    await expect(page.locator('.w-work .chip[data-mode="groups"]')).toHaveText("Level 3");
+    const kept = await page.evaluate(() => window.Deckhand.sanitize(JSON.parse(JSON.stringify(window.Deckhand.config))).scenes[0].widgets.find(w => w.type === "work"));
+    ok(kept.custom.groups && kept.custom.groups.name === "LEVEL 3" && kept.drive.meter === false && kept.drive.music === true, "the rewording or the drive flags did not survive sanitize: " + JSON.stringify(kept));
+    // the timer runs the music
+    await page.click('.w-work .chip[data-mode="partners"]');   // music off
+    await expect.poll(playing).toBe(false);
+    const timer = () => page.evaluate(() => document.querySelector(".w-timer")._entry.api.startPause());
+    await timer(); await page.waitForTimeout(200);
+    ok(!(await playing()), "the timer ran the music with the setting off");
+    await timer();
+    await page.evaluate(() => { window.Deckhand.config.timer.music = true; });
+    await timer();
+    await expect.poll(playing).toBe(true);
+    await timer();
+    await expect.poll(playing).toBe(false);
+  });
+
+  test("v7.13: the Sketch Pad — three widths, Undo takes back the last stroke, Clear has Undo, the number line takes a range and a step, the sketch survives a scene switch", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addDrawBtn"); await page.keyboard.press("Escape");
+    await toolLayout(page);
+    const c = await page.$(".w-draw .dwCanvas"); const b = await c.boundingBox();
+    const stroke = async (x0, y0, x1, y1) => { await page.mouse.move(b.x + x0, b.y + y0); await page.mouse.down(); await page.mouse.move(b.x + x1, b.y + y1, { steps: 6 }); await page.mouse.up(); };
+    const n = () => page.evaluate(() => document.querySelector(".w-draw")._entry.api.strokes());
+    const inked = () => page.evaluate(() => { const c = document.querySelector(".w-draw .dwCanvas"), d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let k = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) k++; return k; });
+    await page.click('.w-draw .dwW[data-w="16"]');
+    await stroke(40, 40, 300, 200);
+    const thick = await inked();
+    await page.click('.w-draw .dwW[data-w="4"]');
+    await stroke(40, 240, 300, 400);
+    const both = await inked();
+    ok(thick > 0 && both - thick > 0 && both - thick < thick / 2, "a thin stroke should ink far less than a thick one: " + thick + " / " + (both - thick));
+    ok((await n()) === 2, "strokes: " + await n());
+    await page.click(".w-draw .dwUndo");
+    ok((await n()) === 1 && Math.abs((await inked()) - thick) < thick * 0.05, "Undo did not take back the thin stroke");
+    await page.click(".w-draw .dwClear");
+    ok((await inked()) === 0, "Clear left ink");
+    await page.click("#undoToast button");
+    ok((await n()) === 1 && (await inked()) > 0, "Undo after Clear did not restore");
+    // number line range
+    await page.selectOption(".w-draw .dwBgSel", "line");
+    await expect(page.locator(".w-draw .dwLine")).toBeVisible();
+    await page.fill('.w-draw .dwLn[data-k="step"]', "10"); await page.press('.w-draw .dwLn[data-k="step"]', "Enter");
+    await page.fill('.w-draw .dwLn[data-k="min"]', "0"); await page.press('.w-draw .dwLn[data-k="min"]', "Enter");
+    await page.fill('.w-draw .dwLn[data-k="max"]', "100"); await page.press('.w-draw .dwLn[data-k="max"]', "Enter");
+    const ln = await page.evaluate(() => JSON.stringify(window.Deckhand.config.scenes[0].widgets.find(w => w.type === "draw").line));
+    ok(ln === '{"min":0,"max":100,"step":10}', "number line: " + ln);
+    const norm = await page.evaluate(() => JSON.stringify(window.Deckhand.sanitize({ scenes: [{ name: "S", widgets: [{ type: "draw", line: { min: 5, max: 1, step: 0 } }, { type: "draw", line: { min: 0, max: 1, step: 0.001 } }] }] }).scenes[0].widgets.map(w => w.line)));
+    ok(norm === '[{"min":-10,"max":10,"step":1},{"min":0,"max":1,"step":0.005}]', "normLine: " + norm);
+    // the sketch outlives a scene switch
+    const scenes = await page.evaluate(() => window.Deckhand.config.scenes.map(s => s.name));
+    await page.selectOption("#sceneSel", scenes[1]); await page.waitForTimeout(300);
+    await page.selectOption("#sceneSel", scenes[0]); await page.waitForTimeout(500);
+    ok((await n()) === 1 && (await inked()) > 0, "the sketch did not survive the scene switch");
+  });
+});

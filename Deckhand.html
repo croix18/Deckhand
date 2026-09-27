@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.11.6",
+  "appVersion": "7.13.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -980,6 +980,12 @@
   .wkBadge.whisper{background:var(--sand); color:var(--navy);}
   .wkBadge.partners{background:var(--paleturq); color:var(--navy);}
   .wkBadge.groups{background:var(--turq); color:var(--navy);}
+  .wkDrive{gap:6px;}
+  .wkDrive .chip[aria-pressed="true"]::before{content:"\2713\00a0";}
+  body.locked .wkDrive, body.locked .wkEdit{display:none;}
+  .wkEdit{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:96%;}
+  .wkEdit[hidden]{display:none;}
+  .wkEdit input{font:inherit; font-weight:700; padding:8px 10px; border:3px solid var(--navy); border-radius:12px; background:var(--white); color:var(--navy); min-width:0; flex:1 1 120px;}
   .wkSub{color:var(--teal); font-weight:700; text-align:center;
     font-size:clamp(12px, 4.4cqw, 34px);}
 
@@ -1007,6 +1013,21 @@
   .prTally b{color:var(--navy); font-weight:900; font-size:1.25em;}
   .prTally .prN{flex-direction:row; align-self:center;}
   .prN{font-weight:700; color:var(--navy); opacity:.6; font-size:clamp(11px, 2.4cqw, 18px); font-variant-numeric:tabular-nums;}
+  /* v7.13: relative-frequency bars with the theoretical share as a line across each */
+  .prTally.bars{align-items:flex-end; gap:.3em .9em;}
+  .prTally.many{gap:.25em .5em; font-size:clamp(11px, 2.3cqw, 20px);}
+  .prTally.many .prPct{display:none;}             /* eleven columns: the bar and the count are the story */
+  .prTally.many .prBar{height:clamp(18px, 9cqh, 64px); width:1.3em;}
+  .prBar{display:block; position:relative; width:1.6em; height:clamp(20px, 11cqh, 96px); background:var(--grid); border-radius:4px; overflow:hidden; margin-bottom:.12em;}
+  .prBar u{position:absolute; left:0; right:0; bottom:0; background:var(--turq); text-decoration:none; transition:height .25s;}
+  .prBar em{position:absolute; left:0; right:0; height:2px; margin-bottom:-1px; background:var(--navy); opacity:.75;}
+  .prPct{font-size:.68em; font-weight:700; color:var(--navy); opacity:.55; line-height:1.1;}
+  /* a card at its spawn size has no room for the bars — they arrive with the room (a taller
+     card, or ⛶ for the lesson); the counts stay */
+  @container (max-height: 479px){ .prBar, .prPct{display:none;} .prTally.bars{align-items:flex-end;} }
+  .prTally.bars > span{gap:.05em;}
+  .chip.prBatch{opacity:.85;}
+  .chip.prBatch:first-of-type{margin-left:.4em;}
   .cnFaces{display:flex; gap:3cqw; align-items:center; justify-content:center; flex-wrap:wrap;}
   .coin{width:clamp(56px, 34cqmin, 260px); aspect-ratio:1/1; display:block;}
   .coin .cnRim{fill:var(--sand); stroke:var(--navy); stroke-width:4;}
@@ -1372,6 +1393,11 @@
   .widget .chip.chipSm{font-size:13px; padding:6px 12px; min-height:36px;}   /* the meter's setup row stays compact */
   .mtSensChips{gap:6px;}
   body.locked .mtSens{display:none;}
+  /* v7.13: by hand — nothing measures, so the level bar and its limit step aside for the ✖ */
+  .w-meter.manual .mtTrack, .w-meter.manual .mtRow{display:none;}
+  .mtHandRow[hidden], .mtSetup[hidden]{display:none;}
+  .widget .btn.mtStrike{background:var(--navy); color:var(--white); font-size:clamp(18px, 6cqmin, 40px); min-height:max(52px, 15cqmin); padding:.2em .9em; max-width:92%; white-space:nowrap;}
+  .mtStrike:active{transform:scale(.96);}
   .w-meter.strikeFlash{animation:strikePulse .9s ease;}
   @keyframes strikePulse{
     0%, 100%{box-shadow:8px 10px 0 var(--shadow);}
@@ -1404,6 +1430,16 @@
     font-size:clamp(12px, 2.6cqw, 17px); padding:3px 14px; min-height:44px;
   }
   .dwTool[aria-pressed="true"]{background:var(--navy); color:var(--white);}
+  .dwTool:disabled{opacity:.4; cursor:default;}
+  /* v7.13: three pen widths, and the number line's range row */
+  .dwWidths{display:flex; gap:4px;}
+  .dwW{width:44px; height:44px; border-radius:50%; border:2px solid transparent; background:var(--paleturq); cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center;}
+  .dwW i{display:block; border-radius:50%; background:var(--navy);}
+  .dwW[aria-pressed="true"]{border-color:var(--navy); background:var(--white);}
+  .dwLine{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; font-weight:700; color:var(--teal); font-size:clamp(11px, 2.4cqw, 15px);}
+  .dwLine[hidden]{display:none;}
+  .dwLine input{width:5em; font:inherit; font-weight:700; padding:4px 8px; border:2px solid var(--navy); border-radius:10px; color:var(--navy); background:var(--white); margin-left:4px;}
+  body.locked .dwLine{display:none;}
 
   /* ===== Slides / embed card ===== */
   .embBody{padding:0; gap:0;}
@@ -1511,6 +1547,19 @@
     inset:auto; left:50%; top:50%; transform:translate(-50%, -50%);
     background:var(--coral); border-radius:.18em; padding:.05em .25em;
   }
+  .visWrap.ring.low .visDigits, .visWrap.disc.low .visDigits{background:none; padding:0; color:var(--coral);}   /* v7.13: the coral ring is the alert; a band across it read as a no-entry sign */
+  /* v7.13: the keypad; and the preset chips step aside while the timer runs (a tap on 5:00
+     used to silently kill a running countdown) */
+  .tPad{display:grid; grid-template-columns:repeat(3, 1fr); gap:1.2cqmin; width:min(92%, 64cqmin);}
+  .tPad[hidden]{display:none;}
+  .tPad button{font:inherit; font-weight:900; font-size:clamp(16px, 6cqmin, 40px); min-height:max(44px, 11cqmin); border:none; border-radius:12px;
+    background:var(--paleturq); color:var(--navy); cursor:pointer;}
+  .tPad .tPadGo{grid-column:1 / -1; background:var(--turq);}
+  .tPad button[data-k="x"]{background:var(--grid);}
+  .w-timer.padOpen .tChips, .w-timer.padOpen .tBody > .row, .w-timer.padOpen .visWrap{display:none;}
+  .w-timer.padOpen .tDisplay{display:block !important; cursor:default;}
+  .w-timer.running .tChips{visibility:hidden;}
+  .w-timer:not(.running) .tDisplay, .w-timer:not(.running) .visWrap{cursor:pointer;}
   .tideTank{
     position:absolute; inset:5%; border-radius:26px; border:3px solid var(--navy);
     background:var(--white); overflow:hidden;
@@ -3602,8 +3651,8 @@
             <div class="fGroup">
               <div class="fGrid c2">
                 <div class="fField">
-                  <label class="fLabel" for="sPresets">Presets (minutes)</label>
-                  <input class="setInput" type="text" id="sPresets" placeholder="1, 3, 5, 10">
+                  <label class="fLabel" for="sPresets">Presets (minutes, or m:ss)</label>
+                  <input class="setInput" type="text" id="sPresets" placeholder="0:30, 1, 3, 5, 10">
                   <div class="fHint">One to six values, separated by commas. These are the chips on every timer and the &#9201; menu in stage mode.</div>
                 </div>
                 <div class="fField">
@@ -3617,6 +3666,8 @@
                   <div class="fHint">How the time left is drawn behind the digits.</div>
                 </div>
               </div>
+              <label class="fCheck"><input type="checkbox" id="sTimerMusic"> Play the Music card while a timer runs</label>
+              <div class="fHint">Needs a Music card on the board. The music stops when the timer ends or pauses.</div>
             </div>
           </section>
 
@@ -3852,7 +3903,7 @@ var DEFAULT_SCENES = [
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.11.6",
+  appVersion: "7.13.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -3860,7 +3911,7 @@ var DEFAULTS = {
   rosters: [],
   sound: { enabled: true, volume: 0.25 },
   clock: { showSeconds: false },
-  timer: { presetsMinutes: [1,3,5,10], defaultSeconds: 300, style: "digits" },
+  timer: { presetsMinutes: [1,3,5,10], defaultSeconds: 300, style: "digits", music: false },
   bell: {
     nudgeSeconds: 0, showProgressBar: true, showCountdown: true,
     countdownSeconds: false, showDayStrip: true,
@@ -3893,8 +3944,8 @@ function sanitize(c){
   var ba = isObj(b.bathroom) ? b.bathroom : {};
   var pm = Array.isArray(t.presetsMinutes)
     ? t.presetsMinutes.filter(function(n){
-        return typeof n === "number" && isFinite(n) && n >= 1 && n <= 120;
-      }).map(function(n){ return Math.round(n); }).slice(0, 6)
+        return typeof n === "number" && isFinite(n) && n >= 0.25 && n <= 120;   // v7.13: seconds allowed (0.25 = 15 s)
+      }).map(function(n){ return Math.round(n * 100) / 100; }).slice(0, 6)
     : [];
   function cleanBlocks(arr){
     if (!Array.isArray(arr)) return [];
@@ -3999,12 +4050,28 @@ function sanitize(c){
       if (ty === "work"){
         wc.mode = ["silent","whisper","partners","groups"].indexOf(w.mode) !== -1
           ? w.mode : "silent";
+        /* v7.13: the card drives the room (the meter's limit, the music) and its modes
+           can be reworded — "SILENT" may be "LEVEL 0" in one room */
+        var dv = isObj(w.drive) ? w.drive : {};
+        wc.drive = { meter: bool(dv.meter, true), music: bool(dv.music, false) };
+        wc.custom = {};
+        if (isObj(w.custom)) ["silent","whisper","partners","groups"].forEach(function(id){
+          var cm = w.custom[id];
+          if (!isObj(cm)) return;
+          var nm = str(cm.name, "").trim().slice(0, 16), sb = str(cm.sub, "").trim().slice(0, 60);
+          if (nm || sb) wc.custom[id] = { name: nm, sub: sb };
+        });
       }
       if (ty === "dice") wc.count = Math.round(numIn(w.count, 1, 3, 2));
       if (ty === "coin") wc.count = Math.round(numIn(w.count, 1, 3, 1));        // v7.8 the probability kit
       if (ty === "spin") wc.sectors = Math.round(numIn(w.sectors, 2, 8, 4));
       if (ty === "cards") wc.replace = bool(w.replace, false);
-      if (ty === "draw") wc.bg = ["blank","grid","dots","line","plane"].indexOf(w.bg) !== -1 ? w.bg : "blank";   // v7.8
+      if (ty === "draw"){
+        wc.bg = ["blank","grid","dots","line","plane"].indexOf(w.bg) !== -1 ? w.bg : "blank";   // v7.8
+        /* v7.13: the number line's range and step — 0 to 1 by 0.1, 0 to 100 by 10 */
+        var ln = isObj(w.line) ? w.line : {};
+        wc.line = normLine(num(ln.min, -10), num(ln.max, 10), num(ln.step, 1));
+      }
       if (ty === "qr") wc.url = str(w.url, "").slice(0, 300);
       if (ty === "embed"){
         var eu = str(w.url, "").slice(0, 500);
@@ -4075,6 +4142,9 @@ function sanitize(c){
             wc.when = wn;
           }
         }
+        /* v7.13: count school days (weekends and the no-school weeks skipped) — the default for
+           a card that has no event yet; a card already counting calendar days keeps counting them */
+        wc.schoolDays = bool(w.schoolDays, !wc.when);
       }
       if (ty === "music"){
         wc.channel = "lofi";   // mozart returns when the real audio lands
@@ -4223,7 +4293,8 @@ function sanitize(c){
     clock: { showSeconds: bool(ck.showSeconds, false) },
     timer: { presetsMinutes: pm.length ? pm : DEFAULTS.timer.presetsMinutes.slice(),
              defaultSeconds: num(t.defaultSeconds, 300),
-             style: ["digits","ring","disc","tide"].indexOf(t.style) !== -1 ? t.style : "digits" },
+             style: ["digits","ring","disc","tide"].indexOf(t.style) !== -1 ? t.style : "digits",
+             music: bool(t.music, false) },       // v7.13: the Music card plays while a timer runs
     bell: {
       nudgeSeconds: Math.max(-600, Math.min(600, Math.round(num(b.nudgeSeconds, 0)))),
       showProgressBar: bool(b.showProgressBar, true),
@@ -5137,7 +5208,20 @@ var Bell = (function(){
       var t = cfg.bell.today;
       return (t && t.date === dateKey(now())) ? t.mode : "regular";
     },
-    dayBlocksFor: dayBlocksFor
+    dayBlocksFor: dayBlocksFor,
+    /* v7.13: school days after `from` up to and including `to` — weekends and the weeks
+       with no school (Settings → Bells) don't count. Dates only; times are ignored. */
+    schoolDaysBetween: function(from, to){
+      var d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1);
+      var end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+      var n = 0, guard = 0;
+      while (d <= end && guard++ < 1000){
+        var wd = d.getDay();
+        if (wd !== 0 && wd !== 6 && !inSkipWeek(d)) n++;
+        d.setDate(d.getDate() + 1);
+      }
+      return n;
+    }
   };
 })();
 
@@ -5557,6 +5641,22 @@ function fmtUp(ms){
   var s = Math.max(0, Math.floor(ms / 1000));
   return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 }
+/* v7.13: a preset is minutes, possibly fractional (0.5 = thirty seconds) */
+function fmtPresetChip(min){
+  var s = Math.round(min * 60), m = Math.floor(s / 60), r = s % 60;
+  return m + ":" + (r < 10 ? "0" : "") + r;
+}
+function fmtPresetWords(min){
+  var s = Math.round(min * 60);
+  return s % 60 === 0 ? (s / 60) + " min" : (s < 60 ? s + " s" : fmtPresetChip(min));
+}
+function parsePresetToken(s){                    // "3", "0:30", "1:30", "0.5" → minutes or null
+  s = String(s).trim();
+  var m = /^(\d{1,3}):(\d{2})$/.exec(s);
+  if (m) return +m[1] + (+m[2]) / 60;
+  if (/^\d+(\.\d+)?$/.test(s)) return +s;
+  return null;
+}
 function fmtEntryStr(d){
   var p = d.padStart(3, "0");
   return parseInt(p.slice(0, -2), 10) + ":" + p.slice(-2);
@@ -5584,6 +5684,15 @@ var TIMER_BODY_HTML =
       '<div class="visDigits">5:00</div>' +
     '</div>' +
     '<div class="tDisplay">5:00</div>' +
+    /* v7.13: a keypad for the panel — tapping the digits while idle opens it; keys feed the same
+       entry mode the keyboard uses (digits are minutes+seconds, Enter starts) */
+    '<div class="tPad" role="group" aria-label="Set a time" hidden>' +
+      '<button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>' +
+      '<button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>' +
+      '<button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>' +
+      '<button type="button" data-k="x" aria-label="Cancel">&times;</button><button type="button" data-k="0">0</button><button type="button" data-k="bs" aria-label="Backspace">&#9003;</button>' +
+      '<button type="button" data-k="go" class="tPadGo">Start</button>' +
+    '</div>' +
     '<div class="chips tChips" role="group" aria-label="Timer presets"></div>' +
     '<div class="row">' +
       '<button class="btn tStart" type="button" style="background:var(--turq); color:var(--navy)">Start</button>' +
@@ -5610,7 +5719,21 @@ function makeTimer(host, wcfg, assignIds){
     water.id = "tideWater"; digitsEl.id = "visDigits";
   }
   var t = { setMs: 300000, remainMs: 300000, visMax: 300000, endAt: null, tid: null };
-  var entry = null;
+  var entry = null, wasRunning = false;
+  var pad = q(".tPad");
+  function padOpen(){ return !pad.hidden; }
+  function openPad(){ if (!canEnter()) return; entry = ""; pad.hidden = false; host.classList.add("padOpen"); paint(); }
+  function closePad(){ pad.hidden = true; host.classList.remove("padOpen"); }
+  pad.addEventListener("click", function(e){
+    var b = e.target.closest("button"); if (!b) return;
+    var k = b.dataset.k;
+    if (k === "x"){ entryCancel(); }
+    else if (k === "bs"){ entryBackspace(); }
+    else if (k === "go"){ commitEntryAndStart(); }
+    else { if (entry === null) entry = ""; entryDigit(k); }
+    if (e.detail > 0) b.blur();
+  });
+  [dEl, visWrap].forEach(function(el){ el.addEventListener("click", function(){ if (!padOpen() && canEnter()) openPad(); }); });
   var chips = [];
   var visRaf = null;
   var destroyed = false;
@@ -5692,6 +5815,12 @@ function makeTimer(host, wcfg, assignIds){
       dEl.hidden = showVis;
       visWrap.hidden = !showVis;
       if (showVis) paintVis(low);
+      if (padOpen()) closePad();                 // entry ended (started, cancelled, or a key path): the pad goes
+    }
+    host.classList.toggle("running", !!t.endAt);
+    if (wasRunning !== !!t.endAt){                 // v7.13: the Music card may be listening
+      wasRunning = !!t.endAt;
+      try { document.dispatchEvent(new CustomEvent("deckhand:timer", { detail: { running: wasRunning } })); } catch(e){}
     }
     startBtn.textContent = t.endAt ? "Pause" : "Start";
   }
@@ -5744,7 +5873,7 @@ function makeTimer(host, wcfg, assignIds){
   }
   function setPreset(min, btn){
     entry = null;
-    t.setMs = min * 60000;
+    t.setMs = Math.round(min * 60000);
     chips.forEach(function(c){
       c.setAttribute("aria-pressed", c === btn ? "true" : "false");
     });
@@ -5762,7 +5891,7 @@ function makeTimer(host, wcfg, assignIds){
     t.visMax = t.setMs;
     chips.forEach(function(c){
       c.setAttribute("aria-pressed",
-        c.dataset.min && +c.dataset.min * 60000 === t.setMs ? "true" : "false");
+        c.dataset.min && Math.round(+c.dataset.min * 60000) === t.setMs ? "true" : "false");
     });
     startPause();
   }
@@ -5776,8 +5905,8 @@ function makeTimer(host, wcfg, assignIds){
       var b = document.createElement("button");
       b.type = "button"; b.className = "chip";
       b.dataset.min = min;
-      b.textContent = min + ":00";
-      b.setAttribute("aria-pressed", min * 60000 === t.setMs ? "true" : "false");
+      b.textContent = fmtPresetChip(min);          // v7.13: presets take seconds ("0:30", "1:30")
+      b.setAttribute("aria-pressed", Math.round(min * 60000) === t.setMs ? "true" : "false");
       wireButton(b, function(){ setPreset(min, b); });
       chipsWrap.appendChild(b);
       chips.push(b);
@@ -5850,7 +5979,7 @@ function makeTimer(host, wcfg, assignIds){
 
   var pm = cfg.timer.presetsMinutes || [5];
   var defS = cfg.timer.defaultSeconds || 300;
-  t.setMs = pm.indexOf(defS / 60) >= 0 ? defS * 1000 : pm[0] * 60000;
+  t.setMs = pm.indexOf(defS / 60) >= 0 ? defS * 1000 : Math.round(pm[0] * 60000);
   t.remainMs = t.setMs;
   t.visMax = t.setMs;
   buildChips();
@@ -6098,6 +6227,26 @@ var Absent = (function(){
     day: function(){ fresh(); return day; }
   };
 })();
+/* v7.13 (audit §3.10): a scene switch used to destroy a tool's work — the picker's
+   round, the groups just made, the tally under the dice, the sketch — because the card
+   is torn down and rebuilt. Each tool now parks its day's state here and takes it back
+   when it is built again. Keys are either a string shared across scenes ("picker:5th":
+   one round per class, whichever picker is asking) or the card's own config object
+   (stable for the session: one tally per card). Session-only and, like Absent, for
+   today only — Tuesday's round must not greet Wednesday. */
+var DayStore = (function(){
+  var day = null, byKey = Object.create(null), byObj = new WeakMap();
+  function fresh(){
+    var k = dateKey(now());
+    if (k !== day){ byKey = Object.create(null); byObj = new WeakMap(); day = k; }
+  }
+  function isObjKey(k){ return typeof k === "object" && k !== null; }
+  return {
+    get: function(k){ fresh(); return isObjKey(k) ? byObj.get(k) : byKey[k]; },
+    set: function(k, v){ fresh(); if (isObjKey(k)) byObj.set(k, v); else byKey[k] = v; },
+    clear: function(k){ fresh(); if (isObjKey(k)) byObj.delete(k); else delete byKey[k]; }
+  };
+})();
 /* Small "Absent" chip + tap-out name panel, shared by picker & groups.
    Marking absence is a live teaching action, so it works while locked. */
 function attachAbsent(host, periodFn, onChange){
@@ -6204,18 +6353,26 @@ function makePicker(host, wcfg){
   if (typeof wcfg.period !== "string") wcfg.period = "";   // added at runtime: no sanitize pass
   var q = function(s){ return host.querySelector(s); };
   var sel = q(".pkSel"), nameEl = q(".pkName"), leftEl = q(".pkLeft"), hintEl = q(".tHint");
-  var pool = [], poolPeriod = null, spinTid = null, refreshTid = null;
+  var spinTid = null, refreshTid = null;
   var destroyed = false;
-  var period = buildPeriodSelect(sel, wcfg, function(){ resetPool(); paint(); ab.repaint(); });
+  var period = buildPeriodSelect(sel, wcfg, function(){ cancelSpin(); showLast(); paint(); ab.repaint(); });
   var ab = attachAbsent(host, function(){ return period.current(); },
                         function(){ paint(); });
-  function resetPool(){
-    pool = []; poolPeriod = null;
+  /* v7.13: the round lives in DayStore by class ("picker:5th"), so it survives a scene
+     switch and is shared by every picker on the board — 5th period has ONE round today */
+  function round(p){ return p ? DayStore.get("picker:" + p) : null; }   // {pool, last} or undefined
+  function cancelSpin(){
     if (spinTid){                               // a reset mid-spin cancels the spin —
       clearInterval(spinTid); spinTid = null;   // never commit a student who was
       nameEl.classList.remove("spin");          // reset (or edited) away
     }
   }
+  function resetPool(){
+    cancelSpin();
+    var p = period.current();
+    if (p) DayStore.clear("picker:" + p);
+  }
+  function showLast(){ var r = round(period.current()); nameEl.textContent = r && r.last ? r.last : "\u2014"; }
   function paint(){
     var p = period.current();
     var names = p ? Rosters.namesFor(p) : [];
@@ -6232,16 +6389,18 @@ function makePicker(host, wcfg){
     emptyEl.textContent = "";
     hintEl.textContent = "Space picks · R restarts the round";
     var present = Absent.presentFor(p);
-    var left = poolPeriod === p
-      ? pool.filter(function(n){ return !Absent.isOut(p, n); }).length
+    var r = round(p);
+    var left = r
+      ? r.pool.filter(function(n){ return present.indexOf(n) >= 0; }).length   // absent or edited away: not waiting
       : present.length;
     var out = Absent.countOut(p);
     leftEl.textContent = left + " of " + present.length + " left" +
       (out ? " · " + out + " out" : "");
   }
-  function commit(name){
+  function commit(name, p){
     nameEl.classList.remove("spin");
     nameEl.textContent = name;
+    var r = round(p); if (r) r.last = name;
     paint();
   }
   function pick(){
@@ -6250,25 +6409,25 @@ function makePicker(host, wcfg){
     if (!p) { paint(); return; }
     var names = Absent.presentFor(p);           // never call on the kid at home
     if (!names.length){ paint(); return; }
-    if (poolPeriod !== p) pool = [];
+    var r = round(p) || { pool: [], last: "" };
     /* someone marked absent MID-ROUND is skipped — but stays in the pool, so un-marking
        them puts them back in this round (v7.11.5: the filter used to be permanent) */
-    var eligible = pool.filter(function(n){ return !Absent.isOut(p, n); });
+    var eligible = r.pool.filter(function(n){ return names.indexOf(n) >= 0; });
     if (!eligible.length){                      // fresh round
-      pool = shuffleNames(names.slice());
-      poolPeriod = p;
-      eligible = pool.slice();
+      r.pool = shuffleNames(names.slice());
+      eligible = r.pool.slice();
     }
+    DayStore.set("picker:" + p, r);
     var target = eligible[eligible.length - 1];
-    pool.splice(pool.lastIndexOf(target), 1);
-    if (REDUCED){ commit(target); return; }
+    r.pool.splice(r.pool.lastIndexOf(target), 1);
+    if (REDUCED){ commit(target, p); return; }
     var t0 = Date.now();
     nameEl.classList.add("spin");
     spinTid = setInterval(function(){
       if (destroyed){ clearInterval(spinTid); return; }
       if (Date.now() - t0 > 900){
         clearInterval(spinTid); spinTid = null;
-        commit(target);
+        commit(target, p);
       } else {
         nameEl.textContent = names[Math.floor(Math.random() * names.length)];
       }
@@ -6281,7 +6440,7 @@ function makePicker(host, wcfg){
     period.fill(); paint();
     ab.repaint();                                // two open panels stay in sync
   }, 5000);  // follow the bells
-  paint();
+  paint(); showLast();
   return {
     kind: "picker",
     label: function(){ return wcfg.label || "Picker"; },
@@ -6289,7 +6448,7 @@ function makePicker(host, wcfg){
     reset: fullReset,
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){ resetPool(); period.fill(); nameEl.textContent = "—"; paint(); },
+    rebuild: function(){ cancelSpin(); period.fill(); showLast(); paint(); },   // v7.13: a roster edit keeps the round (names gone from the roster just stop waiting)
     resync: paint,
     destroy: function(){
       destroyed = true;
@@ -6318,7 +6477,7 @@ function makeGroups(host, wcfg){
   if (!(wcfg.count >= 2 && wcfg.count <= 8)) wcfg.count = 4;
   var q = function(s){ return host.querySelector(s); };
   var sel = q(".pkSel"), sizeWrap = q(".gpSize"), out = q(".gpOut"), hintEl = q(".tHint");
-  var period = buildPeriodSelect(sel, wcfg, function(){ out.innerHTML = ""; host.classList.remove("made"); q(".gpGo").textContent = "Make groups"; paint(); ab.repaint(); });
+  var period = buildPeriodSelect(sel, wcfg, function(){ show(); paint(); ab.repaint(); });
   var ab = attachAbsent(host, function(){ return period.current(); },
                         function(){ paint(); });
   var chips = [];
@@ -6376,6 +6535,11 @@ function makeGroups(host, wcfg){
     var groups = [];
     for (var i = 0; i < count; i++) groups.push([]);
     names.forEach(function(n, i){ groups[i % count].push(n); });
+    DayStore.set("groups:" + p, groups);         // v7.13: today's groups for this class outlive the scene
+    render(groups);
+  }
+  function render(groups){
+    out.innerHTML = "";
     groups.forEach(function(g, i){
       var card = document.createElement("div");
       card.className = "gpCard";
@@ -6387,20 +6551,25 @@ function makeGroups(host, wcfg){
     });
     host.classList.add("made"); q(".gpGo").textContent = "Shuffle";   // v7.12: the button's second job
   }
+  function show(){                               // whatever this class was given today, or a clean card
+    var g = DayStore.get("groups:" + period.current());
+    if (g) render(g);
+    else { out.innerHTML = ""; host.classList.remove("made"); q(".gpGo").textContent = "Make groups"; }
+  }
   wireButton(q(".gpGo"), make);
   var refreshTid = setInterval(function(){
     period.fill(); paint();
     ab.repaint();                                // two open panels stay in sync
   }, 5000);  // Auto label follows the bells
-  paint();
+  paint(); show();
   return {
     kind: "groups",
     label: function(){ return wcfg.label || "Groups"; },
     startPause: make,
-    reset: function(){ out.innerHTML = ""; paint(); },
+    reset: function(){ var p = period.current(); if (p) DayStore.clear("groups:" + p); show(); paint(); },
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){ out.innerHTML = ""; period.fill(); paint(); },
+    rebuild: function(){ period.fill(); show(); paint(); },
     resync: paint,
     destroy: function(){ clearInterval(refreshTid); }
   };
@@ -6864,48 +7033,112 @@ function makeText(host, wcfg){
 
 /* Work symbols / voice level: one big badge the back row can read.
    Space (on selection) cycles to the next mode. */
+/* v7.13 (audit §3.14): each mode carries the room's noise limit for the meter and
+   whether the music plays; `music` is the tape's state under that mode when the card
+   is set to run it (quiet work gets the lofi, team voices don't compete with it). */
 var WORK_MODES = [
-  { id: "silent",   name: "SILENT",     sub: "Voices off · work alone" },
-  { id: "whisper",  name: "WHISPER",    sub: "Partner voices · stay at your seat" },
-  { id: "partners", name: "PARTNERS",   sub: "Work with your partner" },
-  { id: "groups",   name: "GROUP WORK", sub: "Team voices · everyone contributes" }
+  { id: "silent",   name: "SILENT",     sub: "Voices off · work alone",             limit: 35, music: true },
+  { id: "whisper",  name: "WHISPER",    sub: "Partner voices · stay at your seat",  limit: 50, music: true },
+  { id: "partners", name: "PARTNERS",   sub: "Work with your partner",              limit: 65, music: false },
+  { id: "groups",   name: "GROUP WORK", sub: "Team voices · everyone contributes",  limit: 80, music: false }
 ];
 function makeWork(host, wcfg){
   if (!WORK_MODES.some(function(m){ return m.id === wcfg.mode; })) wcfg.mode = "silent";
+  if (!isObj(wcfg.drive)) wcfg.drive = { meter: true, music: false };
+  if (!isObj(wcfg.custom)) wcfg.custom = {};
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="wkBadge"></div>' +
       '<div class="wkSub"></div>' +
       '<div class="chips wkChips" role="group" aria-label="Work mode"></div>' +
+      '<div class="chips wkDrive" role="group" aria-label="What this card sets">' +
+        '<button type="button" class="chip chipSm" data-drive="meter" aria-pressed="false">Sets noise limit</button>' +
+        '<button type="button" class="chip chipSm" data-drive="music" aria-pressed="false">Runs the music</button>' +
+      '</div>' +
+      '<div class="row wkEdit" hidden>' +
+        '<input class="wkName" maxlength="16" placeholder="Mode name" aria-label="Mode name">' +
+        '<input class="wkSubIn" maxlength="60" placeholder="What it means" aria-label="What the mode means">' +
+        '<button class="btn wkDone" type="button" style="background:var(--turq); color:var(--navy)">Done</button>' +
+      '</div>' +
       '<div class="tHint">Space switches to the next mode</div>' +
     '</div>');
   var badge = host.querySelector(".wkBadge");
   var sub = host.querySelector(".wkSub");
   var chipsWrap = host.querySelector(".wkChips");
+  var editRow = host.querySelector(".wkEdit"), nameIn = host.querySelector(".wkName"), subIn = host.querySelector(".wkSubIn");
   var chips = [];
+  function modeOf(id){ return WORK_MODES.filter(function(x){ return x.id === id; })[0] || WORK_MODES[0]; }
+  function wording(m){                            // the teacher's words for a mode, or the stock ones
+    var c = wcfg.custom[m.id];
+    return { name: (c && c.name) || m.name, sub: (c && c.sub) || m.sub };
+  }
+  function chipText(m){ var nm = wording(m).name; return nm === nm.toUpperCase() ? nm.charAt(0) + nm.slice(1).toLowerCase() : nm; }
   function paint(){
-    var m = WORK_MODES.filter(function(x){ return x.id === wcfg.mode; })[0] || WORK_MODES[0];
+    var m = modeOf(wcfg.mode), w = wording(m);
     badge.className = "wkBadge " + m.id;
-    badge.textContent = m.name;
-    sub.textContent = m.sub;
+    badge.textContent = w.name;
+    sub.textContent = w.sub;
     chips.forEach(function(c){
       c.setAttribute("aria-pressed", c.dataset.mode === wcfg.mode ? "true" : "false");
+      c.textContent = chipText(modeOf(c.dataset.mode));
+    });
+    host.querySelectorAll(".wkDrive .chip").forEach(function(c){
+      c.setAttribute("aria-pressed", wcfg.drive[c.dataset.drive] ? "true" : "false");
     });
   }
+  /* the room follows: the meter takes the mode's limit, the music plays or stops */
+  function drive(){
+    var m = modeOf(wcfg.mode);
+    try {
+      document.dispatchEvent(new CustomEvent("deckhand:workmode", { detail: {
+        id: m.id, limit: wcfg.drive.meter ? m.limit : null, music: wcfg.drive.music ? m.music : null } }));
+    } catch(e){}
+  }
+  function setMode(id){ wcfg.mode = id; paint(); drive(); }
   WORK_MODES.forEach(function(m){
     var b = document.createElement("button");
     b.type = "button"; b.className = "chip";
     b.dataset.mode = m.id;
-    b.textContent = m.name.charAt(0) + m.name.slice(1).toLowerCase();
-    wireButton(b, function(){ wcfg.mode = m.id; paint(); });
+    wireButton(b, function(){ setMode(m.id); });
     chipsWrap.appendChild(b);
     chips.push(b);
   });
+  host.querySelectorAll(".wkDrive .chip").forEach(function(c){
+    wireButton(c, function(){ wcfg.drive[c.dataset.drive] = !wcfg.drive[c.dataset.drive]; paint(); drive(); });
+  });
   function cycle(){
     var i = WORK_MODES.map(function(m){ return m.id; }).indexOf(wcfg.mode);
-    wcfg.mode = WORK_MODES[(i + 1) % WORK_MODES.length].id;
-    paint();
+    setMode(WORK_MODES[(i + 1) % WORK_MODES.length].id);
   }
+  /* ✎: reword the CURRENT mode (name and meaning) — the colour stays with the mode */
+  var pencil = document.createElement("button");
+  pencil.type = "button"; pencil.className = "wEdit";
+  pencil.setAttribute("aria-label", "Reword this mode");
+  pencil.innerHTML = '<svg class="wIcon"><use href="#i-pencil"/></svg>';
+  var strip = host.querySelector(".strip");
+  strip.insertBefore(pencil, strip.querySelector(".wFocus"));
+  function startEdit(){
+    if (cfg.ui.locked) return;
+    var w = wording(modeOf(wcfg.mode));
+    nameIn.value = w.name; subIn.value = w.sub;
+    editRow.hidden = false; nameIn.focus(); nameIn.select();
+  }
+  function commit(){
+    if (cfg.ui.locked){ editRow.hidden = true; return; }
+    var m = modeOf(wcfg.mode), nm = nameIn.value.trim().slice(0, 16), sb = subIn.value.trim().slice(0, 60);
+    if ((nm && nm !== m.name) || (sb && sb !== m.sub)) wcfg.custom[m.id] = { name: nm === m.name ? "" : nm, sub: sb === m.sub ? "" : sb };
+    else delete wcfg.custom[m.id];
+    editRow.hidden = true; paint();
+  }
+  wireButton(host.querySelector(".wkDone"), commit);
+  wireButton(pencil, function(){ if (editRow.hidden) startEdit(); else commit(); });
+  [nameIn, subIn].forEach(function(inp){
+    inp.addEventListener("keydown", function(e){
+      if (Alarm.isOn()) return;
+      e.stopPropagation();
+      if (e.key === "Enter" || e.key === "Escape") commit();
+    });
+  });
   paint();
   return {
     kind: "work",
@@ -6914,7 +7147,7 @@ function makeWork(host, wcfg){
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: paint, resync: function(){},
-    destroy: function(){}
+    destroy: function(){ if (!editRow.hidden) commit(); }
   };
 }
 
@@ -6945,13 +7178,24 @@ function makeDice(host, wcfg){
   /* v7.8: a session tally — per face for one die, per TOTAL for two or three
      (the "why is 7 the most common" lesson) */
   var counts = Object.create(null), rolls = 0;
+  function park(){ DayStore.set(wcfg, { counts: counts, rolls: rolls, values: values.slice(), count: wcfg.count }); }   // v7.13: the tally outlives the scene
   function paintTally(){
-    var keys = Object.keys(counts).map(Number).sort(function(a, b){ return a - b; });
-    tallyLine(tallyEl, keys.map(function(k){ return [String(k), counts[k]]; }), rolls, "roll");
+    var theo = diceTheory(wcfg.count), keys = Object.keys(theo).map(Number).sort(function(a, b){ return a - b; });
+    tallyLine(tallyEl, keys.map(function(k){ return [String(k), counts[k] || 0, theo[k]]; }), rolls, "roll");
   }
   function record(){
     var t = values.reduce(function(a, b){ return a + b; }, 0);
     counts[t] = (counts[t] || 0) + 1; rolls++;
+    park();
+  }
+  function snapshot(){ return { counts: Object.assign(Object.create(null), counts), rolls: rolls, values: values.slice() }; }
+  function restore(s){ counts = s.counts; rolls = s.rolls; values = s.values; park(); paint(false); }
+  function rollMany(n){
+    if (rollTid) return;
+    var was = snapshot();
+    for (var i = 0; i < n; i++){ values = randomValues(); record(); }
+    paint(false);
+    Undo.show(n + " rolls added", function(){ restore(was); });
   }
   function dieSVG(v){
     var s = '<svg class="die" viewBox="0 0 100 100" aria-label="Die showing ' + v + '">' +
@@ -7006,20 +7250,22 @@ function makeDice(host, wcfg){
       wcfg.count = n;
       values = values.slice(0, n);
       while (values.length < n) values.push(1);
-      paint(false);
+      park(); paint(false);
     });
     chipsWrap.appendChild(b);
     chips.push(b);
   });
-  values = [];
-  for (var i = 0; i < wcfg.count; i++) values.push(i + 1);
+  batchChips(chipsWrap, "roll", rollMany);
+  var parked = DayStore.get(wcfg);
+  if (parked && parked.count === wcfg.count){ counts = parked.counts; rolls = parked.rolls; values = parked.values.slice(); }
+  else { values = []; for (var i = 0; i < wcfg.count; i++) values.push(i + 1); }
   paint(false);
   wireButton(host.querySelector(".dcGo"), roll);
   function clearTally(){
     if (!rolls) return;
-    var was = { counts: counts, rolls: rolls };
-    counts = Object.create(null); rolls = 0; paint(false);
-    Undo.show("Tally cleared", function(){ counts = was.counts; rolls = was.rolls; paint(false); });
+    var was = snapshot();
+    counts = Object.create(null); rolls = 0; park(); paint(false);
+    Undo.show("Tally cleared", function(){ restore(was); });
   }
   wireButton(host.querySelector(".tReset"), clearTally);
   return {
@@ -7037,18 +7283,70 @@ function makeDice(host, wcfg){
 /* ---- v7.8 the probability kit (Croix: "we have probability content… a
    coin flipper, a spinner, and a deck of cards draw"). Space = flip / spin /
    draw, R = clear the tally (or reshuffle). Tallies are session-only. ---- */
-function tallyLine(el, parts, n, noun){
+/* v7.13 (audit §3.12): each entry is [label, count, theoretical probability]; with a
+   probability the column grows a bar — the observed relative frequency, filled — with the
+   theoretical share drawn across it as a line, so "experimental vs theoretical" is the
+   picture and not a sentence. One scale for the row (the tallest of either), so the
+   SHAPE of the distribution shows: the two-dice triangle, the coin's two equal halves.
+   `total` is the count the fractions are over when it differs from `n` (three coins per flip). */
+function tallyLine(el, parts, n, noun, total){
   el.innerHTML = "";
+  if (total === undefined) total = n;
+  var hasTheo = parts.some(function(pt){ return pt[2] != null; });
+  var scale = 0;
+  if (hasTheo){
+    parts.forEach(function(pt){ scale = Math.max(scale, pt[2] || 0, total ? pt[1] / total : 0); });
+    scale = (scale || 1) * 1.12;
+  }
+  el.classList.toggle("bars", hasTheo);
+  el.classList.toggle("many", parts.length > 8);
   parts.forEach(function(pt){
     var sp = document.createElement("span");
+    if (hasTheo){
+      var bar = document.createElement("i"); bar.className = "prBar";
+      var fill = document.createElement("u");
+      fill.style.height = (total ? Math.min(100, pt[1] / total / scale * 100) : 0).toFixed(1) + "%";
+      var tick = document.createElement("em");
+      tick.style.bottom = ((pt[2] || 0) / scale * 100).toFixed(1) + "%";
+      bar.appendChild(fill); bar.appendChild(tick);
+      bar.setAttribute("aria-label", (total ? Math.round(pt[1] / total * 100) : 0) + "% so far, " + Math.round((pt[2] || 0) * 100) + "% expected");
+      sp.appendChild(bar);
+    }
     sp.appendChild(document.createTextNode(pt[0]));
     var b = document.createElement("b"); b.textContent = pt[1];
     sp.appendChild(b);
+    if (hasTheo && total){
+      var pc = document.createElement("small"); pc.className = "prPct";
+      pc.textContent = Math.round(pt[1] / total * 100) + "%";
+      sp.appendChild(pc);
+    }
     el.appendChild(sp);
   });
   var nEl = document.createElement("span"); nEl.className = "prN";
   nEl.textContent = n ? n + " " + (n === 1 ? noun : noun + "s") : "";
   el.appendChild(nEl);
+}
+/* ×10 / ×100 at once (audit §3.12): the law of large numbers needs more trials than a
+   class period allows one at a time. `run(n)` performs n instant trials; the toast undoes. */
+function batchChips(wrap, noun, run){
+  [10, 100].forEach(function(n){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip chipSm prBatch"; b.dataset.batch = n;
+    b.textContent = "\u00d7" + n;
+    b.setAttribute("aria-label", n + " " + noun + "s at once");
+    wireButton(b, function(){ run(n); });
+    wrap.appendChild(b);
+  });
+}
+/* the probability of each total of k dice (k = 1..3): convolution of uniform faces */
+function diceTheory(k){
+  var dist = { 0: 1 };
+  for (var d = 0; d < k; d++){
+    var nx = {};
+    Object.keys(dist).forEach(function(s){ for (var f = 1; f <= 6; f++) nx[+s + f] = (nx[+s + f] || 0) + dist[s] / 6; });
+    dist = nx;
+  }
+  return dist;
 }
 function makeCoin(host, wcfg){
   if (!(wcfg.count >= 1 && wcfg.count <= 3)) wcfg.count = 1;
@@ -7064,6 +7362,7 @@ function makeCoin(host, wcfg){
   var faces = host.querySelector(".cnFaces"), tallyEl = host.querySelector(".prTally");
   var chipsWrap = host.querySelector(".cnChips"), chips = [];
   var values = [], heads = 0, tails = 0, flips = 0, tid = null, destroyed = false;
+  function park(){ DayStore.set(wcfg, { values: values.slice(), heads: heads, tails: tails, flips: flips, count: wcfg.count }); }
   function coinSVG(v){
     return '<svg class="coin' + (v ? "" : " tails") + '" viewBox="0 0 100 100" aria-label="' + (v ? "Heads" : "Tails") + '">' +
       '<circle class="cnRim" cx="50" cy="50" r="46"/><circle class="cnFace" cx="50" cy="50" r="36"/>' +
@@ -7072,7 +7371,7 @@ function makeCoin(host, wcfg){
   function paint(anim){
     faces.innerHTML = values.map(coinSVG).join("");
     if (anim) faces.querySelectorAll(".coin").forEach(function(c){ c.classList.add("flip"); });
-    tallyLine(tallyEl, [["Heads", heads], ["Tails", tails]], flips, "flip");
+    tallyLine(tallyEl, [["Heads", heads, .5], ["Tails", tails, .5]], flips, "flip", heads + tails);
     chips.forEach(function(c){ c.setAttribute("aria-pressed", +c.dataset.n === wcfg.count ? "true" : "false"); });
   }
   function land(){
@@ -7080,6 +7379,14 @@ function makeCoin(host, wcfg){
     for (var i = 0; i < wcfg.count; i++) values.push(Math.random() < 0.5);
     values.forEach(function(v){ if (v) heads++; else tails++; });
     flips++;
+    park();
+  }
+  function flipMany(n){
+    if (tid) return;
+    var was = [heads, tails, flips, values.slice()];
+    for (var i = 0; i < n; i++) land();
+    paint(false);
+    Undo.show(n + " flips added", function(){ heads = was[0]; tails = was[1]; flips = was[2]; values = was[3]; park(); paint(false); });
   }
   function flip(){
     if (tid) return;
@@ -7101,18 +7408,21 @@ function makeCoin(host, wcfg){
       if (tid) return;                            // v7.11.5: not mid-flip
       wcfg.count = n;
       values = values.slice(0, n); while (values.length < n) values.push(true);
-      paint(false);
+      park(); paint(false);
     });
     chipsWrap.appendChild(b); chips.push(b);
   });
-  for (var i = 0; i < wcfg.count; i++) values.push(true);
+  batchChips(chipsWrap, "flip", flipMany);
+  var parked = DayStore.get(wcfg);
+  if (parked && parked.count === wcfg.count){ values = parked.values.slice(); heads = parked.heads; tails = parked.tails; flips = parked.flips; }
+  else { for (var i = 0; i < wcfg.count; i++) values.push(true); }
   paint(false);
   wireButton(host.querySelector(".cnGo"), flip);
   function clearTally(){
     if (!flips) return;
     var was = [heads, tails, flips];
-    heads = tails = flips = 0; paint(false);
-    Undo.show("Tally cleared", function(){ heads = was[0]; tails = was[1]; flips = was[2]; paint(false); });
+    heads = tails = flips = 0; park(); paint(false);
+    Undo.show("Tally cleared", function(){ heads = was[0]; tails = was[1]; flips = was[2]; park(); paint(false); });
   }
   wireButton(host.querySelector(".tReset"), clearTally);
   return {
@@ -7149,6 +7459,7 @@ function makeSpin(host, wcfg){
   var wheel = host.querySelector(".spWheel"), resEl = host.querySelector(".spResult");
   var tallyEl = host.querySelector(".prTally"), chipsWrap = host.querySelector(".spChips"), chips = [];
   var angle = 0, counts = [], spins = 0, spinning = false, result = null, tid = null, destroyed = false;
+  function park(){ DayStore.set(wcfg, { counts: counts.slice(), spins: spins, result: result, angle: angle, sectors: wcfg.sectors }); }
   function buildWheel(){
     var n = wcfg.sectors, out = "";
     for (var i = 0; i < n; i++){
@@ -7165,7 +7476,7 @@ function makeSpin(host, wcfg){
   function paint(){
     resEl.textContent = result === null ? "" : String(result);
     var parts = [];
-    for (var i = 0; i < wcfg.sectors; i++) parts.push([String(i + 1), counts[i] || 0]);
+    for (var i = 0; i < wcfg.sectors; i++) parts.push([String(i + 1), counts[i] || 0, 1 / wcfg.sectors]);
     tallyLine(tallyEl, parts, spins, "spin");
     chips.forEach(function(c){ c.setAttribute("aria-pressed", +c.dataset.n === wcfg.sectors ? "true" : "false"); });
   }
@@ -7179,7 +7490,14 @@ function makeSpin(host, wcfg){
     result = Math.floor(under / seg) + 1;
     counts[result - 1] = (counts[result - 1] || 0) + 1;
     spins++;
-    paint();
+    park(); paint();
+  }
+  function spinMany(n){
+    if (spinning) return;
+    var was = { counts: counts.slice(), spins: spins, result: result };
+    for (var i = 0; i < n; i++){ result = 1 + Math.floor(Math.random() * wcfg.sectors); counts[result - 1] = (counts[result - 1] || 0) + 1; spins++; }
+    park(); paint();
+    Undo.show(n + " spins added", function(){ counts = was.counts; spins = was.spins; result = was.result; park(); paint(); });
   }
   function spin(){
     if (spinning) return;
@@ -7197,17 +7515,23 @@ function makeSpin(host, wcfg){
     wireButton(b, function(){
       if (spinning) return;
       wcfg.sectors = n; counts = []; spins = 0; result = null;
-      buildWheel(); paint();
+      park(); buildWheel(); paint();
     });
     chipsWrap.appendChild(b); chips.push(b);
   });
+  batchChips(chipsWrap, "spin", spinMany);
+  var parked = DayStore.get(wcfg);
+  if (parked && parked.sectors === wcfg.sectors){
+    counts = parked.counts.slice(); spins = parked.spins; result = parked.result; angle = parked.angle;
+    wheel.classList.add("noAnim"); wheel.style.transform = "rotate(" + angle.toFixed(2) + "deg)";
+  }
   buildWheel(); paint();
   wireButton(host.querySelector(".spGo"), spin);
   function clearTally(){
     if (!spins) return;
     var was = { counts: counts.slice(), spins: spins, result: result };
-    counts = []; spins = 0; result = null; paint();
-    Undo.show("Tally cleared", function(){ counts = was.counts; spins = was.spins; result = was.result; paint(); });
+    counts = []; spins = 0; result = null; park(); paint();
+    Undo.show("Tally cleared", function(){ counts = was.counts; spins = was.spins; result = was.result; park(); paint(); });
   }
   wireButton(host.querySelector(".tReset"), clearTally);
   return {
@@ -7243,6 +7567,7 @@ function makeCards(host, wcfg){
   var cardEl = host.querySelector(".cdCard"), tallyEl = host.querySelector(".prTally");
   var replaceBtn = host.querySelector(".cdReplace"), goBtn = host.querySelector(".cdGo");
   var deck = [], drawn = null, suitCount = [0, 0, 0, 0], draws = 0;
+  function park(){ DayStore.set(wcfg, { deck: deck.slice(), drawn: drawn, suitCount: suitCount.slice(), draws: draws }); }
   function mix(){
     for (var i = deck.length - 1; i > 0; i--){          // Fisher–Yates
       var j = Math.floor(Math.random() * (i + 1)), t = deck[i]; deck[i] = deck[j]; deck[j] = t;
@@ -7266,24 +7591,38 @@ function makeCards(host, wcfg){
   }
   function paint(){
     cardEl.innerHTML = cardSVG(drawn);
-    var parts = CARD_SUITS.map(function(su, i){ return [su[0], suitCount[i]]; });
+    var parts = CARD_SUITS.map(function(su, i){ return [su[0], suitCount[i], .25]; });
     tallyLine(tallyEl, parts, draws, "draw");
     replaceBtn.setAttribute("aria-pressed", wcfg.replace ? "true" : "false");
     goBtn.textContent = deck.length ? "Draw \u00b7 " + deck.length + " left" : "Deck empty \u2014 shuffle";
     goBtn.disabled = !deck.length;
   }
-  function draw(){
-    if (!deck.length) return;
+  function drawOne(){
     drawn = deck.pop();
     if (wcfg.replace){ deck.push(drawn); mix(); }   // v7.11.5: Fisher–Yates — the sort() shuffle returned the same card 1.6× too often
     suitCount[drawn.s]++; draws++;
-    paint();
   }
-  function shuffle(){ fresh(); drawn = null; suitCount = [0, 0, 0, 0]; draws = 0; paint(); }
+  function draw(){
+    if (!deck.length) return;
+    drawOne(); park(); paint();
+  }
+  function drawMany(n){
+    n = Math.min(n, deck.length);                 // without "Put it back" the deck runs out — a lesson in itself
+    if (!n) return;
+    var was = { deck: deck.slice(), drawn: drawn, suitCount: suitCount.slice(), draws: draws };
+    for (var i = 0; i < n; i++) drawOne();
+    park(); paint();
+    Undo.show(n + " draws added", function(){ deck = was.deck; drawn = was.drawn; suitCount = was.suitCount; draws = was.draws; park(); paint(); });
+  }
+  function shuffle(){ fresh(); drawn = null; suitCount = [0, 0, 0, 0]; draws = 0; park(); paint(); }
   wireButton(replaceBtn, function(){ wcfg.replace = !wcfg.replace; paint(); });
   wireButton(host.querySelector(".cdShuffle"), shuffle);
   wireButton(goBtn, draw);
-  fresh(); paint();
+  batchChips(host.querySelector(".cdChips"), "draw", drawMany);
+  var parked = DayStore.get(wcfg);
+  if (parked){ deck = parked.deck.slice(); drawn = parked.drawn; suitCount = parked.suitCount.slice(); draws = parked.draws; }
+  else fresh();
+  paint();
   return {
     kind: "cards",
     label: function(){ return wcfg.label || "Cards"; },
@@ -7415,6 +7754,7 @@ function makeScore(host, wcfg){
 function makeEvent(host, wcfg){
   if (typeof wcfg.title !== "string") wcfg.title = "";
   if (typeof wcfg.when !== "string") wcfg.when = "";
+  if (typeof wcfg.schoolDays !== "boolean") wcfg.schoolDays = !wcfg.when;   // v7.13: new cards count school days
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="evTitle" hidden></div>' +
@@ -7425,6 +7765,7 @@ function makeEvent(host, wcfg){
         '<input class="evName" maxlength="60" placeholder="Event name" aria-label="Event name">' +
         '<input class="evDate" type="date" aria-label="Event date">' +
         '<input class="evTime" type="time" aria-label="Event time (optional)">' +
+        '<button class="chip evSchool" type="button" aria-pressed="false">School days</button>' +
         '<button class="btn evBtn" type="button" ' +
           'style="background:var(--turq); color:var(--navy)">Done</button>' +
       '</div>' +
@@ -7468,8 +7809,15 @@ function makeEvent(host, wcfg){
     if (hasTime) fmt += " · " + t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     sub.textContent = fmt;
     if (dd > 0){
-      big.textContent = dd;
-      unit.textContent = dd === 1 ? "day to go" : "days to go";
+      var sd = wcfg.schoolDays ? Bell.schoolDaysBetween(n, t) : 0;
+      if (sd > 0){                               // v7.13: "4 school days" — the number a class can plan by
+        big.textContent = sd;
+        unit.textContent = sd === 1 ? "school day to go" : "school days to go";
+        sub.textContent = fmt + " \u00b7 " + dd + (dd === 1 ? " day" : " days");
+      } else {                                   // a weekend event, or calendar days by choice
+        big.textContent = dd;
+        unit.textContent = dd === 1 ? "day to go" : "days to go";
+      }
     } else if (dd === 0 && hasTime && t - n > 0){
       var left = Math.floor((t - n) / 1000);
       big.textContent = Math.floor(left / 3600) + ":" +
@@ -7502,6 +7850,10 @@ function makeEvent(host, wcfg){
     paint();
   }
   wireButton(q(".evBtn"), commit);
+  var schoolBtn = q(".evSchool");
+  function paintSchool(){ schoolBtn.setAttribute("aria-pressed", wcfg.schoolDays ? "true" : "false"); }
+  wireButton(schoolBtn, function(){ wcfg.schoolDays = !wcfg.schoolDays; paintSchool(); paint(); });
+  paintSchool();
   [nameIn, dateIn, timeIn].forEach(function(inp){
     inp.addEventListener("keydown", function(e){
       if (Alarm.isOn()) return;                  // never shield the alarm stage
@@ -7520,7 +7872,7 @@ function makeEvent(host, wcfg){
     startPause: function(){}, reset: function(){},
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: paint, resync: paint,
+    rebuild: function(){ paintSchool(); paint(); }, resync: paint,
     destroy: function(){
       /* scene switch / Home with the row open: keep the typed event —
          every other editor tap-away-saves, so losing it here would
@@ -8345,6 +8697,22 @@ function makeMusic(host, wcfg){
   }
   function toggle(){ if (playing) pause(); else play(); }
   wireButton(playBtn, toggle);
+  /* v7.13: the room's other cards can run the tape — a Work Mode card set to "Runs the
+     music" (quiet modes play, team modes stop) and, with the Timer setting on, any timer
+     (plays while it runs; stops when it ends or pauses, but only if the timer started it) */
+  var byTimer = false;
+  function onWorkMode(e){
+    if (destroyed || !e.detail || e.detail.music == null) return;
+    if (e.detail.music && !playing) play();
+    else if (!e.detail.music && playing) pause();
+  }
+  function onTimer(e){
+    if (destroyed || !cfg.timer.music || !e.detail) return;
+    if (e.detail.running){ if (!playing){ play(); byTimer = true; } }
+    else if (byTimer){ byTimer = false; if (playing) pause(); }
+  }
+  document.addEventListener("deckhand:workmode", onWorkMode);
+  document.addEventListener("deckhand:timer", onTimer);
   volEl.addEventListener("input", function(){
     wcfg.volume = Math.max(0, Math.min(1, (+volEl.value || 0) / 100));
     /* only while PLAYING — while paused the bus is hushed, and setting
@@ -8366,6 +8734,8 @@ function makeMusic(host, wcfg){
     _level: function(){ return master ? master.gain.value : 0; },// test hook
     destroy: function(){
       destroyed = true;
+      document.removeEventListener("deckhand:workmode", onWorkMode);
+      document.removeEventListener("deckhand:timer", onTimer);
       pause();
       if (ctx){ try { ctx.close(); } catch(e){} ctx = null; }
     }
@@ -9009,8 +9379,10 @@ function makeMeter(host, wcfg){
       '<div class="mtRecord"></div>' +
       '<div class="mtTrack"><div class="mtFill"></div><div class="mtMark"></div></div>' +
       '<div class="mtStatus">—</div>' +
-      '<div class="row"><button class="btn mtBtn" type="button" ' +
-        'style="background:var(--turq); color:var(--navy)">Enable microphone</button></div>' +
+      '<div class="row mtSetup"><button class="btn mtBtn" type="button" ' +
+        'style="background:var(--turq); color:var(--navy)">Enable microphone</button>' +
+        '<button class="btn ghost mtHand" type="button">By hand</button></div>' +
+      '<div class="row mtHandRow" hidden><button class="btn mtStrike" type="button" aria-label="Too loud — add a strike">\u2716 Too loud</button></div>' +
       '<div class="mtRow"><span>Limit</span>' +
         '<input class="mtLimit" type="range" min="10" max="100" step="5">' +
       '</div>' +
@@ -9025,7 +9397,7 @@ function makeMeter(host, wcfg){
     '</div>');
   var q = function(s){ return host.querySelector(s); };
   var fill = q(".mtFill"), mark = q(".mtMark"), status = q(".mtStatus");
-  var btn = q(".mtBtn"), slider = q(".mtLimit");
+  var btn = q(".mtBtn"), slider = q(".mtLimit"), handBtn = q(".mtHand"), strikeBtn = q(".mtStrike");
   var streakEl = q(".mtStreak"), streakLab = q(".mtStreakLab");
   var strikesEl = q(".mtStrikes"), recordEl = q(".mtRecord"), tallyEl = q(".mtTally");
   var stream = null, ctx = null, analyser = null, buf = null;
@@ -9033,7 +9405,14 @@ function makeMeter(host, wcfg){
   /* game state */
   var streakStart = null, overSince = null, struck = false, struckN = 0, strikes = 0;
   var curPeriod = null, lastShownSec = -1, flashTid = null;
+  /* v7.13 (audit §3.11): the Chromebox denies the mic to file:// — the game used to be
+     dead on the very panel it was built for. BY HAND: the streak clock runs on its own
+     (the room is quiet until the teacher says otherwise) and the big ✖ adds the strike —
+     Space too, when the card is selected. Same streak, same records, same per-period
+     tally; the level bar and its limit are hidden because nothing measures. */
+  var manual = false, manualTid = null;
   function gamePeriod(){ return currentPeriodLabel() || "Class"; }
+  function park(){ DayStore.set(wcfg, { mode: manual ? "hand" : (analyser ? "mic" : ""), streakStart: streakStart, strikes: strikes, curPeriod: curPeriod }); }
   function fmtStreak(sec){
     return Math.floor(sec / 60) + ":" + String(Math.floor(sec % 60)).padStart(2, "0");
   }
@@ -9076,7 +9455,7 @@ function makeMeter(host, wcfg){
     lastShownSec = -1;
     paintGame();
   }
-  var periodTid = setInterval(function(){ if (analyser) rollPeriod(); }, 5000);
+  var periodTid = setInterval(function(){ if (analyser || manual) rollPeriod(); }, 5000);
   slider.value = wcfg.limit;
   function paintMark(){ mark.style.left = wcfg.limit + "%"; }
   paintMark();
@@ -9116,23 +9495,30 @@ function makeMeter(host, wcfg){
       var due = struck ? overSince + need + struckN * need * 2 : overSince + need;
       if (nowMs >= due){
         struck = true; struckN++;
-        strikes++;
-        var by = tallyToday();
-        if (curPeriod && curPeriod !== "__proto__" &&
-            (hasOwn(by, curPeriod) || Object.keys(by).length < 12)){
-          by[curPeriod] = (hasOwn(by, curPeriod) ? by[curPeriod] : 0) + 1;
-        }
-        streakStart = null;                      // the streak dies with the strike
-        lastShownSec = -1;
-        host.classList.add("strikeFlash");
-        if (flashTid) clearTimeout(flashTid);
-        flashTid = setTimeout(function(){ host.classList.remove("strikeFlash"); }, 900);
-        paintGame();
+        addStrike();
       }
     } else {
       overSince = null; struck = false; struckN = 0;
       if (streakStart === null) streakStart = nowMs;
     }
+    tickStreak(nowMs);
+    raf = requestAnimationFrame(frame);
+  }
+  function addStrike(){
+    strikes++;
+    var by = tallyToday();
+    if (curPeriod && curPeriod !== "__proto__" &&
+        (hasOwn(by, curPeriod) || Object.keys(by).length < 12)){
+      by[curPeriod] = (hasOwn(by, curPeriod) ? by[curPeriod] : 0) + 1;
+    }
+    streakStart = null;                          // the streak dies with the strike
+    lastShownSec = -1;
+    host.classList.add("strikeFlash");
+    if (flashTid) clearTimeout(flashTid);
+    flashTid = setTimeout(function(){ host.classList.remove("strikeFlash"); }, 900);
+    paintGame(); park();
+  }
+  function tickStreak(nowMs){
     var sec = streakStart ? (nowMs - streakStart) / 1000 : 0;
     var shown = Math.floor(sec);
     if (shown !== lastShownSec){
@@ -9146,15 +9532,52 @@ function makeMeter(host, wcfg){
       wcfg.records[curPeriod] = Math.floor(sec);
       paintGame();                               // live record chase
     }
-    raf = requestAnimationFrame(frame);
   }
+  /* ---- by hand ---- */
+  function goManual(why){
+    if (manual || analyser) return;
+    manual = true;
+    host.classList.add("manual");
+    q(".mtSetup").hidden = true; q(".mtHandRow").hidden = false;
+    status.textContent = why || "By hand \u2014 tap \u2716 when the room gets loud";
+    if (why) setTimeout(function(){ if (manual && !destroyed) status.textContent = "By hand \u2014 tap \u2716 when the room gets loud"; }, 9000);   // the reason once, then the job
+    if (streakStart === null){ streakStart = Date.now(); lastShownSec = -1; }
+    clearInterval(manualTid);
+    manualTid = setInterval(function(){
+      if (destroyed) return;
+      var nowMs = Date.now();
+      if (lastFrameMs && nowMs - lastFrameMs > 1000 && streakStart !== null) streakStart = nowMs;   // a hidden tab is not a quiet room
+      lastFrameMs = nowMs;
+      tickStreak(nowMs);
+    }, 250);
+    park();
+  }
+  function handStrike(){
+    if (!manual) return;
+    var was = { strikes: strikes, streakStart: streakStart, tally: JSON.parse(JSON.stringify(wcfg.tally)) };
+    addStrike();
+    streakStart = Date.now();                    // the next streak starts now — the teacher already called it
+    Undo.show("Strike added", function(){
+      strikes = was.strikes; streakStart = was.streakStart; wcfg.tally = was.tally; lastShownSec = -1;
+      paintGame(); park();
+    });
+  }
+  wireButton(handBtn, function(){ goManual(); });
+  wireButton(strikeBtn, handStrike);
+  /* v7.13: the Work Mode card sets the limit — silent 35, whisper 50, partners 65, groups 80 */
+  function onWorkMode(e){
+    if (destroyed || !e.detail || e.detail.limit == null) return;
+    wcfg.limit = Math.max(10, Math.min(100, e.detail.limit));
+    slider.value = wcfg.limit; paintMark();
+  }
+  document.addEventListener("deckhand:workmode", onWorkMode);
   function start(){
     /* `pending` matters: a double-tap before the permission prompt
        resolves would otherwise open a SECOND stream that nothing can
        ever stop — a live mic indicator until reload */
     if (stream || pending) return;
     if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
-      status.textContent = "Microphone not available on this device";
+      goManual("No microphone on this device \u2014 running by hand: tap \u2716 when it\u2019s too loud");
       return;
     }
     pending = true;
@@ -9169,14 +9592,16 @@ function makeMeter(host, wcfg){
       analyser.fftSize = 1024;
       buf = new Uint8Array(analyser.fftSize);
       src.connect(analyser);                     // analysis only — never to speakers
-      btn.hidden = true;
+      q(".mtSetup").hidden = true;
       raf = requestAnimationFrame(frame);
+      park();
     }).catch(function(){
       pending = false;
       /* Confirmed on the classroom Chromebox: no prompt ever appears —
          Chrome/device policy denies the mic to files opened from disk.
-         Say so honestly instead of sending anyone permission-hunting. */
-      status.textContent = "Microphone blocked by the browser or device policy — Deckhand can’t override this";
+         Say so honestly instead of sending anyone permission-hunting —
+         and play on by hand (v7.13). */
+      goManual("Mic blocked by the browser or device policy \u2014 running by hand: tap \u2716 when it\u2019s too loud");
     });
   }
   slider.addEventListener("input", function(){
@@ -9189,16 +9614,25 @@ function makeMeter(host, wcfg){
     wireButton(c, function(){ wcfg.strikeSecs = +c.dataset.secs; paintSens(); });
   });
   paintSens();
+  /* v7.13: back on this scene, the round carries on — by hand at once; the mic is asked
+     for again (granted once, Chrome grants it silently; denied, it plays on by hand) */
+  var parked = DayStore.get(wcfg);
+  if (parked && parked.mode && parked.curPeriod === curPeriod){
+    strikes = parked.strikes; streakStart = parked.streakStart; lastShownSec = -1;
+    paintGame();
+    if (parked.mode === "hand") goManual(); else start();
+  }
   return {
     kind: "meter",
     label: function(){ return wcfg.label || "Noise Meter"; },
-    startPause: start,
+    startPause: function(){ if (manual) handStrike(); else start(); },
+    manual: function(){ return manual; },        // test hook
     reset: function(){                           // R: fresh round for this class
       strikes = 0;
-      streakStart = null; overSince = null; struck = false;
+      streakStart = manual ? Date.now() : null; overSince = null; struck = false;
       lastShownSec = -1;
       streakEl.textContent = "0:00";
-      paintGame();
+      paintGame(); park();
     },
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
@@ -9206,7 +9640,8 @@ function makeMeter(host, wcfg){
     resync: function(){ if (analyser && raf === null) raf = requestAnimationFrame(frame); },
     destroy: function(){
       destroyed = true;
-      clearInterval(periodTid);
+      clearInterval(periodTid); clearInterval(manualTid);
+      document.removeEventListener("deckhand:workmode", onWorkMode);
       if (flashTid) clearTimeout(flashTid);
       if (raf !== null) cancelAnimationFrame(raf);
       if (stream) stream.getTracks().forEach(function(t){ t.stop(); });
@@ -9225,7 +9660,18 @@ function makeMeter(host, wcfg){
    Clear never touches it. */
 var DRAW_BGS = ["blank", "grid", "dots", "line", "plane"];
 var DRAW_BG_NAMES = { blank: "Blank", grid: "Grid", dots: "Dot paper", line: "Number line", plane: "Coordinate plane" };
-function drawSketchBg(c, kind, W, H){
+/* a sane number line: min < max, a positive step that gives 1..200 intervals */
+function normLine(min, max, step){
+  min = Math.max(-1e6, Math.min(1e6, min)); max = Math.max(-1e6, Math.min(1e6, max));
+  if (!(max > min)){ min = -10; max = 10; }
+  if (!(step > 0)) step = 1;
+  var n = (max - min) / step;
+  if (n < 1) step = max - min;                    // a step wider than the line: one interval
+  if (n > 200) step = (max - min) / 200;
+  return { min: +min.toFixed(6), max: +max.toFixed(6), step: +step.toFixed(6) };
+}
+function fmtTick(v){ return String(+v.toFixed(6)).replace("-", "\u2212"); }
+function drawSketchBg(c, kind, W, H, line){
   var g = c.getContext("2d");
   g.clearRect(0, 0, W, H);
   if (kind === "blank" || !kind) return;
@@ -9253,20 +9699,28 @@ function drawSketchBg(c, kind, W, H){
   g.font = "700 " + font + "px 'DM Sans', system-ui, sans-serif";
   g.textAlign = "center"; g.textBaseline = "top";
   if (kind === "line"){
-    /* −10 … 10, ticks every 1, labels every 1, arrowheads both ways */
-    var pad = W * 0.06, y0 = H / 2, step = (W - 2 * pad) / 20, i;
+    /* v7.13: min … max by step (default −10 … 10 by 1); labels thin out past 21 ticks,
+       the big ticks land on every labelled one, zero reads teal, arrowheads both ways */
+    var ln = normLine(line ? line.min : -10, line ? line.max : 10, line ? line.step : 1);
+    var nT = Math.round((ln.max - ln.min) / ln.step);
+    var every = Math.ceil(nT / 20) || 1;         // at most ~21 labels
+    var pad = W * 0.06, y0 = H / 2, step = (W - 2 * pad) / nT, i;
+    var extra = Math.min(step * .6, W * .03);
     g.strokeStyle = NAVY; g.lineWidth = Math.max(2, W / 400);
-    g.beginPath(); g.moveTo(pad - step * .6, y0); g.lineTo(W - pad + step * .6, y0); g.stroke();
+    g.beginPath(); g.moveTo(pad - extra, y0); g.lineTo(W - pad + extra, y0); g.stroke();
     var ah = Math.max(8, W / 90);
     g.fillStyle = NAVY;
-    g.beginPath(); g.moveTo(W - pad + step * .6 + ah, y0); g.lineTo(W - pad + step * .6 - ah * .2, y0 - ah * .6); g.lineTo(W - pad + step * .6 - ah * .2, y0 + ah * .6); g.closePath(); g.fill();
-    g.beginPath(); g.moveTo(pad - step * .6 - ah, y0); g.lineTo(pad - step * .6 + ah * .2, y0 - ah * .6); g.lineTo(pad - step * .6 + ah * .2, y0 + ah * .6); g.closePath(); g.fill();
-    for (i = -10; i <= 10; i++){
-      var x1 = pad + (i + 10) * step, big = i % 5 === 0;
+    g.beginPath(); g.moveTo(W - pad + extra + ah, y0); g.lineTo(W - pad + extra - ah * .2, y0 - ah * .6); g.lineTo(W - pad + extra - ah * .2, y0 + ah * .6); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(pad - extra - ah, y0); g.lineTo(pad - extra + ah * .2, y0 - ah * .6); g.lineTo(pad - extra + ah * .2, y0 + ah * .6); g.closePath(); g.fill();
+    var lf = Math.max(9, Math.min(font, Math.round(step * every * .9)));   // labels never collide
+    g.font = "700 " + lf + "px 'DM Sans', system-ui, sans-serif";
+    for (i = 0; i <= nT; i++){
+      var v = ln.min + i * ln.step, x1 = pad + i * step, big = i % every === 0;
       g.lineWidth = big ? Math.max(2, W / 400) : Math.max(1.5, W / 700);
       g.beginPath(); g.moveTo(x1, y0 - (big ? ah * 1.2 : ah * .75)); g.lineTo(x1, y0 + (big ? ah * 1.2 : ah * .75)); g.stroke();
-      g.fillStyle = i === 0 ? TEAL : NAVY;
-      g.fillText(String(i).replace("-", "\u2212"), x1, y0 + ah * 1.5);
+      if (!big) continue;
+      g.fillStyle = Math.abs(v) < 1e-9 ? TEAL : NAVY;
+      g.fillText(fmtTick(v), x1, y0 + ah * 1.5);
     }
     return;
   }
@@ -9309,6 +9763,7 @@ function drawSketchBg(c, kind, W, H){
 }
 function makeDraw(host, wcfg){
   if (DRAW_BGS.indexOf(wcfg.bg) === -1) wcfg.bg = "blank";
+  if (!isObj(wcfg.line)) wcfg.line = normLine(-10, 10, 1);
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody dwBody">' +
       '<div class="dwWrap">' +
@@ -9317,9 +9772,20 @@ function makeDraw(host, wcfg){
       '</div>' +
       '<div class="dwTools">' +
         '<span class="dwChips"></span>' +
+        '<span class="dwWidths" role="group" aria-label="Pen width">' +
+          '<button class="dwW" type="button" data-w="4" aria-label="Thin pen"><i style="width:6px;height:6px"></i></button>' +
+          '<button class="dwW" type="button" data-w="8" aria-label="Medium pen"><i style="width:11px;height:11px"></i></button>' +
+          '<button class="dwW" type="button" data-w="16" aria-label="Thick pen"><i style="width:18px;height:18px"></i></button>' +
+        '</span>' +
         '<button class="dwTool dwEraser" type="button" aria-pressed="false">Eraser</button>' +
+        '<button class="dwTool dwUndo" type="button">Undo</button>' +
         '<button class="dwTool dwClear" type="button">Clear</button>' +
         '<select class="dwBgSel" aria-label="Background"></select>' +
+      '</div>' +
+      '<div class="dwLine" hidden>' +
+        '<label>From <input class="dwLn" data-k="min" type="number" step="any" aria-label="Number line start"></label>' +
+        '<label>to <input class="dwLn" data-k="max" type="number" step="any" aria-label="Number line end"></label>' +
+        '<label>by <input class="dwLn" data-k="step" type="number" step="any" min="0" aria-label="Number line step"></label>' +
       '</div>' +
     '</div>');
   var canvas = host.querySelector(".dwCanvas");
@@ -9335,20 +9801,38 @@ function makeDraw(host, wcfg){
     var dpr = Math.min(2, window.devicePixelRatio || 1);
     var W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
     if (bg.width !== W || bg.height !== H){ bg.width = W; bg.height = H; }
-    drawSketchBg(bg, wcfg.bg, W, H);
+    drawSketchBg(bg, wcfg.bg, W, H, wcfg.line);
+    lineRow.hidden = wcfg.bg !== "line";
   }
   bgSel.addEventListener("change", function(){
     wcfg.bg = DRAW_BGS.indexOf(this.value) !== -1 ? this.value : "blank";
     this.blur();                                 // keyboard stays with the board
     paintBg();
   });
+  /* v7.13: the number line's range — from, to, by */
+  var lineRow = host.querySelector(".dwLine"), lineIns = host.querySelectorAll(".dwLn");
+  function fillLine(){ lineIns.forEach(function(inp){ if (inp !== document.activeElement) inp.value = wcfg.line[inp.dataset.k]; }); }   // never under a typing finger
+  function readLine(){
+    var v = {}; lineIns.forEach(function(inp){ v[inp.dataset.k] = parseFloat(inp.value); });
+    wcfg.line = normLine(isFinite(v.min) ? v.min : wcfg.line.min, isFinite(v.max) ? v.max : wcfg.line.max, isFinite(v.step) ? v.step : wcfg.line.step);
+    fillLine(); paintBg();
+  }
+  lineIns.forEach(function(inp){
+    inp.addEventListener("change", readLine);
+    inp.addEventListener("keydown", function(e){
+      if (Alarm.isOn()) return;
+      e.stopPropagation();                       // typing is never a shortcut
+      if (e.key === "Enter" || e.key === "Escape"){ readLine(); inp.blur(); }
+    });
+  });
+  fillLine();
   var ro = null;
   try { ro = new ResizeObserver(function(){ paintBg(); }); ro.observe(wrap); } catch(e){}
   setTimeout(paintBg, 0);
   var chipsWrap = host.querySelector(".dwChips");
   var eraserBtn = host.querySelector(".dwEraser");
   var COLORS = ["#17324D", "#127A85", "#40E0D0", "#FF7F6A", "#E6D5B8"];
-  var color = COLORS[0], eraser = false;
+  var color = COLORS[0], eraser = false, width = 8;
   var chips = [];
   var COLOR_NAMES = ["Navy", "Teal", "Turquoise", "Coral", "Sand"];
   COLORS.forEach(function(col, ci){
@@ -9364,17 +9848,68 @@ function makeDraw(host, wcfg){
     chipsWrap.appendChild(b);
     chips.push(b);
   });
+  var widthBtns = host.querySelectorAll(".dwW");
   function paintTools(){
     chips.forEach(function(c, i){
       c.setAttribute("aria-pressed", !eraser && COLORS[i] === color ? "true" : "false");
     });
     eraserBtn.setAttribute("aria-pressed", eraser ? "true" : "false");
+    widthBtns.forEach(function(b){ b.setAttribute("aria-pressed", +b.dataset.w === width ? "true" : "false"); });
+    undoBtn.disabled = !strokes.length;
   }
+  widthBtns.forEach(function(b){ wireButton(b, function(){ width = +b.dataset.w; eraser = false; paintTools(); }); });
   wireButton(eraserBtn, function(){ eraser = !eraser; paintTools(); });
-  wireButton(host.querySelector(".dwClear"), function(){   // v7.11.5: a focused Clear + Space wiped the drawing
+  /* v7.13 (audit §3.15): strokes are kept as paths, so Undo takes the last one back and
+     the sketch outlives a scene switch (DayStore). `base` is a baked bitmap of old strokes
+     once the list gets long — one ImageData, never one per stroke. */
+  var strokes = [], base = null, undoBtn = host.querySelector(".dwUndo");
+  function park(){ DayStore.set(wcfg, { strokes: strokes, base: base }); }
+  function replayStroke(s){
+    g.globalCompositeOperation = s.eraser ? "destination-out" : "source-over";
+    g.strokeStyle = s.color; g.fillStyle = s.color;
+    g.lineWidth = s.width; g.lineCap = "round"; g.lineJoin = "round";
+    var p = s.pts;
+    g.beginPath(); g.arc(p[0], p[1], s.width / 2, 0, Math.PI * 2); g.fill();
+    if (p.length > 2){
+      g.beginPath(); g.moveTo(p[0], p[1]);
+      for (var i = 2; i < p.length; i += 2) g.lineTo(p[i], p[i + 1]);
+      g.stroke();
+    }
+    g.globalCompositeOperation = "source-over";
+  }
+  function redraw(){
+    g.globalCompositeOperation = "source-over";
     g.clearRect(0, 0, canvas.width, canvas.height);
-  });
-  var drawingId = null, last = null;
+    if (base) g.putImageData(base, 0, 0);
+    strokes.forEach(replayStroke);
+  }
+  function bake(){                               // the oldest 200 strokes become pixels
+    if (strokes.length <= 400) return;
+    var old = strokes.slice(0, 200);
+    g.globalCompositeOperation = "source-over";
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    if (base) g.putImageData(base, 0, 0);
+    old.forEach(replayStroke);
+    try { base = g.getImageData(0, 0, canvas.width, canvas.height); } catch(e){}
+    strokes = strokes.slice(200);
+    redraw();
+  }
+  function undo(){
+    if (!strokes.length) return;
+    strokes.pop(); redraw(); park(); paintTools();
+  }
+  wireButton(undoBtn, undo);
+  function clearAll(){
+    if (!strokes.length && !base) return;
+    var was = { strokes: strokes, base: base };
+    strokes = []; base = null; redraw(); park(); paintTools();
+    Undo.show("Sketch cleared", function(){ strokes = was.strokes; base = was.base; redraw(); park(); paintTools(); });
+  }
+  wireButton(host.querySelector(".dwClear"), clearAll);   // v7.11.5: a focused Clear + Space wiped the drawing
+  var parked = DayStore.get(wcfg);
+  if (parked){ strokes = parked.strokes; base = parked.base; redraw(); }
+  paintTools();
+  var drawingId = null, last = null, cur = null;
   function toCanvas(e){
     var r = canvas.getBoundingClientRect();
     return { x: (e.clientX - r.left) * canvas.width / r.width,
@@ -9385,9 +9920,11 @@ function makeDraw(host, wcfg){
     drawingId = e.pointerId;
     try { canvas.setPointerCapture(e.pointerId); } catch(err){}
     last = toCanvas(e);
-    g.beginPath();                               // dot on tap
-    g.arc(last.x, last.y, eraser ? 24 : 4, 0, Math.PI * 2);
+    var w = eraser ? 48 : width;
+    cur = { color: color, width: w, eraser: eraser, pts: [last.x, last.y] };
     g.globalCompositeOperation = eraser ? "destination-out" : "source-over";
+    g.beginPath();                               // dot on tap
+    g.arc(last.x, last.y, w / 2, 0, Math.PI * 2);
     g.fillStyle = color;
     g.fill();
     e.preventDefault();
@@ -9397,18 +9934,20 @@ function makeDraw(host, wcfg){
     var p = toCanvas(e);
     g.globalCompositeOperation = eraser ? "destination-out" : "source-over";
     g.strokeStyle = color;
-    g.lineWidth = eraser ? 48 : 8;
+    g.lineWidth = cur ? cur.width : (eraser ? 48 : width);
     g.lineCap = "round"; g.lineJoin = "round";
     g.beginPath();
     g.moveTo(last.x, last.y);
     g.lineTo(p.x, p.y);
     g.stroke();
+    if (cur) cur.pts.push(p.x, p.y);
     last = p;
   });
   function endStroke(e){
     if (e.pointerId !== drawingId) return;
     drawingId = null; last = null;
     g.globalCompositeOperation = "source-over";
+    if (cur){ strokes.push(cur); cur = null; bake(); park(); paintTools(); }
   }
   canvas.addEventListener("pointerup", endStroke);
   canvas.addEventListener("pointercancel", endStroke);
@@ -9416,10 +9955,12 @@ function makeDraw(host, wcfg){
     kind: "draw",
     label: function(){ return wcfg.label || "Sketch"; },
     startPause: function(){},
-    reset: function(){ g.clearRect(0, 0, canvas.width, canvas.height); },
+    reset: clearAll,
+    undo: undo,                                   // R clears (with Undo); the button undoes a stroke
+    strokes: function(){ return strokes.length; },   // test hook
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){ bgSel.value = wcfg.bg; paintBg(); }, resync: function(){},
+    rebuild: function(){ bgSel.value = wcfg.bg; fillLine(); paintBg(); }, resync: function(){},
     setBg: function(k){ if (DRAW_BGS.indexOf(k) !== -1){ wcfg.bg = k; bgSel.value = k; paintBg(); } },   // test hook
     destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} }
   };
@@ -11275,7 +11816,7 @@ var Canvas = (function(){
     }
     (cfg.timer.presetsMinutes && cfg.timer.presetsMinutes.length
       ? cfg.timer.presetsMinutes : [5]).forEach(function(min){
-      pill(min + " min", function(){ summonGhost(min * 60); }, presetsList).dataset.min = min;
+      pill(fmtPresetWords(min), function(){ summonGhost(min * 60); }, presetsList).dataset.min = min;
     });
     /* same contract as the widget's own chip: only during a period,
        and re-checked LIVE at pick time (the menu can sit open) */
@@ -11592,7 +12133,7 @@ var Settings = (function(){
     skipWeeks: $("sSkipWeeks"),
     stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"),
     stPledge: $("sStPledge"), stPledgeMin: $("sStPledgeMin"), stPer: $("sStPer"),
-    nudge: $("sNudge"), presets: $("sPresets"), errors: $("setErrors"),
+    nudge: $("sNudge"), presets: $("sPresets"), timerMusic: $("sTimerMusic"), errors: $("setErrors"),
     grpNames: [$("sGrpName1"), $("sGrpName2"), $("sGrpName3"), $("sGrpName4")],
     grpReg: [$("taGrpReg1"), $("taGrpReg2"), $("taGrpReg3"), $("taGrpReg4")],
     grpWed: [$("taGrpWed1"), $("taGrpWed2"), $("taGrpWed3"), $("taGrpWed4")]
@@ -11736,6 +12277,7 @@ var Settings = (function(){
     f.count.checked = !!cfg.bell.showCountdown;
     f.countSecs.checked = !!cfg.bell.countdownSeconds;
     f.timerStyle.value = cfg.timer.style || "digits";
+    f.timerMusic.checked = !!cfg.timer.music;
     f.volume.value = Math.round((cfg.sound.volume || 0) * 100);
     f.seconds.checked = !!cfg.clock.showSeconds;
     f.motion.value = cfg.ui.motion || "auto";
@@ -11763,7 +12305,7 @@ var Settings = (function(){
     f.anchor.value = cfg.bell.anchorMonday || "";
     f.skipWeeks.value = (cfg.bell.skipWeeks || []).join(", ");
     f.nudge.value = cfg.bell.nudgeSeconds || 0;
-    f.presets.value = (cfg.timer.presetsMinutes || []).join(",");
+    f.presets.value = (cfg.timer.presetsMinutes || []).map(function(m){ return Number.isInteger(m) ? String(m) : fmtPresetChip(m); }).join(", ");
     rebuildDefaultOptions();
     rebuildAnchorOptions();
     var cards = wkCards();
@@ -11917,9 +12459,9 @@ var Settings = (function(){
     var presets = [];
     f.presets.value.split(",").forEach(function(p){
       var s = p.trim(); if (!s) return;
-      var n = parseInt(s, 10);
-      if (!(n >= 1 && n <= 120)) errors.push('Presets: "' + s + '" isn’t 1–120 minutes');
-      else presets.push(n);
+      var n = parsePresetToken(s);                 // v7.13: "0:30" and "1:30" are presets too
+      if (n === null || !(n >= 0.25 && n <= 120)) errors.push('Presets: "' + s + '" isn’t 0:15–120 minutes (try 0:30, 1:30, 3, 5)');
+      else presets.push(Math.round(n * 100) / 100);
     });
     if (presets.length < 1 || presets.length > 6) errors.push("Presets: enter 1–6 values");
 
@@ -12042,6 +12584,7 @@ var Settings = (function(){
     try { Season.apply(); } catch(e){}
     cfg.timer.style = ["digits","ring","disc","tide"].indexOf(f.timerStyle.value) !== -1
       ? f.timerStyle.value : "digits";
+    cfg.timer.music = f.timerMusic.checked;
     cfg.bell.nudgeSeconds = nudge;
     cfg.bell.autoWeek = autoOn && newGroups.length >= 2;
     if (autoOn){ cfg.bell.anchorMonday = f.anchor.value; cfg.bell.anchorWeekName = newAnchorName; }
@@ -12871,6 +13414,9 @@ window.Deckhand = {
   settle: Settle,                               // v7.7: the settle-in, a moment of the clock (tests)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)
   season: Season,                               // v7.10: active()/apply() (tests)
+  bell: Bell,                                   // v7.13: schoolDaysBetween() (tests)
+  sanitize: sanitize,                           // v7.13: the whitelist, for the tests that pin new fields
+  parsePresetToken: parsePresetToken,           // v7.13: "0:30" → 0.5 (tests)
   lofiSides: function(){ var el = document.querySelector(".w-music"); return el && el._entry ? el._entry.api.sides() : null; },   // v7.10 test hook
   shiftClock: function(ms){ simOffset += ms; }, // test hook (v7.6): move the simulated clock
   qr: qrMatrix,                                 // test hook: decode-verified in CI

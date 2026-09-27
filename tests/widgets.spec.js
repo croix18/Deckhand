@@ -366,7 +366,7 @@ test.describe("event countdown + agenda", () => {
     await page.click(".w-event .evBtn");
     const big = page.locator(".w-event .evBig");
     ok(await dh.text(".w-event .evBig") === "4", "days: " + await dh.text(".w-event .evBig"));
-    ok((await dh.text(".w-event .evUnit")).toLowerCase() === "days to go", "unit");
+    ok((await dh.text(".w-event .evUnit")).toLowerCase() === "school days to go", "unit: " + await dh.text(".w-event .evUnit"));   // v7.13: a new card counts school days (Mon → Fri: 4 either way)
     ok((await dh.text(".w-event .evSub")).includes("Sep 4"), "sub: " + await dh.text(".w-event .evSub"));
     ok(await dh.text(".w-event .evTitle") === "Unit Test", "title");
     const cw = await lastWidget(page);
@@ -524,7 +524,7 @@ test.describe("landing, alarm, add menu, z-order", () => {
     });
     await page.selectOption("#sceneSel", "Daily Board");
     await expect.poll(() => page.evaluate(() => document.querySelector(".w-timer").style.top)).toBe("55%");
-    for (let i = 0; i < 25; i++) await page.click(".w-timer .visWrap");  // z climbs
+    for (let i = 0; i < 25; i++) await page.click(".w-timer .tHint");  // z climbs (v7.13: the face itself opens the keypad)
     const zw = await page.evaluate(() =>
       +document.querySelector(".w-timer").style.zIndex);
     ok(zw > 15, "precondition: z did not climb: " + zw);

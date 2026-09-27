@@ -25,3 +25,8 @@ lands in `tools/proofs/out/` (git-ignored). Run from the repo root with `node to
 
 The Chromebox cannot be reached from here: everything above is the sandbox's Chromium at
 1920×1080. Frame rate and paint cost on the panel are the one thing these cannot tell you.
+
+- `tools-sheet.js` — photographs every tool alone on a fresh Daily Board at 1920×1080 (board + card
+  crops, the + Add menu, `cards.json`) with a little life in each; `ONLY=addDiceBtn,addCoinBtn node
+  tools/proofs/tools-sheet.js` shoots a few. The contact sheets in `docs/reviews/tools-2026-09-27/`
+  were built from its output (PIL, five per row).
