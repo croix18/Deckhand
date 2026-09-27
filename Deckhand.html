@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.13.0",
+  "appVersion": "7.14.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -181,6 +181,11 @@
   .w-clock.stLive #clockFace{display:none;}
   #clockSettle[hidden]{display:none;}
   .w-clock.stLive #clockSettle{display:flex;}
+  /* v7.14: the wrap-up takes the face the same way; the settle-in (a bell) outranks it */
+  #clockWrap[hidden]{display:none;}
+  .w-clock.wuLive:not(.stLive) #clockFace{display:none;}
+  .w-clock.wuLive:not(.stLive) #clockWrap{display:flex;}
+  .w-clock.stLive #clockWrap{display:none;}
   #clock{
     font-weight:900; font-variant-numeric:tabular-nums;
     font-size:clamp(64px, 13vw, 190px); line-height:1;
@@ -1242,6 +1247,77 @@
   .w-clock.wFull .stBig{font-size:clamp(80px, 34cqh, 560px);}
   .w-clock.wFull .stBig.stMsgB{font-size:clamp(32px, 8cqw, 150px);}
   .w-clock.wFull .stSub{font-size:clamp(16px, 2.4cqw, 40px);}
+  /* v7.14 the wrap-up: the time to the bell, the prompt, a checklist the teacher taps off */
+  .wuStage{gap:1.2cqh; padding:1cqh 3cqw;}
+  .wuBig{font-weight:900; line-height:1; color:var(--navy); font-variant-numeric:tabular-nums; font-size:clamp(40px, 22cqh, 300px);}
+  .wuBig.low{color:var(--navy); background:var(--coral); padding:0 .2em; border-radius:.18em; line-height:1.1;}
+  .wuPrompt{font-weight:900; color:var(--teal); font-size:clamp(16px, 4.2cqw, 64px); line-height:1.2; max-width:92%; overflow-wrap:anywhere;}
+  .wuPrompt[hidden]{display:none;}
+  .wuList{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.6cqh; align-items:stretch; width:min(92%, 30em); font-size:clamp(14px, 3cqw, 44px);}
+  .wuList li{display:flex; align-items:center; gap:.5em; font-weight:700; color:var(--navy); padding:.2em .7em; border-radius:12px; background:var(--paleturq); cursor:pointer; min-height:44px; text-align:left;}
+  .wuList li::before{content:""; width:1em; height:1em; border-radius:50%; border:3px solid var(--navy); flex:none; box-sizing:border-box;}
+  .wuList li.done{opacity:.55; text-decoration:line-through;}
+  .wuList li.done::before{background:var(--turq); border-color:var(--turq);}
+  .wuMsg{font-weight:900; color:var(--navy); font-size:clamp(14px, 2.8cqw, 40px); background:var(--sand); padding:.3em .9em; border-radius:999px; max-width:92%;}
+  .wuMsg:empty{display:none;}
+
+  /* v7.14 the Talk Timer: the letter is the room's cue */
+  .tkPrompt{font-weight:900; color:var(--teal); font-size:clamp(14px, 6.5cqmin, 44px); line-height:1.2; text-align:center; max-width:96%; overflow-wrap:anywhere;}
+  .tkPrompt:empty{display:none;}
+  .tkLetter{font-weight:900; line-height:1; color:var(--navy); font-size:clamp(36px, 22cqmin, 220px); background:var(--paleturq); border-radius:.2em; padding:0 .25em; min-width:1.2em; text-align:center;}
+  .w-talk.phaseB .tkLetter{background:var(--sand);}
+  .w-talk.phaseShare .tkLetter{background:var(--turq); font-size:clamp(28px, 16cqmin, 140px); padding:.1em .4em;}
+  .tkWho{font-weight:900; color:var(--teal); letter-spacing:.08em; text-transform:uppercase; font-size:clamp(12px, 5cqmin, 32px);}
+  .tkTime{font-weight:900; font-variant-numeric:tabular-nums; color:var(--navy); line-height:1; font-size:clamp(24px, 12cqmin, 110px);}
+  .w-talk .wBody{gap:1cqh;}
+  .tkTime.low{color:var(--navy); background:var(--coral); padding:0 .2em; border-radius:.18em;}
+  .tkRule{font-weight:700; color:var(--navy); opacity:.7; font-size:clamp(11px, 3.6cqmin, 22px);}
+  .tkRule:empty{display:none;}
+  .tkEdit{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:96%;}
+  .tkEdit[hidden]{display:none;}
+  .tkEdit input{font-family:inherit; font-weight:600; color:var(--navy); border:2px solid var(--grid); border-radius:10px; padding:6px 10px; font-size:clamp(12px, 2.6cqw, 17px); min-width:0; flex:1 1 140px;}
+  body.locked .tkEdit{display:none;}
+  /* v7.14 Stations: the timer on top, a card per station with its group */
+  .snTop{display:flex; align-items:baseline; gap:.6em; font-weight:900; color:var(--teal); letter-spacing:.06em; text-transform:uppercase; font-size:clamp(12px, 4.4cqmin, 30px);}
+  .snTime{font-weight:900; font-variant-numeric:tabular-nums; color:var(--navy); line-height:1; font-size:clamp(28px, 11cqmin, 110px);}
+  .snTime.low{background:var(--coral); padding:0 .2em; border-radius:.18em;}
+  .snGrid{width:96%; flex:1 1 auto; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 9em), 1fr)); gap:1.2cqmin; align-content:start; font-size:clamp(12px, 3.3cqmin, 30px);}
+  .snGrid:empty{display:none;}
+  .w-stations .wBody{gap:1cqh;}
+  .snCard{padding:.3em .55em; line-height:1.12;}
+  .snCard{background:var(--paleturq); border-radius:14px; padding:.35em .6em; font-weight:700; color:var(--navy); line-height:1.15; text-align:left;}
+  .snCard b{display:block; color:var(--teal); font-size:.68em; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.15em;}
+  .snCard i{display:block; font-style:normal; font-weight:900; color:var(--navy); font-size:.8em; opacity:.75; margin-bottom:.1em;}
+  .snCard span{display:block;}
+  .snCard.here{background:var(--turq);}
+  .snEmpty{font-weight:700; color:var(--teal); font-size:clamp(12px, 3cqw, 20px);}
+  .snEmpty:empty{display:none;}
+  .snEdit{display:flex; flex-direction:column; gap:8px; align-items:center; width:96%;}
+  .snEdit .row{width:100%;}
+  .snEdit[hidden]{display:none;}
+  .snEdit textarea{font-family:inherit; font-weight:600; color:var(--navy); border:2px solid var(--grid); border-radius:10px; padding:6px 10px; font-size:clamp(12px, 2.6cqw, 17px); flex:1 1 200px; min-height:5em; resize:vertical;}
+  body.locked .snEdit, body.locked .snSetup{display:none;}
+  /* v7.14 the Number Line: an SVG the finger can move things on */
+  .nlWrap{width:100%; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;}
+  .nlSvg{width:100%; height:100%; max-height:100%; touch-action:none; cursor:crosshair; display:block; font-family:inherit;}
+  .nlSvg .nlAxis{stroke:var(--navy); stroke-width:4; fill:none;}
+  .nlSvg .nlTick{stroke:var(--navy); stroke-width:2.5;}
+  .nlSvg .nlTick.big{stroke-width:4;}
+  .nlSvg .nlLab{fill:var(--navy); font-weight:700; font-size:26px; text-anchor:middle;}
+  .nlSvg .nlLab.zero{fill:var(--teal);}
+  .nlSvg .nlPt{fill:var(--turq); stroke:var(--navy); stroke-width:5;}
+  .nlSvg .nlPt.drag{fill:var(--sand);}
+  .nlSvg .nlJump{fill:none; stroke:var(--teal); stroke-width:6; stroke-linecap:round;}
+  .nlSvg .nlJump.neg{stroke:var(--navy);}
+  .nlSvg .nlJump.ghost{opacity:.45; stroke-dasharray:10 10;}
+  .nlSvg .nlJLab{font-weight:900; font-size:30px; text-anchor:middle; fill:var(--teal);}
+  .nlSvg .nlJLab.neg{fill:var(--navy);}
+  .nlSvg .nlHead{fill:var(--teal);}
+  .nlSvg .nlHead.neg{fill:var(--navy);}
+  .nlTools{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;}
+  .nlLine{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; font-weight:700; color:var(--teal); font-size:clamp(11px, 2.4cqw, 15px);}
+  .nlLine input{width:5em; font:inherit; font-weight:700; padding:4px 8px; border:2px solid var(--navy); border-radius:10px; color:var(--navy); background:var(--white); margin-left:4px;}
+  body.locked .nlLine{display:none;}
 
   /* event countdown */
   .evTitle{font-weight:900; color:var(--teal); letter-spacing:.05em; text-transform:uppercase;
@@ -1700,7 +1776,7 @@
   /* v7.12 (audit): one row per group with the heading on the left — six rows, ~560 px, so the
      menu sits above the dock and below most of the clock's digits instead of covering them */
   #addMenu{
-    display:grid; grid-template-columns:72px repeat(5, 150px); gap:8px;
+    display:grid; grid-template-columns:72px repeat(6, 150px); gap:8px;   /* v7.14: Class holds six */
     padding:12px; align-content:start; align-items:center;
   }
   #addMenu .menuLabel{grid-column:1; align-self:center; padding:0 4px;}
@@ -1736,7 +1812,7 @@
      768px one by a mile: go wider, not taller (the menu must never scroll
      mid-lesson) */
   @media (max-height: 820px){
-    #addMenu{grid-template-columns:72px repeat(5, 140px);}
+    #addMenu{grid-template-columns:72px repeat(6, 132px);}
     #addMenu .tile{min-height:70px;}
   }
   /* ⋯ scene manager: the current scene as the heading, one field, a list */
@@ -2846,6 +2922,9 @@
     <symbol id="i-sketch" viewBox="0 0 24 24"><path d="M4 20c4-1 5-2 6-4M6 14.5L16.5 4a2.1 2.1 0 0 1 3 3L9 17.5l-4 1z"/></symbol>
     <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 8.5h3.2a2 2 0 0 1 0 4H9.5zM9.5 12.5h3.8a2 2 0 0 1 0 4H9.5zM9.5 8.5v8"/></symbol>
     <symbol id="i-spin" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 5v8l5.7 5.6M12 13l-8-.5M12 13l6 5.3M12 2.5l-2 2.5h4z"/></symbol>
+    <symbol id="i-talk" viewBox="0 0 24 24"><path d="M3.5 5.5h10a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8l-3.5 3v-3h-1a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2z"/><path d="M17.5 9.5h2a2 2 0 0 1 2 2v3.5a2 2 0 0 1-2 2h-.5v2.5l-3-2.5h-3"/></symbol>
+    <symbol id="i-stations" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4M17.5 10v4M14 17.5h-4M6.5 14v-4"/></symbol>
+    <symbol id="i-numline" viewBox="0 0 24 24"><path d="M2 14h20M5 11.5v5M9.5 11.5v5M14 11.5v5M18.5 11.5v5"/><path d="M9.5 14a4.5 4.5 0 0 1 9 0"/><circle cx="5" cy="14" r="1.6" fill="currentColor"/></symbol>
     <symbol id="i-cards" viewBox="0 0 24 24"><rect x="7" y="4" width="11" height="15" rx="2" transform="rotate(8 12.5 11.5)"/><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9.5 10.5l-1.8 2.2h3.6z"/></symbol>
     <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="8.5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="8.5" cy="15.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/></symbol>
   </defs>
@@ -3011,6 +3090,13 @@
         <div class="stBig"></div>
         <div class="stSub"></div>
       </div>
+      <div id="clockWrap" class="stStage wuStage" hidden>
+        <div class="stTop wuTop">Wrap up</div>
+        <div class="wuBig">3:00</div>
+        <div class="wuPrompt" hidden></div>
+        <ul class="wuList" aria-label="Before the bell"></ul>
+        <div class="wuMsg"></div>
+      </div>
     </div>
     <div class="wHandle hSE" data-dir="se" aria-hidden="true"></div>
     <div class="wHandle hSW" data-dir="sw" aria-hidden="true"></div>
@@ -3089,6 +3175,8 @@
       <button class="tile" id="addGroupsBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-groups"/></svg><span class="tName">Group Maker</span><span class="tDesc">Shuffle into teams</span></button>
       <button class="tile" id="addScoreBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-score"/></svg><span class="tName">Scoreboard</span><span class="tDesc">Points for teams</span></button>
       <button class="tile" id="addTallyBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-tally"/></svg><span class="tName">Tally</span><span class="tDesc">Big tap counters</span></button>
+      <button class="tile" id="addTalkBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-talk"/></svg><span class="tName">Talk Timer</span><span class="tDesc">Partner A, then B</span></button>
+      <button class="tile" id="addStationsBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-stations"/></svg><span class="tName">Stations</span><span class="tDesc">Who is where, how long</span></button>
       <div class="menuLabel">Room</div>
       <button class="tile" id="addWorkBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-work"/></svg><span class="tName">Work Mode</span><span class="tDesc">Silent to group work</span></button>
       <button class="tile" id="addMeterBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-meter"/></svg><span class="tName">Noise Meter</span><span class="tDesc">Quiet streaks, records</span></button>
@@ -3106,6 +3194,7 @@
       <button class="tile" id="addCoinBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-coin"/></svg><span class="tName">Coin</span><span class="tDesc">Flip 1&ndash;3, heads vs tails</span></button>
       <button class="tile" id="addSpinBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-spin"/></svg><span class="tName">Spinner</span><span class="tDesc">2&ndash;8 equal sectors</span></button>
       <button class="tile" id="addCardsBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-cards"/></svg><span class="tName">Cards</span><span class="tDesc">Draw from a deck of 52</span></button>
+      <button class="tile" id="addNumlineBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-numline"/></svg><span class="tName">Number Line</span><span class="tDesc">Points and jumps</span></button>
     </div>
   </div>
   <div id="shelf" aria-label="Stage-only widgets"></div>
@@ -3631,6 +3720,31 @@
               <div class="fHint">The clock becomes the count when a class begins (Lunch excepted), then hands off to a Slides card if the scene has one. While it runs, Space restarts it and R stands it down. A scene needs a clock to run it.</div>
             </div>
             <div class="fGroup">
+              <div class="fSection">Wrap-up at the bell</div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sWuOn"> Run the wrap-up before each bell</label>
+                <div class="fField">
+                  <label class="fLabel" for="sWuMin">Minutes before the bell</label>
+                  <input class="setInput" type="number" id="sWuMin" step="1" min="1" max="15">
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sWuMsg">The rule</label>
+                  <input class="setInput" type="text" id="sWuMsg" maxlength="80" placeholder="The teacher dismisses you, not the bell.">
+                </div>
+              </div>
+              <div class="fGrid c2">
+                <div class="fField">
+                  <label class="fLabel" for="sWuPrompt">Exit ticket (a prompt or a link)</label>
+                  <input class="setInput" type="text" id="sWuPrompt" maxlength="140" placeholder="One thing you learned today">
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sWuSteps">Before the bell (one per line, up to six)</label>
+                  <textarea class="setInput" id="sWuSteps" rows="3" placeholder="Finish the exit ticket&#10;Pack up&#10;Push in your chair"></textarea>
+                </div>
+              </div>
+              <div class="fHint">The clock takes the stage with the time to the bell, the exit ticket, the checklist (tap a line to check it off) and the rule; at the bell the face comes back. R stands it down for that period.</div>
+            </div>
+            <div class="fGroup">
               <div class="fSection">Bathroom window</div>
               <div class="fGrid c3">
                 <label class="fCheck"><input type="checkbox" id="sBath"> Bathroom window</label>
@@ -3901,9 +4015,13 @@ var DEFAULT_SCENES = [
   ]}
 ];
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
+/* v7.14: the wrap-up — the settle-in's twin at the other end of the period (tools audit §4.1) */
+var DEFAULT_WRAPUP = { on: false, minutes: 3, prompt: "", steps: "", msg: "" };
+var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
+var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.13.0",
+  appVersion: "7.14.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -3917,7 +4035,7 @@ var DEFAULTS = {
     countdownSeconds: false, showDayStrip: true,
     showNextClass: true, warnMinutes: 5, warnChime: false,
     bathroom: { enabled: true, firstMinutes: 10, lastMinutes: 10 },
-    settle: DEFAULT_SETTLE,
+    settle: DEFAULT_SETTLE, wrapup: DEFAULT_WRAPUP,
     autoWeek: false, anchorMonday: "2026-08-31", anchorWeekName: "",
     skipWeeks: [],                               // v7.9: Mondays of weeks with no school (they don't count)
     defaultGroup: "none", groups: []
@@ -3998,7 +4116,7 @@ function sanitize(c){
       if (!isObj(w)) return;
       var ty = (["timer","stopwatch","bell","clock","picker","groups",
                  "text","work","dice","coin","spin","cards","score","qr","meter","draw","embed",
-                 "event","tally","agenda","settle","music","yt"].indexOf(w.type) !== -1) ? w.type : null;
+                 "event","tally","agenda","settle","music","yt","talk","stations","numline"].indexOf(w.type) !== -1) ? w.type : null;
       if (!ty) return;
       /* v7.7: the settle-in card is gone — its settings move to bell.settle
          (the first card's win); v7.8: the scene's clock grows into its row */
@@ -4145,6 +4263,23 @@ function sanitize(c){
         /* v7.13: count school days (weekends and the no-school weeks skipped) — the default for
            a card that has no event yet; a card already counting calendar days keeps counting them */
         wc.schoolDays = bool(w.schoolDays, !wc.when);
+      }
+      if (ty === "talk"){                        // v7.14: turn-and-talk
+        wc.prompt = str(w.prompt, "").trim().slice(0, 120);
+        wc.who = str(w.who, "").trim().slice(0, 40);
+        wc.secs = Math.round(numIn(w.secs, 15, 300, 60));
+      }
+      if (ty === "stations"){                    // v7.14: groups × stations × a rotating timer
+        wc.period = str(w.period, "").slice(0, 20);
+        if (wc.period === "__proto__") wc.period = "";
+        wc.count = Math.round(numIn(w.count, 2, 6, 4));
+        wc.mins = Math.round(numIn(w.mins, 1, 30, 8));
+        wc.spots = (Array.isArray(w.spots) ? w.spots : []).slice(0, 6).map(function(s){ return str(s, "").trim().slice(0, 24); });
+        while (wc.spots.length && !wc.spots[wc.spots.length - 1]) wc.spots.pop();
+      }
+      if (ty === "numline"){                     // v7.14: the interactive number line
+        var nl = isObj(w.line) ? w.line : {};
+        wc.line = normLine(num(nl.min, -10), num(nl.max, 10), num(nl.step, 1));
       }
       if (ty === "music"){
         wc.channel = "lofi";   // mozart returns when the real audio lands
@@ -4310,6 +4445,16 @@ function sanitize(c){
         lastMinutes: Math.max(0, Math.min(45, Math.round(num(ba.lastMinutes, 10))))
       },
       settle: settle,                             // v7.7: the moment of the clock
+      wrapup: (function(){                        // v7.14: its twin at the bell
+        var src = isObj(b.wrapup) ? b.wrapup : {};
+        return {
+          on: bool(src.on, false),
+          minutes: Math.round(numIn(src.minutes, 1, 15, 3)),
+          prompt: str(src.prompt, "").trim().slice(0, 140),
+          steps: str(src.steps, "").split("\n").map(function(s){ return s.trim().slice(0, 40); }).filter(Boolean).slice(0, 6).join("\n"),
+          msg: str(src.msg, "").trim().slice(0, 80)
+        };
+      })(),
       autoWeek: bool(b.autoWeek, false) && groups.length >= 2,
       anchorMonday: /^\d{4}-\d{2}-\d{2}$/.test(b.anchorMonday) ? b.anchorMonday : DEFAULTS.bell.anchorMonday,
       /* v7.9 (Croix: "it alternates by school week"): weeks with no school days
@@ -8138,6 +8283,7 @@ var Settle = (function(){
   function start(auto, firstBell){
     if (!hasCard()) return;
     if (auto === true && !S().on) return;
+    try { if (typeof Wrapup !== "undefined" && Wrapup.live()) Wrapup.reset(); } catch(e){}   // v7.14: the bell outranks the wrap-up
     try { Landing.dismissToast(); } catch(e){}    // the greeting yields the top of the screen
     doneUntil = null; clearTimeout(doneTid);
     clearTimeout(t.tid); clearTimeout(halfTid);
@@ -8279,6 +8425,538 @@ var Settle = (function(){
     _bellWatch: bellWatch                          // test hook
   };
 })();
+
+/* v7.14 (tools audit §4.1): THE WRAP-UP — the settle-in's twin. N minutes before the bell the
+   clock card takes the stage with the time to the bell, the exit-ticket prompt (or link), a
+   pack-up checklist the teacher taps off, and the room's rule ("the teacher dismisses you, not
+   the bell"); at the bell the face comes back and the next class's settle-in, if any, takes
+   over. Six times a day, timed to the bell — Deckhand is the only thing in the room that knows
+   the bell. R stands it down for THIS period only. Settings → Bells → Wrap-up at the bell. */
+var Wrapup = (function(){
+  var host = $("clockWidget"), stage = $("clockWrap");
+  var big = stage.querySelector(".wuBig"), prompt = stage.querySelector(".wuPrompt"),
+      list = stage.querySelector(".wuList"), msg = stage.querySelector(".wuMsg");
+  var live = false, curKey = null, stoodDown = null, tid = null, lastShown = null;
+  function W(){ return (cfg.bell && isObj(cfg.bell.wrapup)) ? cfg.bell.wrapup : DEFAULT_WRAPUP; }
+  function tell(phase){
+    try { document.dispatchEvent(new CustomEvent("deckhand:settle", { detail: { phase: phase, host: host, kind: "wrapup" } })); } catch(e){}
+  }
+  function hasCard(){ try { return Canvas.clockMounted(); } catch(e){ return !host.hidden; } }
+  function build(){
+    var w = W();
+    prompt.textContent = w.prompt;
+    prompt.hidden = !w.prompt;
+    list.innerHTML = "";
+    (w.steps || WRAPUP_STEPS).split("\n").forEach(function(s){
+      if (!s.trim()) return;
+      var li = document.createElement("li"); li.textContent = s.trim();   // user data: textContent only
+      li.setAttribute("role", "checkbox"); li.setAttribute("aria-checked", "false"); li.tabIndex = 0;
+      list.appendChild(li);
+    });
+    msg.textContent = w.msg || WRAPUP_MSG;
+  }
+  list.addEventListener("click", function(e){
+    var li = e.target.closest("li"); if (!li) return;
+    li.classList.toggle("done");
+    li.setAttribute("aria-checked", li.classList.contains("done") ? "true" : "false");
+  });
+  function paint(remainMs){
+    var s = Math.max(0, Math.ceil(remainMs / 1000));
+    if (s !== lastShown){
+      lastShown = s;
+      big.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+      big.classList.toggle("low", s <= 30);
+    }
+  }
+  function start(key, remainMs){
+    if (!hasCard()) return;
+    var settling = false; try { settling = Settle.live(); } catch(e){}
+    if (settling) return;                        // a bell's moment outranks the wrap-up
+    try { Landing.dismissToast(); } catch(e){}
+    live = true; curKey = key; lastShown = null;
+    build();
+    stage.hidden = false; host.classList.add("wuLive");
+    paint(remainMs);
+    try { Sound.soft(); } catch(e){}
+    tell("start");
+  }
+  function end(){
+    if (!live) return;
+    live = false; stage.hidden = true; host.classList.remove("wuLive");
+    tell("reset");
+  }
+  function reset(){                              // R: stood down for this period
+    stoodDown = curKey;
+    end();
+  }
+  function watch(){
+    var s = null; try { s = Bell.statusAt(now()); } catch(e){}
+    var w = W();
+    var inClass = s && s.type === "in" && !/lunch/i.test(s.label || "");
+    var key = inClass ? dateKey(now()) + "|" + s.label + "|" + s.idx : null;
+    if (live){
+      if (!inClass || key !== curKey || s.remainMs <= 0){ end(); return; }
+      paint(s.remainMs);
+      return;
+    }
+    if (!w.on || !inClass) return;
+    if (typeof Settings !== "undefined" && Settings.isOpen()) return;
+    if (document.body.classList.contains("landing")) return;
+    if (key === stoodDown) return;
+    if (s.remainMs > 0 && s.remainMs <= w.minutes * 60000) start(key, s.remainMs);
+  }
+  return {
+    init: function(){ tid = setInterval(watch, 250); },
+    live: function(){ return live; },
+    reset: reset,
+    start: function(){                           // the API / a test: run it now for the rest of the period
+      var s = null; try { s = Bell.statusAt(now()); } catch(e){}
+      if (!s || s.type !== "in") return;
+      stoodDown = null;
+      start(dateKey(now()) + "|" + s.label + "|" + s.idx, s.remainMs);
+    },
+    _watch: watch                                // test hook
+  };
+})();
+
+/* ---- v7.14 (tools audit §4.2) the TALK TIMER: turn-and-talk / think–pair–share with a public
+   switch. A prompt, "Partner A speaks" for N seconds, a chime and a visible swap to B, then
+   Share. Space starts/pauses, R resets; ✎ sets the prompt and who A is. ---- */
+function makeTalk(host, wcfg){
+  if (typeof wcfg.prompt !== "string") wcfg.prompt = "";
+  if (typeof wcfg.who !== "string") wcfg.who = "";
+  if (!(wcfg.secs >= 15 && wcfg.secs <= 300)) wcfg.secs = 60;
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="tkPrompt"></div>' +
+      '<div class="tkLetter">A</div>' +
+      '<div class="tkWho">Partner A speaks</div>' +
+      '<div class="tkTime">1:00</div>' +
+      '<div class="tkRule"></div>' +
+      '<div class="chips tkChips" role="group" aria-label="Seconds each"></div>' +
+      '<div class="row tkEdit" hidden>' +
+        '<input class="tkPromptIn" maxlength="120" placeholder="The question" aria-label="The question">' +
+        '<input class="tkWhoIn" maxlength="40" placeholder="A is… (closest to the window)" aria-label="Who is Partner A">' +
+        '<button class="btn tkDone" type="button" style="background:var(--turq); color:var(--navy)">Done</button>' +
+      '</div>' +
+      '<div class="row"><button class="btn tkGo" type="button" style="background:var(--turq); color:var(--navy)">Start</button>' +
+        '<button class="btn ghost tkReset" type="button">Reset</button></div>' +
+      '<div class="tHint">Space starts · R resets</div>' +
+    '</div>');
+  var q = function(s){ return host.querySelector(s); };
+  var promptEl = q(".tkPrompt"), letter = q(".tkLetter"), who = q(".tkWho"), timeEl = q(".tkTime"), rule = q(".tkRule");
+  var chipsWrap = q(".tkChips"), editRow = q(".tkEdit"), promptIn = q(".tkPromptIn"), whoIn = q(".tkWhoIn"), goBtn = q(".tkGo");
+  var phase = "idle", endAt = null, remain = 0, tid = null, destroyed = false, lastShown = null;
+  var PHASES = { idle: ["A", "Partner A speaks"], A: ["A", "Partner A speaks"], B: ["B", "Partner B speaks"], share: ["Share", "Tell the class what your partner said"] };
+  var chips = [];
+  [30, 45, 60, 90, 120].forEach(function(s){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.dataset.secs = s;
+    b.textContent = s < 60 ? s + "s" : Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
+    wireButton(b, function(){ if (phase === "A" || phase === "B") return; wcfg.secs = s; remain = s * 1000; paint(); });
+    chipsWrap.appendChild(b); chips.push(b);
+  });
+  function fmt(ms){ var s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
+  function paint(){
+    promptEl.textContent = wcfg.prompt;
+    var ph = PHASES[phase];
+    letter.textContent = ph[0]; who.textContent = ph[1];
+    host.classList.toggle("phaseB", phase === "B");
+    host.classList.toggle("phaseShare", phase === "share");
+    host.classList.toggle("running", !!endAt);
+    rule.textContent = phase === "share" ? "" : (wcfg.who ? "A is " + wcfg.who : "");
+    var ms = endAt ? endAt - Date.now() : remain;
+    if (phase === "share"){ timeEl.hidden = true; }
+    else {
+      timeEl.hidden = false;
+      var s = Math.ceil(ms / 1000);
+      if (s !== lastShown){ lastShown = s; timeEl.textContent = fmt(ms); }
+      timeEl.classList.toggle("low", !!endAt && ms <= 10000);
+    }
+    chips.forEach(function(c){ c.setAttribute("aria-pressed", +c.dataset.secs === wcfg.secs ? "true" : "false"); });
+    chipsWrap.hidden = phase === "share";
+    goBtn.textContent = endAt ? "Pause" : (phase === "share" ? "Again" : (phase === "idle" ? "Start" : "Resume"));
+  }
+  function loop(){
+    if (destroyed || !endAt) return;
+    if (Date.now() >= endAt){
+      endAt = null;
+      try { Sound.soft(); } catch(e){}
+      if (phase === "A"){ phase = "B"; remain = wcfg.secs * 1000; endAt = Date.now() + remain; }
+      else { phase = "share"; remain = 0; }
+      paint();
+      if (endAt) tid = setTimeout(loop, 200);
+      return;
+    }
+    paint();
+    tid = setTimeout(loop, 200);
+  }
+  function startPause(){
+    if (endAt){ remain = Math.max(0, endAt - Date.now()); endAt = null; clearTimeout(tid); paint(); return; }
+    if (phase === "share" || phase === "idle"){ phase = "A"; remain = wcfg.secs * 1000; }
+    endAt = Date.now() + remain;
+    loop();
+  }
+  function reset(){ clearTimeout(tid); endAt = null; phase = "idle"; remain = wcfg.secs * 1000; lastShown = null; paint(); }
+  wireButton(goBtn, startPause);
+  wireButton(q(".tkReset"), reset);
+  var pencil = document.createElement("button");
+  pencil.type = "button"; pencil.className = "wEdit";
+  pencil.setAttribute("aria-label", "Set the question");
+  pencil.innerHTML = '<svg class="wIcon"><use href="#i-pencil"/></svg>';
+  var strip = host.querySelector(".strip");
+  strip.insertBefore(pencil, strip.querySelector(".wFocus"));
+  function startEdit(){ if (cfg.ui.locked) return; promptIn.value = wcfg.prompt; whoIn.value = wcfg.who; editRow.hidden = false; promptIn.focus(); }
+  function commit(){
+    if (cfg.ui.locked){ editRow.hidden = true; return; }
+    wcfg.prompt = promptIn.value.trim().slice(0, 120); wcfg.who = whoIn.value.trim().slice(0, 40);
+    editRow.hidden = true; paint();
+  }
+  wireButton(q(".tkDone"), commit);
+  wireButton(pencil, function(){ if (editRow.hidden) startEdit(); else commit(); });
+  [promptIn, whoIn].forEach(function(inp){
+    inp.addEventListener("keydown", function(e){
+      if (Alarm.isOn()) return;
+      e.stopPropagation();
+      if (e.key === "Enter" || e.key === "Escape") commit();
+    });
+  });
+  remain = wcfg.secs * 1000;
+  paint();
+  return {
+    kind: "talk",
+    label: function(){ return wcfg.label || "Talk Timer"; },
+    startPause: startPause, reset: reset,
+    running: function(){ return !!endAt; },
+    phase: function(){ return phase; },          // test hook
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    rebuild: paint, resync: paint,
+    destroy: function(){ destroyed = true; clearTimeout(tid); if (!editRow.hidden) commit(); }
+  };
+}
+
+/* ---- v7.14 (tools audit §4.4) STATIONS: the Group Maker's groups × named stations × a rotating
+   timer. Who is where is the card; at 0:00 a soft chime and everyone moves one station on.
+   Takes the day's groups for the class if the Group Maker made them (DayStore), else makes
+   its own by count. Space starts/pauses, R resets to rotation 1; ✎ names the stations. ---- */
+function makeStations(host, wcfg){
+  if (typeof wcfg.period !== "string") wcfg.period = "";
+  if (!(wcfg.count >= 2 && wcfg.count <= 6)) wcfg.count = 4;
+  if (!(wcfg.mins >= 1 && wcfg.mins <= 30)) wcfg.mins = 8;
+  if (!Array.isArray(wcfg.spots)) wcfg.spots = [];
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="snTop"><span class="snRot">Rotation 1 of 4</span></div>' +
+      '<div class="snTime">8:00</div>' +
+      '<div class="snGrid"></div>' +
+      '<div class="wEmpty snEmpty"></div>' +
+      '<div class="pkRow snSetup"><select class="pkSel" aria-label="Class period"></select></div>' +
+      '<div class="snEdit" hidden>' +
+        '<span class="chips snCount" role="group" aria-label="Stations"></span>' +
+        '<span class="chips snMins" role="group" aria-label="Minutes each"></span>' +
+        '<div class="row"><textarea class="snNames" rows="4" placeholder="One station per line:&#10;Vocabulary&#10;Practice&#10;Challenge&#10;Teacher table" aria-label="Station names"></textarea>' +
+        '<button class="btn snDone" type="button" style="background:var(--turq); color:var(--navy)">Done</button></div>' +
+      '</div>' +
+      '<div class="row"><button class="btn snGo" type="button" style="background:var(--turq); color:var(--navy)">Start</button>' +
+        '<button class="btn snNext" type="button" style="background:var(--sand); color:var(--navy)">Next station</button>' +
+        '<button class="btn ghost snReset" type="button">Reset</button></div>' +
+      '<div class="tHint">Space starts · R resets</div>' +
+    '</div>');
+  var q = function(s){ return host.querySelector(s); };
+  var sel = q(".pkSel"), rotEl = q(".snRot"), timeEl = q(".snTime"), grid = q(".snGrid"), emptyEl = q(".snEmpty");
+  var editRow = q(".snEdit"), namesIn = q(".snNames"), goBtn = q(".snGo");
+  var st = null, tid = null, destroyed = false, lastShown = null;
+  var period = buildPeriodSelect(sel, wcfg, function(){ load(); paint(); ab.repaint(); });
+  var ab = attachAbsent(host, function(){ return period.current(); }, function(){ paint(); });
+  function key(){ var p = period.current(); return p ? "stations:" + p : null; }
+  function fresh(){ return { groups: null, count: wcfg.count, rot: 0, endAt: null, remain: wcfg.mins * 60000, done: false }; }
+  function load(){
+    var k = key();
+    st = (k && DayStore.get(k)) || fresh();
+    if (st.count !== wcfg.count){ st.groups = null; st.count = wcfg.count; st.rot = 0; }
+  }
+  function park(){ var k = key(); if (k) DayStore.set(k, st); }
+  function makeGroups(){
+    var p = period.current();
+    if (!p) return null;
+    var made = DayStore.get("groups:" + p);          // the Group Maker's groups for this class today
+    if (made && made.length === wcfg.count) return made.map(function(g){ return g.slice(); });
+    var names = shuffleNames(Absent.presentFor(p));
+    if (names.length < 2) return null;
+    var count = Math.max(1, Math.min(wcfg.count, names.length)), groups = [];
+    for (var i = 0; i < count; i++) groups.push([]);
+    names.forEach(function(n, i){ groups[i % count].push(n); });
+    return groups;
+  }
+  function spotName(i){ return (wcfg.spots[i] || "").trim() || "Station " + (i + 1); }
+  function fmt(ms){ var s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); }
+  function paint(){
+    var p = period.current();
+    if (!st.groups) st.groups = makeGroups();
+    grid.innerHTML = "";
+    if (!st.groups){
+      emptyEl.textContent = p && Rosters.namesFor(p).length ? "Not enough students present" : (cfg.rosters.length ? "No roster for this period — pick one above" : "Add class rosters in Settings");
+    } else {
+      emptyEl.textContent = "";
+      var n = wcfg.count;
+      grid.style.gridTemplateColumns = "repeat(" + (n <= 3 ? n : Math.ceil(n / 2)) + ", minmax(0, 1fr))";   // 4 → 2×2, 5–6 → 3 across
+      for (var s = 0; s < n; s++){
+        var card = document.createElement("div"); card.className = "snCard";
+        var b = document.createElement("b"); b.textContent = spotName(s); card.appendChild(b);
+        var g = ((s - st.rot) % n + n) % n;         // group g sits at station (g + rot) mod n
+        var grp = st.groups[g];
+        var gi = document.createElement("i"); gi.textContent = "Group " + (g + 1); card.appendChild(gi);
+        (grp || []).forEach(function(nm){ var sp = document.createElement("span"); sp.textContent = nm; card.appendChild(sp); });   // names: textContent only
+        grid.appendChild(card);
+      }
+    }
+    rotEl.textContent = st.done ? "All " + wcfg.count + " rotations done" : "Rotation " + (st.rot + 1) + " of " + wcfg.count;
+    var ms = st.endAt ? st.endAt - Date.now() : st.remain;
+    var sec = Math.ceil(ms / 1000);
+    if (sec !== lastShown){ lastShown = sec; timeEl.textContent = fmt(ms); }
+    timeEl.classList.toggle("low", !!st.endAt && ms <= 30000);
+    host.classList.toggle("running", !!st.endAt);
+    host.querySelectorAll(".snCount .chip").forEach(function(c){ c.setAttribute("aria-pressed", +c.dataset.n === wcfg.count ? "true" : "false"); });
+    host.querySelectorAll(".snMins .chip").forEach(function(c){ c.setAttribute("aria-pressed", +c.dataset.n === wcfg.mins ? "true" : "false"); });
+    goBtn.textContent = st.endAt ? "Pause" : (st.done ? "Start over" : (st.remain === wcfg.mins * 60000 && st.rot === 0 ? "Start" : "Resume"));
+    goBtn.disabled = !st.groups;
+  }
+  function advance(){
+    if (st.rot + 1 >= wcfg.count){ st.done = true; st.endAt = null; st.remain = 0; }
+    else { st.rot++; st.remain = wcfg.mins * 60000; if (st.endAt) st.endAt = Date.now() + st.remain; }
+    lastShown = null; park(); paint();
+  }
+  function loop(){
+    if (destroyed || !st.endAt) return;
+    if (Date.now() >= st.endAt){
+      try { Sound.soft(); } catch(e){}
+      advance();
+      if (st.endAt) tid = setTimeout(loop, 200);
+      return;
+    }
+    paint();
+    tid = setTimeout(loop, 200);
+  }
+  function startPause(){
+    if (!st.groups) return;
+    if (st.endAt){ st.remain = Math.max(0, st.endAt - Date.now()); st.endAt = null; clearTimeout(tid); park(); paint(); return; }
+    if (st.done){ st.done = false; st.rot = 0; st.remain = wcfg.mins * 60000; }
+    st.endAt = Date.now() + st.remain; park();
+    loop();
+  }
+  function reset(){ clearTimeout(tid); st.endAt = null; st.rot = 0; st.done = false; st.remain = wcfg.mins * 60000; lastShown = null; park(); paint(); }
+  function shuffle(){ st.groups = null; reset(); }
+  [2, 3, 4, 5, 6].forEach(function(n){
+    var b = document.createElement("button"); b.type = "button"; b.className = "chip chipSm"; b.dataset.n = n; b.textContent = n + " stations";
+    wireButton(b, function(){ if (st.endAt) return; wcfg.count = n; st.count = n; st.groups = null; reset(); });
+    q(".snCount").appendChild(b);
+  });
+  [5, 8, 10, 12, 15].forEach(function(n){
+    var b = document.createElement("button"); b.type = "button"; b.className = "chip chipSm"; b.dataset.n = n; b.textContent = n + " min";
+    wireButton(b, function(){ if (st.endAt) return; wcfg.mins = n; st.remain = n * 60000; lastShown = null; park(); paint(); });
+    q(".snMins").appendChild(b);
+  });
+  wireButton(goBtn, startPause);
+  wireButton(q(".snNext"), function(){ if (!st.groups || st.done) return; advance(); if (st.endAt) { clearTimeout(tid); loop(); } });
+  wireButton(q(".snReset"), reset);
+  var pencil = document.createElement("button");
+  pencil.type = "button"; pencil.className = "wEdit";
+  pencil.setAttribute("aria-label", "Name the stations");
+  pencil.innerHTML = '<svg class="wIcon"><use href="#i-pencil"/></svg>';
+  var strip = host.querySelector(".strip");
+  strip.insertBefore(pencil, strip.querySelector(".wFocus"));
+  function startEdit(){ if (cfg.ui.locked) return; namesIn.value = wcfg.spots.join("\n"); editRow.hidden = false; namesIn.focus(); }
+  function commit(){
+    if (cfg.ui.locked){ editRow.hidden = true; return; }
+    wcfg.spots = namesIn.value.split("\n").map(function(s){ return s.trim().slice(0, 24); }).slice(0, 6);
+    while (wcfg.spots.length && !wcfg.spots[wcfg.spots.length - 1]) wcfg.spots.pop();
+    editRow.hidden = true; paint();
+  }
+  wireButton(q(".snDone"), commit);
+  wireButton(pencil, function(){ if (editRow.hidden) startEdit(); else commit(); });
+  namesIn.addEventListener("keydown", function(e){
+    if (Alarm.isOn()) return;
+    e.stopPropagation();
+    if (e.key === "Escape") commit();
+  });
+  var refreshTid = setInterval(function(){ period.fill(); ab.repaint(); }, 5000);
+  load(); paint();
+  if (st.endAt) loop();                          // back on this scene: the clock is still running
+  return {
+    kind: "stations",
+    label: function(){ return wcfg.label || "Stations"; },
+    startPause: startPause, reset: reset, shuffle: shuffle,
+    running: function(){ return !!st.endAt; },
+    state: function(){ return { rot: st.rot, done: st.done, groups: st.groups, endAt: st.endAt }; },   // test hook
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    rebuild: function(){ period.fill(); load(); paint(); }, resync: paint,
+    destroy: function(){ destroyed = true; clearTimeout(tid); clearInterval(refreshTid); if (!editRow.hidden) commit(); }
+  };
+}
+
+/* ---- v7.14 (tools audit §4.3) the NUMBER LINE, interactive: points the finger can place and
+   drag, jumps drawn as arcs (−7 + 4 is an arc from −7 landing on −3, labelled +4), any range
+   and step (fractions and decimals). Point mode: tap adds, drag moves, a tap on a point takes
+   it away. Jump mode: drag from one number to another. Today's marks outlive a scene switch. */
+function makeNumline(host, wcfg){
+  if (!isObj(wcfg.line)) wcfg.line = normLine(-10, 10, 1);
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="nlWrap"><svg class="nlSvg" viewBox="0 0 1000 300" aria-label="Number line"></svg></div>' +
+      '<div class="nlTools">' +
+        '<span class="chips nlMode" role="group" aria-label="Tool">' +
+          '<button type="button" class="chip" data-mode="point" aria-pressed="true">Point</button>' +
+          '<button type="button" class="chip" data-mode="jump" aria-pressed="false">Jump</button>' +
+        '</span>' +
+        '<button class="dwTool nlUndo" type="button">Undo</button>' +
+        '<button class="dwTool nlClear" type="button">Clear</button>' +
+      '</div>' +
+      '<div class="nlLine">' +
+        '<label>From <input class="nlIn" data-k="min" type="number" step="any" aria-label="Start"></label>' +
+        '<label>to <input class="nlIn" data-k="max" type="number" step="any" aria-label="End"></label>' +
+        '<label>by <input class="nlIn" data-k="step" type="number" step="any" min="0" aria-label="Step"></label>' +
+      '</div>' +
+    '</div>');
+  var svg = host.querySelector(".nlSvg"), NS = "http://www.w3.org/2000/svg";
+  var mode = "point", marks = { points: [], jumps: [], log: [] }, ghost = null, drag = null;
+  var parked = DayStore.get(wcfg);
+  if (parked) marks = parked;
+  if (!Array.isArray(marks.log)) marks.log = [];
+  function park(){ DayStore.set(wcfg, marks); }
+  var X0 = 70, X1 = 930, Y = 190;
+  function ln(){ return wcfg.line; }
+  function nT(){ return Math.round((ln().max - ln().min) / ln().step); }
+  function xOf(v){ return X0 + (v - ln().min) / (ln().max - ln().min) * (X1 - X0); }
+  function snap(x){                              // the nearest tick's value
+    var i = Math.round((x - X0) / (X1 - X0) * nT());
+    i = Math.max(0, Math.min(nT(), i));
+    return +(ln().min + i * ln().step).toFixed(6);
+  }
+  function el(tag, attrs, cls){ var e = document.createElementNS(NS, tag); Object.keys(attrs).forEach(function(k){ e.setAttribute(k, attrs[k]); }); if (cls) e.setAttribute("class", cls); return e; }
+  function render(){
+    svg.innerHTML = "";
+    var n = nT(), step = (X1 - X0) / n;
+    /* labels every 1, 2, 4, 5, 10… ticks — the first spacing whose labels fit side by side */
+    var chars = 1, every = 1;
+    for (var k = 0; k <= n; k++) chars = Math.max(chars, fmtTick(ln().min + k * ln().step).length);
+    var lw = chars * 26 * .62 + 14;
+    [1, 2, 4, 5, 10, 20, 25, 50, 100].some(function(e){ every = e; return (n / e + 1) * lw <= X1 - X0 + 40; });
+    svg.appendChild(el("path", { d: "M" + (X0 - 30) + " " + Y + "H" + (X1 + 30) }, "nlAxis"));
+    svg.appendChild(el("path", { d: "M" + (X1 + 30) + " " + Y + "l-16 -10v20z" }, "nlHead neg"));
+    svg.appendChild(el("path", { d: "M" + (X0 - 30) + " " + Y + "l16 -10v20z" }, "nlHead neg"));
+    var lf = 26;
+    for (var i = 0; i <= n; i++){
+      var v = +(ln().min + i * ln().step).toFixed(6), x = X0 + i * step, big = i % every === 0;
+      svg.appendChild(el("line", { x1: x, y1: Y - (big ? 18 : 11), x2: x, y2: Y + (big ? 18 : 11) }, "nlTick" + (big ? " big" : "")));
+      if (big){
+        var t = el("text", { x: x, y: Y + 52, "font-size": lf }, "nlLab" + (Math.abs(v) < 1e-9 ? " zero" : ""));
+        t.textContent = fmtTick(v); svg.appendChild(t);
+      }
+    }
+    marks.jumps.concat(ghost ? [ghost] : []).forEach(function(j, k){
+      var a = xOf(j[0]), b = xOf(j[1]), d = +(j[1] - j[0]).toFixed(6), neg = d < 0;
+      var lift = Math.min(120, 30 + Math.abs(b - a) * .35), mid = (a + b) / 2;
+      var p = el("path", { d: "M" + a + " " + (Y - 8) + " Q" + mid + " " + (Y - 8 - lift * 2) + " " + b + " " + (Y - 8) }, "nlJump" + (neg ? " neg" : "") + (j === ghost ? " ghost" : ""));
+      svg.appendChild(p);
+      var dir = neg ? -1 : 1;
+      svg.appendChild(el("path", { d: "M" + b + " " + (Y - 6) + "l" + (-14 * dir) + " -18l" + (10 * dir) + " -2z" }, "nlHead" + (neg ? " neg" : "")));
+      var lab = el("text", { x: mid, y: Y - 14 - lift - 8 }, "nlJLab" + (neg ? " neg" : ""));
+      lab.textContent = (d > 0 ? "+" : "\u2212") + fmtTick(Math.abs(d)); svg.appendChild(lab);
+    });
+    marks.points.forEach(function(v, i){
+      var c = el("circle", { cx: xOf(v), cy: Y, r: 15 }, "nlPt" + (drag && drag.i === i ? " drag" : ""));
+      c.dataset.i = i; svg.appendChild(c);
+    });
+    host.querySelector(".nlUndo").disabled = !marks.points.length && !marks.jumps.length;
+  }
+  function toX(e){ var r = svg.getBoundingClientRect(); return (e.clientX - r.left) / r.width * 1000; }
+  function toY(e){ var r = svg.getBoundingClientRect(); return (e.clientY - r.top) / r.height * 300; }
+  function nearPoint(x){
+    var best = -1, bd = 26;
+    marks.points.forEach(function(v, i){ var d = Math.abs(xOf(v) - x); if (d < bd){ bd = d; best = i; } });
+    return best;
+  }
+  var pid = null;
+  svg.addEventListener("pointerdown", function(e){
+    if (pid !== null) return;
+    pid = e.pointerId; try { svg.setPointerCapture(pid); } catch(err){}
+    var x = toX(e), y = toY(e), v = snap(x);
+    if (Math.abs(y - Y) > 80 && mode === "point"){ pid = null; return; }   // far from the line: nothing
+    if (mode === "point"){
+      var i = nearPoint(x);
+      if (i >= 0) drag = { i: i, moved: false, from: marks.points[i] };
+      else { marks.points.push(v); marks.log.push("p"); drag = { i: marks.points.length - 1, moved: true, from: v }; }
+    } else {
+      drag = { jump: true, a: v, moved: false }; ghost = [v, v];
+    }
+    render(); e.preventDefault();
+  });
+  svg.addEventListener("pointermove", function(e){
+    if (e.pointerId !== pid || !drag) return;
+    var v = snap(toX(e));
+    if (drag.jump){ if (v !== drag.a) drag.moved = true; ghost = [drag.a, v]; }
+    else { if (v !== marks.points[drag.i]) drag.moved = true; marks.points[drag.i] = v; }
+    render();
+  });
+  function up(e){
+    if (e.pointerId !== pid) return;
+    pid = null;
+    if (drag){
+      if (drag.jump){ if (ghost && ghost[0] !== ghost[1]){ marks.jumps.push(ghost); marks.log.push("j"); } ghost = null; }
+      else if (!drag.moved){ marks.points.splice(drag.i, 1); var li = marks.log.lastIndexOf("p"); if (li >= 0) marks.log.splice(li, 1); }   // a tap on a point takes it away
+      drag = null; park(); render();
+    }
+  }
+  svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
+  host.querySelectorAll(".nlMode .chip").forEach(function(c){
+    wireButton(c, function(){ mode = c.dataset.mode; host.querySelectorAll(".nlMode .chip").forEach(function(d){ d.setAttribute("aria-pressed", d === c ? "true" : "false"); }); });
+  });
+  function undo(){                               // the last thing placed, whichever kind
+    var k = marks.log.pop();
+    if (k === "j") marks.jumps.pop(); else if (k === "p") marks.points.pop(); else return;
+    park(); render();
+  }
+  function clearAll(){
+    if (!marks.points.length && !marks.jumps.length) return;
+    var was = { points: marks.points.slice(), jumps: marks.jumps.slice(), log: marks.log.slice() };
+    marks = { points: [], jumps: [], log: [] }; park(); render();
+    Undo.show("Number line cleared", function(){ marks = was; park(); render(); });
+  }
+  wireButton(host.querySelector(".nlUndo"), undo);
+  wireButton(host.querySelector(".nlClear"), clearAll);
+  var ins = host.querySelectorAll(".nlIn");
+  function fillLine(){ ins.forEach(function(inp){ if (inp !== document.activeElement) inp.value = wcfg.line[inp.dataset.k]; }); }
+  function readLine(){
+    var v = {}; ins.forEach(function(inp){ v[inp.dataset.k] = parseFloat(inp.value); });
+    wcfg.line = normLine(isFinite(v.min) ? v.min : wcfg.line.min, isFinite(v.max) ? v.max : wcfg.line.max, isFinite(v.step) ? v.step : wcfg.line.step);
+    /* marks off the new line are dropped; the rest snap to the new ticks */
+    marks.points = marks.points.filter(function(p){ return p >= wcfg.line.min && p <= wcfg.line.max; }).map(function(p){ return snap(xOf(p)); });
+    marks.jumps = marks.jumps.filter(function(j){ return j[0] >= wcfg.line.min && j[0] <= wcfg.line.max && j[1] >= wcfg.line.min && j[1] <= wcfg.line.max; });
+    park(); fillLine(); render();
+  }
+  ins.forEach(function(inp){
+    inp.addEventListener("change", readLine);
+    inp.addEventListener("keydown", function(e){
+      if (Alarm.isOn()) return;
+      e.stopPropagation();
+      if (e.key === "Enter" || e.key === "Escape"){ readLine(); inp.blur(); }
+    });
+  });
+  fillLine(); render();
+  return {
+    kind: "numline",
+    label: function(){ return wcfg.label || "Number Line"; },
+    startPause: function(){}, reset: clearAll,
+    marks: function(){ return { points: marks.points.slice(), jumps: marks.jumps.map(function(j){ return j.slice(); }) }; },   // test hook
+    setMode: function(m){ mode = m; },              // test hook
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    rebuild: function(){ fillLine(); render(); }, resync: function(){},
+    destroy: function(){}
+  };
+}
 
 /* Music (v6.25, reworked v6.26 after Croix's field notes: "The scratchy
    under the lofi is annoying… maybe a little underdeveloped… the mozart
@@ -10967,7 +11645,8 @@ var WIDGET_NAMES = {
   score: "Scoreboard", qr: "QR Code", meter: "Noise Meter",
   draw: "Sketch Pad", embed: "Slides",
   event: "Countdown", tally: "Tally", agenda: "Agenda",
-  music: "Music", yt: "YouTube"
+  music: "Music", yt: "YouTube",
+  talk: "Talk Timer", stations: "Stations", numline: "Number Line"   // v7.14
 };
 /* boards saved before v7.12 carry the old default names as labels — those are not custom names */
 var LEGACY_NAMES = { picker: ["Picker"], groups: ["Groups"], text: ["Note"], draw: ["Sketch"] };
@@ -10984,7 +11663,8 @@ var WIDGET_MAKERS = {
   score: makeScore, qr: makeQR, meter: makeMeter,
   draw: makeDraw, embed: makeEmbed,
   event: makeEvent, tally: makeTally, agenda: makeAgenda,
-  music: makeMusic, yt: makeYT
+  music: makeMusic, yt: makeYT,
+  talk: makeTalk, stations: makeStations, numline: makeNumline   // v7.14
 };
 
 var Canvas = (function(){
@@ -11531,6 +12211,7 @@ var Canvas = (function(){
     /* v7.11.5 (audit): a live settle-in with no clock in the new scene would keep Space
        and R and its ticks with nothing on screen — the moment ends with its card */
     try { if (!Canvas.clockMounted() && Settle.live()) Settle.reset(); } catch(e){}
+    try { if (!Canvas.clockMounted() && Wrapup.live()) Wrapup.reset(); } catch(e){}   // v7.14
     refreshDock();
     alignGrid();                                 // painted grid follows the canvas
     if (!REDUCED){                               // scene cross-fade (120ms-ish)
@@ -11721,7 +12402,7 @@ var Canvas = (function(){
      "addTextBtn","addWorkBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn","addScoreBtn",
      "addQrBtn","addMeterBtn","addDrawBtn","addEmbedBtn",
      "addEventBtn","addTallyBtn","addAgendaBtn",
-     "addMusicBtn","addYtBtn"].forEach(function(id){
+     "addMusicBtn","addYtBtn","addTalkBtn","addStationsBtn","addNumlineBtn"].forEach(function(id){
       $(id).disabled = locked || full;
     });
     var hasClock = activeSceneObj().widgets.some(function(w){ return w.type === "clock"; });
@@ -11963,7 +12644,8 @@ var Canvas = (function(){
        ["addDrawBtn","draw"], ["addEmbedBtn","embed"], ["addEventBtn","event"],
        ["addTallyBtn","tally"], ["addAgendaBtn","agenda"],
        ["addMusicBtn","music"],
-       ["addYtBtn","yt"]].forEach(function(pair){
+       ["addYtBtn","yt"],
+       ["addTalkBtn","talk"], ["addStationsBtn","stations"], ["addNumlineBtn","numline"]].forEach(function(pair){
         wireButton($(pair[0]), function(){ addWidget(pair[1]); hideAddMenu(); });
       });
       wireButton($("moreBtn"), toggleMoreMenu);
@@ -12132,6 +12814,7 @@ var Settings = (function(){
     bath: $("sBath"), bathFirst: $("sBathFirst"), bathLast: $("sBathLast"),
     skipWeeks: $("sSkipWeeks"),
     stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"),
+    wuOn: $("sWuOn"), wuMin: $("sWuMin"), wuMsg: $("sWuMsg"), wuPrompt: $("sWuPrompt"), wuSteps: $("sWuSteps"),   // v7.14
     stPledge: $("sStPledge"), stPledgeMin: $("sStPledgeMin"), stPer: $("sStPer"),
     nudge: $("sNudge"), presets: $("sPresets"), timerMusic: $("sTimerMusic"), errors: $("setErrors"),
     grpNames: [$("sGrpName1"), $("sGrpName2"), $("sGrpName3"), $("sGrpName4")],
@@ -12300,6 +12983,9 @@ var Settings = (function(){
     f.stPledge.checked = !!st.pledge.on;
     f.stPledgeMin.value = st.pledge.minutes;
     renderSettlePer(st);
+    var wu = cfg.bell.wrapup || DEFAULT_WRAPUP;   // v7.14
+    f.wuOn.checked = !!wu.on; f.wuMin.value = wu.minutes; f.wuMsg.value = wu.msg || "";
+    f.wuPrompt.value = wu.prompt || ""; f.wuSteps.value = wu.steps || "";
     f.sound.checked = !!cfg.sound.enabled;
     f.auto.checked = !!cfg.bell.autoWeek;
     f.anchor.value = cfg.bell.anchorMonday || "";
@@ -12572,6 +13258,13 @@ var Settings = (function(){
       msgDone: f.stMsg.value.trim().slice(0, 60),
       pledge: { on: f.stPledge.checked, minutes: stPledgeMin },
       perPeriod: stPer
+    };
+    cfg.bell.wrapup = {                          // v7.14
+      on: f.wuOn.checked,
+      minutes: Math.max(1, Math.min(15, Math.round(+f.wuMin.value) || 3)),
+      prompt: f.wuPrompt.value.trim().slice(0, 140),
+      steps: f.wuSteps.value.split("\n").map(function(s){ return s.trim().slice(0, 40); }).filter(Boolean).slice(0, 6).join("\n"),
+      msg: f.wuMsg.value.trim().slice(0, 80)
     };
     cfg.sound.volume = vol / 100;
     cfg.clock.showSeconds = f.seconds.checked;
@@ -13360,11 +14053,11 @@ var Keys = (function(){
     if (Ink.isArmed() && k === "Escape"){ Ink.arm(false); e.preventDefault(); return; }
     /* v7.7: while the clock IS the settle count, Space restarts it and R
        stands it down (the card's old chips) — the selected timer waits */
-    var settleLive = false;
-    try { settleLive = Settle.live(); } catch(_){}
+    var settleLive = false, wrapLive = false;
+    try { settleLive = Settle.live(); wrapLive = Wrapup.live(); } catch(_){}
     if (k === " "){ if (settleLive) Settle.start(); else if (sel) sel.startPause(); e.preventDefault(); }
     else if (lk === "d"){ Ink.toggle(); }
-    else if (lk === "r"){ if (settleLive) Settle.reset(); else if (sel) sel.reset(); }
+    else if (lk === "r"){ if (settleLive) Settle.reset(); else if (wrapLive) Wrapup.reset(); else if (sel) sel.reset(); }   // v7.14
     else if (lk === "f"){ FS.toggle(); }
     else if (lk === "m"){ Sound.toggle(); }
     else if (lk === "s"){ Canvas.cycleSel(); }
@@ -13378,7 +14071,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Season, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Season, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -13412,6 +14105,7 @@ window.Deckhand = {
   canvas: Canvas,                               // v7.5: timerRunning() for the sea's director (tests)
   absent: Absent,                               // v7.6: date-keyed marks (tests)
   settle: Settle,                               // v7.7: the settle-in, a moment of the clock (tests)
+  wrapup: Wrapup,                               // v7.14: the wrap-up at the bell (tests)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)
   season: Season,                               // v7.10: active()/apply() (tests)
   bell: Bell,                                   // v7.13: schoolDaysBetween() (tests)

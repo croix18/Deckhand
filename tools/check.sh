@@ -56,7 +56,7 @@ function checkConfig(f, c) {
   }));
   /* v7.5.1 (audit): free text is where student names end up — notes, agenda items, team and
      tally names, event titles, the settle message, the saved-deck library. Any content refuses. */
-  const TEXT_KEYS = ["html", "text", "saved", "teams", "items", "names", "title", "msgDone", "lines", "pages", "decks"];
+  const TEXT_KEYS = ["html", "text", "saved", "teams", "items", "names", "title", "msgDone", "lines", "pages", "decks", "prompt", "who", "spots", "custom"];   // v7.14: the Talk Timer's prompt and rule, the Stations' names, Work Mode's rewording
   const texty = [];
   (c.scenes || []).forEach(s => (s.widgets || []).forEach(w => {
     if (!w) return;
@@ -68,6 +68,8 @@ function checkConfig(f, c) {
     if (seed && w.label && String(w.label).trim() && !seed.labels.has(w.label)) texty.push(w.type + ".label");
   }));
   if (c.bell && c.bell.settle && String(c.bell.settle.msgDone || "").trim() && c.bell.settle.msgDone !== "Find your seat") texty.push("bell.settle.msgDone");
+  /* v7.14: the wrap-up's prompt, checklist and rule are free text too */
+  if (c.bell && c.bell.wrapup) ["prompt", "steps", "msg"].forEach(k => { if (String(c.bell.wrapup[k] || "").trim()) texty.push("bell.wrapup." + k); });
   if (seed) (c.scenes || []).forEach(s => { if (s && s.name && !seed.scenes.has(s.name)) texty.push("scene.name"); });
   const owner = c.ownerName;
   if (names.length || urls.length || texty.length || (owner && owner !== "Mr. Shaffer")) {

@@ -7,7 +7,7 @@ const path = require("path"), fs = require("fs");
 const OUT = path.resolve(__dirname, "out/tools"); fs.mkdirSync(OUT, { recursive: true });
 const URL = "file://" + path.resolve(__dirname, "../../Deckhand.html");
 const TOOLS = (process.env.ONLY ? process.env.ONLY.split(",") : ["addTimerBtn","addWatchBtn","addBellBtn","addEventBtn","addPickerBtn","addGroupsBtn","addScoreBtn","addTallyBtn",
-  "addMusicBtn","addWorkBtn","addMeterBtn","addAgendaBtn","addTextBtn","addQrBtn","addEmbedBtn","addYtBtn","addDrawBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn"]);
+  "addMusicBtn","addWorkBtn","addMeterBtn","addAgendaBtn","addTextBtn","addQrBtn","addEmbedBtn","addYtBtn","addDrawBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn","addTalkBtn","addStationsBtn","addNumlineBtn"]);
 (async () => {
   const br = await chromium.launch();
   const ctx = await br.newContext({ viewport: { width: 1920, height: 1080 }, reducedMotion: "reduce" });
@@ -53,6 +53,9 @@ const TOOLS = (process.env.ONLY ? process.env.ONLY.split(",") : ["addTimerBtn","
       if (id === "addQrBtn"){ const i = await page.$(".w-qr input"); if (i){ await i.fill("https://example.org/exit-ticket"); await page.keyboard.press("Enter"); } await page.waitForTimeout(300); }
       if (id === "addTimerBtn"){ await page.keyboard.press("5"); await page.keyboard.press("Enter"); await page.waitForTimeout(400); }
       if (id === "addWatchBtn"){ await page.keyboard.press(" "); await page.waitForTimeout(1300); }
+      if (id === "addTalkBtn"){ await page.click(".w-talk .wEdit"); await page.fill(".w-talk .tkPromptIn", "Why is 7 the most common total?"); await page.fill(".w-talk .tkWhoIn", "closest to the window"); await page.click(".w-talk .tkDone"); await page.click(".w-talk .tkGo"); await page.waitForTimeout(1500); }   // v7.14
+      if (id === "addStationsBtn"){ await page.selectOption(".w-stations .pkSel", "5th"); await page.click(".w-stations .wEdit"); await page.fill(".w-stations .snNames", "Vocabulary\nPractice\nChallenge\nTeacher table"); await page.click(".w-stations .snDone"); await page.click(".w-stations .snGo"); await page.waitForTimeout(1500); }
+      if (id === "addNumlineBtn"){ const c = await page.$(".w-numline .nlSvg"); const b = await c.boundingBox(); const xOf = v => b.x + b.width * ((70 + (v + 10) / 20 * 860) / 1000), y = b.y + b.height * (190 / 300); await page.mouse.click(xOf(-7), y); await page.click('.w-numline .chip[data-mode="jump"]'); await page.mouse.move(xOf(-7), y); await page.mouse.down(); await page.mouse.move(xOf(-3), y, { steps: 5 }); await page.mouse.up(); }
     } catch (e) { console.log(id, "warm-up skipped:", String(e).split("\n")[0]); }
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(OUT, id + "-board.png") });

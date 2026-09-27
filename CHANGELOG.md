@@ -2,6 +2,22 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.14.0 — 2026-09-27
+
+**Routines and math** — the tools audit's third release (§4). **The wrap-up at the bell**, the
+settle-in's twin: N minutes before the bell the clock takes the stage with the time to the
+bell, the exit-ticket prompt (or link), a pack-up checklist the teacher taps off and the rule
+("The teacher dismisses you, not the bell."); at the bell the face comes back; R stands it
+down for that period; a bell's settle-in outranks it. Off until you turn it on: Settings →
+Bells → Wrap-up at the bell. Three new tiles: **Talk Timer** (a question, "Partner A speaks"
+for 30 s–2 min, a chime and a public switch to B, then Share; ✎ sets the question and who A
+is), **Stations** (the Group Maker's groups for the class — or its own by count — across
+named stations with a rotating timer; a chime and everyone moves one station on; the rotation
+survives a scene switch), and **Number Line** (tap to place a point, drag to move it, tap to
+take it away; Jump draws an arc with its signed length; any range and step, so 0 to 1 by ¼ or
+−50 to 50 by 10; Undo, Clear with Undo; the marks survive a scene switch). The + Add menu
+holds six tiles a row. `tools/check.sh` refuses the new free-text fields. Five tests; 249.
+
 ## 7.13.0 — 2026-09-27
 
 **Touch and survival** — the tools audit's second release (items 9–15 of

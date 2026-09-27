@@ -477,3 +477,187 @@ test.describe("v7.13", () => {
     ok((await n()) === 1 && (await inked()) > 0, "the sketch did not survive the scene switch");
   });
 });
+
+/* v7.14 — "Routines and math" (tools audit §4: the wrap-up, the Talk Timer, Stations, the
+ * Number Line). */
+test.describe("v7.14", () => {
+  const rosters = page => page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee","Eli","Fay","Gus","Hal","Ivy","Jon","Kim","Lee"] }]; });
+  const place = page => page.evaluate(() => {
+    const ws = window.Deckhand.config.scenes[0].widgets, pos = { talk: [1, 2, 32, 52], stations: [35, 2, 40, 60], numline: [1, 56, 60, 42] };
+    ws.forEach(w => { if (pos[w.type]) [w.x, w.y, w.w, w.h] = pos[w.type]; });
+    window.Deckhand.canvas.loadScene();
+  });
+
+  test("v7.14: the wrap-up at the bell — N minutes out the clock takes the stage with the time to the bell, the prompt, a checklist and the rule; R stands it down for that period; the bell brings the face back; a settle-in outranks it", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T11:05:30");            // 5th ends 11:09
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.bell.wrapup = { on: true, minutes: 3, prompt: "One thing you learned", steps: "Pack up\nPush in your chair", msg: "" }; });
+    const live = () => page.evaluate(() => window.Deckhand.wrapup.live());
+    await page.waitForTimeout(600);
+    ok(!(await live()), "live with 3:30 left");
+    await page.evaluate(() => window.Deckhand.shiftClock(60000));
+    await expect.poll(live).toBe(true);
+    await expect(page.locator("#clockWrap .wuBig")).toHaveText(/^2:(29|30)$/);
+    await expect(page.locator("#clockWrap .wuPrompt")).toHaveText("One thing you learned");
+    ok((await page.locator("#clockWrap .wuList li").count()) === 2, "checklist");
+    await expect(page.locator("#clockWrap .wuMsg")).toHaveText("The teacher dismisses you, not the bell.");
+    ok(await page.evaluate(() => document.querySelector(".w-clock").classList.contains("wFull")), "the clock did not take the stage");
+    await page.click("#clockWrap .wuList li >> nth=0");
+    await expect(page.locator("#clockWrap .wuList li >> nth=0")).toHaveClass(/done/);
+    await page.keyboard.press("r");
+    ok(!(await live()), "R did not stand it down");
+    await page.evaluate(() => window.Deckhand.wrapup._watch());
+    ok(!(await live()), "it came back for the same period after R");
+    // the bell: the face returns (the settle-in starts on the transition into HOWL)
+    await page.evaluate(() => window.Deckhand.wrapup.start());
+    ok(await live(), "start() refused");
+    await page.evaluate(() => window.Deckhand.shiftClock(160000));   // 11:09:10
+    await expect.poll(live).toBe(false);
+    // off by default; sanitize keeps the fields
+    const san = await page.evaluate(() => JSON.stringify(window.Deckhand.sanitize({ bell: { wrapup: { on: true, minutes: 99, steps: "a\nb\nc\nd\ne\nf\ng", prompt: "p" } } }).bell.wrapup));
+    ok(san === '{"on":true,"minutes":15,"prompt":"p","steps":"a\\nb\\nc\\nd\\ne\\nf","msg":""}', "sanitize: " + san);
+    ok((await page.evaluate(() => window.Deckhand.sanitize({}).bell.wrapup.on)) === false, "the wrap-up should be off until Croix turns it on");
+  });
+
+  test("v7.14: the Talk Timer — A for the seconds set, a chime and a public switch to B, then Share; ✎ sets the question and who A is; Space and R", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addTalkBtn"); await page.keyboard.press("Escape");
+    await place(page);
+    const api = () => page.evaluate(() => { const a = document.querySelector(".w-talk")._entry.api; return { phase: a.phase(), running: a.running(), letter: document.querySelector(".w-talk .tkLetter").textContent, who: document.querySelector(".w-talk .tkWho").textContent }; });
+    await page.click(".w-talk .wEdit");
+    await page.fill(".w-talk .tkPromptIn", "Why is 7 the most common total?");
+    await page.fill(".w-talk .tkWhoIn", "closest to the window");
+    await page.click(".w-talk .tkDone");
+    await expect(page.locator(".w-talk .tkPrompt")).toHaveText("Why is 7 the most common total?");
+    await expect(page.locator(".w-talk .tkRule")).toHaveText("A is closest to the window");
+    await page.click('.w-talk .chip[data-secs="30"]');
+    await expect(page.locator(".w-talk .tkTime")).toHaveText("0:30");
+    await page.keyboard.press(" ");                                    // the selected card
+    let s = await api();
+    ok(s.phase === "A" && s.running && s.letter === "A", "A did not start: " + JSON.stringify(s));
+    await page.keyboard.press(" ");                                    // pause
+    s = await api();
+    ok(s.phase === "A" && !s.running, "Space did not pause: " + JSON.stringify(s));
+    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(x => x.type === "talk"); w.secs = 15; });
+    const kept = await page.evaluate(() => window.Deckhand.sanitize(JSON.parse(JSON.stringify(window.Deckhand.config))).scenes[0].widgets.find(w => w.type === "talk"));
+    ok(kept.prompt === "Why is 7 the most common total?" && kept.who === "closest to the window" && kept.secs === 15, "sanitize: " + JSON.stringify(kept));
+    await page.keyboard.press("r");
+    s = await api();
+    ok(s.phase === "idle" && !s.running, "R did not reset: " + JSON.stringify(s));
+  });
+
+  test("v7.14: the Talk Timer's phases run A → B → Share on the clock", async ({ page, dh }) => {
+    test.setTimeout(90000);
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addTalkBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(x => x.type === "talk"); w.secs = 15; window.Deckhand.canvas.loadScene(); });
+    const phase = () => page.evaluate(() => document.querySelector(".w-talk")._entry.api.phase());
+    await page.click(".w-talk .tkGo");
+    ok((await phase()) === "A", "A");
+    await expect.poll(phase, { timeout: 20000 }).toBe("B");
+    await expect(page.locator(".w-talk")).toHaveClass(/phaseB/);
+    await expect(page.locator(".w-talk .tkWho")).toHaveText("Partner B speaks");
+    await expect.poll(phase, { timeout: 20000 }).toBe("share");
+    await expect(page.locator(".w-talk .tkLetter")).toHaveText("Share");
+    ok(!(await page.evaluate(() => document.querySelector(".w-talk")._entry.api.running())), "still running after Share");
+  });
+
+  test("v7.14: Stations — the Group Maker's groups for the class (or its own by count) × named stations × a rotating timer; Next moves everyone one station on; the rotation survives a scene switch", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await rosters(page);
+    await dh.addW("addGroupsBtn"); await page.keyboard.press("Escape");
+    await page.selectOption(".w-groups .pkSel", "5th");
+    await page.click('.w-groups .chip[data-by="count"][data-n="4"]');
+    await page.click(".w-groups .gpGo");
+    const made = await page.evaluate(() => [...document.querySelectorAll(".w-groups .gpCard")].map(c => [...c.querySelectorAll("span")].map(s => s.textContent).join("+")));
+    await dh.addW("addStationsBtn"); await page.keyboard.press("Escape");
+    await place(page);
+    await page.selectOption(".w-stations .pkSel", "5th");
+    const st = () => page.evaluate(() => { const s = document.querySelector(".w-stations")._entry.api.state(); return { rot: s.rot, done: s.done, groups: s.groups.map(g => g.join("+")), running: !!s.endAt, cards: [...document.querySelectorAll(".w-stations .snCard")].map(c => c.querySelector("b").textContent + "=" + c.querySelector("i").textContent) }; });
+    let s = await st();
+    ok(s.groups.join("|") === made.join("|"), "Stations should take the Group Maker's groups: " + s.groups.join("|") + " vs " + made.join("|"));
+    ok(s.cards.join() === "Station 1=Group 1,Station 2=Group 2,Station 3=Group 3,Station 4=Group 4", "rotation 1: " + s.cards.join());
+    await page.click(".w-stations .wEdit");
+    await page.fill(".w-stations .snNames", "Vocabulary\nPractice\nChallenge\nTeacher table");
+    await page.click('.w-stations .snMins .chip[data-n="5"]');
+    await page.click(".w-stations .snDone");
+    await expect(page.locator(".w-stations .snTime")).toHaveText("5:00");
+    await page.click(".w-stations .snGo");
+    await page.click(".w-stations .snNext");
+    s = await st();
+    ok(s.rot === 1 && s.running && s.cards[0] === "Vocabulary=Group 4" && s.cards[1] === "Practice=Group 1", "after Next: " + JSON.stringify(s.cards));
+    await expect(page.locator(".w-stations .snRot")).toHaveText("Rotation 2 of 4");
+    const scenes = await page.evaluate(() => window.Deckhand.config.scenes.map(sc => sc.name));
+    await page.selectOption("#sceneSel", scenes[1]); await page.waitForTimeout(300);
+    await page.selectOption("#sceneSel", scenes[0]); await page.waitForTimeout(500);
+    s = await st();
+    ok(s.rot === 1 && s.running && s.cards[0] === "Vocabulary=Group 4", "the rotation did not survive the scene switch: " + JSON.stringify(s));
+    for (let i = 0; i < 3; i++) await page.click(".w-stations .snNext");
+    s = await st();
+    ok(s.done && !s.running, "the last rotation should end the run: " + JSON.stringify(s));
+    await expect(page.locator(".w-stations .snRot")).toHaveText("All 4 rotations done");
+    await page.keyboard.press("r");
+    s = await st();
+    ok(s.rot === 0 && !s.done, "R");
+    const kept = await page.evaluate(() => window.Deckhand.sanitize(JSON.parse(JSON.stringify(window.Deckhand.config))).scenes[0].widgets.find(w => w.type === "stations"));
+    ok(kept.spots.join("|") === "Vocabulary|Practice|Challenge|Teacher table" && kept.mins === 5 && kept.count === 4, "sanitize: " + JSON.stringify(kept));
+  });
+
+  test("v7.14: the Number Line — a tap places a point, a drag moves it, a tap on it takes it away; Jump draws an arc with its signed length; range and step; Undo and Clear; marks survive a scene switch", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addNumlineBtn"); await page.keyboard.press("Escape");
+    await place(page);
+    const svg = await page.$(".w-numline .nlSvg"); const b = await svg.boundingBox();
+    const xOf = v => b.x + b.width * ((70 + (v + 10) / 20 * 860) / 1000), y = b.y + b.height * (190 / 300);
+    const marks = () => page.evaluate(() => document.querySelector(".w-numline")._entry.api.marks());
+    await page.mouse.click(xOf(-7), y);
+    await page.mouse.click(xOf(3), y);
+    let m = await marks();
+    ok(m.points.join() === "-7,3", "points: " + m.points.join());
+    await page.mouse.move(xOf(3), y); await page.mouse.down(); await page.mouse.move(xOf(5), y, { steps: 5 }); await page.mouse.up();
+    m = await marks();
+    ok(m.points.join() === "-7,5", "drag: " + m.points.join());
+    await page.click('.w-numline .chip[data-mode="jump"]');
+    await page.mouse.move(xOf(-7), y); await page.mouse.down(); await page.mouse.move(xOf(-3), y, { steps: 5 }); await page.mouse.up();
+    m = await marks();
+    ok(m.jumps.length === 1 && m.jumps[0].join() === "-7,-3", "jump: " + JSON.stringify(m.jumps));
+    await expect(page.locator(".w-numline .nlJLab")).toHaveText("+4");
+    await page.mouse.move(xOf(5), y); await page.mouse.down(); await page.mouse.move(xOf(-2), y, { steps: 5 }); await page.mouse.up();
+    await expect(page.locator(".w-numline .nlJLab >> nth=1")).toHaveText("−7");
+    ok(await page.locator(".w-numline .nlJump.neg").count() === 1, "a negative jump is drawn navy");
+    await page.click('.w-numline .chip[data-mode="point"]');
+    await page.mouse.click(xOf(5), y);                                 // a tap on the point removes it
+    m = await marks();
+    ok(m.points.join() === "-7", "tap-remove: " + m.points.join());
+    await page.click(".w-numline .nlUndo");                             // the last thing placed was a jump
+    m = await marks();
+    ok(m.jumps.length === 1 && m.points.length === 1, "undo: " + JSON.stringify(m));
+    // range: 0 to 1 by 0.25 — marks off the new line are dropped
+    await page.fill('.w-numline .nlIn[data-k="step"]', "0.25"); await page.press('.w-numline .nlIn[data-k="step"]', "Enter");
+    await page.fill('.w-numline .nlIn[data-k="min"]', "0"); await page.press('.w-numline .nlIn[data-k="min"]', "Enter");
+    await page.fill('.w-numline .nlIn[data-k="max"]', "1"); await page.press('.w-numline .nlIn[data-k="max"]', "Enter");
+    const line = await page.evaluate(() => JSON.stringify(window.Deckhand.config.scenes[0].widgets.find(w => w.type === "numline").line));
+    ok(line === '{"min":0,"max":1,"step":0.25}', "line: " + line);
+    m = await marks();
+    ok(m.points.length === 0 && m.jumps.length === 0, "marks off the new line should go: " + JSON.stringify(m));
+    const labels = await page.evaluate(() => [...document.querySelectorAll(".w-numline .nlLab")].map(t => t.textContent).join());
+    ok(labels === "0,0.25,0.5,0.75,1", "labels: " + labels);
+    const bb = await svg.boundingBox();
+    await page.mouse.click(bb.x + bb.width * ((70 + 0.5 * 860) / 1000), bb.y + bb.height * (190 / 300));
+    m = await marks();
+    ok(m.points.join() === "0.5", "a point at 0.5: " + m.points.join());
+    const scenes = await page.evaluate(() => window.Deckhand.config.scenes.map(sc => sc.name));
+    await page.selectOption("#sceneSel", scenes[1]); await page.waitForTimeout(300);
+    await page.selectOption("#sceneSel", scenes[0]); await page.waitForTimeout(400);
+    m = await marks();
+    ok(m.points.join() === "0.5", "the marks did not survive the scene switch");
+    await page.click(".w-numline .nlClear");
+    ok((await marks()).points.length === 0, "Clear");
+    await page.click("#undoToast button");
+    ok((await marks()).points.join() === "0.5", "Undo after Clear");
+  });
+});
