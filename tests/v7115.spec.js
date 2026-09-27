@@ -160,3 +160,83 @@ test.describe("v7.11.6", () => {
     ok(inside2, "the tally count left its card after +1");
   });
 });
+
+/* v7.12 — "Read from the back row" (the tools audit, §3 items 1–8) */
+test.describe("v7.12", () => {
+  test("v7.12: the spinner fits its card, the tallies stack face-over-count, a reset button with Undo on the probability kit, the scoreboard and the tally", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T10:30");
+    await dh.launch();
+    await dh.addW("addSpinBtn");
+    const fit = await page.evaluate(() => {
+      const w = document.querySelector(".w-spin"), wheel = w.querySelector(".spWrap"), go = w.querySelector(".spGo");
+      const a = w.getBoundingClientRect(), b = wheel.getBoundingClientRect(), c = go.getBoundingClientRect();
+      const strip = w.querySelector(".strip").getBoundingClientRect();
+      return b.top >= strip.bottom - 1 && c.bottom <= a.bottom - 6;
+    });
+    ok(fit, "the spinner's wheel or button leaves the card");
+    // each tally entry is a column: the face, then the count — never "8 1"
+    await dh.addW("addDiceBtn");
+    await page.click(".w-dice .btn >> nth=0");
+    await page.waitForTimeout(900);
+    const col = await page.evaluate(() => { const s = document.querySelector(".w-dice .prTally > span"); return s && getComputedStyle(s).flexDirection === "column" && !/ /.test(s.firstChild.textContent); });
+    ok(col, "the dice tally is not a column");
+    // Clear with Undo
+    await page.click(".w-dice .tReset");
+    await expect(page.locator("#undoToast")).toBeVisible();
+    ok((await page.evaluate(() => document.querySelector(".w-dice")._entry.api.tally().rolls)) === 0, "Clear did not clear");
+    await page.click("#undoToast button");
+    ok((await page.evaluate(() => document.querySelector(".w-dice")._entry.api.tally().rolls)) === 1, "Undo did not restore the roll");
+    await dh.addW("addScoreBtn");
+    await page.click(".w-score .scB:not(.minus) >> nth=0");
+    await page.click(".w-score .tReset");
+    ok((await page.textContent(".w-score .scScore >> nth=0")) === "0", "Reset scores did not reset");
+    await page.click("#undoToast button");
+    ok((await page.textContent(".w-score .scScore >> nth=0")) === "1", "Undo did not restore the score");
+    // locked: the team-count chips and the rename hide; +1 still works
+    await page.click("#lockBtn");
+    ok(!(await page.isVisible(".w-score .scChips")), "team-count chips showed while locked");
+    await page.click(".w-score .scName >> nth=0");
+    ok(!(await page.$(".w-score .scNameInput")), "rename opened while locked");
+    await page.click(".w-score .scB:not(.minus) >> nth=0");
+    ok((await page.textContent(".w-score .scScore >> nth=0")) === "2", "+1 stopped working while locked");
+    await dh.unlock();
+  });
+
+  test("v7.12: group cards list one name per line at a readable size; the picker's roster message survives the lock; one name per tool; new cards avoid the clock's digits", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T10:30");
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "1st", names: ["Ava","Ben","Cal","Dee","Eli","Fay","Gus"] }]; });
+    await dh.addW("addGroupsBtn");
+    await page.selectOption(".w-groups .pkSel", "1st");
+    await page.click(".w-groups .gpGo");
+    const g = await page.evaluate(() => { const c = document.querySelector(".w-groups .gpCard span"); return { fs: parseFloat(getComputedStyle(c).fontSize), block: getComputedStyle(c).display }; });
+    ok(g.fs >= 18 && g.block === "block", "group names are not readable lines: " + JSON.stringify(g));
+    ok((await page.textContent(".w-groups .gpGo")) === "Shuffle", "the button did not become Shuffle");
+    // the picker with no roster for the period says so, locked or not
+    await dh.addW("addPickerBtn");
+    await page.selectOption(".w-picker .pkSel", "1st");
+    await page.evaluate(() => { window.Deckhand.config.rosters = []; });
+    await page.waitForTimeout(5200);   // the 5 s refresh
+    await page.click("#lockBtn");
+    await expect(page.locator(".w-picker .pkEmpty")).toBeVisible();
+    await expect(page.locator(".w-picker .pkEmpty")).toHaveText("Add class rosters in Settings");
+    await dh.unlock();
+    // one name per tool: a second Name Picker is "Name Picker 2" on the card
+    await dh.addW("addPickerBtn");
+    const cap = await page.evaluate(() => Array.from(document.querySelectorAll(".w-picker")).map(w => w.getAttribute("data-label") || "").join("|"));
+    ok(/Name Picker 2/.test(cap), "the second picker's caption: " + cap);
+    // a board saved with the old default label is not a custom name
+    const legacy = await page.evaluate(() => { const c = window.Deckhand.config; c.scenes[0].widgets.push({ type: "text", x: 60, y: 60, w: 30, h: 30, label: "Note", html: "" }); window.Deckhand.canvas.loadScene(); return !!document.querySelector('.w-text.wNamed'); });
+    ok(!legacy, '"Note" from an old board showed as a custom caption');
+    // new cards spawn in a corner, never on the clock's digits
+    await dh.openAt("#t=2026-09-28T10:30");
+    await dh.launch();
+    await dh.addW("addTimerBtn");
+    const clear = await page.evaluate(() => {
+      const t = document.querySelector(".w-timer").getBoundingClientRect(), d = document.getElementById("clock");
+      const b = d.getBoundingClientRect();
+      return { ok: !(t.left < b.right && t.right > b.left && t.top < b.bottom && t.bottom > b.top), t: [t.left, t.top, t.right, t.bottom], b: [b.left, b.top, b.right, b.bottom] };
+    });
+    ok(clear.ok, "the new card covers the clock's digits: " + JSON.stringify(clear));
+  });
+});

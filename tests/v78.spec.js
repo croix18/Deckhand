@@ -204,7 +204,7 @@ test.describe("v7.8 the probability kit", () => {
     ok(s.rolls === 1 && Object.keys(s.counts).every(k => +k >= 1 && +k <= 6), "one-die tally: " + JSON.stringify(s));
     await page.click("#addBtn");
     const labels = await page.$$eval("#addMenu .menuLabel", ls => ls.map(l => l.textContent));
-    ok(labels.join() === "Time,Students,Classroom,Board,Probability", "menu headings: " + labels.join());
+    ok(labels.join() === "Time,Class,Room,Post,Media,Math", "menu headings: " + labels.join());
     for (const id of ["addDiceBtn", "addCoinBtn", "addSpinBtn", "addCardsBtn"]) await expect(page.locator("#" + id)).toBeVisible();
     await page.keyboard.press("Escape");
     const pg = await dh.loadFixture("tmp_kit.html", JSON.stringify({

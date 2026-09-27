@@ -133,7 +133,7 @@ test.describe("students: absent, groups, agenda", () => {
     await page.click(".w-groups .gpGo");
     const kids = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".w-groups .gpCard"))
-        .map(c => c.textContent.replace(/GROUP \d+/, "")).join(","));
+        .flatMap(c => Array.from(c.querySelectorAll("span"), sp => sp.textContent)).join(","));   // v7.12: one name per line
     const set = kids.split(",").map(s => s.trim()).filter(Boolean).sort().join("");
     ok(set === "DEF", "absent kids grouped: " + kids);
     // absence never touches config (session-only by design)
@@ -150,7 +150,7 @@ test.describe("students: absent, groups, agenda", () => {
     await page.click(".w-groups .gpGo");
     const sizes = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".w-groups .gpCard"))
-        .map(c => c.textContent.replace(/GROUP \d+/, "").split(",").length));
+        .map(c => c.querySelectorAll("span").length));   // v7.12: one name per line
     ok(sizes.length === 3 && sizes.reduce((a, b) => a + b, 0) === 7,
       "count mode: " + sizes.join(","));
     const wcfg = await page.evaluate(() => {
@@ -263,7 +263,7 @@ test.describe("v6.13 design pass", () => {
       "strip targets: " + JSON.stringify(m));
     await page.click("#addBtn");
     const labels = await page.locator("#addMenu .menuLabel").allTextContents();
-    ok(labels.join("|") === "Time|Students|Classroom|Board|Probability",   // v7.8: the kit
+    ok(labels.join("|") === "Time|Class|Room|Post|Media|Math",   // v7.12: regrouped (the tools audit)
       "menu groups: " + labels.join("|"));
     // v7.0: the popover is a group, not a menu
     ok(await dh.attr("#addMenu", "role") === "group", "add menu role: " + await dh.attr("#addMenu", "role"));

@@ -555,6 +555,16 @@
     max-width:calc(100vw - 40px); overflow:hidden; text-overflow:ellipsis;
   }
   #greetToast[hidden]{display:none;}
+  /* v7.12: the undo toast — above the dock, tappable */
+  #undoToast{
+    position:fixed; bottom:96px; left:50%; transform:translateX(-50%); z-index:16;
+    background:var(--navy); color:var(--white); border-radius:999px;
+    padding:8px 8px 8px 22px; font-weight:700; font-size:clamp(14px, 1.2vw, 19px);
+    box-shadow:4px 6px 0 var(--shadow); display:flex; align-items:center; gap:14px; white-space:nowrap;
+  }
+  #undoToast[hidden]{display:none;}
+  #undoToast button{font:inherit; font-weight:900; background:var(--turq); color:var(--navy); border:none; border-radius:999px; padding:8px 18px; min-height:44px; cursor:pointer;}
+  .btn.ghost{background:var(--white); color:var(--navy); border:3px solid var(--navy);}
   body.waveMotion #greetToast{animation:toastIn .4s cubic-bezier(.2,.9,.3,1.2);}
   @keyframes toastIn{from{opacity:0; transform:translateX(-50%) translateY(-12px);} to{opacity:1; transform:translateX(-50%);}}
   #verNudge{
@@ -601,13 +611,13 @@
     background:none; border:none; cursor:pointer; color:inherit; opacity:.65;
     font:inherit; font-weight:900; font-size:18px; padding:2px 6px; line-height:1;
   }
-  .wClose:hover{opacity:1;}
+  @media (hover:hover){ .wClose:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
   body.locked .wClose{display:none;}
   .wEdit{
     background:none; border:none; cursor:pointer; color:inherit; opacity:.65;
     font:inherit; font-weight:900; font-size:16px; padding:2px 8px; line-height:1;
   }
-  .wEdit:hover{opacity:1;}
+  @media (hover:hover){ .wEdit:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
   body.locked .wEdit{display:none;}
   /* 44px effective touch targets for the strip icons (they measured
      27×20 — 43% of the minimum, INSIDE a drag surface where a missed
@@ -680,7 +690,7 @@
     padding:9px 18px; cursor:pointer; opacity:.88;
     display:inline-flex; align-items:center; gap:7px;
   }
-  #focusBar button:hover{opacity:1;}
+  @media (hover:hover){ #focusBar button:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
 
   /* ===== v6.14 STAGE MODE: direct instruction gets the WHOLE screen =====
      (Croix, field: "look at all the space the date and top bar are
@@ -708,7 +718,7 @@
     background:none; border:none; cursor:pointer; color:inherit; opacity:.65;
     font:inherit; font-weight:900; font-size:15px; padding:2px 8px; line-height:1;
   }
-  .wFocus:hover{opacity:1;}
+  @media (hover:hover){ .wFocus:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
   .wFocus[aria-pressed="true"]{opacity:1;}
   /* Pin (⇈): keep this widget floating above EVERYTHING — including a
      ⛶-focused deck — so a timer can live in a corner of the slides.
@@ -717,7 +727,7 @@
     background:none; border:none; cursor:pointer; color:inherit; opacity:.5;
     font:inherit; font-weight:900; font-size:15px; padding:2px 8px; line-height:1;
   }
-  .wPin:hover{opacity:1;}
+  @media (hover:hover){ .wPin:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
   .wPin[aria-pressed="true"]{opacity:1;}
   body.locked .wPin{display:none;}
   .widget.wFull .wHandle{display:none;}          /* no resizing a focused widget */
@@ -850,24 +860,24 @@
   .widget .visWrap.disc .visDigits{font-size:clamp(12px, 8cqmin, 26px);}
   .widget .visWrap.disc .visDigits.longNum{font-size:clamp(10px, 5.5cqmin, 19px);}
   .widget .chips{gap:1.4cqw;}
-  .widget .chip{font-size:clamp(11px, 2.8cqw, 21px); padding:1.2cqh 2.6cqw;}
-  .widget .btn{font-size:clamp(12px, 3.2cqw, 23px); padding:1.6cqh 3.4cqw;}
+  /* v7.12 (audit): 44 px chips and 48 px buttons — the panel's finger, not a mouse */
+  .widget .chip{font-size:clamp(11px, 2.8cqw, 21px); padding:1.2cqh 2.6cqw; min-height:44px;}
+  .widget .btn{font-size:clamp(12px, 3.2cqw, 23px); padding:1.6cqh 3.4cqw; min-height:48px;}
   .widget .row{gap:1.6cqw;}
   .widget .tHint{font-size:clamp(9px, 1.8cqw, 13px); color:var(--teal); font-weight:500; text-align:center; min-height:1.2em;}
   body.locked .widget .tHint{display:none;}   /* v7.8.1: shortcut hints are for the teacher, not the room */
-  .w-timer .strip{background:var(--teal); color:var(--white);}
-  .w-stopwatch .strip{background:var(--navy); color:var(--white);}
-  .w-clock .strip{background:var(--turq); color:var(--navy);}
-  .w-bell .strip{background:var(--sand); color:var(--navy);}
-  .w-picker .strip{background:var(--paleturq); color:var(--navy);}
-  .w-groups .strip{background:var(--teal); color:var(--white);}
+  /* v7.12 (audit): empty-state and error text is for the ROOM — it lives in .wEmpty, which the lock keeps */
+  .wEmpty{font-weight:700; color:var(--teal); text-align:center; font-size:clamp(13px, 4cqmin, 26px); max-width:92%; line-height:1.3;}
+  .wEmpty:empty{display:none;}
+  /* v7.12: setup controls hide with the lock, like every ✎ row */
+  body.locked .scChips, body.locked .tlChips, body.locked .mtRow, body.locked .qrIn{display:none;}   /* (dice/coin/spinner counts and group size stay: those are lesson-time choices) */
 
   /* name picker + group maker */
   .pkRow{display:flex; align-items:center; gap:1.6cqw; flex-wrap:wrap; justify-content:center;}
   .pkSel{
     font:inherit; font-weight:700; color:var(--navy); background:var(--paleturq);
-    border:none; border-radius:999px; padding:0.9cqh 2.2cqw;
-    font-size:clamp(11px, 2.6cqw, 18px); max-width:90%;
+    border:none; border-radius:999px; padding:0.9cqh 2.2cqw; min-height:44px;
+    font-size:clamp(12px, 3cqw, 20px); max-width:90%;
   }
   .pkSel:focus-visible{outline:3px solid var(--turq); outline-offset:1px;}
   .pkLeft{font-size:clamp(10px, 2.2cqw, 15px); color:var(--teal); font-weight:700;}
@@ -894,22 +904,22 @@
     max-width:96%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .pkName.spin{color:var(--teal);}
+  /* v7.12 (audit: "the worst card on the board" — 12 px chips over an empty half): a grid of
+     group cards that fills the card, one name per line, sized to the card */
   .gpOut{
     width:96%; flex:1; min-height:0; overflow:auto;
-    display:flex; flex-wrap:wrap; gap:1.4cqmin; align-content:flex-start; justify-content:center;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 8em), 1fr)); gap:1.4cqmin; align-content:start;
+    font-size:clamp(13px, 4.6cqmin, 40px);
   }
+  .gpOut:empty{display:none;}
   .gpCard{
-    background:var(--paleturq); border-radius:12px; padding:1cqh 1.8cqw;
-    font-weight:700; color:var(--navy); font-size:clamp(11px, 2.4cqw, 19px);
-    max-width:46%;
+    background:var(--paleturq); border-radius:14px; padding:.35em .6em;
+    font-weight:700; color:var(--navy); line-height:1.15;
   }
-  .gpCard b{display:block; color:var(--teal); font-size:0.78em; letter-spacing:.08em;}
+  .gpCard b{display:block; color:var(--teal); font-size:.6em; letter-spacing:.1em; margin-bottom:.15em;}
+  .gpCard span{display:block;}
 
   /* ===== wave 2: text, work symbols, dice, scoreboard ===== */
-  .w-text .strip{background:var(--grid); color:var(--navy);}
-  .w-work .strip{background:var(--navy); color:var(--white);}
-  .w-dice .strip{background:var(--sand); color:var(--navy);}
-  .w-score .strip{background:var(--teal); color:var(--white);}
 
   /* text/announcement box (v7.1: rich text, bigger by default) */
   .txBody{display:flex; flex-direction:column; gap:6px;}
@@ -947,7 +957,7 @@
     min-width:40px; min-height:40px; padding:4px 9px; border:0; border-radius:8px; cursor:pointer;
     background:transparent; color:var(--navy); font:inherit; font-weight:900; font-size:15px;
   }
-  .txTool:hover{background:var(--paleturq);}
+  @media (hover:hover){ .txTool:hover{background:var(--paleturq);} }   /* v7.12: no sticky hover on the panel */
   .txTool[aria-pressed="true"]{background:var(--turq);}
   .txSwatch{min-width:30px; width:30px; height:30px; min-height:30px; border-radius:50%; margin:5px 3px;
     border:2px solid var(--white); box-shadow:0 0 0 1px var(--grid);}
@@ -963,15 +973,15 @@
   /* work symbols / voice level */
   .wkBadge{
     font-weight:900; text-align:center; line-height:1.05; letter-spacing:.04em;
-    font-size:clamp(20px, 8.4cqw, 72px);
-    padding:1.6cqh 5cqw; border-radius:999px; max-width:94%;
+    font-size:clamp(20px, 13cqw, 110px);   /* v7.12: the card the room reads most */
+    padding:1.2cqh 5cqw; border-radius:999px; max-width:96%;
   }
   .wkBadge.silent{background:var(--navy); color:var(--white);}
   .wkBadge.whisper{background:var(--sand); color:var(--navy);}
   .wkBadge.partners{background:var(--paleturq); color:var(--navy);}
   .wkBadge.groups{background:var(--turq); color:var(--navy);}
   .wkSub{color:var(--teal); font-weight:700; text-align:center;
-    font-size:clamp(12px, 3cqw, 24px);}
+    font-size:clamp(12px, 4.4cqw, 34px);}
 
   /* dice */
   .dcFaces{display:flex; gap:3cqw; align-items:center; justify-content:center;
@@ -986,14 +996,16 @@
     65%{transform:rotate(11deg);}
   }
   @media (prefers-reduced-motion: reduce){ .die.shake{animation:none;} }
-  .dcTotal{font-weight:900; color:var(--teal); font-variant-numeric:tabular-nums;
-    font-size:clamp(14px, 3.6cqw, 30px); min-height:1.2em;}
+  .dcTotal{font-weight:900; color:var(--navy); font-variant-numeric:tabular-nums;
+    font-size:clamp(18px, 9cqmin, 80px); min-height:1.2em; line-height:1;}   /* v7.12: the sum IS the math */
   /* v7.8 the probability kit: coin, spinner, cards — each keeps a session
      tally, because experimental vs theoretical IS the lesson (MA.7.DP.2) */
-  .w-coin .strip, .w-spin .strip, .w-cards .strip{background:var(--sand); color:var(--navy);}
-  .prTally{display:flex; gap:.6em 1.4em; flex-wrap:wrap; justify-content:center; font-weight:700;
-    color:var(--teal); font-variant-numeric:tabular-nums; font-size:clamp(12px, 3cqw, 24px); min-height:1.2em;}
-  .prTally b{color:var(--navy); font-weight:900;}
+  /* v7.12: each entry is a column — the face on top, the count below — "8 1" used to read as 81 */
+  .prTally{display:flex; gap:.4em 1.2em; flex-wrap:wrap; justify-content:center; align-items:flex-end; font-weight:700;
+    color:var(--teal); font-variant-numeric:tabular-nums; font-size:clamp(12px, 3.2cqw, 26px); min-height:1.2em;}
+  .prTally > span{display:inline-flex; flex-direction:column; align-items:center; line-height:1.05;}
+  .prTally b{color:var(--navy); font-weight:900; font-size:1.25em;}
+  .prTally .prN{flex-direction:row; align-self:center;}
   .prN{font-weight:700; color:var(--navy); opacity:.6; font-size:clamp(11px, 2.4cqw, 18px); font-variant-numeric:tabular-nums;}
   .cnFaces{display:flex; gap:3cqw; align-items:center; justify-content:center; flex-wrap:wrap;}
   .coin{width:clamp(56px, 34cqmin, 260px); aspect-ratio:1/1; display:block;}
@@ -1007,16 +1019,20 @@
     75%{transform:scaleX(.08) translateY(-6px);} 100%{transform:scaleX(1);}
   }
   @media (prefers-reduced-motion: reduce){ .coin.flip{animation:none;} }
-  .spWrap{position:relative; width:clamp(90px, 60cqmin, 420px); aspect-ratio:1/1;}
+  /* v7.12: the wheel fits the card (60cqmin overflowed the strip and the resize nub); the
+     result sits in the hub, so the card needs one less row */
+  .spWrap{position:relative; width:clamp(90px, 48cqmin, 420px); aspect-ratio:1/1; margin-top:2cqh;}
   .spWheel{width:100%; height:100%; display:block; transition:transform 2.2s cubic-bezier(.15,.85,.25,1);}
   .spWheel.noAnim{transition:none;}
   @media (prefers-reduced-motion: reduce){ .spWheel{transition:none;} }
-  .spWheel text{font-family:inherit; font-weight:900; fill:var(--navy); text-anchor:middle; dominant-baseline:central; font-size:11px;}
+  .spWheel text{font-family:inherit; font-weight:900; fill:var(--navy); text-anchor:middle; dominant-baseline:central; font-size:12px; paint-order:stroke; stroke:rgba(255,255,255,.7); stroke-width:2.5px;}
   .spWheel .spSeg{stroke:var(--white); stroke-width:1.2;}
   .spWheel .spHub{fill:var(--white); stroke:var(--navy); stroke-width:2;}
   .spPtr{position:absolute; left:50%; top:-4%; transform:translateX(-50%); width:14%; height:14%;}
   .spPtr path{fill:var(--navy);}
-  .spResult{font-weight:900; color:var(--navy); font-variant-numeric:tabular-nums; font-size:clamp(18px, 8cqw, 64px); line-height:1; min-height:1em;}
+  .spResult{position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); font-weight:900; color:var(--navy);
+    font-variant-numeric:tabular-nums; font-size:clamp(16px, 11cqmin, 72px); line-height:1; min-width:1.6em; min-height:1.6em;
+    display:flex; align-items:center; justify-content:center; background:var(--white); border:3px solid var(--navy); border-radius:50%;}
   .cdRow{display:flex; gap:2cqw; align-items:center; justify-content:center;}
   /* .pcard, NOT .card — that is the widget container's class (the .chip/.ring lesson) */
   .pcard{width:clamp(64px, 30cqmin, 240px); aspect-ratio:5/7; display:block;}
@@ -1035,11 +1051,12 @@
     flex:1; min-width:0; background:var(--paleturq); border-radius:14px;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:0.8cqh; padding:1.2cqh 0.6cqw;
+    container-type:size;                          /* v7.12: the number is sized by ITS panel — 110 px at two teams, not 53 */
   }
   .scName{
     font-family:inherit; font-weight:900; color:var(--teal); background:none; border:none;
     cursor:pointer; letter-spacing:.05em; text-transform:uppercase;
-    font-size:clamp(10px, 2.2cqw, 18px);
+    font-size:clamp(12px, 9cqw, 30px);
     max-width:96%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     /* an 11px-tall tap target (design-review find) — real height, real
        padding, so a finger (or a hit-test skew) can't slide onto the
@@ -1058,7 +1075,7 @@
   }
   .scScore{
     font-weight:900; color:var(--navy); font-variant-numeric:tabular-nums; line-height:1;
-    font-size:clamp(28px, 12cqmin, 100px);
+    font-size:clamp(28px, min(52cqw, 42cqh), 240px);
   }
   /* +1 is the most-tapped button in the room: 44×22 with − only 8px away
      meant a coarse IR tap aimed at +1 could SUBTRACT. Bigger, farther. */
@@ -1073,7 +1090,6 @@
 
   /* ===== wave 4: event countdown, tally, agenda ===== */
   /* ===== youtube (v6.26): the direct line ===== */
-  .w-yt .strip{background:var(--sand); color:var(--navy);}
   .ytStations{flex-wrap:wrap; justify-content:center;}
   .ytStations .ytDel{
     padding:6px 8px; min-width:0; margin-left:-6px;
@@ -1106,7 +1122,6 @@
   .ytName:focus-visible, .ytIn:focus-visible{outline:3px solid var(--turq); outline-offset:1px;}
 
   /* ===== music (v6.25): the self-contained jukebox ===== */
-  .w-music .strip{background:var(--teal); color:var(--white);}
   .muStage{
     flex:1; min-height:0; display:flex; flex-direction:column;
     align-items:center; justify-content:center; gap:10px; text-align:center;
@@ -1118,7 +1133,7 @@
   }
   .muWhat{font-weight:700; font-size:clamp(12px, 6cqw, 17px); color:var(--navy); opacity:.75;}
   .muRow{display:flex; gap:8px; align-items:center; justify-content:center;}
-  .muVol{width:110px; accent-color:var(--turq);}
+  .muVol{width:130px; height:44px; accent-color:var(--turq);}
   .muPlay{min-width:74px;}
   @media (prefers-reduced-motion: no-preference){
     .w-music.muOn .muBars i{animation:muDance 1s ease-in-out infinite alternate;}
@@ -1206,20 +1221,17 @@
   .w-clock.wFull .stBig{font-size:clamp(80px, 34cqh, 560px);}
   .w-clock.wFull .stBig.stMsgB{font-size:clamp(32px, 8cqw, 150px);}
   .w-clock.wFull .stSub{font-size:clamp(16px, 2.4cqw, 40px);}
-  .w-event .strip{background:var(--paleturq); color:var(--navy);}
-  .w-tally .strip{background:var(--turq); color:var(--navy);}
-  .w-agenda .strip{background:var(--teal); color:var(--white);}
 
   /* event countdown */
   .evTitle{font-weight:900; color:var(--teal); letter-spacing:.05em; text-transform:uppercase;
-    font-size:clamp(13px, 4.2cqmin, 30px); text-align:center; max-width:96%;
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    font-size:clamp(14px, 8cqmin, 56px); text-align:center; max-width:96%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}   /* v7.12: what it counts to, readable */
   .evTitle[hidden]{display:none;}
   .evBig{font-weight:900; color:var(--navy); line-height:1; text-align:center;
     font-variant-numeric:tabular-nums; font-size:clamp(30px, 24cqmin, 150px);}
   .evBig.evAccent{color:var(--teal);}
   .evUnit{font-weight:700; color:var(--teal); letter-spacing:.08em; text-transform:uppercase;
-    font-size:clamp(12px, 3.4cqmin, 26px); min-height:1.1em;}
+    font-size:clamp(12px, 6cqmin, 40px); min-height:1.1em;}
   .evSub{font-weight:700; color:var(--navy); opacity:.75; text-align:center;
     font-size:clamp(12px, 3cqw, 22px);}
   .evRow{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:96%;}
@@ -1245,9 +1257,10 @@
     flex:1; min-width:0; background:var(--paleturq); border-radius:14px;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:0.8cqh; padding:1.2cqh 0.6cqw;
+    container-type:size;                          /* v7.12: like .scTeam */
   }
   .tlCount{font-weight:900; color:var(--navy); font-variant-numeric:tabular-nums;
-    line-height:1; font-size:clamp(32px, 26cqmin, 140px);}
+    line-height:1; font-size:clamp(32px, min(50cqw, 46cqh), 260px);}
 
   /* agenda checklist */
   .agList{flex:1; min-height:0; width:96%; overflow:auto;
@@ -1263,7 +1276,7 @@
     font-weight:700; color:var(--navy); line-height:1.25; padding:0.22em 0.3em;
     border-radius:10px;
   }
-  .agItem:hover{background:var(--paleturq);}
+  @media (hover:hover){ .agItem:hover{background:var(--paleturq);} }   /* v7.12: no sticky hover on the panel */
   .agMark{
     flex:none; width:1.05em; height:1.05em; border-radius:50%;
     border:0.14em solid var(--teal); display:inline-flex;
@@ -1305,12 +1318,11 @@
   .agPer{max-width:40%;}
 
   /* ===== wave 3: QR, sound meter, drawing pad ===== */
-  .w-qr .strip{background:var(--paleturq); color:var(--navy);}
-  .w-meter .strip{background:var(--sand); color:var(--navy);}
-  .w-draw .strip{background:var(--grid); color:var(--navy);}
 
   .qrBox{flex:1; min-height:0; width:100%; display:flex; align-items:center; justify-content:center;}
   .qrBox svg{height:100%; max-height:100%; max-width:88%; aspect-ratio:1/1; display:block;}
+  .qrUrl{font-weight:900; color:var(--navy); font-size:clamp(14px, 5.5cqmin, 34px); max-width:94%; overflow-wrap:anywhere; text-align:center; line-height:1.15;}
+  .qrUrl[hidden]{display:none;}
   .qrIn{
     width:88%; font-family:inherit; font-weight:600; color:var(--navy);
     font-size:clamp(11px, 2.4cqw, 16px);
@@ -1339,24 +1351,25 @@
   .w-meter.tooLoud{outline:4px solid var(--coral); outline-offset:-4px;}
   .mtRow{display:flex; align-items:center; gap:10px; font-weight:700; color:var(--teal);
     font-size:clamp(11px, 2.4cqw, 15px);}
-  .mtRow input{accent-color:var(--teal); width:clamp(90px, 40cqw, 220px);}
+  .mtRow input{accent-color:var(--teal); width:clamp(90px, 40cqw, 220px); height:36px;}
   .mtBtn[hidden]{display:none;}
   .mtStreak{
     font-weight:900; font-variant-numeric:tabular-nums; line-height:1;
-    color:var(--navy); font-size:clamp(30px, 17cqmin, 100px);
+    color:var(--navy); font-size:clamp(30px, 14cqmin, 100px);
   }
+  .w-meter .wBody{gap:0.9cqh;}                    /* v7.12: seven rows in one card — tight */
   .mtStreakLab{
     color:var(--teal); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
     font-size:clamp(10px, 2.3cqw, 16px);
   }
   .mtStrikes{
     min-height:1.2em; font-weight:900; color:var(--coral);
-    font-size:clamp(15px, 3.6cqw, 30px); letter-spacing:.15em;
+    font-size:clamp(15px, 6cqmin, 44px); letter-spacing:.15em;
   }
-  .mtRecord{color:var(--teal); font-weight:700; font-size:clamp(11px, 2.4cqw, 17px);}
+  .mtRecord{color:var(--teal); font-weight:700; font-size:clamp(12px, 4.4cqmin, 28px);}   /* v7.12: the stakes, readable */
   .mtTally{color:var(--navy); font-weight:700; font-size:clamp(11px, 2.6cqw, 18px); min-height:1.2em;}
   .mtTally:empty{display:none;}
-  .chipSm{font-size:13px; padding:8px 12px; min-height:40px;}
+  .widget .chip.chipSm{font-size:13px; padding:6px 12px; min-height:36px;}   /* the meter's setup row stays compact */
   .mtSensChips{gap:6px;}
   body.locked .mtSens{display:none;}
   .w-meter.strikeFlash{animation:strikePulse .9s ease;}
@@ -1376,24 +1389,23 @@
   .dwCanvas{touch-action:none; cursor:crosshair; background:transparent;}
   .dwBgSel{
     font:inherit; font-weight:700; font-size:clamp(10px, 2.2cqw, 15px); color:var(--navy);
-    background:var(--paleturq); border:none; border-radius:999px; padding:4px 10px; min-height:32px;
+    background:var(--paleturq); border:none; border-radius:999px; padding:4px 12px; min-height:44px;
   }
   .dwTools{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;}
   .dwChips{display:flex; gap:6px;}
   .dwChip{
-    width:clamp(20px, 4.5cqw, 34px); height:clamp(20px, 4.5cqw, 34px);
+    width:clamp(32px, 7cqw, 44px); height:clamp(32px, 7cqw, 44px);
     border-radius:50%; border:3px solid transparent; cursor:pointer; padding:0;
   }
   .dwChip[aria-pressed="true"]{border-color:var(--navy); box-shadow:0 0 0 2px var(--white) inset;}
   .dwTool{
     font-family:inherit; font-weight:700; border:2px solid var(--navy); background:var(--white);
     color:var(--navy); border-radius:999px; cursor:pointer;
-    font-size:clamp(10px, 2.2cqw, 15px); padding:3px 12px;
+    font-size:clamp(12px, 2.6cqw, 17px); padding:3px 14px; min-height:44px;
   }
   .dwTool[aria-pressed="true"]{background:var(--navy); color:var(--white);}
 
   /* ===== Slides / embed card ===== */
-  .w-embed .strip{background:var(--navy); color:var(--white);}
   .embBody{padding:0; gap:0;}
   .embEmpty{
     flex:1; display:flex; flex-direction:column; align-items:center;
@@ -1477,7 +1489,7 @@
            font-size:clamp(20px, 11cqmin, 52px);}
   .bellBig.bellLong{font-size:clamp(15px, 8cqmin, 38px);}
   .bellSmall{font-weight:700; color:var(--teal); line-height:1.25;
-             font-size:clamp(10px, 3.6cqmin, 18px); max-width:34cqmin;}
+             font-size:clamp(11px, 5cqmin, 26px); max-width:40cqmin;}
   /* the urgent chip paints coral BEHIND these lines now — navy ink
      (coral-on-coral made the "until bell" label invisible, HIGH find) */
   .visWrap.low .bellSmall{color:var(--navy);}
@@ -1636,16 +1648,19 @@
     display:flex; align-items:center; gap:10px;
   }
   /* + Add: tiles in three columns under four headings */
+  /* v7.12 (audit): one row per group with the heading on the left — six rows, ~560 px, so the
+     menu sits above the dock and below most of the clock's digits instead of covering them */
   #addMenu{
-    display:grid; grid-template-columns:repeat(3, 160px); gap:8px;
-    padding:12px; align-content:start;
+    display:grid; grid-template-columns:72px repeat(5, 150px); gap:8px;
+    padding:12px; align-content:start; align-items:center;
   }
+  #addMenu .menuLabel{grid-column:1; align-self:center; padding:0 4px;}
   .menuLabel{                            /* also the YouTube library's headings (navy ground) */
-    grid-column:1 / -1; color:var(--turq);
+    grid-column:1 / -1; color:var(--turq);   /* (the + Add menu overrides: one column on the left) */
     font-weight:900; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
     padding:4px 6px 0; line-height:1.2;
   }
-  #addMenu .menuLabel{color:var(--teal); padding:4px 4px 0;}   /* white ground */
+  #addMenu .menuLabel{color:var(--teal);}   /* white ground */
   .popNote{
     grid-column:1 / -1; background:var(--sand); color:var(--navy); border-radius:10px;
     padding:10px 14px; font-weight:700; font-size:13px;
@@ -1671,11 +1686,9 @@
   /* 20 tiles in three columns outgrow a 1080p screen by a hair and a
      768px one by a mile: go wider, not taller (the menu must never scroll
      mid-lesson) */
-  @media (max-height: 1100px){
-    #addMenu{grid-template-columns:repeat(5, 160px);}   /* v7.8: 23 tiles under five headings */
-  }
   @media (max-height: 820px){
-    #addMenu{grid-template-columns:repeat(6, 160px);}
+    #addMenu{grid-template-columns:72px repeat(5, 140px);}
+    #addMenu .tile{min-height:70px;}
   }
   /* ⋯ scene manager: the current scene as the heading, one field, a list */
   #sceneMenu{display:flex; flex-direction:column; min-width:300px;}
@@ -2743,6 +2756,7 @@
       width:auto; max-height:calc(100dvh - 100px); overflow-y:auto;
     }
     #addMenu{grid-template-columns:repeat(2, minmax(0, 1fr));}
+    #addMenu .menuLabel{grid-column:1 / -1;}   /* the phone layout keeps headings above their row */
   }
 </style>
 </head>
@@ -3021,23 +3035,24 @@
       <button class="tile" id="addBellBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-bell"/></svg><span class="tName">Next Bell</span><span class="tDesc">Ring down to the bell</span></button>
       <button class="tile" id="addClockBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-clock"/></svg><span class="tName">Clock</span><span class="tDesc">Time, period and bells</span></button>
       <button class="tile" id="addEventBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-countdown"/></svg><span class="tName">Countdown</span><span class="tDesc">Days until the test</span></button>
-      <div class="menuLabel">Students</div>
+      <div class="menuLabel">Class</div>
       <button class="tile" id="addPickerBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-picker"/></svg><span class="tName">Name Picker</span><span class="tDesc">Random, no repeats</span></button>
       <button class="tile" id="addGroupsBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-groups"/></svg><span class="tName">Group Maker</span><span class="tDesc">Shuffle into teams</span></button>
       <button class="tile" id="addScoreBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-score"/></svg><span class="tName">Scoreboard</span><span class="tDesc">Points for teams</span></button>
       <button class="tile" id="addTallyBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-tally"/></svg><span class="tName">Tally</span><span class="tDesc">Big tap counters</span></button>
-      <div class="menuLabel">Classroom</div>
-      <button class="tile" id="addMusicBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-music"/></svg><span class="tName">Music</span><span class="tDesc">Quiet lo-fi for work</span></button>
+      <div class="menuLabel">Room</div>
       <button class="tile" id="addWorkBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-work"/></svg><span class="tName">Work Mode</span><span class="tDesc">Silent to group work</span></button>
       <button class="tile" id="addMeterBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-meter"/></svg><span class="tName">Noise Meter</span><span class="tDesc">Quiet streaks, records</span></button>
+      <button class="tile" id="addMusicBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-music"/></svg><span class="tName">Music</span><span class="tDesc">Quiet lo-fi for work</span></button>
+      <div class="menuLabel">Post</div>
       <button class="tile" id="addAgendaBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-agenda"/></svg><span class="tName">Agenda</span><span class="tDesc">Today&rsquo;s plan, live</span></button>
       <button class="tile" id="addTextBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-note"/></svg><span class="tName">Text Box</span><span class="tDesc">A note on the board</span></button>
       <button class="tile" id="addQrBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-qr"/></svg><span class="tName">QR Code</span><span class="tDesc">A link kids can scan</span></button>
-      <div class="menuLabel">Board</div>
+      <div class="menuLabel">Media</div>
       <button class="tile" id="addEmbedBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-slides"/></svg><span class="tName">Slides / Embed</span><span class="tDesc">Slides or a web page</span></button>
       <button class="tile" id="addYtBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-youtube"/></svg><span class="tName">YouTube</span><span class="tDesc">A video on the board</span></button>
+      <div class="menuLabel">Math</div>
       <button class="tile" id="addDrawBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-sketch"/></svg><span class="tName">Sketch Pad</span><span class="tDesc">Grid, number line, plane</span></button>
-      <div class="menuLabel">Probability</div>
       <button class="tile" id="addDiceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-dice"/></svg><span class="tName">Dice</span><span class="tDesc">Roll 1&ndash;3, keep a tally</span></button>
       <button class="tile" id="addCoinBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-coin"/></svg><span class="tName">Coin</span><span class="tDesc">Flip 1&ndash;3, heads vs tails</span></button>
       <button class="tile" id="addSpinBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-spin"/></svg><span class="tName">Spinner</span><span class="tDesc">2&ndash;8 equal sectors</span></button>
@@ -4648,6 +4663,25 @@ document.addEventListener("contextmenu", function(e){
   if (e.target.closest("input, textarea, select")) return;
   e.preventDefault();
 });
+/* v7.12 (audit): a reset from a touch button or the R key shows a five-second toast with
+   Undo — clearing a scoreboard by a mis-tap in front of a class must be one tap to take back */
+var Undo = (function(){
+  var el = null, tid = null, fn = null;
+  function ensure(){
+    if (el) return;
+    el = document.createElement("div"); el.id = "undoToast"; el.hidden = true; el.setAttribute("role", "status");
+    el.innerHTML = '<span></span><button type="button">Undo</button>';
+    document.body.appendChild(el);
+    wireButton(el.querySelector("button"), function(){ var f = fn; hide(); if (f) f(); });
+  }
+  function hide(){ clearTimeout(tid); tid = null; fn = null; if (el) el.hidden = true; }
+  function show(text, restore){
+    ensure();
+    el.querySelector("span").textContent = text; fn = restore; el.hidden = false;
+    clearTimeout(tid); tid = setTimeout(hide, 5000);
+  }
+  return { show: show, hide: hide };
+})();
 function wireButton(btn, fn){
   btn.addEventListener("click", function(e){
     fn(e);
@@ -6160,6 +6194,7 @@ function makePicker(host, wcfg){
       '<div class="pkRow"><select class="pkSel" aria-label="Class period"></select>' +
       '<span class="pkLeft"></span></div>' +
       '<div class="pkName">—</div>' +
+      '<div class="wEmpty pkEmpty"></div>' +
       '<div class="row">' +
         '<button class="btn pkGo" type="button" style="background:var(--turq); color:var(--navy)">Pick</button>' +
         '<button class="btn pkReset" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy)">Reset</button>' +
@@ -6184,14 +6219,17 @@ function makePicker(host, wcfg){
   function paint(){
     var p = period.current();
     var names = p ? Rosters.namesFor(p) : [];
+    var emptyEl = host.querySelector(".pkEmpty");
     if (!names.length){
       nameEl.textContent = "—";
       leftEl.textContent = "";
-      hintEl.textContent = cfg.rosters.length
+      emptyEl.textContent = cfg.rosters.length
         ? "No roster for this period — pick one above"
         : "Add class rosters in Settings";
+      hintEl.textContent = "";
       return;
     }
+    emptyEl.textContent = "";
     hintEl.textContent = "Space picks · R restarts the round";
     var present = Absent.presentFor(p);
     var left = poolPeriod === p
@@ -6280,7 +6318,7 @@ function makeGroups(host, wcfg){
   if (!(wcfg.count >= 2 && wcfg.count <= 8)) wcfg.count = 4;
   var q = function(s){ return host.querySelector(s); };
   var sel = q(".pkSel"), sizeWrap = q(".gpSize"), out = q(".gpOut"), hintEl = q(".tHint");
-  var period = buildPeriodSelect(sel, wcfg, function(){ out.innerHTML = ""; paint(); ab.repaint(); });
+  var period = buildPeriodSelect(sel, wcfg, function(){ out.innerHTML = ""; host.classList.remove("made"); q(".gpGo").textContent = "Make groups"; paint(); ab.repaint(); });
   var ab = attachAbsent(host, function(){ return period.current(); },
                         function(){ paint(); });
   var chips = [];
@@ -6344,9 +6382,10 @@ function makeGroups(host, wcfg){
       var b = document.createElement("b");
       b.textContent = "GROUP " + (i + 1);
       card.appendChild(b);
-      card.appendChild(document.createTextNode(g.join(", ")));  // names are user data
+      g.forEach(function(n){ var s = document.createElement("span"); s.textContent = n; card.appendChild(s); });   // names are user data, one per line
       out.appendChild(card);
     });
+    host.classList.add("made"); q(".gpGo").textContent = "Shuffle";   // v7.12: the button's second job
   }
   wireButton(q(".gpGo"), make);
   var refreshTid = setInterval(function(){
@@ -6893,7 +6932,7 @@ function makeDice(host, wcfg){
       '<div class="prTally"></div>' +
       '<div class="chips dcChips" role="group" aria-label="Number of dice"></div>' +
       '<div class="row"><button class="btn dcGo" type="button" ' +
-        'style="background:var(--turq); color:var(--navy)">Roll</button></div>' +
+        'style="background:var(--turq); color:var(--navy)">Roll</button>' + '<button class="btn ghost tReset" type="button">Clear</button>' + '</div>' +
       '<div class="tHint">Space rolls · R clears the tally</div>' +
     '</div>');
   var faces = host.querySelector(".dcFaces");
@@ -6976,10 +7015,17 @@ function makeDice(host, wcfg){
   for (var i = 0; i < wcfg.count; i++) values.push(i + 1);
   paint(false);
   wireButton(host.querySelector(".dcGo"), roll);
+  function clearTally(){
+    if (!rolls) return;
+    var was = { counts: counts, rolls: rolls };
+    counts = Object.create(null); rolls = 0; paint(false);
+    Undo.show("Tally cleared", function(){ counts = was.counts; rolls = was.rolls; paint(false); });
+  }
+  wireButton(host.querySelector(".tReset"), clearTally);
   return {
     kind: "dice",
     label: function(){ return wcfg.label || "Dice"; },
-    startPause: roll, reset: function(){ counts = Object.create(null); rolls = 0; paint(false); },
+    startPause: roll, reset: clearTally,
     tally: function(){ return { counts: Object.assign({}, counts), rolls: rolls }; },   // test hook (v7.8)
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
@@ -6995,7 +7041,7 @@ function tallyLine(el, parts, n, noun){
   el.innerHTML = "";
   parts.forEach(function(pt){
     var sp = document.createElement("span");
-    sp.appendChild(document.createTextNode(pt[0] + " "));
+    sp.appendChild(document.createTextNode(pt[0]));
     var b = document.createElement("b"); b.textContent = pt[1];
     sp.appendChild(b);
     el.appendChild(sp);
@@ -7012,7 +7058,7 @@ function makeCoin(host, wcfg){
       '<div class="prTally"></div>' +
       '<div class="chips cnChips" role="group" aria-label="Number of coins"></div>' +
       '<div class="row"><button class="btn cnGo" type="button" ' +
-        'style="background:var(--turq); color:var(--navy)">Flip</button></div>' +
+        'style="background:var(--turq); color:var(--navy)">Flip</button>' + '<button class="btn ghost tReset" type="button">Clear</button>' + '</div>' +
       '<div class="tHint">Space flips · R clears the tally</div>' +
     '</div>');
   var faces = host.querySelector(".cnFaces"), tallyEl = host.querySelector(".prTally");
@@ -7062,11 +7108,18 @@ function makeCoin(host, wcfg){
   for (var i = 0; i < wcfg.count; i++) values.push(true);
   paint(false);
   wireButton(host.querySelector(".cnGo"), flip);
+  function clearTally(){
+    if (!flips) return;
+    var was = [heads, tails, flips];
+    heads = tails = flips = 0; paint(false);
+    Undo.show("Tally cleared", function(){ heads = was[0]; tails = was[1]; flips = was[2]; paint(false); });
+  }
+  wireButton(host.querySelector(".tReset"), clearTally);
   return {
     kind: "coin",
     label: function(){ return wcfg.label || "Coin"; },
     startPause: flip,
-    reset: function(){ heads = tails = flips = 0; paint(false); },
+    reset: clearTally,
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: function(){ paint(false); }, resync: function(){},
@@ -7077,7 +7130,7 @@ function makeCoin(host, wcfg){
 /* the spinner: N equal sectors in the palette, a fixed pointer at the top;
    a spin turns the wheel 3–6 times plus a random offset (CSS transition), and
    the sector under the pointer is the result */
-var SPIN_COLORS = ["#40E0D0", "#FF7F6A", "#E6D5B8", "#B8ECE6", "#127A85", "#F8F2E4", "#9AD7CF", "#F2B6A8"];
+var SPIN_COLORS = ["#40E0D0", "#E6D5B8", "#B8ECE6", "#127A85", "#F8F2E4", "#9AD7CF", "#D8C5A0", "#7FD9CF"];   // v7.12: no coral — coral is for alerts
 function makeSpin(host, wcfg){
   if (!(wcfg.sectors >= 2 && wcfg.sectors <= 8)) wcfg.sectors = 4;
   host.insertAdjacentHTML("beforeend",
@@ -7085,12 +7138,12 @@ function makeSpin(host, wcfg){
       '<div class="spWrap">' +
         '<svg class="spWheel" viewBox="-50 -50 100 100" aria-label="Spinner"></svg>' +
         '<svg class="spPtr" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 19L2 3h16z"/></svg>' +
+        '<div class="spResult" aria-live="polite"></div>' +
       '</div>' +
-      '<div class="spResult" aria-live="polite"></div>' +
       '<div class="prTally"></div>' +
       '<div class="chips spChips" role="group" aria-label="Number of sectors"></div>' +
       '<div class="row"><button class="btn spGo" type="button" ' +
-        'style="background:var(--turq); color:var(--navy)">Spin</button></div>' +
+        'style="background:var(--turq); color:var(--navy)">Spin</button>' + '<button class="btn ghost tReset" type="button">Clear</button>' + '</div>' +
       '<div class="tHint">Space spins · R clears the tally</div>' +
     '</div>');
   var wheel = host.querySelector(".spWheel"), resEl = host.querySelector(".spResult");
@@ -7106,7 +7159,7 @@ function makeSpin(host, wcfg){
       var am = (a0 + a1) / 2;
       out += '<text x="' + (31 * Math.cos(am)).toFixed(2) + '" y="' + (31 * Math.sin(am)).toFixed(2) + '">' + (i + 1) + '</text>';
     }
-    out += '<circle class="spHub" cx="0" cy="0" r="5"/>';
+    out += '<circle class="spHub" cx="0" cy="0" r="9"/>';
     wheel.innerHTML = out;
   }
   function paint(){
@@ -7150,11 +7203,18 @@ function makeSpin(host, wcfg){
   });
   buildWheel(); paint();
   wireButton(host.querySelector(".spGo"), spin);
+  function clearTally(){
+    if (!spins) return;
+    var was = { counts: counts.slice(), spins: spins, result: result };
+    counts = []; spins = 0; result = null; paint();
+    Undo.show("Tally cleared", function(){ counts = was.counts; spins = was.spins; result = was.result; paint(); });
+  }
+  wireButton(host.querySelector(".tReset"), clearTally);
   return {
     kind: "spin",
     label: function(){ return wcfg.label || "Spinner"; },
     startPause: spin,
-    reset: function(){ counts = []; spins = 0; result = null; paint(); },
+    reset: clearTally,
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: function(){ buildWheel(); paint(); }, resync: function(){},
@@ -7201,7 +7261,7 @@ function makeCards(host, wcfg){
     return '<svg class="pcard ' + suit[1] + ' deal" viewBox="0 0 100 140" aria-label="' + rank + " of " + suit[2] + '">' +
       '<rect class="cdBack" x="4" y="4" width="92" height="132" rx="10"/>' +
       '<text x="18" y="22" font-size="20">' + rank + '</text><text x="18" y="42" font-size="18">' + suit[0] + '</text>' +
-      '<text x="50" y="74" font-size="52">' + suit[0] + '</text>' +
+      '<text x="50" y="86" font-size="46">' + rank + '</text><text x="50" y="118" font-size="22">' + suit[0] + '</text>' +   /* v7.12: the RANK reads from the back */
       '<g transform="rotate(180 50 70)"><text x="18" y="22" font-size="20">' + rank + '</text><text x="18" y="42" font-size="18">' + suit[0] + '</text></g></svg>';
   }
   function paint(){
@@ -7245,6 +7305,7 @@ function makeScore(host, wcfg){
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="scRow"></div>' +
+      '<div class="row"><button class="btn ghost tReset" type="button">Reset scores</button></div>' +
       '<div class="chips scChips" role="group" aria-label="Number of teams"></div>' +
       '<div class="tHint">R resets the scores</div>' +
     '</div>');
@@ -7261,6 +7322,7 @@ function makeScore(host, wcfg){
       name.textContent = team.name;               // user data: textContent only
       name.title = "Rename";
       name.addEventListener("click", function(){
+        if (cfg.ui.locked) return;                // v7.12: renaming is setup, not play
         var inp = document.createElement("input");
         inp.className = "scNameInput";
         inp.maxLength = 16;
@@ -7326,14 +7388,18 @@ function makeScore(host, wcfg){
     chips.push(b);
   });
   paint();
+  function resetScores(){
+    if (!wcfg.teams.some(function(t){ return t.score; })) return;
+    var was = wcfg.teams.map(function(t){ return t.score; });
+    wcfg.teams.forEach(function(t){ t.score = 0; }); paint();
+    Undo.show("Scores cleared", function(){ wcfg.teams.forEach(function(t, i){ if (i < was.length) t.score = was[i]; }); paint(); });
+  }
+  wireButton(host.querySelector(".tReset"), resetScores);
   return {
     kind: "score",
     label: function(){ return wcfg.label || "Scoreboard"; },
     startPause: function(){},
-    reset: function(){
-      wcfg.teams.forEach(function(t){ t.score = 0; });
-      paint();
-    },
+    reset: resetScores,
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: paint, resync: function(){},
@@ -7389,7 +7455,7 @@ function makeEvent(host, wcfg){
     var t = target();
     if (!t){
       big.textContent = "—"; unit.textContent = "";
-      sub.textContent = "Tap ✎ to set the event and date.";
+      sub.textContent = cfg.ui.locked ? "No event set" : "Tap ✎ to set the event and date.";   // v7.12: the ✎ is hidden while locked
       return;
     }
     var hasTime = wcfg.when.length > 10;
@@ -7474,6 +7540,7 @@ function makeTally(host, wcfg){
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="tlRow"></div>' +
+      '<div class="row"><button class="btn ghost tReset" type="button">Reset</button></div>' +
       '<div class="chips tlChips" role="group" aria-label="Number of counters"></div>' +
       '<div class="tHint">Space adds one · R resets</div>' +
     '</div>');
@@ -7492,6 +7559,7 @@ function makeTally(host, wcfg){
       name.textContent = item.name;              // user data: textContent only
       name.title = "Rename";
       name.addEventListener("click", function(){
+        if (cfg.ui.locked) return;                // v7.12: renaming is setup, not play
         var inp = document.createElement("input");
         inp.className = "scNameInput";
         inp.maxLength = 16;
@@ -7558,6 +7626,13 @@ function makeTally(host, wcfg){
     chips.push(b);
   });
   paint();
+  function resetCounts(){
+    if (!wcfg.items.some(function(t){ return t.count; })) return;
+    var was = wcfg.items.map(function(t){ return t.count; });
+    wcfg.items.forEach(function(t){ t.count = 0; }); paint();
+    Undo.show("Counts cleared", function(){ wcfg.items.forEach(function(t, i){ if (i < was.length) t.count = was[i]; }); paint(); });
+  }
+  wireButton(host.querySelector(".tReset"), resetCounts);
   return {
     kind: "tally",
     label: function(){ return wcfg.label || "Tally"; },
@@ -7571,10 +7646,7 @@ function makeTally(host, wcfg){
         firstCountEl.classList.add("scPop");
       }
     },
-    reset: function(){
-      wcfg.items.forEach(function(t){ t.count = 0; });
-      paint();
-    },
+    reset: resetCounts,
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: paint, resync: function(){},
@@ -8390,12 +8462,8 @@ function makeYT(host, wcfg){
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody embBody">' +
       '<div class="embEmpty ytEmpty">' +
-        '<b>A direct line to YouTube.</b><br>' +
-        'Tap a station, or paste any YouTube link below &mdash; videos, ' +
-        'live streams, playlists. &#9734; Save keeps it as a station.<br>' +
-        '<span class="ytTip">If the player shows &ldquo;Error 153&rdquo; on this ' +
-        'machine, tap &#8599; Tab &mdash; it opens on YouTube itself and keeps ' +
-        'playing while you work the board.</span></div>' +
+        '<b>Tap a station, or paste a YouTube link.</b><br>' +
+        '<span class="ytTip">&#9734; Save keeps a link as a station. &ldquo;Error 153&rdquo;? Tap &#8599; Tab.</span></div>' +
       '<iframe class="embFrame ytFrame" title="YouTube player" allow="fullscreen *; autoplay *; encrypted-media *; picture-in-picture *" hidden></iframe>' +
       '<div class="chips ytStations" role="group" aria-label="Saved stations"></div>' +
       '<div class="ytLib" hidden></div>' +
@@ -8660,10 +8728,10 @@ function makeAgenda(host, wcfg){
   var editing = false;
   /* Shrink-to-fit, like the text box: an agenda the back row has to
      squint at defeats the point. */
-  var FIT = [1, 0.85, 0.72, 0.6, 0.5, 0.42];
+  var FIT = [1, 0.85, 0.72, 0.6, 0.5, 0.42, 0.36];
   function fit(){
     for (var i = 0; i < FIT.length; i++){
-      list.style.fontSize = "calc(clamp(15px, 4.4cqw, 44px) * " + FIT[i] + ")";
+      list.style.fontSize = "calc(clamp(15px, 6cqw, 60px) * " + FIT[i] + ")";   // v7.12: bigger base — an agenda a third of the card tall was 22 px
       if (list.scrollHeight <= list.clientHeight + 2) return;
     }
   }
@@ -8859,6 +8927,8 @@ function makeQR(host, wcfg){
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="qrBox"></div>' +
+      '<div class="qrUrl"></div>' +
+      '<div class="wEmpty qrEmpty"></div>' +
       '<input class="qrIn" type="text" maxlength="271" spellcheck="false" ' +
         'placeholder="Paste a link, then tap away">' +
       '<div class="tHint"></div>' +
@@ -8867,8 +8937,9 @@ function makeQR(host, wcfg){
   var input = host.querySelector(".qrIn");
   function render(){
     box.innerHTML = "";
+    showUrl(wcfg.url);
     if (!wcfg.url){
-      hintText("Paste a link below — students scan it from their seats");
+      hintText(cfg.ui.locked ? "No link yet" : "Paste a link below — students scan it, or read it and type it");
       return;
     }
     var m = qrMatrix(wcfg.url);
@@ -8888,7 +8959,9 @@ function makeQR(host, wcfg){
       '<path d="' + d + '" fill="#17324D"/></svg>';
     hintText("");
   }
-  function hintText(t){ host.querySelector(".tHint").textContent = t; }
+  function hintText(t){ host.querySelector(".qrEmpty").textContent = t; }
+  var urlEl = host.querySelector(".qrUrl");
+  function showUrl(u){ urlEl.textContent = u ? u.replace(/^https?:\/\/(www\.)?/, "") : ""; urlEl.hidden = !u; }   // v7.12: the link, readable — most kids will type it
   input.addEventListener("blur", function(){
     wcfg.url = input.value.trim().slice(0, 300);
     render();
@@ -10344,15 +10417,25 @@ var Sea = (function(){
    named scenes stored in config (persisted via download-copy).
    Positions are percentages of the canvas, so a projector
    resolution change cannot scramble a layout. */
+/* v7.12 (audit): ONE name per tool — the + Add tile, the card's label and the "Name Picker 2"
+   caption all read from here (the tile used to say "Name Picker" and the card "PICKER 2") */
 var WIDGET_NAMES = {
   timer: "Timer", stopwatch: "Stopwatch", bell: "Next Bell", clock: "Clock",
-  picker: "Picker", groups: "Groups", text: "Note", work: "Work Mode",
+  picker: "Name Picker", groups: "Group Maker", text: "Text Box", work: "Work Mode",
   dice: "Dice", coin: "Coin", spin: "Spinner", cards: "Cards",
   score: "Scoreboard", qr: "QR Code", meter: "Noise Meter",
-  draw: "Sketch", embed: "Slides",
+  draw: "Sketch Pad", embed: "Slides",
   event: "Countdown", tally: "Tally", agenda: "Agenda",
   music: "Music", yt: "YouTube"
 };
+/* boards saved before v7.12 carry the old default names as labels — those are not custom names */
+var LEGACY_NAMES = { picker: ["Picker"], groups: ["Groups"], text: ["Note"], draw: ["Sketch"] };
+function isDefaultLabel(type, label){
+  var l = String(label || "").trim().toLowerCase();
+  if (!l) return true;
+  var names = [WIDGET_NAMES[type] || ""].concat(LEGACY_NAMES[type] || []).map(function(n){ return n.toLowerCase(); });
+  return names.indexOf(l) !== -1;
+}
 var WIDGET_MAKERS = {
   stopwatch: makeStopwatch, bell: makeBellTimer, picker: makePicker,
   groups: makeGroups, text: makeText, work: makeWork,
@@ -10830,8 +10913,7 @@ var Canvas = (function(){
     var wname = wcfg.label || WIDGET_NAMES[wcfg.type] || "Widget";
     elx.querySelector(".wLabel").textContent = wname.toUpperCase();
     /* v7.5.1: only a CUSTOM name earns a label (the content says "timer" already) */
-    if (wcfg.label && wcfg.label.trim() &&
-        wcfg.label.trim().toLowerCase() !== String(WIDGET_NAMES[wcfg.type] || "").toLowerCase()){
+    if (wcfg.label && wcfg.label.trim() && !isDefaultLabel(wcfg.type, wcfg.label)){
       elx.classList.add("wNamed");
       elx.setAttribute("data-label", wcfg.label.trim());
     }
@@ -10974,13 +11056,24 @@ var Canvas = (function(){
         spot.x = Math.max(2, spot.x - 4);
       }
     }
+    /* v7.12 (audit): the full-board clock (7.8) is a background, not an obstacle — but its
+       face is. New cards go to the corners around the digits (top-right first: the digits end
+       at ~70 % and the date is centred), never onto "10:30" (every board shot had the new card
+       over the "1"). A small clock is an ordinary obstacle, as before. */
+    var clockW = sc.widgets.filter(function(b){ return b.type === "clock"; })[0];
+    var bigClock = !!(clockW && clockW.w * clockW.h >= 4500);
+    var obstacles = sc.widgets.filter(function(b){ return !(bigClock && b === clockW); });
+    var clearAt = function(x, y){
+      return !obstacles.some(function(b){ return x < b.x + b.w && x + ww > b.x && y < b.y + b.h && y + wh > b.y; });
+    };
+    if (!spot && bigClock){
+      [{ x: 99 - ww, y: 2 }, { x: 99 - ww, y: 98 - wh }, { x: 1, y: 98 - wh }, { x: 1, y: 2 }].forEach(function(c){
+        if (!spot && clearAt(c.x, c.y)) spot = c;
+      });
+    }
     for (var sy = 2; sy + wh <= 100 && !spot; sy += 8){
       for (var sx = 2; sx + ww <= 100 && !spot; sx += 6){
-        var clear = !sc.widgets.some(function(b){
-          return sx < b.x + b.w && sx + ww > b.x &&
-                 sy < b.y + b.h && sy + wh > b.y;
-        });
-        if (clear) spot = { x: sx, y: sy };
+        if (clearAt(sx, sy)) spot = { x: sx, y: sy };
       }
     }
     if (!spot){
@@ -11090,8 +11183,9 @@ var Canvas = (function(){
      "addMusicBtn","addYtBtn"].forEach(function(id){
       $(id).disabled = locked || full;
     });
-    $("addClockBtn").disabled = locked || full ||
-      activeSceneObj().widgets.some(function(w){ return w.type === "clock"; });
+    var hasClock = activeSceneObj().widgets.some(function(w){ return w.type === "clock"; });
+    $("addClockBtn").disabled = locked || full || hasClock;
+    $("addClockBtn").querySelector(".tDesc").textContent = hasClock ? "Already on this board" : "Time, period and bells";   // v7.12: a greyed tile says why
     /* v7.2: a menu of greyed tiles says WHY (the ⏱ menu already did) */
     var note = $("addMenuNote");
     note.hidden = !(locked || full);

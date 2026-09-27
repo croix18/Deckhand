@@ -100,7 +100,7 @@ test.describe("rosters, picker, groups", () => {
     await setRoster(page, "2nd", "Ava, Ben, Cai");
     await dh.addW("addPickerBtn");
     await page.click(".w-picker .pkGo");
-    const hintLoc = page.locator(".w-picker .tHint");
+    const hintLoc = page.locator(".w-picker .pkEmpty");   // v7.12: the room's message, not the teacher's hint
     await expect(hintLoc).toHaveText("No roster for this period — pick one above");
     const name = (await page.locator(".w-picker .pkName").textContent()).trim();
     ok(name === "—", "picked from the wrong class: " + name);
@@ -120,7 +120,7 @@ test.describe("rosters, picker, groups", () => {
     await page.click(".w-groups .gpGo");
     const sizes = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".w-groups .gpCard"))
-        .map(c => c.childNodes[1].textContent.split(", ").length).sort().join(","));
+        .map(c => c.querySelectorAll("span").length).sort().join(","));
     ok(sizes === "3,4", "sizes: " + sizes);
   });
 
@@ -156,7 +156,7 @@ test.describe("rosters, picker, groups", () => {
     await page.click(".w-groups .gpGo");
     const g = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".w-groups .gpCard"))
-        .map(c => c.childNodes[1].textContent.split(", ")));
+        .map(c => Array.from(c.querySelectorAll("span"), s => s.textContent)));
     ok(g.length === 3, "group count: " + g.length);
     const sizes = g.map(x => x.length).sort().join(",");
     ok(sizes === "3,4,4", "sizes: " + sizes);
@@ -167,7 +167,7 @@ test.describe("rosters, picker, groups", () => {
     await page.click(".w-groups .gpGo");
     const g2 = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".w-groups .gpCard"))
-        .map(c => c.childNodes[1].textContent.split(", ").length));
+        .map(c => c.querySelectorAll("span").length));
     ok(g2.length === 5 && Math.min(...g2) === 2 && Math.max(...g2) === 3,
       "pairs: " + g2.join(","));
     // widget config remembers the override-able fields
