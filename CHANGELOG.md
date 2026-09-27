@@ -2,6 +2,17 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.11.4 — 2026-09-27
+
+**A finer web, a real flock.** Croix took two of my own reservations and asked for them.
+The web is now hairlines at a fifth strength with two broken strands in the outer rings,
+nearly invisible — until, once a minute (every twenty seconds in wind), a glint runs out
+along the spiral from the hub: the light catching the silk. The bats answer each other now:
+the leader dips, the second follows it down half as far a beat late and pulls up hard, the
+third barely dips and overtakes the leader in the last third, the low plodder jinks lower as
+the others come down toward it, the fifth closes in on the group before it peels away — and
+every bat slips a few pixels side to side on its own clock, so the spacing breathes.
+
 ## 7.11.3 — 2026-09-27
 
 **The ghost's first vanish, where it can be seen.** The galleon enters behind the sand
