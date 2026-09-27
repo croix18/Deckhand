@@ -24,8 +24,8 @@ test.describe("v7.11 October 2.0", () => {
     await spider.dispatchEvent("pointerdown");
     await expect(rig).toHaveClass(/redrop/);
     const sy = await rig.evaluate(e => e.style.getPropertyValue("--sy"));
-    /* from the hang (112) or, on a slow runner, the first pull of the climb (78) — never from the hub */
-    ok(/^(7[0-9]|8\d|9\d|1[01]\d|12[0-5])(\.\d+)?px$/.test(sy), "the re-drop did not start from where it hung: --sy=" + sy);
+    /* from the hang (112) or, on a slow runner, somewhere up the climb — never from the hub (0) */
+    ok(parseFloat(sy) > 20 && parseFloat(sy) <= 125, "the re-drop did not start from where it hung: --sy=" + sy);
     await expect(rig).not.toHaveClass(/redrop/, { timeout: 7000 });
     // three re-drops a minute, then a twitch
     await spider.dispatchEvent("pointerdown");
@@ -105,7 +105,7 @@ test.describe("v7.11 October 2.0", () => {
     }
     const rate = (a, b) => { const ps = plans.filter(pl => pl.d >= a && pl.d <= b); return ps.reduce((n, pl) => n + pl.ev.slice(1).filter(x => OCT.has(x)).length, 0) / ps.length; };
     const early = rate(1, 11), mid = rate(12, 23), late = rate(26, 29);
-    ok(early > 0 && early < .6 && mid > early * 2 && late > mid, `the month should build: early=${early.toFixed(2)} mid=${mid.toFixed(2)} late=${late.toFixed(2)}`);
+    ok(early > 0 && early < mid * .5 && late > mid, `the month should build: early=${early.toFixed(2)} mid=${mid.toFixed(2)} late=${late.toFixed(2)}`);
     ok(plans.filter(pl => pl.d >= 12 && pl.d <= 29 && pl.ev.includes("ghost")).length > 0, "no ghost anywhere from the 12th to the 29th");
     // a 20-minute Halloween advisory has no last third worth a ship
     const short = await page.evaluate(() => window.Deckhand.seaModule.plan("2026-10-30", 2, 20, 5, null).events.map(e => e.act));

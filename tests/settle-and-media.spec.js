@@ -457,13 +457,18 @@ test.describe("embeds", () => {
     ok(await conv("https://www.youtube-nocookie.com/embed/videoseries?list=PLxyz-12_34") ===
       "https://www.youtube-nocookie.com/embed/videoseries?list=PLxyz-12_34",
       "nocookie playlist pass-through");
-    const last2 = "https://www.youtube-nocookie.com/embed/videoseries?list=PLxyz-12_34";
+    /* v7.11.5: a nocookie embed link with extra parameters (YouTube's own "?si=…", an
+       autoplay someone added) is a real player link — it frames with the parameters
+       dropped, never with them; http is normalised to https */
+    ok(await conv("https://www.youtube-nocookie.com/embed/jfKfPfyJRdk?autoplay=1") ===
+      "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk", "nocookie + params: params not dropped");
+    ok(await conv("http://www.youtube-nocookie.com/embed/jfKfPfyJRdk") ===
+      "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk", "nocookie http not normalised");
+    const last2 = "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk";
     for (const u of [
       "https://www.youtube-nocookie.com/watch?v=jfKfPfyJRdk",
       "https://www.youtube-nocookie.com/",
-      "https://www.youtube-nocookie.com/embed/ab",
-      "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk?autoplay=1",
-      "http://www.youtube-nocookie.com/embed/jfKfPfyJRdk"
+      "https://www.youtube-nocookie.com/embed/ab"
     ]) ok(await conv(u) === last2, "non-player youtube-nocookie url was framed: " + u);
     await page.click(".w-embed .wClose");
   });

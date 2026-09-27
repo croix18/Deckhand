@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.11.4",
+  "appVersion": "7.11.5",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1114,7 +1114,7 @@
   .muBars{display:flex; gap:5px; align-items:flex-end; height:34px;}
   .muBars i{
     width:7px; height:8px; border-radius:4px; background:var(--turq);
-    display:block;
+    display:block; transform-origin:50% 100%;
   }
   .muWhat{font-weight:700; font-size:clamp(12px, 6cqw, 17px); color:var(--navy); opacity:.75;}
   .muRow{display:flex; gap:8px; align-items:center; justify-content:center;}
@@ -1716,6 +1716,12 @@
     .scScore.pop, .tlCount.pop{animation:pop .25s cubic-bezier(.34,1.56,.64,1);}
     .agCk path{transition:stroke-dashoffset .3s ease .05s;}
     .agText::after{transition:right .25s ease .1s;}
+    /* v7.11.5 (audit): these five names had no keyframes — the rules were silent */
+    @keyframes canvasIn{from{opacity:.55;} to{opacity:1;}}
+    @keyframes wIn{from{opacity:0; transform:scale(.96);} to{opacity:1; transform:scale(1);}}
+    @keyframes alarmIn{from{opacity:0;} to{opacity:1;}}
+    @keyframes pop{0%{transform:scale(1);} 45%{transform:scale(1.18);} 100%{transform:scale(1);}}
+    @keyframes muDance{from{transform:scaleY(.45);} to{transform:scaleY(1);}}
   }
   /* ===== v6.22: WATERLINE motion left the reduced-motion block.
      body.waveMotion is set by JS from cfg.ui.motion — "auto" follows
@@ -2201,7 +2207,7 @@
   .dpEye{fill:var(--paleturq) !important;}
   .dpSmile{fill:none !important; stroke:var(--paleturq); stroke-width:.6;}
   .dpFluke{transform-box:view-box; transform-origin:8.6px 10px;}
-  .d2{translate:0 5px; scale:.88;}
+  .dpDol.d2{translate:0 5px; scale:.88;}   /* v7.11.5: scoped — it was moving the boat's spray and the whale's splash */
   body.waveMotion #sea-dolphins.go .dpArc path{animation:pfTrace 8s ease-out;}
   body.waveMotion #sea-dolphins.go .dpDol{animation:dpLeap 7s linear both;}
   body.waveMotion #sea-dolphins.go .d2{animation-delay:.45s;}
@@ -2227,7 +2233,7 @@
   /* ---- the pumpkins on the sand ---- */
   #ocPumpkins{
     position:fixed; right:6vw; bottom:36px; width:clamp(190px, 17vw, 340px); height:auto;   /* feet on the dry sand, the puddle reaching the wet */
-    z-index:2; display:none; overflow:visible;
+    z-index:2; display:none; overflow:visible; pointer-events:none;   /* v7.11.5: the box sits over the canvas corner — only the pumpkins take taps */
   }
   body.october:not(.landing):not(.focusMode) #ocPumpkins{display:block;}
   .ocPumpkin{cursor:pointer; pointer-events:auto;}
@@ -2456,7 +2462,7 @@
     67%{transform:scaleY(2.2); animation-timing-function:linear;}  74%{transform:scaleY(2.2); animation-timing-function:cubic-bezier(.2,.8,.3,1);}
     84%{transform:scaleY(1.55); animation-timing-function:linear;} 90%{transform:scaleY(1.55); animation-timing-function:cubic-bezier(.2,.8,.3,1);}
     97%{transform:scaleY(.95); animation-timing-function:ease-in-out;} 100%{transform:scaleY(1);}}
-  body.waveMotion .ocSpiderRig.poke .l2l{animation:ocPoke .3s linear 1;}
+  body.waveMotion .ocSpiderRig.poke:not(.drop):not(.redrop) .l2l{animation:ocPoke .3s linear 1;}   /* v7.11.5: never over a drop's leg animation */
   @keyframes ocPoke{0%{transform:rotate(0); animation-timing-function:cubic-bezier(.2,.8,.3,1);} 30%{transform:rotate(16deg); animation-timing-function:ease-in;} 100%{transform:rotate(0);}}
 
   /* ---- the boat's swallow-tail: a shape, not a shade; it whips on the sail's wind ---- */
@@ -2559,8 +2565,9 @@
     0%{transform:translate(calc(100vw + 60px), 0); animation-timing-function:ease-in-out;}
     40%{transform:translate(62vw, -10px); animation-timing-function:linear;}      /* closes in on the group first */
     58%{transform:translate(44vw, -8px); animation-timing-function:cubic-bezier(.4,0,.8,.3);}
-    78%{transform:translate(30vw, -240px); animation-timing-function:linear;}
-    100%{transform:translate(30vw, -240px);}}
+    78%{transform:translate(30vw, -240px); opacity:1; animation-timing-function:linear;}
+    86%{transform:translate(29vw, -300px); opacity:0;}
+    100%{transform:translate(28vw, -360px); opacity:0;}}   /* v7.11.5: out and gone, not hovering until the act ends */
   @keyframes ocPitchPeel{0%,56%{rotate:0deg; animation-timing-function:ease-in;} 64%{rotate:25deg; animation-timing-function:ease-in-out;} 78%,100%{rotate:25deg;}}
 
   /* ---- GHOST SHIP (44 s): there, then not; a hang behind the boat; a candle in a hull ---- */
@@ -3830,7 +3837,7 @@ var DEFAULT_SCENES = [
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.11.4",
+  appVersion: "7.11.5",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -3885,7 +3892,7 @@ function sanitize(c){
              /^\d{1,2}:\d{2}$/.test(x.start.trim()) &&
              /^\d{1,2}:\d{2}$/.test(x.end.trim());
     }).slice(0, 20)
-      .map(function(x){ return { label: x.label.slice(0, 20),
+      .map(function(x){ return { label: x.label.trim().slice(0, 20).trim(),
                                  start: x.start.trim(), end: x.end.trim() }; });
   }
   var groups = [];
@@ -4535,7 +4542,16 @@ var Store = (function(){
   }
   /* v7.5.1: an unreadable device copy is QUARANTINED, never seeded over */
   function quarantine(){
-    try { if (rawSeen) localStorage.setItem(KEY + ".bad-" + Date.now(), rawSeen); } catch(e){}
+    /* v7.11.5 (audit): once per unreadable copy — every boot used to add another
+       roster-bearing blob to the shared, quota-tight file:// origin */
+    try {
+      if (!rawSeen) return;
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (k && k.indexOf(KEY + ".bad-") === 0 && localStorage.getItem(k) === rawSeen) return;
+      }
+      localStorage.setItem(KEY + ".bad-" + Date.now(), rawSeen);
+    } catch(e){}
   }
   function clear(){
     if (!ok) return;
@@ -4747,6 +4763,15 @@ var Bell = (function(){
     var t = cfg.bell.today;
     return (t && t.date && t.date === dateKey(day) && t.mode !== "regular") ? t : null;
   }
+  /* v7.11.5 (audit): "Weeks with no school" used to steer only the rotation — the Friday
+     before Thanksgiving still said "Next: 1st · Monday", and a board left open over a break
+     rang its bells and ran the settle-in to an empty room */
+  function inSkipWeek(day){
+    var sk = cfg.bell.skipWeeks;
+    if (!sk || !sk.length) return false;
+    var mon = new Date(day.getFullYear(), day.getMonth(), day.getDate() - ((day.getDay() + 6) % 7));
+    return sk.indexOf(dateKey(mon)) !== -1;
+  }
   function dayBlocksFor(day, gi){
     var wd = day.getDay();
     var ov = overrideFor(day);
@@ -4760,6 +4785,7 @@ var Bell = (function(){
       return { g: g0 || { name: "Custom day" }, usedWed: false, custom: true, blocks: cb };
     }
     if (wd === 0 || wd === 6) return null;                  // no school on weekends
+    if (inSkipWeek(day)) return null;                        // v7.11.5: nor in a week with no school (the rotation's list)
     var g = gi >= 0 && cfg.bell.groups[gi] ? cfg.bell.groups[gi] : null;
     if (!g) return null;
     var hasWed = g.wednesday && g.wednesday.length > 0;
@@ -4806,7 +4832,7 @@ var Bell = (function(){
     /* scan on the NUDGED timeline: a nudge that crosses midnight must
        not pair yesterday's clock with today's calendar */
     var origin = new Date(d.getTime() + (cfg.bell.nudgeSeconds || 0) * 1000);
-    for (var off = 0; off <= 14; off++){
+    for (var off = 0; off <= 21; off++){                 // v7.11.5: three weeks, so the winter break (two skip weeks) still resolves
       var day = new Date(origin.getFullYear(), origin.getMonth(), origin.getDate() + off);
       var info = dayBlocksFor(day, off === 0 ? active : groupIndexForDay(day));
       if (!info) continue;
@@ -5477,7 +5503,7 @@ var Sound = (function(){
     el.soundBtn.textContent = on ? "Sound On" : "Sound Off";
     el.soundBtn.setAttribute("aria-pressed", on ? "true" : "false");
   }
-  function toggle(){ on = !on; paint(); }
+  function toggle(){ on = !on; cfg.sound.enabled = on; paint(); }   // v7.11.5: M writes the setting, so Settings → Apply no longer un-mutes
   function setOn(v){ on = !!v; paint(); }
   function primed(){ return !!ctx && ctx.state === "running"; }   // v7.7: has a gesture woken the audio yet?
   return { init: function(){ paint(); wireButton(el.soundBtn, toggle); },
@@ -5636,29 +5662,39 @@ function makeTimer(host, wcfg, assignIds){
     startBtn.textContent = t.endAt ? "Pause" : "Start";
   }
   function loop(){
+    if (!t.endAt) return;                        // paused or reset since this tick was armed
     t.remainMs = t.endAt - Date.now();
     if (t.remainMs <= 0){
       t.remainMs = 0; t.endAt = null;
+      clearTimeout(t.endTid); t.endTid = null;
       paint(); Alarm.ring(self); return;
     }
     paint();
     t.tid = setTimeout(loop, 200);
   }
+  /* v7.11.5 (audit): a hidden tab throttles a CHAINED timeout to once a minute; a single
+     timeout armed from the user's action for the whole remaining time is not throttled the
+     same way, so the chime lands on time even with a video open in another tab */
+  function armEnd(){
+    clearTimeout(t.endTid);
+    t.endTid = t.endAt ? setTimeout(loop, Math.max(0, t.endAt - Date.now())) : null;
+  }
   function startPause(){
     if (entry !== null){ commitEntryAndStart(); return; }
     if (t.endAt){
-      clearTimeout(t.tid);
+      clearTimeout(t.tid); clearTimeout(t.endTid); t.endTid = null;
       t.remainMs = Math.max(0, t.endAt - Date.now());
       t.endAt = null;
     } else {
       if (t.remainMs <= 0){ t.remainMs = t.setMs; t.visMax = t.setMs; }
       t.endAt = Date.now() + t.remainMs;
       t.tid = setTimeout(loop, 0);
+      armEnd();
     }
     paint();
   }
   function reset(){
-    clearTimeout(t.tid);
+    clearTimeout(t.tid); clearTimeout(t.endTid); t.endTid = null;
     t.endAt = null;
     t.remainMs = t.setMs;
     t.visMax = t.setMs;
@@ -5668,7 +5704,7 @@ function makeTimer(host, wcfg, assignIds){
   function plusMinute(){
     if (entry !== null) return;
     t.remainMs += 60000;
-    if (t.endAt) t.endAt += 60000;
+    if (t.endAt){ t.endAt += 60000; armEnd(); }
     if (t.remainMs > t.visMax) t.visMax = t.remainMs;
     paint();
   }
@@ -6177,13 +6213,16 @@ function makePicker(host, wcfg){
     var names = Absent.presentFor(p);           // never call on the kid at home
     if (!names.length){ paint(); return; }
     if (poolPeriod !== p) pool = [];
-    /* someone marked absent MID-ROUND leaves the pool too */
-    pool = pool.filter(function(n){ return !Absent.isOut(p, n); });
-    if (!pool.length){                          // fresh round
+    /* someone marked absent MID-ROUND is skipped — but stays in the pool, so un-marking
+       them puts them back in this round (v7.11.5: the filter used to be permanent) */
+    var eligible = pool.filter(function(n){ return !Absent.isOut(p, n); });
+    if (!eligible.length){                      // fresh round
       pool = shuffleNames(names.slice());
       poolPeriod = p;
+      eligible = pool.slice();
     }
-    var target = pool.pop();
+    var target = eligible[eligible.length - 1];
+    pool.splice(pool.lastIndexOf(target), 1);
     if (REDUCED){ commit(target); return; }
     var t0 = Date.now();
     nameEl.classList.add("spin");
@@ -6923,6 +6962,7 @@ function makeDice(host, wcfg){
     b.dataset.n = n;
     b.textContent = n === 1 ? "1 die" : n + " dice";
     wireButton(b, function(){
+      if (rollTid) return;                        // v7.11.5: not mid-roll (the tally and the faces disagreed)
       if (wcfg.count !== n){ counts = Object.create(null); rolls = 0; }   // a different game, a fresh tally
       wcfg.count = n;
       values = values.slice(0, n);
@@ -7012,6 +7052,7 @@ function makeCoin(host, wcfg){
     b.type = "button"; b.className = "chip"; b.dataset.n = n;
     b.textContent = n === 1 ? "1 coin" : n + " coins";
     wireButton(b, function(){
+      if (tid) return;                            // v7.11.5: not mid-flip
       wcfg.count = n;
       values = values.slice(0, n); while (values.length < n) values.push(true);
       paint(false);
@@ -7142,12 +7183,15 @@ function makeCards(host, wcfg){
   var cardEl = host.querySelector(".cdCard"), tallyEl = host.querySelector(".prTally");
   var replaceBtn = host.querySelector(".cdReplace"), goBtn = host.querySelector(".cdGo");
   var deck = [], drawn = null, suitCount = [0, 0, 0, 0], draws = 0;
-  function fresh(){
-    deck = [];
-    for (var su = 0; su < 4; su++) for (var r = 0; r < 13; r++) deck.push({ s: su, r: r });
+  function mix(){
     for (var i = deck.length - 1; i > 0; i--){          // Fisher–Yates
       var j = Math.floor(Math.random() * (i + 1)), t = deck[i]; deck[i] = deck[j]; deck[j] = t;
     }
+  }
+  function fresh(){
+    deck = [];
+    for (var su = 0; su < 4; su++) for (var r = 0; r < 13; r++) deck.push({ s: su, r: r });
+    mix();
   }
   function cardSVG(c){
     if (!c) return '<svg class="pcard cdDown" viewBox="0 0 100 140" aria-label="Face-down deck">' +
@@ -7171,7 +7215,7 @@ function makeCards(host, wcfg){
   function draw(){
     if (!deck.length) return;
     drawn = deck.pop();
-    if (wcfg.replace){ deck.push(drawn); deck.sort(function(){ return Math.random() - 0.5; }); }
+    if (wcfg.replace){ deck.push(drawn); mix(); }   // v7.11.5: Fisher–Yates — the sort() shuffle returned the same card 1.6× too often
     suitCount[drawn.s]++; draws++;
     paint();
   }
@@ -7844,6 +7888,7 @@ function makeMusic(host, wcfg){
     '</div>');
   var q = function(s){ return host.querySelector(s); };
   var whatEl = q(".muWhat"), playBtn = q(".muPlay"), volEl = q(".muVol"), nextBtn = q(".muNext");
+  volEl.addEventListener("change", function(){ volEl.blur(); });   // v7.11.5: a focused slider swallowed every shortcut
   volEl.value = Math.round(wcfg.volume * 100);
   var ctx = null, master = null, duckG = null, echoIn = null, tone = null, bus = null;
   var playing = false, tickTid = null, destroyed = false;
@@ -8010,6 +8055,9 @@ function makeMusic(host, wcfg){
     return on ? LO_TRACKS.concat([LO_OCT]) : LO_TRACKS;
   }
   function side(i){ var all = sides(); return all[i] || all[0]; }
+  /* v7.11.5: the deck can shrink mid-listen (Nov 1, or Seasonal touches Off) — the order
+     rebuilds and a side past the end moves on cleanly, tone and echo included */
+  function deckChanged(){ return order && order.length !== sides().length; }
   var TRACK_BARS = 32, BREAK_BARS = 2;
   var trackIdx = 0, barNo = 0;
   var order = null, orderPos = 0;                // v7.3: sides shuffle after side A
@@ -8020,8 +8068,9 @@ function makeMusic(host, wcfg){
     if (!order){                                 // first pass: in order, from side B
       order = sides().map(function(_, i){ return i; });
       orderPos = 1;
-    } else if (orderPos >= order.length){
-      order = sides().map(function(_, i){ return i; }).sort(function(){ return Math.random() - 0.5; });
+    } else if (orderPos >= order.length || deckChanged()){
+      order = sides().map(function(_, i){ return i; });
+      for (var oi = order.length - 1; oi > 0; oi--){ var oj = Math.floor(Math.random() * (oi + 1)), ot = order[oi]; order[oi] = order[oj]; order[oj] = ot; }   // v7.11.5: a fair shuffle
       if (order[0] === trackIdx && order.length > 1){ order.push(order.shift()); }
       orderPos = 0;
     }
@@ -8038,6 +8087,7 @@ function makeMusic(host, wcfg){
     else ep(midi, t, dur, vel, send);
   }
   function lofiBar(t){                           // schedules ONE bar; returns its length
+    if (trackIdx >= sides().length) nextSide();  // v7.11.5: the side we were on left the deck
     var tr = side(trackIdx);
     var spb = 60 / tr.bpm;
     if (barNo >= TRACK_BARS){                    // the breath between tracks
@@ -8159,6 +8209,7 @@ function makeMusic(host, wcfg){
     if (ctx.state === "suspended"){ try { ctx.resume(); } catch(e){} }
     duckG.gain.setTargetAtTime(alarmOn() ? 0.08 : 1, ctx.currentTime, 0.15);
     var ahead = ctx.currentTime + 0.35;
+    if (nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.05;   // v7.11.5: a main-thread stall must not clump the missed bars
     while (nextTime < ahead){
       nextTime += lofiBar(nextTime);
     }
@@ -8207,6 +8258,7 @@ function makeMusic(host, wcfg){
     if (ctx.state === "suspended"){ try { ctx.resume(); } catch(e){} }
     playing = true;
     barNo = 0;                                   // top of the current side
+    if (bus) newBus();                           // v7.11.5: a bar already scheduled fades out under the new one instead of over it
     nextTime = ctx.currentTime + 0.08;
     unhush();
     clearTimeout(tickTid);
@@ -8657,7 +8709,7 @@ function makeAgenda(host, wcfg){
   }
   var ro = null;
   if (window.ResizeObserver){
-    ro = new ResizeObserver(function(){ if (!editing && wcfg.items.length) fit(); });
+    ro = new ResizeObserver(function(){ if (!editing && activeItems().length) fit(); });   // v7.11.5: per-period pages refit too
     ro.observe(list);
   }
   var draftFor = null;                           // the page this textarea belongs to
@@ -8718,7 +8770,7 @@ function makeAgenda(host, wcfg){
     paint();
   }
   ppCk.addEventListener("change", function(){
-    if (editing) commitDraft();                  // the draft belongs to the OLD mode
+    if (editing) commitDraft();                  // the draft belongs to the OLD mode (no blur here: the editor stays open — see area's blur guard)
     wcfg.perPeriod = this.checked;
     var p = currentPeriodLabel();
     if (wcfg.perPeriod && wcfg.items.length && p && p !== "__proto__" &&
@@ -8956,9 +9008,15 @@ function makeMeter(host, wcfg){
   function paintMark(){ mark.style.left = wcfg.limit + "%"; }
   paintMark();
   rollPeriod();
+  var lastFrameMs = 0;
   function frame(){
     raf = null;
     if (destroyed || !analyser) return;
+    /* v7.11.5 (audit): frames stop while the tab is hidden, but the streak is wall-clock —
+       twenty minutes in another tab used to come back as a 20:00 record */
+    var fnow = Date.now();
+    if (lastFrameMs && fnow - lastFrameMs > 1000 && streakStart !== null) streakStart = fnow;
+    lastFrameMs = fnow;
     analyser.getByteTimeDomainData(buf);
     var sum = 0;
     for (var i = 0; i < buf.length; i++){
@@ -9226,7 +9284,7 @@ function makeDraw(host, wcfg){
     b.style.background = col;
     b.setAttribute("aria-label", COLOR_NAMES[ci] + " pen");
     b.setAttribute("aria-pressed", col === color ? "true" : "false");
-    b.addEventListener("click", function(){
+    wireButton(b, function(){                    // v7.11.5: blurs — a focused chip took the next Space
       color = col; eraser = false;
       paintTools();
     });
@@ -9239,8 +9297,8 @@ function makeDraw(host, wcfg){
     });
     eraserBtn.setAttribute("aria-pressed", eraser ? "true" : "false");
   }
-  eraserBtn.addEventListener("click", function(){ eraser = !eraser; paintTools(); });
-  host.querySelector(".dwClear").addEventListener("click", function(){
+  wireButton(eraserBtn, function(){ eraser = !eraser; paintTools(); });
+  wireButton(host.querySelector(".dwClear"), function(){   // v7.11.5: a focused Clear + Space wiped the drawing
     g.clearRect(0, 0, canvas.width, canvas.height);
   });
   var drawingId = null, last = null;
@@ -9322,12 +9380,12 @@ function embedURL(u){
   /* v6.25: YouTube links normalize to the embeddable nocookie player
      (watch pages refuse to iframe at all). Lofi Girl for work time,
      a Mozart playlist, a science clip — whatever the lesson needs. */
-  var yt = u.match(/^https?:\/\/(?:www\.|m\.|music\.)?(?:youtube\.com\/(?:watch|playlist|shorts\/([\w-]*)|live\/([\w-]*)|embed\/([\w-]*))|youtu\.be\/([\w-]*))/i);
+  var yt = u.match(/^https?:\/\/(?:www\.|m\.|music\.)?(?:youtube\.com\/(?:watch|playlist|shorts\/([\w-]*)|live\/([\w-]*)|embed\/([\w-]*))|youtube-nocookie\.com\/embed\/([\w-]*)|youtu\.be\/([\w-]*))/i);   // v7.11.5: the privacy-enhanced embed link too
   if (yt){
     /* ids validate CENTRALLY — a too-short youtu.be id used to slip the
        whole match and load the raw (unframeable) page: black widget with
        no explanation (adversarial find). Bad id = clean rejection. */
-    var vid = yt[1] || yt[2] || yt[3] || yt[4] || "";
+    var vid = yt[1] || yt[2] || yt[3] || yt[4] || yt[5] || "";
     if (!vid){
       var vq = u.match(/[?&]v=([\w-]+)/);
       if (vq) vid = vq[1];
@@ -9418,7 +9476,12 @@ function makeEmbed(host, wcfg){
   pencil.innerHTML = '<svg class="wIcon"><use href="#i-pencil"/></svg>';
   var stripEl = host.querySelector(".strip");
   stripEl.insertBefore(pencil, stripEl.querySelector(".wFocus"));
+  var pencilSkip = false;                        // v7.11.5: the input's blur (applyInput) can tuck the row before the click lands
+  pencil.addEventListener("pointerdown", function(){ if (rowOpen) pencilSkip = true; });
+  pencil.addEventListener("pointerleave", function(){ pencilSkip = false; });
+  pencil.addEventListener("pointercancel", function(){ pencilSkip = false; });
   wireButton(pencil, function(){
+    if (pencilSkip){ pencilSkip = false; rowOpen = false; paintRow(); return; }
     rowOpen = !rowOpen;
     paintRow();
     if (rowOpen){
@@ -9572,7 +9635,11 @@ function makeEmbed(host, wcfg){
       ? ((target && wcfg.decks[target]) || "")
       : wcfg.url;
     if (wcfg.perPeriod){
-      if (!target || target === "__proto__") return;
+      if (!target || target === "__proto__"){    // v7.11.5: say why, and keep the draft
+        showNote("No class is in session — pick a period (\u270e) first, or turn Per-period off.");
+        rowOpen = true; paintRow();
+        return;
+      }
       if (u) wcfg.decks[target] = u;
       else delete wcfg.decks[target];            // cleared on purpose
       fillPer();
@@ -9637,10 +9704,12 @@ function makeEmbed(host, wcfg){
   });
   shelfCk.checked = wcfg.stageOnly;
   shelfCk.addEventListener("change", function(){
+    this.blur();                                  // v7.11.5: a focused checkbox took the next Space
     wcfg.stageOnly = this.checked;
     try { Canvas.syncShelf(host._entry); } catch(e){}
   });
   ppCk.addEventListener("change", function(){
+    this.blur();                                  // v7.11.5: a focused checkbox took the next Space
     wcfg.perPeriod = this.checked;
     var p = currentPeriodLabel();
     if (wcfg.perPeriod && wcfg.url && p && !wcfg.decks[p]){
@@ -9803,7 +9872,12 @@ function waveMotionOn(){
   catch(e){ return true; }
 }
 function applyWaveMotion(){
-  document.body.classList.toggle("waveMotion", waveMotionOn());
+  var was = document.body.classList.contains("waveMotion"), on = waveMotionOn();
+  document.body.classList.toggle("waveMotion", on);
+  /* v7.11.5 (audit): motion Off mid-act used to freeze the creature on screen (its `.go`
+     visibility is not gated); motion On again needs the swell's clock re-read */
+  try { if (was && !on && typeof Sea !== "undefined") Sea.clear(); } catch(e){}
+  try { if (!was && on && typeof Sea !== "undefined" && Sea.resync) Sea.resync(); } catch(e){}
 }
 
 /* ================= Sea module (v6.18 → v7.5 "Sea 2.0") =================
@@ -9862,7 +9936,7 @@ var Sea = (function(){
      a lit week from the 26th, and Halloween. Pure: a function of the date string. */
   function octoberWeight(dateStr){
     var mo = +String(dateStr).slice(5, 7), day = +String(dateStr).slice(8, 10), yr = +String(dateStr).slice(0, 4);
-    if (mo !== 10) return { w: 0, day: 0, halloween: false, cap: 0 };
+    if (mo !== 10 || !inSeason({ season: "october" }, dateStr)) return { w: 0, day: 0, halloween: false, cap: 0 };   // v7.11.5: Seasonal touches Off means no Halloween rules either
     var hw = day === halloweenDay(yr);
     return { w: hw ? 2.5 : day >= 26 ? 1.8 : day >= 12 ? 1 : .12, day: day, halloween: hw, cap: hw ? 3 : 2 };
   }
@@ -9934,7 +10008,8 @@ var Sea = (function(){
     var seenSerpent = false, count = {};
     var oct = octoberWeight(dateStr), octN = 0;   // v7.11: at most two October acts a period (three on Halloween)
     var greetings = GREETINGS.filter(function(k){ return inSeason(ACTS[k], dateStr); });
-    var greeting = oct.halloween ? "castaway" : greetings[Math.floor(r() * greetings.length)];
+    var gw = {}; greetings.forEach(function(k){ gw[k] = ACTS[k].season ? oct.w : 1; });   // v7.11.5: the rumour weight applies to the greeting too
+    var greeting = oct.halloween ? "castaway" : pickWeighted(r, gw);
     ev.push({ at: 45000, act: greeting }); count[greeting] = 1;
     var t = 10 * 60000;                          // hush through the first ten minutes (instruction)
     var end = (periodMin - 3) * 60000;           // nothing in the last three (packing up is chaos enough)
@@ -10067,12 +10142,16 @@ var Sea = (function(){
     if (!inSeason(a)) return false;              // v7.10: October's acts stay in October
     if (clashes(name)) return false;             // v7.11: the ghost never shares the water with a show, in either order
     if (a.combo){
-      a.combo.forEach(function(c){ setTimeout(function(){ play(c[0], lane); }, c[1]); });
+      a.combo.forEach(function(c, ci){
+        clearTimeout(timers["defer:" + name + ci]);
+        timers["defer:" + name + ci] = setTimeout(function(){ if (ok()) play(c[0], lane); }, c[1]);   // v7.11.5: cleared with the show; never into a hidden sea
+      });
       return true;
     }
     if (a.loud && residents.gull){           // the gull knows: it leaves first, the act follows
       gullLeave();
-      setTimeout(function(){ play(name, lane); }, 3200);
+      clearTimeout(timers["defer:" + name]);
+      timers["defer:" + name] = setTimeout(function(){ if (ok()) play(name, lane); }, 3200);
       return true;
     }
     if (a.resident === "gull"){
@@ -10112,11 +10191,14 @@ var Sea = (function(){
       if (th) th.classList.remove("go");
       clearTimeout(timers[n]);
     });
+    Object.keys(timers).forEach(function(k){ if (k.indexOf("defer:") === 0){ clearTimeout(timers[k]); delete timers[k]; } });   // v7.11.5: a combo's second half, the gull's 3.2 s, the long press's 800 ms
     var b = boat();
     if (b) ["pennant", "gullIn", "gullOut", "struck", "rippled", "haunted", "wilson", "hop"].forEach(function(c){
       b.classList.remove(c); clearTimeout(timers["boat:" + c]);
     });
   }
+  /* v7.11.5: Settings → "Sea weather" back to Varies returns to the period's planned weather */
+  function reapplyWeather(){ setWeather(current ? current.plan.weather : "breezy"); }
 
   /* ---- running the show ---- */
   var current = null;                          // { key, plan, startedAt, played:{} }
@@ -10127,7 +10209,7 @@ var Sea = (function(){
   function record(act){
     if (!current) return;
     mem.hist.push({ d: current.date, p: current.period, a: act });
-    if (mem.hist.length > 240) mem.hist.splice(0, mem.hist.length - 240);
+    if (mem.hist.length > 480) mem.hist.splice(0, mem.hist.length - 480);   // v7.11.5: 240 was four days, not the five seenFactor reads
     saveMem(mem);
   }
   function stage(act, lane){
@@ -10166,7 +10248,8 @@ var Sea = (function(){
     freeTid = null;
     if ((hurried || bellNow().type !== "in") && ok() && !busy()){
       var w = {};                                // the easy-going pool: single things only (no combos, no boat acts, nothing rare)
-      Object.keys(ACTS).forEach(function(k){ var a = ACTS[k]; if (a.tier !== "rare" && !a.resident && !a.combo && a.lanes) w[k] = TIER_W[a.tier]; });
+      var ow = octoberWeight(dateKey(now())).w;   // v7.11.5: October's acts only in October, at the month's weight
+      Object.keys(ACTS).forEach(function(k){ var a = ACTS[k]; if (a.tier !== "rare" && !a.resident && !a.combo && a.lanes && inSeason(a)) w[k] = TIER_W[a.tier] * (a.season ? ow : 1); });
       var act = pickWeighted(Math.random, w);
       if (act) stage(act);
     }
@@ -10188,15 +10271,16 @@ var Sea = (function(){
     var seen = current ? current.plan.events.map(function(e){ return e.act; }) : [];
     var pick = ["attack", "scatter", "whale"].filter(function(k){ return seen.indexOf(k) === -1; })[0] || "attack";
     lastSummon = Date.now();
-    setTimeout(function(){ stage(pick); }, 800);
+    clearTimeout(timers["defer:earned"]);
+    timers["defer:earned"] = setTimeout(function(){ if (ok()) stage(pick); }, 800);
     return true;
   }
   function wireBoat(){
     var b = boat();
     if (!b) return;
-    var holdTid = null, held = false, downAt = 0;
+    var holdTid = null, held = false, downAt = 0, pressing = false;
     b.addEventListener("pointerdown", function(e){
-      held = false; downAt = Date.now();
+      held = false; downAt = Date.now(); pressing = true;
       clearTimeout(holdTid);
       /* v7.7: the boat drifts under a held finger — capture the pointer so
          the hold survives the drift and the up lands back on the boat */
@@ -10206,11 +10290,13 @@ var Sea = (function(){
     var up = function(){ clearTimeout(holdTid); };
     b.addEventListener("pointerup", function(){
       up();
+      if (!pressing) return;                     // v7.11.5: a mouse released over the boat that was pressed elsewhere
+      pressing = false;
       if (held) return;
       if (Date.now() - downAt >= 1400){ held = true; earned(); }   // the timer can run late on a busy frame
       else summon();
     });
-    b.addEventListener("pointercancel", up);
+    b.addEventListener("pointercancel", function(){ up(); pressing = false; });
   }
   return {
     init: function(){
@@ -10235,7 +10321,9 @@ var Sea = (function(){
     plan: plan,                                  // pure: the director's setlist for (date, period, minutes, weekday)
     acts: ACTS,
     setWeather: setWeather,
+    reapplyWeather: reapplyWeather,
     weather: function(){ return weather; },
+    resync: function(){ try { t0 = document.timeline.currentTime; } catch(e){} },   // v7.11.5: motion back on — the visitors' heave re-locks to the waves
     residents: residents,
     gullLeave: gullLeave,
     history: function(){ return mem.hist.slice(); },
@@ -10817,6 +10905,9 @@ var Canvas = (function(){
       }
     });
     select(timerish()[0] || null);
+    /* v7.11.5 (audit): a live settle-in with no clock in the new scene would keep Space
+       and R and its ticks with nothing on screen — the moment ends with its card */
+    try { if (!Canvas.clockMounted() && Settle.live()) Settle.reset(); } catch(e){}
     refreshDock();
     alignGrid();                                 // painted grid follows the canvas
     if (!REDUCED){                               // scene cross-fade (120ms-ish)
@@ -11357,7 +11448,7 @@ var Canvas = (function(){
       try { settle = Settle.running(); } catch(e){}
       return settle || entries.some(function(en){
         var k = en.api && en.api.kind;
-        return (k === "timer" || k === "countdown") && en.api.running && en.api.running();
+        return (k === "timer" || k === "stopwatch") && en.api.running && en.api.running();   // v7.11.5: "countdown" was never a kind
       });
     },
     /* v7.7: the settle moment needs the clock card in THIS scene */
@@ -11713,7 +11804,7 @@ var Settings = (function(){
       /* labels cap at 20 chars to match the roster-period cap — the
          roster join is by label, and asymmetric caps would break it
          the first time a downloaded copy reloads */
-      blocks.push({ label: m[1].slice(0, 20), start: m[2], end: m[3], _s: st, _e: en });
+      blocks.push({ label: m[1].slice(0, 20).trim(), start: m[2], end: m[3], _s: st, _e: en });   // v7.11.5: trimmed — a trailing space broke the roster join after reload
     });
     blocks.sort(function(a,b){ return a._s - b._s; });
     /* v7.0: the same cap sanitize applies on reload (20 per list) — a
@@ -11763,6 +11854,7 @@ var Settings = (function(){
 
     var autoOn = f.auto.checked;
     var anchorIdx = parseInt(f.anchorWeek.value, 10);
+    if (isNaN(anchorIdx) && !f.anchorWeek.options.length) anchorIdx = 0;   // v7.11.5: no options yet (week types added in this same Apply) — the first one
     var oldAnchorIdx = (cfg.bell.groups[1] && cfg.bell.groups[1].name === cfg.bell.anchorWeekName) ? 1 : 0;
     if (autoOn){
       if (!/^\d{4}-\d{2}-\d{2}$/.test(f.anchor.value)) errors.push("Week rotation: pick the anchor week's date");
@@ -11773,7 +11865,8 @@ var Settings = (function(){
       if (!tok) return;
       var mm = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(tok);
       var dd = mm ? new Date(+mm[1], +mm[2] - 1, +mm[3]) : null;
-      if (!dd || isNaN(dd.getTime())){ errors.push('Weeks with no school: "' + tok + '" is not a date (use 2026-11-23)'); return; }
+      if (!dd || isNaN(dd.getTime()) || dd.getFullYear() !== +mm[1] || dd.getMonth() !== +mm[2] - 1 || dd.getDate() !== +mm[3]){   // v7.11.5: 2026-11-31 is not Dec 1
+        errors.push('Weeks with no school: "' + tok + '" is not a date (use 2026-11-23)'); return; }
       dd.setDate(dd.getDate() - ((dd.getDay() + 6) % 7));
       var k = dateKey(dd);
       if (skipWeeks.indexOf(k) === -1) skipWeeks.push(k);
@@ -11850,7 +11943,7 @@ var Settings = (function(){
       ? f.motion.value : "auto";
     applyWaveMotion();                     // the boat reacts on Apply, live
     cfg.ui.seaWeather = f.seaWeather.value === "calm" ? "calm" : "varies";
-    try { Sea.setWeather(Sea.weather()); } catch(e){}
+    try { Sea.reapplyWeather(); } catch(e){}
     cfg.ui.season = f.season.value === "off" ? "off" : "auto";
     try { Season.apply(); } catch(e){}
     cfg.timer.style = ["digits","ring","disc","tide"].indexOf(f.timerStyle.value) !== -1
@@ -11859,6 +11952,7 @@ var Settings = (function(){
     cfg.bell.autoWeek = autoOn && newGroups.length >= 2;
     if (autoOn){ cfg.bell.anchorMonday = f.anchor.value; cfg.bell.anchorWeekName = newAnchorName; }
     cfg.bell.skipWeeks = skipWeeks;
+    var oldGroups = cfg.bell.groups;
     cfg.bell.groups = newGroups;
     cfg.rosters = gatherRosters();
     /* re-key the roster grid immediately: if this Apply renamed a period,
@@ -11866,10 +11960,15 @@ var Settings = (function(){
        instead of silently feeding the picker stale labels */
     renderRosters();
     var defSel = f.def.value;
+    /* v7.11.5 (audit): the select holds the OLD names — renaming the default week used to
+       reset the default to the first week type. Follow the card by index. */
+    var defOldIdx = defSel === "none" ? -1 : oldGroups.findIndex(function(g){ return g.name === defSel; });
     cfg.bell.defaultGroup =
       (defSel !== "none" && newGroups.some(function(g){ return g.name === defSel; }))
         ? defSel
-        : (defSel === "none" ? "none" : (newGroups.length ? newGroups[0].name : "none"));
+        : (defSel === "none" ? "none"
+           : (defOldIdx >= 0 && newGroups[defOldIdx]) ? newGroups[defOldIdx].name
+           : (newGroups.length ? newGroups[0].name : "none"));
     Canvas.applyTimerSettings();
     /* an explicit No-bells pick survives even a rotation change */
     Bell.reResolve((autoChanged && prevActive.index !== -1) ? null : prevActive);
@@ -12141,6 +12240,14 @@ var SaveState = (function(){
   return {
     init: function(){
       baseline = snap();
+      /* v7.11.5 (audit): the × on the banner works in every branch — the "changed in
+         another window" case had no handler and the pill stayed on the projector */
+      try { wireButton(document.getElementById("verNudgeKeep"), function(){ document.getElementById("verNudge").hidden = true; }); } catch(e){}
+      /* v7.11.5 (audit): a board built from DEFAULTS (this file's own config block is
+         broken and there is no device copy) must never autosave — the first edit would
+         have written the defaults board to the shared file:// origin, and the known-good
+         copy the banner points at would then open as the defaults board */
+      if (cfgSource === "defaults") suspended = true;
       /* a file-seeded boot (first open on this device, or a device copy
          that was just reset) persists at once so the next open is the
          same board */
@@ -12156,7 +12263,6 @@ var SaveState = (function(){
             : "The board saved on this device could not be read by this file. It was set aside, not replaced — nothing will be saved until Settings → Use this file’s settings.";
           document.getElementById("verNudgeBells").hidden = true;
           vn0.hidden = false;
-          wireButton(document.getElementById("verNudgeKeep"), function(){ vn0.hidden = true; });
         } catch(e){}
       } else if (Store.ok && cfgSource !== "device" && !fileBroken){
         if (Store.write(cfg)){ lastSaved = new Date(); cfgSource = "device"; }
@@ -12519,7 +12625,8 @@ var Season = (function(){
         return;
       }
       var idle = anim(spider, "ocIdle");
-      if (idle && idle.currentTime !== null && idle.currentTime >= 93000 && idle.currentTime < 110000){ poke(); return; }   // mid-excursion: a twitch, not a drop from the wrong place
+      var lt = (idle && idle.currentTime !== null) ? idle.currentTime % 137000 : -1;   // v7.11.5: currentTime is total, not per loop
+      if (lt >= 93000 && lt < 110000){ poke(); return; }   // mid-excursion: a twitch, not a drop from the wrong place
       rig.style.removeProperty("--sy"); rig.style.removeProperty("--st");
       restart(rig, "drop");
       clearTimeout(endTid); endTid = setTimeout(land, DROP);

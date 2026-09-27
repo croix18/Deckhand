@@ -2,6 +2,38 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.11.5 — 2026-09-27
+
+**Hardening.** Croix: "run through all of the code and harden it." Three review passes
+over the whole file (the core runtime, the widgets and canvas, the sea and the season) found
+about forty defects; every one was traced in the code before it was fixed, and the fixes
+were tested against the previous release. The ones a teacher would have met: a board that
+booted on defaults because its own config block was broken would have autosaved those
+defaults over the device copy on the first tap (it no longer saves at all in that state);
+"Weeks with no school" now silences the bells in those weeks too, so the Friday before
+Thanksgiving points at the Monday after; a period label with a trailing space lost its
+roster after a reload; renaming the default week reset the default; turning the rotation on
+in the same Apply that created the week types failed; M mutes for real now (Settings → Apply
+used to un-mute); an impossible date (2026-11-31) in the skip-week list was silently taken as
+December 1. In the widgets: a scene with no clock now ends a live settle-in; the Sketch Pad's
+buttons, the music slider and the Slides checkboxes let go of keyboard focus (a later Space
+used to wipe the drawing or toggle the box); Pause → Play on the tape no longer plays the old
+bar over the new; the per-period Agenda refits its text; the cards' put-back shuffle is fair;
+dice and coins ignore a count change mid-animation; the Noise Meter's quiet streak ignores
+time in another tab; the timer's end is armed as one timeout so a hidden tab can't delay
+the chime; a student un-marked mid-round goes back into the round; a stopwatch counts as a
+working room for the sea; youtube-nocookie links with parameters load. In the sea: Seasonal
+touches Off now also turns off the Halloween rules; motion Off ends a running act instead of
+freezing it; deferred plays (a combo's second half, the gull's 3.2 s) are cleared with the
+show; the spider's excursion check works past the first idle loop; the pumpkins' box no
+longer takes taps meant for the board; a dolphin rule was moving the boat's spray; the sea's
+memory holds five days as designed; the free-time pool respects the month; the tape handles
+October ending mid-listen. Five animations that never had keyframes (the canvas fade, a new
+card's spawn, the alarm's entrance, the score pop, the music bars) now do. The privacy guard
+(`tools/check.sh`) also checks the settle-in message, scene names and widget labels against
+what is already public, refuses roster-shaped .json/.md/.txt/.csv files, and checks every
+commit about to be pushed, not only the working tree. Six new tests; 234 green.
+
 ## 7.11.4 — 2026-09-27
 
 **A finer web, a real flock.** Croix took two of my own reservations and asked for them.
