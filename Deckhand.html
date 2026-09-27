@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.11.5",
+  "appVersion": "7.11.6",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1713,14 +1713,14 @@
     .widget.spawn{animation:wIn .18s cubic-bezier(.2,.9,.3,1);}
     #alarm.on{animation:alarmIn .2s ease-out, pulse 1s ease-in-out infinite alternate;}
     #alarm.on.calm{animation:none;}
-    .scScore.pop, .tlCount.pop{animation:pop .25s cubic-bezier(.34,1.56,.64,1);}
+    .scScore.scPop, .tlCount.scPop{animation:scorePop .25s cubic-bezier(.34,1.56,.64,1);}   /* v7.11.6: was `.pop` — the popover sheet's class; +1 threw the number out of the card */
     .agCk path{transition:stroke-dashoffset .3s ease .05s;}
     .agText::after{transition:right .25s ease .1s;}
     /* v7.11.5 (audit): these five names had no keyframes — the rules were silent */
     @keyframes canvasIn{from{opacity:.55;} to{opacity:1;}}
     @keyframes wIn{from{opacity:0; transform:scale(.96);} to{opacity:1; transform:scale(1);}}
     @keyframes alarmIn{from{opacity:0;} to{opacity:1;}}
-    @keyframes pop{0%{transform:scale(1);} 45%{transform:scale(1.18);} 100%{transform:scale(1);}}
+    @keyframes scorePop{0%{transform:scale(1);} 45%{transform:scale(1.18);} 100%{transform:scale(1);}}
     @keyframes muDance{from{transform:scaleY(.45);} to{transform:scaleY(1);}}
   }
   /* ===== v6.22: WATERLINE motion left the reduced-motion block.
@@ -3837,7 +3837,7 @@ var DEFAULT_SCENES = [
 var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.11.5",
+  appVersion: "7.11.6",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -7292,9 +7292,9 @@ function makeScore(host, wcfg){
       wireButton(plus, function(){
         team.score = Math.min(999, team.score + 1);
         score.textContent = team.score;
-        score.classList.remove("pop");           // the +1 overshoot spring
+        score.classList.remove("scPop");         // the +1 overshoot spring
         void score.offsetWidth;
-        score.classList.add("pop");
+        score.classList.add("scPop");
       });
       var minus = document.createElement("button");
       minus.type = "button"; minus.className = "scB minus"; minus.textContent = "−";
@@ -7524,9 +7524,9 @@ function makeTally(host, wcfg){
       wireButton(plus, function(){
         item.count = Math.min(9999, item.count + 1);
         count.textContent = item.count;
-        count.classList.remove("pop");           // the +1 overshoot spring
+        count.classList.remove("scPop");         // the +1 overshoot spring
         void count.offsetWidth;
-        count.classList.add("pop");
+        count.classList.add("scPop");
       });
       var minus = document.createElement("button");
       minus.type = "button"; minus.className = "scB minus"; minus.textContent = "−";
@@ -7566,9 +7566,9 @@ function makeTally(host, wcfg){
       item.count = Math.min(9999, item.count + 1);
       if (firstCountEl){
         firstCountEl.textContent = item.count;
-        firstCountEl.classList.remove("pop");
+        firstCountEl.classList.remove("scPop");
         void firstCountEl.offsetWidth;
-        firstCountEl.classList.add("pop");
+        firstCountEl.classList.add("scPop");
       }
     },
     reset: function(){

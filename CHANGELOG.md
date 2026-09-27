@@ -2,6 +2,14 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.11.6 — 2026-09-27
+
+**The +1 that threw the number away.** Since 7.2, tapping +1 on the Scoreboard or the Tally
+made the number jump out of its card: the "+1 spring" animation used the class `pop`, which is
+also the popover menus' class, so the number was positioned as a menu. Found while
+photographing every tool for the tools audit (`docs/reviews/tools-audit-2026-09-27.md`),
+renamed `scPop`, with a test that the number stays inside its card.
+
 ## 7.11.5 — 2026-09-27
 
 **Hardening.** Croix: "run through all of the code and harden it." Three review passes

@@ -137,3 +137,26 @@ test.describe("v7.11.5 hardening", () => {
     await page.keyboard.press("Escape");
   });
 });
+
+test.describe("v7.11.6", () => {
+  test("v7.11.6: +1 on the Scoreboard and the Tally keeps the number inside its card (the `.pop` class collided with the popover sheets since 7.2)", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-28T10:30");
+    await dh.launch();
+    await dh.addW("addScoreBtn");
+    await page.click(".w-score .scB:not(.minus) >> nth=0");
+    const inside = await page.evaluate(() => {
+      const n = document.querySelector(".w-score .scScore"), t = n.closest(".scTeam");
+      const a = n.getBoundingClientRect(), b = t.getBoundingClientRect();
+      return n.textContent === "1" && a.top >= b.top && a.bottom <= b.bottom && a.left >= b.left && a.right <= b.right;
+    });
+    ok(inside, "the score left its team card after +1");
+    await dh.addW("addTallyBtn");
+    await page.click(".w-tally .scB:not(.minus) >> nth=0");
+    const inside2 = await page.evaluate(() => {
+      const n = document.querySelector(".w-tally .tlCount"), t = n.closest(".tlCard");
+      const a = n.getBoundingClientRect(), b = t.getBoundingClientRect();
+      return n.textContent === "1" && a.top >= b.top && a.bottom <= b.bottom;
+    });
+    ok(inside2, "the tally count left its card after +1");
+  });
+});
