@@ -2,6 +2,18 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.19.0 — 2026-09-29
+
+**Ready for a web address.** Croix: "why don't we go ahead and run the whole thing in one of my
+domains since I already own and pay for it." Served from an https address, Deckhand now installs
+as an app (Chrome offers Install; its own icon and window) and opens even when the network drops
+(an offline worker keeps the last copy; every online load still takes the newest file, so updates
+just arrive). The Drive file is unchanged — it never asks for the web app's files. **Import a
+board** (Settings → Device) brings a board in from an exported copy — layout, bells, rosters and
+all — after one confirming tap: saved boards live per address, so this is how the board moves from
+the Drive file to the web address (Export a copy there, Import it here). New files beside the app:
+`deckhand.webmanifest`, `deckhand-sw.js`, `icons/`. One test; 256.
+
 ## 7.18.0 — 2026-09-29
 
 **Minimize, and the three-minute flash.** Croix: "I have one period slides up and we finish class.

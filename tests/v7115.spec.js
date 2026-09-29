@@ -920,3 +920,41 @@ test.describe("v7.18", () => {
     ok(!(await fl()).go, "flashed while off");
   });
 });
+
+/* v7.19 — Deckhand at a web address (Croix: "why don't we go ahead and run the whole thing in one
+ * of my domains"). */
+test.describe("v7.19", () => {
+  test("v7.19: Import a board — an exported copy's board (layout, bells, rosters) replaces this device's after one confirming tap; junk is refused; the Drive file never asks for the web app's files", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    ok((await page.evaluate(() => !!document.querySelector('link[rel="manifest"]'))) === false, "a file:// board asked for a manifest");
+    // an exported copy: the config block with rosters, a renamed scene and a Talk Timer
+    const cfg = await page.evaluate(() => {
+      const c = JSON.parse(JSON.stringify(window.Deckhand.config));
+      c.rosters = [{ period: "5th", names: ["Ava", "Ben", "Cal"] }];
+      c.scenes[0].widgets.push({ type: "talk", x: 60, y: 10, w: 30, h: 40, label: "", pin: false, prompt: "Why?", who: "", secs: 60 });
+      c.bell.flash = { on: false, minutes: 2 };
+      return c;
+    });
+    const exported = path.join(dh.fixtureDir, "tmp_exported_board.html");
+    fs.writeFileSync(exported, '<!DOCTYPE html><title>Deckhand</title><script id="deckhand-config" type="application/json">\n' + JSON.stringify(cfg) + '\n</script><p>…the rest of the app…</p>');
+    const junk = path.join(dh.fixtureDir, "tmp_not_a_board.html");
+    fs.writeFileSync(junk, "<!DOCTYPE html><p>not a board</p>");
+    await page.click("#setBtn");
+    await dh.tab("device");
+    await page.setInputFiles("#importFile", junk);
+    await expect(page.locator("#setErrors")).toContainText("doesn't hold a Deckhand board");
+    await expect(page.locator("#importBtn")).not.toHaveClass(/armed/);
+    await page.setInputFiles("#importFile", exported);
+    await expect(page.locator("#importBtn")).toHaveClass(/armed/);
+    await expect(page.locator("#setErrors")).toContainText("rosters for 1 period");
+    await page.evaluate(() => { window.name = "dh.keepStore"; });   // the suite clears the store on every navigation — keep it for this reload
+    await Promise.all([page.waitForNavigation(), page.click("#importBtn")]);
+    await page.waitForFunction(() => !!window.Deckhand);
+    await dh.launch();
+    const after = await page.evaluate(() => ({ r: window.Deckhand.config.rosters, talk: !!document.querySelector(".w-talk"), flash: window.Deckhand.config.bell.flash, src: window.Deckhand.configSource }));
+    ok(after.r.length === 1 && after.r[0].names.join() === "Ava,Ben,Cal" && after.talk && after.flash.on === false && after.src === "device",
+      "the imported board is not the one in use: " + JSON.stringify(after));
+  });
+});
+

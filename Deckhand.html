@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Deckhand — Classroom Clock</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="theme-color" content="#1B2E45">
+<!-- v7.19: served from a web address (https), Deckhand installs as an app and opens offline —
+     the manifest and the offline worker are added by the boot script only there, so the Drive
+     file (file://) never asks for files it doesn't have. -->
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900&display=swap" rel="stylesheet">
 
 <!-- ============================================================
@@ -23,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.18.0",
+  "appVersion": "7.19.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -548,7 +552,7 @@
   .btnPri{background:var(--turq); color:var(--navy);}
   .btnSand{background:var(--sand); color:var(--navy);}
   .btnOutline{background:var(--white); color:var(--navy); border:3px solid var(--sand);}
-  #setResetBtn.armed{background:var(--coral) !important; border-color:var(--coral) !important;}
+  #setResetBtn.armed, #importBtn.armed{background:var(--coral) !important; border-color:var(--coral) !important;}
   @media (max-width: 700px){
     #settingsCard{width:96vw; height:92vh;}
     #setLayout{flex-direction:column;}
@@ -3964,6 +3968,14 @@
               </div>
             </div>
             <div class="fGroup">
+              <div class="fSection">Import a board</div>
+              <div class="row rowLeft">
+                <button class="btn btnSm" id="importBtn" type="button">Import a board&hellip;</button>
+                <input type="file" id="importFile" accept=".html,.htm,.json,text/html,application/json" hidden>
+              </div>
+              <div class="fHint">Brings in a board from an exported copy of Deckhand (the file <b>Export a copy</b> makes) &mdash; layout, bells, rosters and all. This is how the board moves from the Drive file to the web address, or from one machine to another. It replaces what is saved here; you are asked once more before it does.</div>
+            </div>
+            <div class="fGroup">
               <div class="fSection">Privacy</div>
               <div class="fHint">Rosters stay on this device with everything else. An exported copy carries the student names inside it &mdash; keep exports in your own Drive, never on the public website.</div>
             </div>
@@ -4096,7 +4108,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.18.0",
+  appVersion: "7.19.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -13671,6 +13683,60 @@ var Settings = (function(){
     location.reload();
   }
 
+  /* ---- v7.19: IMPORT A BOARD (Croix: "why don't we go ahead and run the whole thing in one of
+     my domains"). Saved boards live per web address, so the board on the Drive file doesn't
+     appear at the new address by itself: Export a copy there, Import it here. Reads the config
+     block out of an exported Deckhand.html (or a JSON of the saved board), runs it through
+     migrate + sanitize like any boot, and — after one confirming tap — makes it this device's
+     board and reloads. ---- */
+  var importPending = null, importTid = null;
+  function importBoard(){
+    if (importPending){                          // the confirming tap
+      clearTimeout(importTid);
+      var c = importPending; importPending = null;
+      if (!Store.write(c)){ setMsg("Couldn't save the imported board on this device (storage blocked or full).", false); return; }
+      SaveState.suspend();                       // never re-save the old board on the way out
+      location.reload();
+      return;
+    }
+    $("importFile").value = "";
+    $("importFile").click();
+  }
+  function disarmImport(){
+    importPending = null; clearTimeout(importTid);
+    $("importBtn").classList.remove("armed");
+    $("importBtn").textContent = "Import a board\u2026";
+  }
+  function parseBoard(text){
+    var raw = null;
+    var m = /<script[^>]*id=["']deckhand-config["'][^>]*>([\s\S]*?)<\/script>/i.exec(text);
+    try { raw = JSON.parse(m ? m[1] : text); } catch(e){ return null; }
+    if (isObj(raw) && isObj(raw.cfg) && !raw.schemaVersion) raw = raw.cfg;   // a saved-board blob {v, savedAt, cfg}
+    if (!isObj(raw)) return null;
+    var mig = migrate(raw);
+    if (!isObj(mig) || !Object.keys(mig).length) return null;
+    try { return sanitize(mig); } catch(e){ return null; }
+  }
+  function onImportFile(){
+    var f = this.files && this.files[0];
+    if (!f) return;
+    if (f.size > 8 * 1024 * 1024){ setMsg("That file is too big to be a Deckhand board.", false); return; }
+    var rd = new FileReader();
+    rd.onload = function(){
+      var c = parseBoard(String(rd.result || ""));
+      if (!c){ setMsg("That file doesn't hold a Deckhand board. Use the file Export a copy made.", false); return; }
+      importPending = c;
+      var nR = (c.rosters || []).length, nS = (c.scenes || []).length;
+      $("importBtn").classList.add("armed");
+      $("importBtn").textContent = "Replace this board with it?";
+      setMsg("Found a board: " + nS + (nS === 1 ? " scene" : " scenes") + ", " + (c.bell.groups || []).length + " bell schedules, rosters for " +
+        nR + (nR === 1 ? " period" : " periods") + ". Tap \u201CReplace this board with it?\u201D to use it here \u2014 what's saved on this device now is replaced.", true);
+      clearTimeout(importTid); importTid = setTimeout(disarmImport, 15000);
+    };
+    rd.onerror = function(){ setMsg("Couldn't read that file.", false); };
+    rd.readAsText(f);
+  }
+
   /* ---- v7.0: rosters from the Seating Chart tool ----
      Croix's seating chart keeps its data in localStorage under
      "seatingchart.v1" ({periods:[{id,name:"Period N"}], students:[{periodId,
@@ -13819,6 +13885,8 @@ var Settings = (function(){
       wireButton($("applyBtn"), apply);
       wireButton($("dlBtn"), download);
       wireButton($("setResetBtn"), resetToFile);
+      wireButton($("importBtn"), importBoard);                       // v7.19
+      $("importFile").addEventListener("change", onImportFile);
       wireButton($("closeBtn"), function(e){ close(!e || e.detail === 0); });
       $("settingsBack").addEventListener("click", function(){ close(false); });
       wireButton($("rosterImportBtn"), importSeatingLocal);
@@ -14394,6 +14462,20 @@ var Keys = (function(){
     else if (k === "Escape"){ if (!Canvas.closeMenus()) Canvas.unfocus(); }
   }
   return { init: function(){ document.addEventListener("keydown", onKey); } };
+})();
+
+/* ================= v7.19 the web app =================
+   From an https address: the manifest (Chrome offers "Install"), and the offline worker (the
+   board opens when the network hiccups; every online load still fetches the newest file). */
+(function(){
+  if (location.protocol !== "https:") return;
+  try {
+    var l = document.createElement("link"); l.rel = "manifest"; l.href = "deckhand.webmanifest";
+    document.head.appendChild(l);
+    var ic = document.createElement("link"); ic.rel = "icon"; ic.href = "icons/deckhand-192.png";
+    document.head.appendChild(ic);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("deckhand-sw.js").catch(function(){});
+  } catch(e){}
 })();
 
 /* ================= boot =================
