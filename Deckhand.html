@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.15.0",
+  "appVersion": "7.16.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1315,8 +1315,12 @@
   .nlSvg .nlTick.big{stroke-width:4;}
   .nlSvg .nlLab{fill:var(--navy); font-weight:700; text-anchor:middle;}
   .nlSvg .nlLab.zero{fill:var(--teal);}
-  .nlSvg .nlPt{fill:var(--turq); stroke:var(--navy); stroke-width:5;}
-  .nlSvg .nlPt.drag{fill:var(--sand);}
+  .nlSvg .nlPt{fill:var(--navy); stroke:var(--navy); stroke-width:5;}
+  .nlSvg .nlPt.open{fill:var(--white);}              /* v7.16: open ○ and closed ● */
+  .nlSvg .nlPt.drag{stroke:var(--turq); stroke-width:7;}
+  .nlSvg .nlPt.pull{opacity:.3;}                     /* pulled off the line: let go and it's gone */
+  .nlSvg .nlRay{stroke:var(--teal); fill:none; stroke-linecap:butt;}
+  .nlSvg .nlRayHead{fill:var(--teal);}
   .nlSvg .nlJump{fill:none; stroke:var(--teal); stroke-width:6; stroke-linecap:round;}
   .nlSvg .nlJump.neg{stroke:var(--navy);}
   .nlSvg .nlJump.ghost{opacity:.45; stroke-dasharray:10 10;}
@@ -1326,6 +1330,12 @@
   .nlSvg .nlHead.neg{fill:var(--navy);}
   .nlTools{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;}
   .nlLine{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; font-weight:700; color:var(--teal); font-size:clamp(11px, 2.4cqw, 15px);}
+  .nlRange{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;}
+  .nlRange[hidden]{display:none;}
+  body.locked .nlRange, body.locked .nlRangeBtn{display:none;}
+  .nlSw{display:inline-block; width:.8em; height:.8em; border-radius:50%; border:3px solid var(--navy); background:var(--navy); margin-right:.35em; vertical-align:-.08em; box-sizing:border-box;}
+  .nlSw.open{background:var(--white);}
+  .nlRangeBtn{white-space:nowrap;}
   .nlLine input{width:5em; font:inherit; font-weight:700; padding:4px 8px; border:2px solid var(--navy); border-radius:10px; color:var(--navy); background:var(--white); margin-left:4px;}
   body.locked .nlLine{display:none;}
 
@@ -4058,7 +4068,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.15.0",
+  appVersion: "7.16.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -8833,40 +8843,55 @@ function makeStations(host, wcfg){
   };
 }
 
-/* ---- v7.14 (tools audit §4.3) the NUMBER LINE, interactive: points the finger can place and
-   drag, jumps drawn as arcs (−7 + 4 is an arc from −7 landing on −3, labelled +4), any range
-   and step (fractions and decimals). Point mode: tap adds, drag moves, a tap on a point takes
-   it away. Jump mode: drag from one number to another. Today's marks outlive a scene switch. */
+/* ---- v7.14 (tools audit §4.3) the NUMBER LINE, interactive. v7.16 (Croix: "make it so I don't
+   have to type in the number. I want to be able to drop a dot. Open dot or closed dot. But be
+   able to manipulate it by hand"): everything is done with a finger on the line —
+   · Closed ● / Open ○: a tap on the line drops that dot at the nearest tick; drag a dot to move
+     it; tap a dot to flip it open ↔ closed; pull a dot well away from the line to throw it away.
+   · Ray →: tap the line on one side of a dot to shade from the dot to that end (x > 3, x ≤ −2);
+     tap the same side again to take the ray away.
+   · Jump ⌒: drag from one number to another — an arc with its signed length (−7 + 4).
+   The range is a chip (presets; typing is only the Custom row). Undo walks back every change.
+   Today's marks outlive a scene switch. */
 function makeNumline(host, wcfg){
   if (!isObj(wcfg.line)) wcfg.line = normLine(-10, 10, 1);
+  var PRESETS = [[-10, 10, 1], [-5, 5, 1], [0, 10, 1], [0, 20, 1], [-20, 20, 2], [-100, 100, 10], [0, 1, 0.25], [-2, 2, 0.5]];
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="nlWrap"><svg class="nlSvg" aria-label="Number line"></svg></div>' +
       '<div class="nlTools">' +
         '<span class="chips nlMode" role="group" aria-label="Tool">' +
-          '<button type="button" class="chip" data-mode="point" aria-pressed="true">Point</button>' +
+          '<button type="button" class="chip" data-mode="closed" aria-pressed="true"><i class="nlSw closed"></i>Closed</button>' +
+          '<button type="button" class="chip" data-mode="open" aria-pressed="false"><i class="nlSw open"></i>Open</button>' +
+          '<button type="button" class="chip" data-mode="ray" aria-pressed="false">Ray</button>' +
           '<button type="button" class="chip" data-mode="jump" aria-pressed="false">Jump</button>' +
         '</span>' +
         '<button class="dwTool nlUndo" type="button">Undo</button>' +
         '<button class="dwTool nlClear" type="button">Clear</button>' +
-      '<span class="nlLine">' +
-        '<label>From <input class="nlIn" data-k="min" type="number" step="any" aria-label="Start"></label>' +
-        '<label>to <input class="nlIn" data-k="max" type="number" step="any" aria-label="End"></label>' +
-        '<label>by <input class="nlIn" data-k="step" type="number" step="any" min="0" aria-label="Step"></label>' +
-      '</span>' +
+        '<button class="dwTool nlRangeBtn" type="button" aria-expanded="false"></button>' +
+      '</div>' +
+      '<div class="nlRange" hidden>' +
+        '<span class="chips nlPresets" role="group" aria-label="Range"></span>' +
+        '<span class="nlLine">' +
+          '<label>From <input class="nlIn" data-k="min" type="number" step="any" aria-label="Start"></label>' +
+          '<label>to <input class="nlIn" data-k="max" type="number" step="any" aria-label="End"></label>' +
+          '<label>by <input class="nlIn" data-k="step" type="number" step="any" min="0" aria-label="Step"></label>' +
+        '</span>' +
       '</div>' +
     '</div>');
   var svg = host.querySelector(".nlSvg"), NS = "http://www.w3.org/2000/svg";
-  var mode = "point", marks = { points: [], jumps: [], log: [] }, ghost = null, drag = null;
+  var mode = "closed", marks = { dots: [], jumps: [] }, hist = [], ghost = null, drag = null;
   var parked = DayStore.get(wcfg);
-  if (parked) marks = parked;
-  if (!Array.isArray(marks.log)) marks.log = [];
+  if (parked){
+    marks = parked;
+    if (!Array.isArray(marks.dots)) marks.dots = (marks.points || []).map(function(v){ return { v: v, open: false, ray: 0 }; });   // a 7.14/7.15 day
+    if (!Array.isArray(marks.jumps)) marks.jumps = [];
+    delete marks.points; delete marks.log;
+  }
   function park(){ DayStore.set(wcfg, marks); }
-  /* v7.15 (Croix: "It stretched so weird when I tried to make it bigger… clunky as all heck"):
-     the drawing used a fixed 1000×300 box scaled to fit, so a wider card left the line short and
-     centred, a taller one left it floating in empty space and every label grew with it. Now the
-     SVG is drawn in the card's own pixels: the line runs the full width, the labels keep one
-     readable size, and a taller card gives the jumps more room above the line. */
+  function snapshot(){ return JSON.stringify(marks); }
+  function commit(before){ if (before !== snapshot()){ hist.push(before); if (hist.length > 60) hist.shift(); park(); } }
+  /* v7.15: drawn in the card's own pixels — the line runs the width, the labels keep one size */
   var VW = 1000, VH = 300, X0 = 70, X1 = 930, Y = 190, FS = 26;
   var wrapEl = host.querySelector(".nlWrap");
   function layout(){
@@ -8875,8 +8900,6 @@ function makeNumline(host, wcfg){
     svg.setAttribute("viewBox", "0 0 " + VW + " " + VH);
     FS = Math.round(Math.max(22, Math.min(34, VW / 48)));   // readable from the back at any card size, never ballooning
     X0 = Math.max(FS * 1.6, VW * .04); X1 = VW - X0;
-    /* the line sits low (labels under it, the jumps' room above), and a tall card doesn't push it
-       into the bottom edge — it stays at about two-thirds of the height */
     Y = Math.round(Math.min(VH - FS * 2.4 - 6, Math.max(VH * .66, FS * 4)));
   }
   function ln(){ return wcfg.line; }
@@ -8901,48 +8924,64 @@ function makeNumline(host, wcfg){
     svg.appendChild(el("path", { d: "M" + (X0 - ov) + " " + Y + "H" + (X1 + ov) }, "nlAxis"));
     svg.appendChild(el("path", { d: "M" + (X1 + ov) + " " + Y + "l-16 -10v20z" }, "nlHead neg"));
     svg.appendChild(el("path", { d: "M" + (X0 - ov) + " " + Y + "l16 -10v20z" }, "nlHead neg"));
-    var lf = FS, tk = Math.round(FS * .6);
+    var tk = Math.round(FS * .6);
     for (var i = 0; i <= n; i++){
       var v = +(ln().min + i * ln().step).toFixed(6), x = X0 + i * step, big = i % every === 0;
       svg.appendChild(el("line", { x1: x, y1: Y - (big ? tk : tk * .6), x2: x, y2: Y + (big ? tk : tk * .6) }, "nlTick" + (big ? " big" : "")));
       if (big){
-        var t = el("text", { x: x, y: Y + tk + FS * 1.05, "font-size": lf }, "nlLab" + (Math.abs(v) < 1e-9 ? " zero" : ""));
+        var t = el("text", { x: x, y: Y + tk + FS * 1.05, "font-size": FS }, "nlLab" + (Math.abs(v) < 1e-9 ? " zero" : ""));
         t.textContent = fmtTick(v); svg.appendChild(t);
       }
     }
-    marks.jumps.concat(ghost ? [ghost] : []).forEach(function(j, k){
+    /* rays under the dots: a thick bar from the dot to the end of the line, with the arrow */
+    var R = Math.round(FS * .58), rw = Math.max(7, Math.round(FS * .3));
+    marks.dots.forEach(function(d, i){
+      if (!d.ray || (drag && drag.i === i && drag.pull)) return;   // a dot being thrown away takes its ray with it
+      var a = xOf(d.v), b = d.ray > 0 ? X1 + ov : X0 - ov;
+      svg.appendChild(el("path", { d: "M" + a + " " + Y + "H" + (b - d.ray * 18), "stroke-width": rw }, "nlRay"));
+      svg.appendChild(el("path", { d: "M" + b + " " + Y + "l" + (-d.ray * 26) + " " + (-rw * 1.6) + "v" + (rw * 3.2) + "z" }, "nlRayHead"));
+    });
+    marks.jumps.concat(ghost ? [ghost] : []).forEach(function(j){
       var a = xOf(j[0]), b = xOf(j[1]), d = +(j[1] - j[0]).toFixed(6), neg = d < 0;
       var lift = Math.max(20, Math.min(Y - FS * 2 - 12, 30 + Math.abs(b - a) * .35)), mid = (a + b) / 2;   // the arc and its label stay inside the card
-      var p = el("path", { d: "M" + a + " " + (Y - 8) + " Q" + mid + " " + (Y - 8 - lift * 2) + " " + b + " " + (Y - 8) }, "nlJump" + (neg ? " neg" : "") + (j === ghost ? " ghost" : ""));
-      svg.appendChild(p);
+      svg.appendChild(el("path", { d: "M" + a + " " + (Y - 8) + " Q" + mid + " " + (Y - 8 - lift * 2) + " " + b + " " + (Y - 8) }, "nlJump" + (neg ? " neg" : "") + (j === ghost ? " ghost" : "")));
       var dir = neg ? -1 : 1;
       svg.appendChild(el("path", { d: "M" + b + " " + (Y - 6) + "l" + (-14 * dir) + " -18l" + (10 * dir) + " -2z" }, "nlHead" + (neg ? " neg" : "")));
       var lab = el("text", { x: mid, y: Y - 14 - lift - 8, "font-size": Math.round(FS * 1.15) }, "nlJLab" + (neg ? " neg" : ""));
-      lab.textContent = (d > 0 ? "+" : "\u2212") + fmtTick(Math.abs(d)); svg.appendChild(lab);
+      lab.textContent = (d > 0 ? "+" : "−") + fmtTick(Math.abs(d)); svg.appendChild(lab);
     });
-    marks.points.forEach(function(v, i){
-      var c = el("circle", { cx: xOf(v), cy: Y, r: Math.round(FS * .58) }, "nlPt" + (drag && drag.i === i ? " drag" : ""));
-      c.dataset.i = i; svg.appendChild(c);
+    marks.dots.forEach(function(d, i){
+      var dragging = drag && drag.i === i;
+      var cy = dragging && drag.dy ? Y + drag.dy : Y;
+      var c = el("circle", { cx: xOf(d.v), cy: cy, r: R }, "nlPt" + (d.open ? " open" : "") + (dragging ? " drag" : "") + (dragging && drag.pull ? " pull" : ""));
+      svg.appendChild(c);
     });
-    host.querySelector(".nlUndo").disabled = !marks.points.length && !marks.jumps.length;
+    host.querySelector(".nlUndo").disabled = !hist.length;
   }
   function toX(e){ var r = svg.getBoundingClientRect(); return (e.clientX - r.left) / r.width * VW; }
   function toY(e){ var r = svg.getBoundingClientRect(); return (e.clientY - r.top) / r.height * VH; }
-  function nearPoint(x){
-    var best = -1, bd = Math.max(26, FS);
-    marks.points.forEach(function(v, i){ var d = Math.abs(xOf(v) - x); if (d < bd){ bd = d; best = i; } });
+  function nearDot(x, reach){
+    var best = -1, bd = reach || Math.max(30, FS * 1.2);
+    marks.dots.forEach(function(d, i){ var dd = Math.abs(xOf(d.v) - x); if (dd < bd){ bd = dd; best = i; } });
     return best;
   }
-  var pid = null;
+  var pid = null, before = null;
   svg.addEventListener("pointerdown", function(e){
     if (pid !== null) return;
-    pid = e.pointerId; try { svg.setPointerCapture(pid); } catch(err){}
+    layout();                                    // the card may have just been resized or dropped
     var x = toX(e), y = toY(e), v = snap(x);
-    if (Math.abs(y - Y) > Math.max(80, FS * 3) && mode === "point"){ pid = null; return; }   // far from the line: nothing
-    if (mode === "point"){
-      var i = nearPoint(x);
-      if (i >= 0) drag = { i: i, moved: false, from: marks.points[i] };
-      else { marks.points.push(v); marks.log.push("p"); drag = { i: marks.points.length - 1, moved: true, from: v }; }
+    if (Math.abs(y - Y) > Math.max(80, FS * 3.2) && mode !== "jump") return;   // far from the line: nothing
+    pid = e.pointerId; try { svg.setPointerCapture(pid); } catch(err){}
+    before = snapshot();
+    if (mode === "closed" || mode === "open"){
+      var i = nearDot(x);
+      if (i >= 0) drag = { i: i, moved: false, created: false };
+      else {
+        marks.dots.push({ v: v, open: mode === "open", ray: 0 });
+        drag = { i: marks.dots.length - 1, moved: true, created: true };
+      }
+    } else if (mode === "ray"){
+      drag = { ray: true, x: x };
     } else {
       drag = { jump: true, a: v, moved: false }; ghost = [v, v];
     }
@@ -8950,46 +8989,93 @@ function makeNumline(host, wcfg){
   });
   svg.addEventListener("pointermove", function(e){
     if (e.pointerId !== pid || !drag) return;
-    var v = snap(toX(e));
+    var x = toX(e), v = snap(x);
     if (drag.jump){ if (v !== drag.a) drag.moved = true; ghost = [drag.a, v]; }
-    else { if (v !== marks.points[drag.i]) drag.moved = true; marks.points[drag.i] = v; }
+    else if (drag.ray){ drag.x = x; return; }
+    else {
+      var d = marks.dots[drag.i];
+      if (v !== d.v){ drag.moved = true; d.v = v; }
+      drag.dy = Math.max(-Y + 4, Math.min(VH - Y - 4, toY(e) - Y));
+      drag.pull = Math.abs(drag.dy) > FS * 2.4;     // pulled well off the line: let go and it's gone
+      if (drag.pull) drag.moved = true;
+    }
     render();
   });
   function up(e){
     if (e.pointerId !== pid) return;
     pid = null;
-    if (drag){
-      if (drag.jump){ if (ghost && ghost[0] !== ghost[1]){ marks.jumps.push(ghost); marks.log.push("j"); } ghost = null; }
-      else if (!drag.moved){ marks.points.splice(drag.i, 1); var li = marks.log.lastIndexOf("p"); if (li >= 0) marks.log.splice(li, 1); }   // a tap on a point takes it away
-      drag = null; park(); render();
+    if (!drag) return;
+    if (drag.jump){ if (ghost && ghost[0] !== ghost[1]) marks.jumps.push(ghost); ghost = null; }
+    else if (drag.ray){
+      /* the ray goes from the nearest dot toward the side that was tapped; the same side again takes it away */
+      var i = nearDot(drag.x, Infinity);
+      if (i >= 0){
+        var d = marks.dots[i], side = drag.x >= xOf(d.v) ? 1 : -1;
+        d.ray = d.ray === side ? 0 : side;
+      }
+    } else {
+      var dd = marks.dots[drag.i];
+      if (drag.pull) marks.dots.splice(drag.i, 1);
+      else if (!drag.moved && !drag.created) dd.open = !dd.open;   // a tap on a dot flips it open ↔ closed
+      /* two dots never share a tick: the one just placed wins */
+      else marks.dots = marks.dots.filter(function(o, k){ return k === drag.i || o.v !== dd.v; });
     }
+    drag = null;
+    commit(before); render();
   }
   svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
-  host.querySelectorAll(".nlMode .chip").forEach(function(c){
-    wireButton(c, function(){ mode = c.dataset.mode; host.querySelectorAll(".nlMode .chip").forEach(function(d){ d.setAttribute("aria-pressed", d === c ? "true" : "false"); }); });
-  });
-  function undo(){                               // the last thing placed, whichever kind
-    var k = marks.log.pop();
-    if (k === "j") marks.jumps.pop(); else if (k === "p") marks.points.pop(); else return;
-    park(); render();
+  function setMode(m){
+    mode = m;
+    host.querySelectorAll(".nlMode .chip").forEach(function(c){ c.setAttribute("aria-pressed", c.dataset.mode === m ? "true" : "false"); });
+  }
+  host.querySelectorAll(".nlMode .chip").forEach(function(c){ wireButton(c, function(){ setMode(c.dataset.mode); }); });
+  function undo(){
+    if (!hist.length) return;
+    marks = JSON.parse(hist.pop()); park(); render();
   }
   function clearAll(){
-    if (!marks.points.length && !marks.jumps.length) return;
-    var was = { points: marks.points.slice(), jumps: marks.jumps.slice(), log: marks.log.slice() };
-    marks = { points: [], jumps: [], log: [] }; park(); render();
-    Undo.show("Number line cleared", function(){ marks = was; park(); render(); });
+    if (!marks.dots.length && !marks.jumps.length) return;
+    var was = snapshot();
+    hist.push(was);
+    marks = { dots: [], jumps: [] }; park(); render();
+    Undo.show("Number line cleared", function(){ marks = JSON.parse(was); park(); render(); });
   }
   wireButton(host.querySelector(".nlUndo"), undo);
   wireButton(host.querySelector(".nlClear"), clearAll);
+  /* the range: a chip that names it and opens the presets (and, for anything else, the Custom row) */
+  var rangeBtn = host.querySelector(".nlRangeBtn"), rangeRow = host.querySelector(".nlRange");
+  function rangeName(l){ return fmtTick(l.min) + " to " + fmtTick(l.max) + (l.step !== 1 ? " by " + fmtTick(l.step) : ""); }
+  var presetWrap = host.querySelector(".nlPresets");
+  PRESETS.forEach(function(p){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip chipSm"; b.dataset.p = p.join(",");
+    b.textContent = rangeName({ min: p[0], max: p[1], step: p[2] });
+    wireButton(b, function(){ setLine(normLine(p[0], p[1], p[2])); rangeRow.hidden = true; paintRange(); });
+    presetWrap.appendChild(b);
+  });
+  function paintRange(){
+    rangeBtn.textContent = rangeName(wcfg.line) + " ▾";
+    rangeBtn.setAttribute("aria-expanded", rangeRow.hidden ? "false" : "true");
+    presetWrap.querySelectorAll(".chip").forEach(function(b){
+      b.setAttribute("aria-pressed", b.dataset.p === [wcfg.line.min, wcfg.line.max, wcfg.line.step].join(",") ? "true" : "false");
+    });
+  }
+  wireButton(rangeBtn, function(){ rangeRow.hidden = !rangeRow.hidden; paintRange(); });
   var ins = host.querySelectorAll(".nlIn");
   function fillLine(){ ins.forEach(function(inp){ if (inp !== document.activeElement) inp.value = wcfg.line[inp.dataset.k]; }); }
+  function setLine(l){
+    var b0 = snapshot();
+    wcfg.line = l;
+    /* marks off the new line are dropped; the rest snap to the new ticks */
+    marks.dots = marks.dots.filter(function(d){ return d.v >= l.min && d.v <= l.max; });
+    render();
+    marks.dots.forEach(function(d){ d.v = snap(xOf(d.v)); });
+    marks.jumps = marks.jumps.filter(function(j){ return j[0] >= l.min && j[0] <= l.max && j[1] >= l.min && j[1] <= l.max; });
+    commit(b0); fillLine(); render(); paintRange();
+  }
   function readLine(){
     var v = {}; ins.forEach(function(inp){ v[inp.dataset.k] = parseFloat(inp.value); });
-    wcfg.line = normLine(isFinite(v.min) ? v.min : wcfg.line.min, isFinite(v.max) ? v.max : wcfg.line.max, isFinite(v.step) ? v.step : wcfg.line.step);
-    /* marks off the new line are dropped; the rest snap to the new ticks */
-    marks.points = marks.points.filter(function(p){ return p >= wcfg.line.min && p <= wcfg.line.max; }).map(function(p){ return snap(xOf(p)); });
-    marks.jumps = marks.jumps.filter(function(j){ return j[0] >= wcfg.line.min && j[0] <= wcfg.line.max && j[1] >= wcfg.line.min && j[1] <= wcfg.line.max; });
-    park(); fillLine(); render();
+    setLine(normLine(isFinite(v.min) ? v.min : wcfg.line.min, isFinite(v.max) ? v.max : wcfg.line.max, isFinite(v.step) ? v.step : wcfg.line.step));
   }
   ins.forEach(function(inp){
     inp.addEventListener("change", readLine);
@@ -8999,19 +9085,19 @@ function makeNumline(host, wcfg){
       if (e.key === "Enter" || e.key === "Escape"){ readLine(); inp.blur(); }
     });
   });
-  fillLine(); render();
+  fillLine(); paintRange(); render();
   var ro = null, roTid = null;
   try { ro = new ResizeObserver(function(){ clearTimeout(roTid); roTid = setTimeout(render, 30); }); ro.observe(wrapEl); } catch(e){}
   return {
     kind: "numline",
     label: function(){ return wcfg.label || "Number Line"; },
     startPause: function(){}, reset: clearAll,
-    marks: function(){ return { points: marks.points.slice(), jumps: marks.jumps.map(function(j){ return j.slice(); }) }; },   // test hook
-    setMode: function(m){ mode = m; },              // test hook
-    at: function(v){ var r = svg.getBoundingClientRect(); return { x: r.left + xOf(v) / VW * r.width, y: r.top + Y / VH * r.height }; },   // test hook: a number's point on screen
+    marks: function(){ return { points: marks.dots.map(function(d){ return d.v; }), dots: JSON.parse(JSON.stringify(marks.dots)), jumps: marks.jumps.map(function(j){ return j.slice(); }) }; },   // test hook
+    setMode: setMode,                               // test hook
+    at: function(v){ render(); var r = svg.getBoundingClientRect(); return { x: r.left + xOf(v) / VW * r.width, y: r.top + Y / VH * r.height }; },   // test hook: a number's point on screen
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){ fillLine(); render(); }, resync: function(){},
+    rebuild: function(){ fillLine(); paintRange(); render(); }, resync: function(){},
     destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} clearTimeout(roTid); }
   };
 }

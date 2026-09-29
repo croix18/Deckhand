@@ -2,6 +2,19 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.16.0 — 2026-09-29
+
+**The Number Line by hand.** Croix: "make it so I don't have to type in the number. I want to be
+able to drop a dot. Open dot or closed dot. But be able to manipulate it by hand." The tools are
+now **Closed ●, Open ○, Ray and Jump**. A tap on the line drops the chosen dot at the nearest
+tick; drag a dot to move it; tap a dot to flip it open ↔ closed; pull a dot well off the line and
+let go to throw it away. With Ray, tap the line on one side of a dot to shade from the dot to that
+end (x > 3, x ≤ −2) — tap the same side again to take it away. Two dots never share a tick. Undo
+now walks back every change (a drop, a move, a flip, a ray, a jump, a range change). The range is a
+chip that names it ("−10 to 10 ▾") and opens presets (−10 to 10, −5 to 5, 0 to 10, 0 to 20, −20
+to 20 by 2, −100 to 100 by 10, 0 to 1 by 0.25, −2 to 2 by 0.5); typing is only the Custom row
+behind it. Dots, rays and jumps work while locked. One test; 253.
+
 ## 7.15.0 — 2026-09-29
 
 **After the first day with the pen.** Croix: the drawing "worked out really great, except when

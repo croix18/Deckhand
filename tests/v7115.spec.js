@@ -632,14 +632,15 @@ test.describe("v7.14", () => {
     await page.mouse.move(xOf(5), y); await page.mouse.down(); await page.mouse.move(xOf(-2), y, { steps: 5 }); await page.mouse.up();
     await expect(page.locator(".w-numline .nlJLab >> nth=1")).toHaveText("−7");
     ok(await page.locator(".w-numline .nlJump.neg").count() === 1, "a negative jump is drawn navy");
-    await page.click('.w-numline .chip[data-mode="point"]');
-    await page.mouse.click(xOf(5), y);                                 // a tap on the point removes it
+    await page.click('.w-numline .chip[data-mode="closed"]');
+    await page.mouse.move(xOf(5), y); await page.mouse.down(); await page.mouse.move(xOf(5), y - 200, { steps: 5 }); await page.mouse.up();   // v7.16: pulled off the line, it's gone
     m = await marks();
-    ok(m.points.join() === "-7", "tap-remove: " + m.points.join());
-    await page.click(".w-numline .nlUndo");                             // the last thing placed was a jump
+    ok(m.points.join() === "-7", "pull-away: " + m.points.join());
+    await page.click(".w-numline .nlUndo");                             // v7.16: Undo walks back the last change
     m = await marks();
-    ok(m.jumps.length === 1 && m.points.length === 1, "undo: " + JSON.stringify(m));
-    // range: 0 to 1 by 0.25 — marks off the new line are dropped
+    ok(m.jumps.length === 2 && m.points.join() === "-7,5", "undo: " + JSON.stringify(m));
+    // range: 0 to 1 by 0.25 — marks off the new line are dropped (v7.16: the Custom row lives behind the range chip)
+    await page.click(".w-numline .nlRangeBtn");
     await page.fill('.w-numline .nlIn[data-k="step"]', "0.25"); await page.press('.w-numline .nlIn[data-k="step"]', "Enter");
     await page.fill('.w-numline .nlIn[data-k="min"]', "0"); await page.press('.w-numline .nlIn[data-k="min"]', "Enter");
     await page.fill('.w-numline .nlIn[data-k="max"]', "1"); await page.press('.w-numline .nlIn[data-k="max"]', "Enter");
@@ -774,5 +775,51 @@ test.describe("v7.15", () => {
     ok(g1.span > 0.85 && g2.span > 0.85, "the line does not run the card's width: " + JSON.stringify([g1, g2]));
     ok([g1, g2].every(g => g.labH >= 20 && g.labH <= 48), "the labels are unreadable or ballooned: " + JSON.stringify([g1, g2]));
     ok(g2.lineY > 0.55 && g2.lineY < 0.8, "a tall card put the line in a strange place: " + JSON.stringify(g2));
+  });
+
+  test("v7.16: the Number Line by hand — drop closed and open dots, drag one, tap to flip it, pull it off to throw it away, shade a ray by tapping a side, pick the range from chips; Undo walks it all back", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addNumlineBtn"); await page.keyboard.press("Escape");
+    const at = v => page.evaluate(v => document.querySelector(".w-numline")._entry.api.at(v), v);
+    const dots = () => page.evaluate(() => JSON.stringify(document.querySelector(".w-numline")._entry.api.marks().dots));
+    const tap = async v => { const p = await at(v); await page.mouse.click(p.x, p.y); };
+    const drag = async (a, b, dy) => { const p = await at(a), q = await at(b); await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(q.x, q.y + (dy || 0), { steps: 6 }); await page.mouse.up(); };
+    await expect(page.locator(".w-numline .nlRange")).toBeHidden();      // nothing to type to start
+    await tap(3);                                                        // Closed is the default tool
+    await page.click('.w-numline .chip[data-mode="open"]');
+    await tap(-2);
+    ok((await dots()) === '[{"v":3,"open":false,"ray":0},{"v":-2,"open":true,"ray":0}]', "drop: " + await dots());
+    ok((await page.locator(".w-numline .nlPt.open").count()) === 1, "the open dot is not drawn open");
+    await drag(-2, -4);
+    ok((await dots()) === '[{"v":3,"open":false,"ray":0},{"v":-4,"open":true,"ray":0}]', "drag: " + await dots());
+    await tap(3);                                                        // a tap on a dot flips it
+    ok(JSON.parse(await dots())[0].open === true, "flip: " + await dots());
+    await page.click('.w-numline .chip[data-mode="ray"]');
+    await tap(7); await tap(-8);
+    ok((await dots()) === '[{"v":3,"open":true,"ray":1},{"v":-4,"open":true,"ray":-1}]', "rays: " + await dots());
+    ok((await page.locator(".w-numline .nlRay").count()) === 2, "rays not drawn");
+    await tap(9);                                                        // the same side again takes it away
+    ok(JSON.parse(await dots())[0].ray === 0, "ray off: " + await dots());
+    await page.click('.w-numline .chip[data-mode="closed"]');
+    await drag(3, 3, -200);                                              // pulled off the line
+    ok(JSON.parse(await dots()).length === 1, "pull-away: " + await dots());
+    await page.click(".w-numline .nlUndo"); await page.click(".w-numline .nlUndo");
+    ok((await dots()) === '[{"v":3,"open":true,"ray":1},{"v":-4,"open":true,"ray":-1}]', "undo twice: " + await dots());
+    // two dots never share a tick: the one placed wins
+    await drag(-4, 3);
+    ok(JSON.parse(await dots()).length === 1 && JSON.parse(await dots())[0].v === 3, "stacked dots: " + await dots());
+    // the range from chips
+    await expect(page.locator(".w-numline .nlRangeBtn")).toContainText("−10 to 10");
+    await page.click(".w-numline .nlRangeBtn");
+    await page.click('.w-numline .nlPresets .chip[data-p="-5,5,1"]');
+    await expect(page.locator(".w-numline .nlRange")).toBeHidden();
+    await expect(page.locator(".w-numline .nlRangeBtn")).toContainText("−5 to 5");
+    ok((await page.evaluate(() => JSON.stringify(window.Deckhand.config.scenes[0].widgets.find(w => w.type === "numline").line))) === '{"min":-5,"max":5,"step":1}', "preset");
+    ok(JSON.parse(await dots())[0].v === 3, "a dot on both lines kept its number: " + await dots());
+    await page.click("#lockBtn");
+    await expect(page.locator(".w-numline .nlRangeBtn")).toBeHidden();
+    await tap(-1);                                                       // dots work while locked (a teaching action)
+    ok(JSON.parse(await dots()).length === 2, "could not drop a dot while locked");
   });
 });
