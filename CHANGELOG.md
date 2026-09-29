@@ -2,6 +2,15 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.22.0 — 2026-09-29
+
+**Pick the side.** Croix: "the low fi music. Can I get a way to pick which track I'm listening to."
+The side's name on the Music card is now a button: tap it and every side is listed with a one-line
+feel ("easy · keys, a beat", "slow · pads, no drums"). Tap one and it plays straight away. **Repeat
+this side** keeps it looping instead of moving on to the next shuffled side. The pick and the repeat
+are saved with the board, so the card opens on the same side tomorrow. Next › still skips as
+before. One test; 259.
+
 ## 7.21.0 — 2026-09-29
 
 **Zoom for the back row.** Croix: "a couple of times I had students claiming they can't see from

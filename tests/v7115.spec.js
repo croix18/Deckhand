@@ -1052,3 +1052,46 @@ test.describe("v7.21", () => {
     await expect(page.locator("#zoomBar")).toBeHidden();
   });
 });
+
+/* v7.22 — pick the side (Croix: "the low fi music. Can I get a way to pick which track I'm listening to"). */
+test.describe("v7.22", () => {
+  test("v7.22: tapping the side's name opens the picker; a side plays at once and is remembered; Repeat this side stays on it; ✕ closes", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addMusicBtn"); await page.keyboard.press("Escape");
+    const api = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.current());
+    const running = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
+    const picker = page.locator(".w-music .muPick");
+    await expect(picker).toBeHidden();
+    await page.click(".w-music .muWhat");
+    await expect(picker).toBeVisible();
+    const n = await page.locator(".w-music .muSide").count();
+    const sides = await page.evaluate(() => document.querySelector(".w-music")._entry.api.sides());
+    ok(n === sides.length && n >= 10, "the picker lists every side: " + n + " vs " + sides.length);
+    await expect(page.locator('.w-music .muSide[aria-pressed="true"]')).toHaveCount(1);
+    ok(/·/.test(await page.locator(".w-music .muSide span").first().textContent()), "each side says how it feels");
+    await page.click('.w-music .muSide[data-i="8"]');
+    await expect(picker).toBeHidden();
+    await expect.poll(running).toBe(true);                             // picking a side plays it
+    let c = await api();
+    ok(c.i === 8 && !c.repeat, "picked: " + JSON.stringify(c));
+    await expect(page.locator(".w-music .muWhat")).toContainText(sides[8]);
+    // Repeat this side
+    await page.click(".w-music .muWhat");
+    await page.click(".w-music .muRepeat");
+    await expect(page.locator(".w-music .muRepeat")).toHaveAttribute("aria-pressed", "true");
+    await page.click(".w-music .muPickX");
+    await expect(picker).toBeHidden();
+    c = await api();
+    ok(c.i === 8 && c.repeat, "repeat: " + JSON.stringify(c));
+    // remembered: the board opens on the picked side
+    await page.waitForTimeout(1200);
+    const saved = await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "music"));
+    ok(saved.side === 8 && saved.repeat === true, "saved: " + JSON.stringify(saved));
+    await dh.reopen("#t=2026-09-29T10:30");
+    await dh.launch();
+    c = await api();
+    ok(c.i === 8 && c.repeat, "after a reload: " + JSON.stringify(c));
+    await expect(page.locator(".w-music .muWhat")).toContainText(sides[8]);
+  });
+});

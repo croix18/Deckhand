@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.21.0",
+  "appVersion": "7.22.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1198,7 +1198,23 @@
     width:7px; height:8px; border-radius:4px; background:var(--turq);
     display:block; transform-origin:50% 100%;
   }
-  .muWhat{font-weight:700; font-size:clamp(12px, 6cqw, 17px); color:var(--navy); opacity:.75;}
+  /* v7.22: the side's name is the picker's button */
+  .muWhat{font:inherit; font-weight:700; font-size:clamp(12px, 6cqw, 17px); color:var(--navy); background:var(--paleturq);
+    border:0; border-radius:999px; padding:6px 14px; min-height:40px; cursor:pointer; max-width:94%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .muWhat::after{content:" \25BE"; opacity:.7;}
+  .muPick{position:absolute; inset:0; z-index:5; background:var(--white); display:flex; flex-direction:column; gap:8px; padding:10px 12px;}
+  .muPick[hidden]{display:none;}
+  .muPickHead{display:flex; align-items:center; gap:8px;}
+  .muPickHead b{font-weight:900; color:var(--navy); margin-right:auto; font-size:clamp(13px, 4cqw, 18px);}
+  .muPickX{background:none; border:0; font:inherit; font-weight:900; font-size:18px; color:var(--navy); min-width:44px; min-height:44px; cursor:pointer;}
+  .muList{flex:1; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap:6px; align-content:start;}
+  .muSide{display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left; border:0; border-radius:12px; padding:8px 12px; min-height:48px;
+    background:var(--paleturq); color:var(--navy); font:inherit; cursor:pointer;}
+  .muSide b{font-weight:900; font-size:clamp(13px, 3.6cqw, 17px);}
+  .muSide span{font-size:clamp(11px, 2.8cqw, 13px); color:var(--teal); font-weight:700;}
+  .muSide[aria-pressed="true"]{background:var(--turq);}
+  .w-music .wBody{position:relative;}
   .muRow{display:flex; gap:8px; align-items:center; justify-content:center;}
   .muVol{width:130px; height:44px; accent-color:var(--turq);}
   .muPlay{min-width:74px;}
@@ -4151,7 +4167,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.21.0",
+  appVersion: "7.22.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4415,6 +4431,8 @@ function sanitize(c){
       if (ty === "music"){
         wc.channel = "lofi";   // mozart returns when the real audio lands
         wc.volume = numIn(w.volume, 0, 1, 0.5);
+        if (typeof w.side === "number" && w.side >= 0 && w.side < 12) wc.side = Math.round(w.side);   // v7.22: the picked side
+        wc.repeat = bool(w.repeat, false);
       }
       if (ty === "yt"){
         /* the card's runtime rule is YouTube-ONLY — sanitize must agree,
@@ -9309,7 +9327,13 @@ function makeMusic(host, wcfg){
     '<div class="wBody">' +
       '<div class="muStage">' +
         '<div class="muBars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>' +
-        '<div class="muWhat"></div>' +
+        '<button type="button" class="muWhat" aria-haspopup="true" aria-expanded="false"></button>' +
+      '</div>' +
+      '<div class="muPick" role="group" aria-label="Pick a side" hidden>' +
+        '<div class="muPickHead"><b>Pick a side</b>' +
+          '<button type="button" class="chip chipSm muRepeat" aria-pressed="false">Repeat this side</button>' +
+          '<button type="button" class="muPickX" aria-label="Close">\u2715</button></div>' +
+        '<div class="muList"></div>' +
       '</div>' +
       '<div class="muRow">' +
         '<button type="button" class="chip muPlay">Play</button>' +
@@ -9492,6 +9516,11 @@ function makeMusic(host, wcfg){
   function deckChanged(){ return order && order.length !== sides().length; }
   var TRACK_BARS = 32, BREAK_BARS = 2;
   var trackIdx = 0, barNo = 0;
+  /* v7.22 (Croix: "Can I get a way to pick which track I'm listening to"): the side you pick is
+     remembered (wcfg.side) and the tape opens on it; "Repeat this side" (wcfg.repeat) keeps it
+     going instead of moving on to a shuffled next side */
+  if (typeof wcfg.side === "number" && wcfg.side >= 0 && wcfg.side < sides().length) trackIdx = wcfg.side;
+  if (typeof wcfg.repeat !== "boolean") wcfg.repeat = false;
   var order = null, orderPos = 0;                // v7.3: sides shuffle after side A
   function sideName(){ return "Lofi — " + side(trackIdx).name; }
   function nextSide(){
@@ -9527,7 +9556,7 @@ function makeMusic(host, wcfg){
       chB.forEach(function(m, i){ keys(tr, m, t + i * 0.03, spb * 3.6, 0.035); });
       bass(chB[0] - 12, t, spb * 3, 0.10);
       barNo++;
-      if (barNo >= TRACK_BARS + BREAK_BARS) nextSide();
+      if (barNo >= TRACK_BARS + BREAK_BARS){ if (wcfg.repeat) barNo = 0; else nextSide(); }   // v7.22: repeat stays on the side
       return spb * 4;
     }
     var p8 = barNo % 8;                          // place in the phrase
@@ -9672,6 +9701,46 @@ function makeMusic(host, wcfg){
     paint();
   }
   wireButton(nextBtn, skip);
+  /* v7.22 the side picker: tap the side's name; each side says how it feels */
+  var pickEl = q(".muPick"), listEl = q(".muList"), repBtn = q(".muRepeat");
+  var VOICE = { ep: "keys", rhodes: "Rhodes", pluck: "kalimba", pad: "pads" };
+  var DRUMS = { boombap: "a beat", halftime: "a slow beat", brush: "brushes", bossa: "bossa", none: "no drums" };
+  function feel(tr){ return (tr.bpm <= 62 ? "slow" : tr.bpm <= 72 ? "easy" : "bouncy") + " \u00b7 " + (VOICE[tr.voice] || "keys") + ", " + (DRUMS[tr.drums] || "a beat"); }
+  function paintPick(){
+    listEl.innerHTML = "";
+    sides().forEach(function(tr, i){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "muSide"; b.dataset.i = i;
+      b.setAttribute("aria-pressed", i === trackIdx ? "true" : "false");
+      var nm = document.createElement("b"); nm.textContent = tr.name;
+      var sub = document.createElement("span"); sub.textContent = feel(tr);
+      b.appendChild(nm); b.appendChild(sub);
+      wireButton(b, function(){ pickSide(i); });
+      listEl.appendChild(b);
+    });
+    repBtn.setAttribute("aria-pressed", wcfg.repeat ? "true" : "false");
+  }
+  function openPick(open){
+    pickEl.hidden = !open; whatEl.setAttribute("aria-expanded", open ? "true" : "false");
+    host.classList.toggle("muPicking", open);
+    if (open) paintPick();
+  }
+  function pickSide(i){
+    if (i < 0 || i >= sides().length) return;
+    trackIdx = i; barNo = 0; wcfg.side = i;
+    if (ctx){
+      newBus();
+      if (tone) tone.frequency.setTargetAtTime(side(i).tone, ctx.currentTime, 0.5);
+      if (echoIn) echoIn.gain.setTargetAtTime(0.5 * side(i).echo, ctx.currentTime, 0.5);
+    }
+    order = null;                                // the shuffle starts over after the picked side
+    openPick(false);
+    if (playing){ nextTime = ctx.currentTime + 0.2; paint(); }
+    else play();                                 // picking a side means "play this"
+  }
+  wireButton(whatEl, function(){ openPick(pickEl.hidden); });
+  wireButton(q(".muPickX"), function(){ openPick(false); });
+  wireButton(repBtn, function(){ wcfg.repeat = !wcfg.repeat; paintPick(); });
   /* Pause must mean SILENCE: a scheduled lofi bar is ~3.3s of nodes,
      and clearing the tick timer alone let a drum hit land two full
      seconds after the tap (adversarial find). hush() fades the master
@@ -9735,6 +9804,8 @@ function makeMusic(host, wcfg){
   return {
     kind: "music",
     sides: function(){ return sides().map(function(t){ return t.name; }); },   // v7.10 test hook
+    current: function(){ return { i: trackIdx, name: side(trackIdx).name, repeat: wcfg.repeat }; },   // v7.22 test hook
+    pick: pickSide,
     label: function(){ return wcfg.label || "Music"; },
     startPause: toggle,                          // Space = play/pause
     reset: pause,                                // R = stop
