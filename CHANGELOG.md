@@ -2,6 +2,17 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.21.0 — 2026-09-29
+
+**Zoom for the back row.** Croix: "a couple of times I had students claiming they can't see from
+the back row… what I'd really like is a way to zoom." On a staged card (slides, or anything on the
+full board) a magnifier blob sits beside the pen in the bottom-right corner. One tap zooms to 150%;
+drag to move around the slide, pinch (or the wheel) to zoom, double-tap a spot for 2× there (again
+for 100%), or use − / + (125% up to 400%) on the bar that replaces the blob; Done goes back. The
+clicker keeps turning slides at any zoom — the slides get the keys back after every touch — and
+leaving the stage resets to 100%. It magnifies the whole slide (another site's page can't have its
+text enlarged from outside), so it's sharp, not a blown-up picture. One test; 258.
+
 ## 7.20.0 — 2026-09-29
 
 **The tape always has a pause.** Croix: "I played some of the lofi music, but closed the window

@@ -1001,3 +1001,54 @@ test.describe("v7.20", () => {
     await page.keyboard.press("m");
   });
 });
+
+/* v7.21 — zoom for the back row (Croix: "a couple of times I had students claiming they can't see
+ * from the back row… what I'd really like is a way to zoom"). */
+test.describe("v7.21", () => {
+  test("v7.21: on a staged deck the magnifier zooms in (150%), a drag moves around, + / − and a double tap change it, the clicker still turns slides at any zoom, Done and Exit go back to 100%", async ({ page, dh }) => {
+    const deck = path.join(dh.fixtureDir, "tmp_zoom_deck.html");
+    fs.writeFileSync(deck, '<!DOCTYPE html><title>ZoomDeck</title><body><h1 id="n">Slide 1</h1><script>var n=1;addEventListener("keydown",function(e){if(e.key==="PageDown"){n++;document.getElementById("n").textContent="Slide "+n;}});</script>');
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn");
+      inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets;
+      w[w.length - 1].url = u;
+      document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.waitForTimeout(300);
+    await expect(page.locator("#zoomBlob")).toBeHidden();              // only on a staged card
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#zoomBlob")).toBeVisible();
+    const z = () => page.evaluate(() => window.Deckhand.canvas.zoom());
+    const slide = () => page.frameLocator(".w-embed .embFrame").locator("#n").textContent();
+    await page.click("#zoomBlob");
+    let s = await z();
+    ok(s.on && s.s === 1.5, "the magnifier: " + JSON.stringify(s));
+    await expect(page.locator("#zoomBar .zmPct")).toHaveText("150%");
+    const tf = await page.evaluate(() => document.querySelector(".w-embed .wBody").style.transform);
+    ok(/scale\(1\.5/.test(tf), "the deck is not magnified: " + tf);
+    await page.keyboard.press("PageDown");
+    await expect.poll(slide).toBe("Slide 2");
+    await page.mouse.move(800, 450); await page.mouse.down(); await page.mouse.move(1000, 600, { steps: 6 }); await page.mouse.up();
+    const moved = await z();
+    ok(moved.x > s.x && moved.y > s.y, "a drag did not move the view: " + JSON.stringify([s, moved]));
+    await page.keyboard.press("PageDown");
+    await expect.poll(slide).toBe("Slide 3");                          // the keys went back to the slides
+    await page.click("#zoomBar .zmIn");
+    ok((await z()).s === 2, "+ : " + JSON.stringify(await z()));
+    await page.click("#zoomBar .zmOut"); await page.click("#zoomBar .zmOut");
+    ok((await z()).s === 1.25, "− − : " + JSON.stringify(await z()));
+    await page.mouse.dblclick(600, 400);
+    ok((await z()).s === 2, "a double tap: " + JSON.stringify(await z()));
+    await page.click("#zoomBar .zmDone");
+    s = await z();
+    ok(!s.on && (await page.evaluate(() => document.querySelector(".w-embed .wBody").style.transform)) === "", "Done: " + JSON.stringify(s));
+    await page.click("#zoomBlob");
+    await page.click("#unfocusBtn");
+    ok(!(await z()).on, "Exit left the card zoomed");
+    await expect(page.locator("#zoomBar")).toBeHidden();
+  });
+});

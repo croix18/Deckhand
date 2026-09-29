@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.20.0",
+  "appVersion": "7.21.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -459,7 +459,7 @@
   body.focusMode #inkBar .inkGroup{background:rgba(248,242,228,.7);}
   @keyframes inkPop{from{opacity:0; transform:scale(.6);} to{opacity:1; transform:none;}}
   @media (prefers-reduced-motion: reduce){ body.focusMode #inkBar{animation:none;} }
-  @media (max-width: 780px), (max-height: 540px){ #ink, #inkBar, #inkBtn, #inkBlob{display:none !important;} }
+  @media (max-width: 780px), (max-height: 540px){ #ink, #inkBar, #inkBtn, #inkBlob, #zoomBlob{display:none !important;} }
 
   /* ===== settings panel (v7.2 design pass) =====
      A preferences panel, not a scroll of collapsibles: a tab rail on the
@@ -1782,14 +1782,14 @@
      auto-collapses it */
   /* v7.15: the corner blobs — fullscreen top-right, the pen bottom-right on a staged deck;
      navy like the dock, half there until a finger or a pointer comes near */
-  #fsBtn, #inkBlob{
+  #fsBtn, #inkBlob, #zoomBlob{
     position:fixed; z-index:900001; width:44px; height:44px; border-radius:999px; border:0; padding:0;
     background:var(--navy); color:var(--white); box-shadow:3px 4px 0 var(--shadow);
     display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:.45;
     transition:opacity .15s;
   }
   #fsBtn{top:6px; right:6px; width:38px; height:38px;}
-  #fsBtn svg, #inkBlob svg{width:20px; height:20px;}
+  #fsBtn svg, #inkBlob svg, #zoomBlob svg{width:20px; height:20px;}
   #fsBtn .fsOut{display:none;}
   #fsBtn[aria-pressed="true"] .fsIn{display:none;}
   #fsBtn[aria-pressed="true"] .fsOut{display:block;}
@@ -1798,6 +1798,22 @@
   #fsBtn:focus-visible, #inkBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
   body.focusMode:not(.landing) #focusBar{right:56px; top:6px;}
   #inkBlob{right:24px; bottom:16px; display:none;}
+  /* v7.21 zoom: the magnifier sits left of the pen; zoomed, the bar takes its place */
+  #zoomBlob{right:80px; bottom:16px; display:none;}
+  body.focusMode:not(.landing):not(.inking):not(.zooming) #zoomBlob{display:inline-flex;}
+  @media (hover:hover){ #zoomBlob:hover{opacity:1;} }
+  #zoomBar{position:fixed; right:80px; bottom:14px; z-index:900001; display:flex; align-items:center; gap:6px;
+    background:rgba(27,46,69,.88); color:var(--white); border-radius:999px; padding:5px; box-shadow:3px 4px 0 var(--shadow);}
+  #zoomBar[hidden], body:not(.focusMode) #zoomBar, body.landing #zoomBar{display:none;}
+  #zoomBar button{font:inherit; font-weight:900; font-size:22px; min-width:48px; min-height:44px; border:0; border-radius:999px;
+    background:rgba(255,255,255,.14); color:var(--white); cursor:pointer; line-height:1;}
+  #zoomBar .zmDone{font-size:15px; padding:0 16px; background:var(--turq); color:var(--navy);}
+  #zoomBar .zmPct{font-weight:900; font-size:15px; min-width:52px; text-align:center; font-variant-numeric:tabular-nums;}
+  .zoomPad{position:absolute; inset:0; z-index:6; touch-action:none; cursor:grab; background:transparent;}
+  .zoomPad.grab{cursor:grabbing;}
+  .zoomed .wBody{transform-origin:0 0;}
+  .zoomed .wBody.zmGlide{transition:transform .18s ease-out;}
+  @media (prefers-reduced-motion: reduce){ .zoomed .wBody.zmGlide{transition:none;} }
   body.focusMode:not(.landing):not(.inking) #inkBlob{display:inline-flex;}
   #dockTog{
     padding:6px 9px; display:inline-flex; align-items:center; justify-content:center;
@@ -2966,6 +2982,7 @@
      from fallback fonts — the ✎ even came from the EMOJI font) -->
 <svg aria-hidden="true" width="0" height="0" style="position:absolute">
   <defs>
+    <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5M10.5 8v5"/></symbol>
     <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4.5 19.5l3.6-.9L19.3 7.4a1.9 1.9 0 0 0-2.7-2.7L5.4 15.9l-.9 3.6z"/><path d="M14.2 7.1l2.7 2.7"/></symbol>
     <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M4.5 9.5h5v-5M19.5 9.5h-5v-5M4.5 14.5h5v5M19.5 14.5h-5v5"/></symbol>
     <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9.5 4.5h-5v5M14.5 4.5h5v5M9.5 19.5h-5v-5M14.5 19.5h5v-5"/></symbol>
@@ -4054,6 +4071,15 @@
 <!-- v7.15 (Croix: "When the slides are up, I would like the ink to be a pop up… semi
      transparent and start in bottom right corner alongside the bottom menu blob") -->
 <button id="inkBlob" type="button" aria-label="Draw over the slides" aria-pressed="false"><svg class="wIcon"><use href="#i-pencil"/></svg></button>
+<!-- v7.21 (Croix: "students claiming they can't see from the back row… what I'd really like is a way
+     to zoom"): the magnifier beside the pen on a staged card; zoomed, a bar with − / + / Done -->
+<button id="zoomBlob" type="button" aria-label="Zoom in on the slide"><svg class="wIcon"><use href="#i-zoom"/></svg></button>
+<div id="zoomBar" role="group" aria-label="Zoom" hidden>
+  <button type="button" class="zmOut" aria-label="Zoom out">&minus;</button>
+  <span class="zmPct">150%</span>
+  <button type="button" class="zmIn" aria-label="Zoom in">+</button>
+  <button type="button" class="zmDone">Done</button>
+</div>
 <div id="inkBar" role="toolbar" aria-label="Draw over the board" hidden>
   <div class="inkGroup" aria-label="Pen color">
     <button class="inkTool inkSwatch" type="button" data-color="#17324D" style="background:#17324D" aria-label="Navy pen" aria-pressed="true"></button>
@@ -4125,7 +4151,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.20.0",
+  appVersion: "7.21.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -12120,8 +12146,127 @@ var Canvas = (function(){
 
   /* Focus mode: one widget fills the canvas; the config box is untouched
      so un-focusing restores it exactly (and never marks the board dirty). */
+  /* v7.21 ZOOM on the staged card. A deck is another site's page in a frame — Deckhand can't enlarge
+     its text, so it magnifies the whole card: a transform on the card's body (translate + scale,
+     origin top-left), clamped so the slide always fills the card. While zoomed a clear pad lies
+     over the card: drag to move around, pinch or the wheel to zoom, a double tap to jump to 2×
+     there or back to 1×. After every touch the slides get the keys back, so the clicker keeps
+     turning slides at any zoom. Leaving the stage (Exit, Minimize, the settle-in's hand-off) resets. */
+  var zm = { s: 1, x: 0, y: 0, en: null, pad: null };
+  var ZMIN = 1, ZMAX = 4;
+  function zBody(en){ return en && en.el.querySelector(".wBody"); }
+  function zApply(glideIt){
+    var b = zBody(zm.en); if (!b) return;
+    var W = b.offsetWidth, H = b.offsetHeight;
+    zm.s = Math.max(ZMIN, Math.min(ZMAX, zm.s));
+    zm.x = Math.min(0, Math.max(W * (1 - zm.s), zm.x));
+    zm.y = Math.min(0, Math.max(H * (1 - zm.s), zm.y));
+    b.classList.toggle("zmGlide", !!glideIt);
+    b.style.transform = zm.s === 1 ? "" : "translate(" + zm.x.toFixed(1) + "px," + zm.y.toFixed(1) + "px) scale(" + zm.s.toFixed(3) + ")";
+    $("zoomBar").querySelector(".zmPct").textContent = Math.round(zm.s * 100) + "%";
+  }
+  function zoomAt(s, px, py, glideIt){            // px, py in the body's own (unscaled) pixels
+    var k = s / zm.s;
+    zm.x = px - (px - zm.x) * k; zm.y = py - (py - zm.y) * k; zm.s = s;
+    zApply(glideIt);
+  }
+  function zoomOn(){
+    if (!focusedEntry || zm.en) return;
+    var b = zBody(focusedEntry); if (!b) return;
+    zm = { s: 1, x: 0, y: 0, en: focusedEntry, pad: null };
+    focusedEntry.el.classList.add("zoomed");
+    document.body.classList.add("zooming");
+    $("zoomBar").hidden = false;
+    var pad = document.createElement("div"); pad.className = "zoomPad"; pad.setAttribute("aria-hidden", "true");
+    focusedEntry.el.appendChild(pad); zm.pad = pad;
+    wirePad(pad);
+    zoomAt(1.5, b.offsetWidth / 2, b.offsetHeight / 2, true);
+    refocusDeck();
+  }
+  function zoomOff(){
+    if (!zm.en) return;
+    var b = zBody(zm.en);
+    if (b){ b.style.transform = ""; b.classList.remove("zmGlide"); }
+    zm.en.el.classList.remove("zoomed");
+    if (zm.pad) zm.pad.remove();
+    zm = { s: 1, x: 0, y: 0, en: null, pad: null };
+    document.body.classList.remove("zooming");
+    $("zoomBar").hidden = true;
+    refocusDeck();
+  }
+  function zoomStep(dir){
+    if (!zm.en) return;
+    var b = zBody(zm.en), steps = [1, 1.25, 1.5, 2, 2.5, 3, 4], i = 0;
+    while (i < steps.length - 1 && steps[i] <= zm.s + 1e-3) i++;
+    var next = dir > 0 ? steps[i] : (steps.filter(function(v){ return v < zm.s - 1e-3; }).pop() || 1);
+    if (next <= 1){ zoomOff(); return; }
+    zoomAt(next, b.offsetWidth / 2, b.offsetHeight / 2, true);   // about the middle of what's showing
+  }
+  function wirePad(pad){
+    var pts = {}, start = null, lastTap = 0;
+    function snapshot(){
+      var ids = Object.keys(pts);
+      if (ids.length >= 2){
+        var a = pts[ids[0]], b = pts[ids[1]];
+        start = { two: true, d: Math.hypot(a.x - b.x, a.y - b.y) || 1, s: zm.s, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, x: zm.x, y: zm.y };
+      } else if (ids.length === 1){
+        var p = pts[ids[0]]; start = { two: false, px: p.x, py: p.y, x: zm.x, y: zm.y, moved: false };
+      } else start = null;
+    }
+    function cardXY(e){                           // the pointer in the card body's unscaled frame
+      var r = zm.en.el.getBoundingClientRect(), b = zBody(zm.en);
+      return { x: e.clientX - r.left - b.offsetLeft, y: e.clientY - r.top - b.offsetTop };
+    }
+    pad.addEventListener("pointerdown", function(e){
+      if (!zm.en) return;
+      try { pad.setPointerCapture(e.pointerId); } catch(err){}
+      pts[e.pointerId] = cardXY(e); snapshot(); pad.classList.add("grab");
+      e.preventDefault();
+    });
+    pad.addEventListener("pointermove", function(e){
+      if (!zm.en || !pts[e.pointerId] || !start) return;
+      pts[e.pointerId] = cardXY(e);
+      var ids = Object.keys(pts);
+      if (start.two && ids.length >= 2){
+        var a = pts[ids[0]], b = pts[ids[1]];
+        var d = Math.hypot(a.x - b.x, a.y - b.y) || 1, s = Math.max(ZMIN, Math.min(ZMAX, start.s * d / start.d));
+        var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, k = s / start.s;
+        zm.s = s; zm.x = mx - (start.mx - start.x) * k; zm.y = my - (start.my - start.y) * k;
+        zApply(false);
+      } else if (!start.two){
+        var p = pts[e.pointerId];
+        if (Math.abs(p.x - start.px) + Math.abs(p.y - start.py) > 6) start.moved = true;
+        zm.x = start.x + (p.x - start.px); zm.y = start.y + (p.y - start.py);
+        zApply(false);
+      }
+    });
+    function up(e){
+      if (!pts[e.pointerId]) return;
+      var p = pts[e.pointerId], wasTap = start && !start.two && !start.moved;
+      delete pts[e.pointerId]; snapshot();
+      if (!Object.keys(pts).length){
+        pad.classList.remove("grab");
+        if (wasTap){                              // a double tap: 2× right there, or back to 1×
+          var t = Date.now();
+          if (t - lastTap < 350){ lastTap = 0; if (zm.s >= 1.99) zoomOff(); else zoomAt(2, p.x, p.y, true); }
+          else lastTap = t;
+        }
+        if (zm.s <= 1.001 && zm.en) zoomOff();    // pinched all the way out
+        else refocusDeck();                       // the clicker's keys go back to the slides
+      }
+    }
+    pad.addEventListener("pointerup", up); pad.addEventListener("pointercancel", up);
+    pad.addEventListener("wheel", function(e){
+      if (!zm.en) return;
+      e.preventDefault();
+      var c = cardXY(e), s = Math.max(ZMIN, Math.min(ZMAX, zm.s * Math.exp(-e.deltaY * 0.0015)));
+      if (s <= 1.001){ zoomOff(); return; }
+      zoomAt(s, c.x, c.y, false);
+    }, { passive: false });
+  }
   function setFocus(en){
     if (focusedEntry === en) en = null;          // tapping ⛶ again collapses
+    zoomOff();                                   // v7.21: a new stage (or none) starts at 100%
     /* a no-op unfocus (stray Escape, scene load with nothing focused)
        must not touch stage state — it was silently unfolding a dock the
        teacher had folded on purpose */
@@ -12997,6 +13142,11 @@ var Canvas = (function(){
       wireButton($("addBtn"), toggleAddMenu);
       wireButton($("unfocusBtn"), function(){ setFocus(null); });
       wireButton($("minStageBtn"), function(){ minimize(focusedEntry); });   // v7.18
+      wireButton($("zoomBlob"), zoomOn);                                     // v7.21
+      wireButton($("zoomBar").querySelector(".zmIn"), function(){ zoomStep(1); refocusDeck(); });
+      wireButton($("zoomBar").querySelector(".zmOut"), function(){ zoomStep(-1); refocusDeck(); });
+      wireButton($("zoomBar").querySelector(".zmDone"), zoomOff);
+      window.addEventListener("resize", function(){ if (zm.en) zApply(false); });
       wireButton($("focusTimerBtn"), toggleTimerMenu);
       wireButton($("dockTog"), function(){
         setDockMin(!document.body.classList.contains("dockMin"));
@@ -13124,6 +13274,7 @@ var Canvas = (function(){
     },
     unfocus: function(){ setFocus(null); },
     minimize: function(el){ if (el && el._entry) minimize(el._entry); },   // v7.18 (tests)
+    zoom: function(){ return { s: zm.s, x: zm.x, y: zm.y, on: !!zm.en }; },   // v7.21 (tests)
     restore: function(el){ if (el && el._entry) restore(el._entry); },
     refocusDeck: refocusDeck,          // alarm dismiss hands keys back
     dockMin: function(v){ setDockMin(!!v); },   // v7.15: the pen folds the dock back on a staged deck
