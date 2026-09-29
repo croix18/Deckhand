@@ -30,13 +30,13 @@ test.describe("v6.14 stage mode", () => {
       dockMin: document.body.classList.contains("dockMin"),
       width: document.querySelector(".w-timer").getBoundingClientRect().width,
       top: document.querySelector(".w-timer").getBoundingClientRect().top,
-      barBtns: document.querySelectorAll("#focusBar button").length,
+      barBtns: [...document.querySelectorAll("#focusBar button")].filter(b => !b.hidden).length,
       barHidden: document.getElementById("focusBar").hidden
     }));
     ok(staged.mode && staged.header === null && staged.dockMin, "stage not struck: " + JSON.stringify(staged));
     ok(staged.width > before * 2 && staged.top < 20,
       "deck did not take the screen: " + JSON.stringify(staged));
-    ok(staged.barBtns === 2 && !staged.barHidden, "focus bar incomplete");   // Timer · Exit (v7.15: the pen is a blob in the bottom-right corner)
+    ok(staged.barBtns === 3 && !staged.barHidden, "focus bar incomplete");   // Timer · Minimize (v7.18) · Exit (v7.15: the pen is a blob in the bottom-right corner)
     await page.keyboard.press("Escape");         // Esc fully restores
     const restored = await page.evaluate(() => ({
       mode: document.body.classList.contains("focusMode"),

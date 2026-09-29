@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.17.0",
+  "appVersion": "7.18.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -395,6 +395,14 @@
   .blkRow.bad .setInput{border-color:var(--coral);}
   .blkEmpty{font-size:14px; color:var(--teal); font-weight:600; padding:8px 0;}
 
+  /* v7.18 the minutes-left flash: over everything (the stage, Home, the pen), never in the way */
+  #minFlash{position:fixed; inset:0; z-index:900005; pointer-events:none; display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:min(78vh, 60vw); line-height:1; color:var(--navy); opacity:0; font-variant-numeric:tabular-nums;
+    text-shadow:0 0 .06em var(--white), 0 0 .12em var(--white);}
+  #minFlash.go{animation:minFlash 2.6s ease-in-out;}
+  @keyframes minFlash{0%{opacity:0; transform:scale(.94);} 25%{opacity:.24; transform:scale(1);} 60%{opacity:.24;} 100%{opacity:0; transform:scale(1.02);}}
+  @media (prefers-reduced-motion: reduce){ @keyframes minFlash{0%, 100%{opacity:0;} 20%, 70%{opacity:.24;}} }
+
   /* v7.2 INK overlay */
   #ink{
     position:fixed; inset:0; z-index:14; pointer-events:none;
@@ -743,6 +751,14 @@
   @media (hover:hover){ .wPin:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
   .wPin[aria-pressed="true"]{opacity:1;}
   body.locked .wPin{display:none;}
+  /* v7.18 minimize: the — in the strip; the card waits as a chip in the dock */
+  .wMin{background:none; border:none; cursor:pointer; color:inherit; opacity:.65; font:inherit; padding:2px 8px; line-height:1;}
+  @media (hover:hover){ .wMin:hover{opacity:1;} }
+  body.locked .wMin{display:none;}
+  .widget.wMinned{display:none !important;}
+  #shelf .minChip{display:inline-flex; align-items:center; gap:6px; background:var(--sand); color:var(--navy);}
+  #shelf .minChip svg{width:14px; height:14px;}
+  #minStageBtn[hidden]{display:none;}
   .widget.wFull .wHandle{display:none;}          /* no resizing a focused widget */
   /* Resize handles: both bottom corners + left/right/bottom edges.
      The top has none — the strip up there is the MOVE handle and holds
@@ -814,7 +830,7 @@
     border-radius:3px; background:var(--navy); opacity:.28; pointer-events:none;}
   .widget .wLabel{opacity:0; font-weight:900; margin-right:auto;}   /* opacity, not visibility: the label is still the drag surface */
   .widget.wNamed .wLabel{opacity:.7;}
-  .widget .wClose, .widget .wEdit, .widget .wFocus, .widget .wPin, .widget .wSize{margin:-7px -2px; min-width:44px; min-height:44px;}   /* 44px hit boxes on a 30px band */
+  .widget .wClose, .widget .wEdit, .widget .wFocus, .widget .wPin, .widget .wMin, .widget .wSize{margin:-7px -2px; min-width:44px; min-height:44px;}   /* 44px hit boxes on a 30px band */
   .widget .strip .wIcon{width:16px; height:16px;}
   body.locked .widget .strip{position:absolute; left:0; right:0; top:0; height:0; min-height:0; padding:0; background:transparent;
     overflow:visible; pointer-events:none; z-index:3;}
@@ -2938,6 +2954,7 @@
     <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9.5 4.5h-5v5M14.5 4.5h5v5M9.5 19.5h-5v-5M14.5 19.5h5v-5"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M7.5 11L12 6.5 16.5 11M7.5 18L12 13.5 16.5 18"/></symbol>
     <symbol id="i-resize" viewBox="0 0 24 24"><path d="M9.5 14.5l-5 5M4.5 19.5v-4.5M4.5 19.5H9M14.5 9.5l5-5M19.5 4.5V9M19.5 4.5H15"/></symbol>
+    <symbol id="i-min" viewBox="0 0 24 24"><path d="M5.5 17.5h13"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
     <symbol id="i-reload" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.7 4.3v5h-5"/></symbol>
     <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.5" cy="12" r="1.9"/></symbol>
@@ -3105,6 +3122,7 @@
       <div id="focusTimerMenu" role="group" aria-label="Timer presets" hidden></div>
     </div>
 
+    <button id="minStageBtn" type="button" aria-label="Minimize this card to the dock"><svg class="wIcon"><use href="#i-min"/></svg> Minimize</button>
     <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
   </div>
   <section class="card widget w-clock" id="clockWidget" aria-label="Current time and bell schedule">
@@ -3242,7 +3260,7 @@
       <button class="tile" id="addNumlineBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-numline"/></svg><span class="tName">Number Line</span><span class="tDesc">Points and jumps</span></button>
     </div>
   </div>
-  <div id="shelf" aria-label="Stage-only widgets"></div>
+  <div id="shelf" aria-label="Minimized and stage-only cards"></div>
   <button class="pill" id="lockBtn" type="button" aria-pressed="false">Lock</button>
   <button class="pill" id="inkBtn" type="button" aria-pressed="false" aria-label="Draw over the board"><svg class="wIcon"><use href="#i-pencil"/></svg> Draw</button>
   <!-- v7.7: the header folded into the dock — one chrome bar. Settings stays a
@@ -3707,6 +3725,11 @@
               </div>
               <div class="fGrid c3">
                 <label class="fCheck"><input type="checkbox" id="sWarnChime"> Chime at the warning</label>
+                <label class="fCheck"><input type="checkbox" id="sFlash"> Flash the minutes left over every screen</label>
+                <div class="fField">
+                  <label class="fLabel" for="sFlashMin">&hellip;at (minutes before the bell)</label>
+                  <input class="setInput" type="number" id="sFlashMin" step="1" min="1" max="10">
+                </div>
               </div>
               <div class="fHint">Nudge shifts only the bell math, never the clock. The warning turns the countdown coral and pulses the bar; 0 turns it off.</div>
             </div>
@@ -3995,6 +4018,9 @@
      A fixed transparent canvas above the widgets (z 14, under the dock);
      it only takes the pointer while armed, so the board stays usable
      underneath the annotations. Session-only, like the sketch pad. -->
+<!-- v7.18 (Croix: "a faint over all the screens warning that there are 3 minutes left in class no
+     matter what screen I'm on. Just a 3 will do… it can be just a quick flash") -->
+<div id="minFlash" aria-hidden="true"></div>
 <canvas id="ink" aria-hidden="true"></canvas>
 <!-- v7.15 (Croix: "When the slides are up, I would like the ink to be a pop up… semi
      transparent and start in bottom right corner alongside the bottom menu blob") -->
@@ -4070,7 +4096,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.17.0",
+  appVersion: "7.18.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4184,6 +4210,7 @@ function sanitize(c){
                  w: numIn(w.w, 8, 100, 30), h: numIn(w.h, 10, 100, 45),
                  label: str(w.label, "").slice(0, 20),
                  pin: bool(w.pin, false) };
+      if (ty !== "clock" && w.min === true) wc.min = true;   // v7.18: minimized to the dock
       /* geometry invariant: x+w ≤ 100, y+h ≤ 100 — an off-canvas widget
          has an unreachable ✕, and keyboard focus could scroll the whole
          board sideways chasing it */
@@ -4487,6 +4514,9 @@ function sanitize(c){
       showDayStrip: bool(b.showDayStrip, true),
       showNextClass: bool(b.showNextClass, true),
       warnMinutes: Math.max(0, Math.min(60, Math.round(num(b.warnMinutes, 5)))),
+      /* v7.18: a faint number over every screen when this many minutes are left in a class */
+      flash: { on: bool(isObj(b.flash) ? b.flash.on : undefined, true),
+               minutes: Math.round(numIn(isObj(b.flash) ? b.flash.minutes : undefined, 1, 10, 3)) },
       warnChime: bool(b.warnChime, false),
       bathroom: {
         enabled: bool(ba.enabled, true),
@@ -9138,6 +9168,31 @@ function makeNumline(host, wcfg){
   };
 }
 
+/* v7.18: the minutes-left FLASH. Once per class block (Lunch excepted), when the bell is
+   `minutes` away, a faint numeral fills the screen for 2.6 s — over the stage, the landing page,
+   the pen — and is gone. Only at the crossing: a board opened with 2:30 left says nothing. */
+var Flash = (function(){
+  var el = null, last = null, tid = null;
+  function F(){ return (cfg.bell && isObj(cfg.bell.flash)) ? cfg.bell.flash : { on: true, minutes: 3 }; }
+  function show(n){
+    el.textContent = String(n);
+    el.classList.remove("go"); void el.offsetWidth; el.classList.add("go");
+    clearTimeout(tid); tid = setTimeout(function(){ el.classList.remove("go"); }, 2800);
+  }
+  function watch(){
+    var f = F(); if (!f.on) return;
+    var s = null; try { s = Bell.statusAt(now()); } catch(e){}
+    if (!s || s.type !== "in" || /lunch/i.test(s.label || "")) return;
+    var key = dateKey(now()) + "|" + s.label + "|" + s.idx, at = f.minutes * 60000;
+    if (key !== last && s.remainMs <= at && s.remainMs > at - 3000){ last = key; show(f.minutes); }
+  }
+  return {
+    init: function(){ el = $("minFlash"); setInterval(watch, 250); },
+    show: function(n){ show(n || F().minutes); },   // test hook
+    _watch: watch
+  };
+})();
+
 /* Music (v6.25, reworked v6.26 after Croix's field notes: "The scratchy
    under the lofi is annoying… maybe a little underdeveloped… the mozart
    music box sucks"): a self-contained WebAudio LOFI machine — no files,
@@ -9860,6 +9915,7 @@ function makeYT(host, wcfg){
      only Slides went quiet). Board restores whatever was loaded. */
   function onHome(){ try { frame.removeAttribute("src"); } catch(e){} }
   function onBoard(){
+    if (wcfg.min) return;                        // v7.18: a minimized video stays quiet
     if (wcfg.url && frame.getAttribute("src") !== wcfg.url){
       frame.src = wcfg.url; frame.hidden = false; empty.hidden = true;
     }
@@ -9874,6 +9930,7 @@ function makeYT(host, wcfg){
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: renderStations, resync: function(){},
+    hide: onHome, show: onBoard,                 // v7.18: minimize / bring back
     destroy: function(){
       /* a removed card must go QUIET — the iframe outliving the widget
          would keep singing from nowhere */
@@ -11237,7 +11294,7 @@ function makeEmbed(host, wcfg){
   /* Home hides the board; an embedded video must not keep talking
      under the landing page */
   function onHome(){ frame.removeAttribute("src"); }
-  function onBoard(){ render(); }
+  function onBoard(){ if (!wcfg.min) render(); }   // v7.18: a minimized deck stays unloaded
   window.addEventListener("blur", onWinBlur);
   window.addEventListener("focus", onWinFocus);
   document.addEventListener("deckhand:home", onHome);
@@ -11251,6 +11308,7 @@ function makeEmbed(host, wcfg){
     startPause: function(){}, reset: function(){},
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
+    hide: onHome, show: function(){ render(); },  // v7.18: minimize / bring back (the period's deck)
     rebuild: render,
     resync: function(){},
     destroy: function(){                         // scene switch unloads the iframe
@@ -11868,13 +11926,50 @@ var Canvas = (function(){
     if (!en) return;
     var shelved = !!(en.cfg && en.cfg.stageOnly) && (en.type === "embed" || en.type === "yt");
     en.el.classList.toggle("wShelf", shelved);
+    var minned = !!(en.cfg && en.cfg.min) && en.type !== "clock";
+    if (minned !== en.el.classList.contains("wMinned")){
+      en.el.classList.toggle("wMinned", minned);
+      try { if (minned){ if (en.api.hide) en.api.hide(); } else if (en.api.show) en.api.show(); } catch(e){}
+    }
     refreshShelf();
+  }
+  /* v7.18 (Croix: "I have one period slides up and we finish class. Well usually I collapse the
+     screen, flip on the main clock, then hide the embed for next class"): MINIMIZE — one tap on a
+     card's — (or the stage bar's Minimize) and the card leaves the board for a chip in the dock;
+     a staged card leaves the stage too, so the clock is back. A minimized deck or video goes quiet
+     (its frame unloads) and comes back on the chip, or by itself when the next bell's settle-in
+     hands the room to the slides. A minimized timer keeps counting (and still rings). */
+  function minimize(en){
+    if (!en || en.type === "clock" || (en.cfg && en.cfg.min)) return;
+    if (focusedEntry === en) setFocus(null);
+    en.cfg.min = true;
+    syncShelf(en);
+    if (selected === en){
+      var next = timerish().filter(function(e2){ return !(e2.cfg && e2.cfg.min) && !e2.el.classList.contains("wShelf"); });
+      select(next[next.length - 1] || null);
+    }
+  }
+  function restore(en){
+    if (!en || !(en.cfg && en.cfg.min)) return;
+    delete en.cfg.min;
+    syncShelf(en);
+    bringToFront(en); select(en);
   }
   function refreshShelf(){
     var host = $("shelf");
     if (!host) return;
     host.innerHTML = "";
     entries.forEach(function(e2){
+      if (e2.cfg && e2.cfg.min && e2.type !== "clock"){
+        var m = document.createElement("button"), nm = e2.cfg.label || WIDGET_NAMES[e2.type] || "Widget";
+        m.type = "button"; m.className = "pill minChip";
+        m.innerHTML = '<svg class="wIcon"><use href="#i-min"/></svg>';
+        m.appendChild(document.createTextNode(nm));
+        m.setAttribute("aria-label", "Bring back " + nm);
+        wireButton(m, function(){ restore(e2); });
+        host.appendChild(m);
+        return;
+      }
       if (!(e2.cfg && e2.cfg.stageOnly) || (e2.type !== "embed" && e2.type !== "yt")) return;
       var b = document.createElement("button");
       b.type = "button"; b.className = "pill";
@@ -11920,7 +12015,7 @@ var Canvas = (function(){
   }
   function timerish(){ return entries.filter(function(e){ return e.type !== "clock"; }); }
   function cycleSel(){
-    var list = timerish().filter(function(e2){ return !e2.el.classList.contains("wShelf") || e2 === focusedEntry; });
+    var list = timerish().filter(function(e2){ return (!e2.el.classList.contains("wShelf") || e2 === focusedEntry) && !(e2.cfg && e2.cfg.min); });
     if (!list.length) return;
     var i = selected ? list.indexOf(selected) : -1;
     var next = list[(i + 1) % list.length];
@@ -11998,6 +12093,7 @@ var Canvas = (function(){
                        // (or out of) a stage change
     refocusDeck();     // clicker keys belong to the deck from second one
     $("focusBar").hidden = !focusedEntry;        // the no-keyboard exit + ⏱
+    $("minStageBtn").hidden = !focusedEntry || focusedEntry.type === "clock";   // v7.18: the clock is the board, not a card to put away
     /* STAGE MODE: header/waves fold away; the dock folds to its handle
        (it sat on the Slides ‹ › arrows); grid re-anchors */
     document.body.classList.toggle("focusMode", !!focusedEntry);
@@ -12050,6 +12146,7 @@ var Canvas = (function(){
     } else if (d.phase === "end"){
       if (focusedEntry !== en) return;           // the teacher intervened
       var emb = entries.filter(function(e2){ return e2.type === "embed"; })[0];
+      if (emb && emb.cfg && emb.cfg.min) restore(emb);   // v7.18: the next class's slides come back by themselves
       /* a ghost timer summoned OVER the count must ride onto the slides
          too — the generic exit pass expires floats, which buried a
          still-running timer under the deck (adversarial find) */
@@ -12280,6 +12377,8 @@ var Canvas = (function(){
     if (close) close.addEventListener("click", function(){ removeEntry(elx._entry); });
     var fb = elx.querySelector(".wFocus");
     if (fb) wireButton(fb, function(){ setFocus(elx._entry); });
+    var mb = elx.querySelector(".wMin");
+    if (mb) wireButton(mb, function(){ minimize(elx._entry); });
     var pb = elx.querySelector(".wPin");
     if (pb) wireButton(pb, function(){
       if (cfg.ui.locked) return;   // belt + braces: CSS already hides ⇈
@@ -12309,6 +12408,8 @@ var Canvas = (function(){
         '<svg class="wIcon"><use href="#i-expand"/></svg></button>' +
       '<button class="wPin" type="button" aria-label="Keep on top" aria-pressed="false">' +
         '<svg class="wIcon"><use href="#i-pin"/></svg></button>' +
+      '<button class="wMin" type="button" aria-label="Minimize">' +
+        '<svg class="wIcon"><use href="#i-min"/></svg></button>' +
       '<button class="wClose" type="button" aria-label="Remove">' +
         '<svg class="wIcon"><use href="#i-x"/></svg></button></div>' +
       '<div class="wHandle hSE" data-dir="se" aria-hidden="true"></div>' +
@@ -12325,6 +12426,7 @@ var Canvas = (function(){
     }
     elx.setAttribute("aria-label", wname);
     elx.querySelector(".wClose").setAttribute("aria-label", "Remove " + wname);
+    elx.querySelector(".wMin").setAttribute("aria-label", "Minimize " + wname);
     cEl.appendChild(elx);
     var mk = WIDGET_MAKERS[wcfg.type] || makeStopwatch;
     var api;
@@ -12819,6 +12921,7 @@ var Canvas = (function(){
       });
       wireButton($("addBtn"), toggleAddMenu);
       wireButton($("unfocusBtn"), function(){ setFocus(null); });
+      wireButton($("minStageBtn"), function(){ minimize(focusedEntry); });   // v7.18
       wireButton($("focusTimerBtn"), toggleTimerMenu);
       wireButton($("dockTog"), function(){
         setDockMin(!document.body.classList.contains("dockMin"));
@@ -12945,6 +13048,8 @@ var Canvas = (function(){
       return any;
     },
     unfocus: function(){ setFocus(null); },
+    minimize: function(el){ if (el && el._entry) minimize(el._entry); },   // v7.18 (tests)
+    restore: function(el){ if (el && el._entry) restore(el._entry); },
     refocusDeck: refocusDeck,          // alarm dismiss hands keys back
     dockMin: function(v){ setDockMin(!!v); },   // v7.15: the pen folds the dock back on a staged deck
     /* v7.5: the sea's director asks — a running timer or settle-in means
@@ -13005,7 +13110,7 @@ var Settings = (function(){
     volume: $("sVolume"), seconds: $("sSeconds"), next: $("sNext"),
     motion: $("sMotion"),
     seaWeather: $("sSeaWeather"), season: $("sSeason"),
-    warn: $("sWarn"), warnChime: $("sWarnChime"),
+    warn: $("sWarn"), warnChime: $("sWarnChime"), flash: $("sFlash"), flashMin: $("sFlashMin"),
     bath: $("sBath"), bathFirst: $("sBathFirst"), bathLast: $("sBathLast"),
     skipWeeks: $("sSkipWeeks"),
     stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"),
@@ -13168,6 +13273,8 @@ var Settings = (function(){
     f.next.checked = !!cfg.bell.showNextClass;
     f.warn.value = cfg.bell.warnMinutes;
     f.warnChime.checked = !!cfg.bell.warnChime;
+    var fl = cfg.bell.flash || { on: true, minutes: 3 };   // v7.18
+    f.flash.checked = !!fl.on; f.flashMin.value = fl.minutes;
     f.bath.checked = !!cfg.bell.bathroom.enabled;
     f.bathFirst.value = cfg.bell.bathroom.firstMinutes;
     f.bathLast.value = cfg.bell.bathroom.lastMinutes;
@@ -13445,6 +13552,7 @@ var Settings = (function(){
     cfg.bell.showNextClass = f.next.checked;
     cfg.bell.warnMinutes = warn;
     cfg.bell.warnChime = f.warnChime.checked;
+    cfg.bell.flash = { on: f.flash.checked, minutes: Math.max(1, Math.min(10, Math.round(+f.flashMin.value) || 3)) };   // v7.18
     cfg.bell.bathroom.enabled = f.bath.checked;
     cfg.bell.bathroom.firstMinutes = bathFirst;
     cfg.bell.bathroom.lastMinutes = bathLast;
@@ -14292,7 +14400,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Season, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, Season, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -14327,6 +14435,7 @@ window.Deckhand = {
   absent: Absent,                               // v7.6: date-keyed marks (tests)
   settle: Settle,                               // v7.7: the settle-in, a moment of the clock (tests)
   wrapup: Wrapup,                               // v7.14: the wrap-up at the bell (tests)
+  flash: Flash,                                 // v7.18: the minutes-left flash (tests)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)
   season: Season,                               // v7.10: active()/apply() (tests)
   bell: Bell,                                   // v7.13: schoolDaysBetween() (tests)

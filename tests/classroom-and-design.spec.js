@@ -285,9 +285,9 @@ test.describe("v6.13 design pass", () => {
     const bp = grid.bp.split(" ").map(parseFloat);
     ok(Math.abs(bp[0] - grid.cl) < 1 && Math.abs(bp[1] - grid.ct) < 1,
       "grid not anchored: " + JSON.stringify(grid));
-    // drawn icons replaced the fallback-font glyphs (v6.28: +⤡ grip = 4)
+    // drawn icons replaced the fallback-font glyphs (v6.28: +⤡ grip = 4; v7.18: + — minimize = 5)
     ok(await page.evaluate(() =>
-      document.querySelectorAll(".w-timer .strip svg.wIcon").length) === 4,
+      document.querySelectorAll(".w-timer .strip svg.wIcon").length) === 5,
       "strip icons missing");
   });
 

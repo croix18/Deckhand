@@ -835,3 +835,88 @@ test.describe("v7.15", () => {
     ok(JSON.parse(await dots()).length === 2, "could not drop a dot while locked");
   });
 });
+
+/* v7.18 — minimize, and the minutes-left flash (Croix: "I have one period slides up and we finish
+ * class… I collapse the screen, flip on the main clock, then hide the embed for next class";
+ * "a faint over all the screens warning that there are 3 minutes left… Just a 3 will do"). */
+test.describe("v7.18", () => {
+  const loadDeck = async (page, dh) => {
+    const deck = path.join(dh.fixtureDir, "tmp_min_deck.html");
+    fs.writeFileSync(deck, "<!DOCTYPE html><title>MinDeck</title><body><h1>DECK</h1>");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn");
+      inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets;
+      w[w.length - 1].url = u;
+      document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.waitForTimeout(300);
+  };
+  const st = page => page.evaluate(() => ({
+    staged: document.body.classList.contains("focusMode"),
+    shown: !!document.querySelector(".w-embed").offsetParent,
+    src: document.querySelector(".w-embed .embFrame").getAttribute("src"),
+    chips: [...document.querySelectorAll("#shelf .minChip")].map(c => c.textContent),
+    min: !!window.Deckhand.config.scenes[0].widgets.find(w => w.type === "embed").min }));
+
+  test("v7.18: Minimize — one tap takes a staged deck off the stage and the board to a dock chip (the clock is back, the frame goes quiet); the chip brings it back; it survives a reload; the next bell's settle-in brings the slides back by itself", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-08T10:15:40");                  // 20 s before 2nd period
+    await dh.launch();
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await loadDeck(page, dh);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#minStageBtn")).toBeVisible();
+    await page.click("#minStageBtn");
+    let s = await st(page);
+    ok(!s.staged && !s.shown && s.src === null && s.chips.join() === "Slides" && s.min, "the stage bar's Minimize: " + JSON.stringify(s));
+    await expect(page.locator("#clockWidget")).toBeVisible();
+    // the chip brings it back
+    await page.click("#shelf .minChip");
+    s = await st(page);
+    ok(s.shown && s.src && !s.chips.length && !s.min, "the chip: " + JSON.stringify(s));
+    // the strip's — does the same on the board
+    await page.click(".w-embed .wMin");
+    s = await st(page);
+    ok(!s.shown && s.min, "the strip's —: " + JSON.stringify(s));
+    const kept = await page.evaluate(() => window.Deckhand.sanitize(JSON.parse(JSON.stringify(window.Deckhand.config))).scenes[0].widgets.find(w => w.type === "embed").min);
+    ok(kept === true, "minimized did not survive sanitize");
+    // the bell at 10:16: the settle-in runs and hands off to the slides — brought back first
+    await page.evaluate(() => { window.Deckhand.config.bell.settle.seconds = 5; window.Deckhand.settle._doneMs(300); });
+    await expect(page.locator("#clockWidget.stLive")).toHaveCount(1, { timeout: 30000 });
+    await expect(page.locator(".w-embed.wFull")).toHaveCount(1, { timeout: 15000 });
+    s = await st(page);
+    ok(s.staged && s.shown && !s.min && !s.chips.length, "the settle-in did not bring the slides back: " + JSON.stringify(s));
+    // the clock is never minimized from the stage bar
+    await page.click("#unfocusBtn");
+    await page.click("#clockWidget .wFocus");
+    await expect(page.locator("#minStageBtn")).toBeHidden();
+  });
+
+  test("v7.18: the minutes-left flash — a faint numeral over every screen at the crossing, once a class, never when opened inside the window, off in Settings", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T11:05:57");                  // 5th ends 11:09 — the 3-minute mark in 3 s
+    await dh.launch();
+    const fl = () => page.evaluate(() => ({ go: document.getElementById("minFlash").classList.contains("go"), n: document.getElementById("minFlash").textContent }));
+    ok(!(await fl()).go, "flashed early");
+    await expect.poll(async () => (await fl()).go, { timeout: 8000 }).toBe(true);
+    ok((await fl()).n === "3", "the numeral: " + JSON.stringify(await fl()));
+    const peak = await page.evaluate(() => new Promise(r => setTimeout(() => r(+getComputedStyle(document.getElementById("minFlash")).opacity), 1000)));
+    ok(peak > 0.1 && peak < 0.4, "not faint: " + peak);
+    ok((await page.evaluate(() => getComputedStyle(document.getElementById("minFlash")).pointerEvents)) === "none", "the flash takes taps");
+    await expect.poll(async () => (await fl()).go, { timeout: 6000 }).toBe(false);
+    await page.evaluate(() => window.Deckhand.flash._watch());
+    ok(!(await fl()).go, "flashed twice in one class");
+    // opened with 2:30 left: nothing
+    await dh.openAt("#t=2026-09-29T11:06:30");
+    await dh.launch();
+    await page.waitForTimeout(800);
+    ok(!(await fl()).go, "flashed on a board opened inside the window");
+    // Settings: off, or a different minute
+    const san = await page.evaluate(() => JSON.stringify([window.Deckhand.sanitize({}).bell.flash, window.Deckhand.sanitize({ bell: { flash: { on: false, minutes: 44 } } }).bell.flash]));
+    ok(san === '[{"on":true,"minutes":3},{"on":false,"minutes":10}]', "sanitize: " + san);
+    await dh.openAt("#t=2026-09-29T11:05:57");
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.bell.flash = { on: false, minutes: 3 }; });
+    await page.waitForTimeout(4500);
+    ok(!(await fl()).go, "flashed while off");
+  });
+});

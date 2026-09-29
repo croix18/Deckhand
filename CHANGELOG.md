@@ -2,6 +2,22 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.18.0 — 2026-09-29
+
+**Minimize, and the three-minute flash.** Croix: "I have one period slides up and we finish class.
+Well usually I collapse the screen, flip on the main clock, then hide the embed for next class…
+One is a minimize and two is a faint over all the screens warning that there are 3 minutes left
+in class no matter what screen I'm on. Just a 3 will do." **Minimize** is a — on every card's strip
+and a Minimize button on the stage bar (Timer · Minimize · Exit): one tap takes the card off the
+board — and off the stage, so the clock is back — to a chip in the dock ("— Slides"); the chip
+brings it back. A minimized deck or video unloads (no sound, no stale slide); a minimized timer
+keeps counting and still rings. It stays minimized through a reload, and **the next bell's
+settle-in brings the slides back by itself** when it hands the room to them (the next period's
+deck). **The flash**: when a class has three minutes left, a faint 3 fills the screen for about
+two and a half seconds — over the board, the staged slides, Home or the pen — and is gone. Once a
+class, only at the crossing (a board opened with 2:30 left stays quiet), never for Lunch.
+Settings → Bells: on/off and the minute (1–10). Two tests; 255.
+
 ## 7.17.0 — 2026-09-29
 
 **A bigger number line.** Croix: "Can I have the option to have a bigger number line. Like more
