@@ -6,6 +6,7 @@
  * the sea under Seasonal touches Off and under motion Off, a stopwatch as a
  * working room, and the timer's end armed as one timeout. */
 const { test, expect, ok } = require("./helpers");
+const path = require("path"), fs = require("fs");
 
 test.describe("v7.11.5 hardening", () => {
   test("v7.11.5: a board built from DEFAULTS never autosaves; a device copy is quarantined once", async ({ page, dh }) => {
@@ -611,8 +612,10 @@ test.describe("v7.14", () => {
     await dh.launch();
     await dh.addW("addNumlineBtn"); await page.keyboard.press("Escape");
     await place(page);
-    const svg = await page.$(".w-numline .nlSvg"); const b = await svg.boundingBox();
-    const xOf = v => b.x + b.width * ((70 + (v + 10) / 20 * 860) / 1000), y = b.y + b.height * (190 / 300);
+    const at = v => page.evaluate(v => document.querySelector(".w-numline")._entry.api.at(v), v);
+    const y = (await at(0)).y;
+    const X = {}; for (const v of [-7, -3, -2, 3, 5]) X[v] = (await at(v)).x;
+    const xOf = v => X[v];
     const marks = () => page.evaluate(() => document.querySelector(".w-numline")._entry.api.marks());
     await page.mouse.click(xOf(-7), y);
     await page.mouse.click(xOf(3), y);
@@ -646,8 +649,8 @@ test.describe("v7.14", () => {
     ok(m.points.length === 0 && m.jumps.length === 0, "marks off the new line should go: " + JSON.stringify(m));
     const labels = await page.evaluate(() => [...document.querySelectorAll(".w-numline .nlLab")].map(t => t.textContent).join());
     ok(labels === "0,0.25,0.5,0.75,1", "labels: " + labels);
-    const bb = await svg.boundingBox();
-    await page.mouse.click(bb.x + bb.width * ((70 + 0.5 * 860) / 1000), bb.y + bb.height * (190 / 300));
+    const half = await at(0.5);
+    await page.mouse.click(half.x, half.y);
     m = await marks();
     ok(m.points.join() === "0.5", "a point at 0.5: " + m.points.join());
     const scenes = await page.evaluate(() => window.Deckhand.config.scenes.map(sc => sc.name));
@@ -659,5 +662,117 @@ test.describe("v7.14", () => {
     ok((await marks()).points.length === 0, "Clear");
     await page.click("#undoToast button");
     ok((await marks()).points.join() === "0.5", "Undo after Clear");
+  });
+});
+
+/* v7.15 — the pen hands the lesson back (Croix, after class: "It was awkward to walk over,
+ * clear the screen, click done, collapse the bar, click back into the slides frame"). */
+test.describe("v7.15", () => {
+  test("v7.15: leaving the pen is one action — Done or the clicker clears the drawing (with Undo), folds the dock on a staged deck and gives the slides the keys; the next click moves the slide", async ({ page, dh }) => {
+    const deck = path.join(dh.fixtureDir, "tmp_ink_deck.html");
+    fs.writeFileSync(deck, '<!DOCTYPE html><title>InkDeck</title><body><h1 id="n">Slide 1</h1><script>var n=1;addEventListener("keydown",function(e){if(e.key==="PageDown"||e.key==="ArrowRight"){n++;document.getElementById("n").textContent="Slide "+n;}});</script>');
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn");
+      inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets;
+      w[w.length - 1].url = u;
+      document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.waitForTimeout(400);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    const st = () => page.evaluate(() => ({
+      keys: !!(document.activeElement && document.activeElement.classList.contains("embFrame")),
+      inking: document.body.classList.contains("inking"),
+      dockMin: document.body.classList.contains("dockMin"),
+      strokes: window.Deckhand.ink.count() }));
+    const slide = () => page.frameLocator(".w-embed .embFrame").locator("#n").textContent();
+    const draw = async () => { await page.mouse.move(600, 500); await page.mouse.down(); await page.mouse.move(900, 520, { steps: 5 }); await page.mouse.up(); };
+    await expect.poll(async () => (await st()).keys).toBe(true);
+    await page.keyboard.press("PageDown");
+    await expect.poll(slide).toBe("Slide 2");
+    // the stage's Draw, then the clicker: the first press ends the drawing, the second turns the slide
+    await page.click("#inkBlob");
+    await draw();
+    let s = await st();
+    ok(s.inking && s.strokes === 1 && !s.keys, "drawing: " + JSON.stringify(s));
+    await page.keyboard.press("PageDown");
+    s = await st();
+    ok(!s.inking && s.strokes === 0 && s.keys && s.dockMin, "the clicker did not hand the lesson back: " + JSON.stringify(s));
+    ok((await slide()) === "Slide 2", "the slide turned under the ink");
+    await page.keyboard.press("PageDown");
+    await expect.poll(slide).toBe("Slide 3");
+    // the dock's Draw (the dock opened for it), then Done
+    await page.click("#dockTog");
+    await page.click("#inkBtn");
+    await draw();
+    ok(!(await st()).dockMin, "precondition: the dock is open");
+    await page.click("#inkDone");
+    s = await st();
+    ok(!s.inking && s.strokes === 0 && s.keys && s.dockMin, "Done did not hand the lesson back: " + JSON.stringify(s));
+    await page.keyboard.press("PageDown");
+    await expect.poll(slide).toBe("Slide 4");
+    // Undo brings the drawing back and leaves the keys with the slides
+    await page.click("#undoToast button");
+    s = await st();
+    ok(s.strokes === 1 && s.keys && !s.inking, "Undo: " + JSON.stringify(s));
+    // Escape leaves the pen the same way
+    await page.click("#inkBlob");
+    await draw();
+    await page.keyboard.press("Escape");
+    s = await st();
+    ok(!s.inking && s.strokes === 0 && s.keys, "Escape: " + JSON.stringify(s));
+  });
+
+  test("v7.15: the dock has one ⋮ (Scenes live there), Fullscreen sits in the top-right corner clear of a card's ✕, and on a staged deck the pen is a blob in the bottom-right corner", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    ok((await page.locator("#dock svg.dots").count()) === 1, "the dock has more than one dots button");
+    await page.click("#moreBtn");
+    await expect(page.locator("#moreMenu #sceneBtn")).toBeVisible();
+    await page.click("#sceneBtn");
+    await expect(page.locator("#sceneMenu")).toBeVisible();
+    await page.keyboard.press("Escape");
+    const box = await page.evaluate(() => {
+      const f = document.getElementById("fsBtn").getBoundingClientRect(), x = document.querySelector("#clockWidget .wClose").getBoundingClientRect();
+      return { fsRight: innerWidth - f.right, fsTop: f.top, gap: f.left - x.right };
+    });
+    ok(box.fsRight < 12 && box.fsTop < 12, "Fullscreen is not in the top-right corner: " + JSON.stringify(box));
+    ok(box.gap >= 16, "the clock's ✕ sits under the fullscreen button: " + JSON.stringify(box));
+    ok((await page.locator("#inkBlob").isHidden()), "the pen blob shows on the plain board");
+    await page.click("#clockWidget .wFocus");
+    await expect(page.locator("#inkBlob")).toBeVisible();
+    ok((await page.locator("#focusBar #inkBtnStage").count()) === 0, "Draw is still in the stage bar");
+    const blob = await page.evaluate(() => { const r = document.getElementById("inkBlob").getBoundingClientRect(); return { right: innerWidth - r.right, bottom: innerHeight - r.bottom, op: +getComputedStyle(document.getElementById("inkBlob")).opacity }; });
+    ok(blob.right < 40 && blob.bottom < 40 && blob.op < 0.8, "the pen blob is not a quiet bottom-right blob: " + JSON.stringify(blob));
+    await page.click("#inkBlob");
+    await expect(page.locator("#inkBar")).toBeVisible();
+    await expect(page.locator("#inkBlob")).toBeHidden();
+    const bar = await page.evaluate(() => { const b = document.getElementById("inkBar"), r = b.getBoundingClientRect(); return { right: innerWidth - r.right, bottom: innerHeight - r.bottom, bg: getComputedStyle(b).backgroundColor }; });
+    ok(bar.right < 40 && bar.bottom < 40 && /rgba\(255, 255, 255, 0\.[0-9]+\)/.test(bar.bg), "the palette should pop up see-through from the corner: " + JSON.stringify(bar));
+    await page.click("#inkDone");
+    await expect(page.locator("#inkBlob")).toBeVisible();
+  });
+
+  test("v7.15: the Number Line opens as a full-width strip at the bottom, and a resized card redraws in its own pixels — the line runs the width, the labels keep their size", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addNumlineBtn"); await page.keyboard.press("Escape");
+    const w = await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "numline"));
+    ok(w.w >= 90 && w.y + w.h >= 95, "not a full-width strip at the bottom: " + JSON.stringify(w));
+    const geo = () => page.evaluate(() => {
+      const c = document.querySelector(".w-numline .nlSvg").getBoundingClientRect(), api = document.querySelector(".w-numline")._entry.api;
+      const a = api.at(-10), b = api.at(10), lab = document.querySelector(".w-numline .nlLab").getBoundingClientRect();
+      return { span: (b.x - a.x) / c.width, labH: lab.height, lineY: (a.y - c.top) / c.height };
+    });
+    const g1 = await geo();
+    await page.evaluate(() => { const x = window.Deckhand.config.scenes[0].widgets.find(y => y.type === "numline"); x.x = 20; x.y = 5; x.w = 50; x.h = 85; window.Deckhand.canvas.loadScene(); });
+    await page.waitForTimeout(300);
+    const g2 = await geo();
+    ok(g1.span > 0.85 && g2.span > 0.85, "the line does not run the card's width: " + JSON.stringify([g1, g2]));
+    ok([g1, g2].every(g => g.labH >= 20 && g.labH <= 48), "the labels are unreadable or ballooned: " + JSON.stringify([g1, g2]));
+    ok(g2.lineY > 0.55 && g2.lineY < 0.8, "a tall card put the line in a strange place: " + JSON.stringify(g2));
   });
 });

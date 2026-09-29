@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.14.0",
+  "appVersion": "7.15.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -424,10 +424,17 @@
     min-height:44px; padding:10px 20px; border:0; border-radius:12px; cursor:pointer;
     background:var(--navy); color:var(--white); font:inherit; font-weight:900; font-size:15px;
   }
-  #inkBtn[aria-pressed="true"], #inkBtnStage[aria-pressed="true"]{background:var(--turq); color:var(--navy); opacity:1;}
-  #inkBtn svg, #inkBtnStage svg{width:16px; height:16px;}
-  #inkBtn, #inkBtnStage{white-space:nowrap; display:inline-flex; align-items:center; gap:6px;}
-  @media (max-width: 780px), (max-height: 540px){ #ink, #inkBar, #inkBtn{display:none !important;} }
+  #inkBtn[aria-pressed="true"]{background:var(--turq); color:var(--navy); opacity:1;}
+  #inkBtn svg{width:16px; height:16px;}
+  #inkBtn{white-space:nowrap; display:inline-flex; align-items:center; gap:6px;}
+  /* v7.15: over a staged deck the palette is a pop-up from the pen blob — see-through, so the
+     slide under it still reads; it comes up solid under a finger */
+  body.focusMode #inkBar{right:16px; bottom:16px; background:rgba(255,255,255,.72); border-color:rgba(227,212,180,.7);
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); transform-origin:100% 100%; animation:inkPop .16s ease-out;}
+  body.focusMode #inkBar .inkGroup{background:rgba(248,242,228,.7);}
+  @keyframes inkPop{from{opacity:0; transform:scale(.6);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion: reduce){ body.focusMode #inkBar{animation:none;} }
+  @media (max-width: 780px), (max-height: 540px){ #ink, #inkBar, #inkBtn, #inkBlob{display:none !important;} }
 
   /* ===== settings panel (v7.2 design pass) =====
      A preferences panel, not a scroll of collapsibles: a tab rail on the
@@ -610,6 +617,7 @@
   }
   .widget[hidden]{display:none !important;}
   .widget .strip{cursor:grab; user-select:none; touch-action:none; display:flex; align-items:center; gap:10px;}
+  .widget.wCornerTR:not(.wFull) .strip{padding-right:48px;}   /* v7.15: room for the fullscreen blob */
   body.locked .widget .strip{cursor:default;}
   .wLabel{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .wClose{
@@ -1298,19 +1306,21 @@
   .snEdit textarea{font-family:inherit; font-weight:600; color:var(--navy); border:2px solid var(--grid); border-radius:10px; padding:6px 10px; font-size:clamp(12px, 2.6cqw, 17px); flex:1 1 200px; min-height:5em; resize:vertical;}
   body.locked .snEdit, body.locked .snSetup{display:none;}
   /* v7.14 the Number Line: an SVG the finger can move things on */
-  .nlWrap{width:100%; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;}
-  .nlSvg{width:100%; height:100%; max-height:100%; touch-action:none; cursor:crosshair; display:block; font-family:inherit;}
+  .nlWrap{width:100%; flex:1; min-height:60px; position:relative;}
+  .w-numline .wBody{gap:.6cqh; padding-top:.5cqh; padding-bottom:.8cqh;}
+  .w-numline .nlBottom{display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap;}
+  .nlSvg{position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:crosshair; display:block; font-family:inherit;}
   .nlSvg .nlAxis{stroke:var(--navy); stroke-width:4; fill:none;}
   .nlSvg .nlTick{stroke:var(--navy); stroke-width:2.5;}
   .nlSvg .nlTick.big{stroke-width:4;}
-  .nlSvg .nlLab{fill:var(--navy); font-weight:700; font-size:26px; text-anchor:middle;}
+  .nlSvg .nlLab{fill:var(--navy); font-weight:700; text-anchor:middle;}
   .nlSvg .nlLab.zero{fill:var(--teal);}
   .nlSvg .nlPt{fill:var(--turq); stroke:var(--navy); stroke-width:5;}
   .nlSvg .nlPt.drag{fill:var(--sand);}
   .nlSvg .nlJump{fill:none; stroke:var(--teal); stroke-width:6; stroke-linecap:round;}
   .nlSvg .nlJump.neg{stroke:var(--navy);}
   .nlSvg .nlJump.ghost{opacity:.45; stroke-dasharray:10 10;}
-  .nlSvg .nlJLab{font-weight:900; font-size:30px; text-anchor:middle; fill:var(--teal);}
+  .nlSvg .nlJLab{font-weight:900; text-anchor:middle; fill:var(--teal);}
   .nlSvg .nlJLab.neg{fill:var(--navy);}
   .nlSvg .nlHead{fill:var(--teal);}
   .nlSvg .nlHead.neg{fill:var(--navy);}
@@ -1725,6 +1735,25 @@
   /* collapsible dock (Croix, field: it sat exactly on the Slides player's
      ‹ › arrows) — a chevron folds it to a small quiet handle; stage mode
      auto-collapses it */
+  /* v7.15: the corner blobs — fullscreen top-right, the pen bottom-right on a staged deck;
+     navy like the dock, half there until a finger or a pointer comes near */
+  #fsBtn, #inkBlob{
+    position:fixed; z-index:900001; width:44px; height:44px; border-radius:999px; border:0; padding:0;
+    background:var(--navy); color:var(--white); box-shadow:3px 4px 0 var(--shadow);
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:.45;
+    transition:opacity .15s;
+  }
+  #fsBtn{top:6px; right:6px; width:38px; height:38px;}
+  #fsBtn svg, #inkBlob svg{width:20px; height:20px;}
+  #fsBtn .fsOut{display:none;}
+  #fsBtn[aria-pressed="true"] .fsIn{display:none;}
+  #fsBtn[aria-pressed="true"] .fsOut{display:block;}
+  #fsBtn[hidden], #inkBlob[hidden]{display:none;}
+  @media (hover:hover){ #fsBtn:hover, #inkBlob:hover{opacity:1;} }
+  #fsBtn:focus-visible, #inkBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
+  body.focusMode:not(.landing) #focusBar{right:56px; top:6px;}
+  #inkBlob{right:24px; bottom:16px; display:none;}
+  body.focusMode:not(.landing):not(.inking) #inkBlob{display:inline-flex;}
   #dockTog{
     padding:6px 9px; display:inline-flex; align-items:center; justify-content:center;
     min-width:44px; min-height:34px;   /* the sole control when folded */
@@ -1817,6 +1846,7 @@
   }
   /* ⋯ scene manager: the current scene as the heading, one field, a list */
   #sceneMenu{display:flex; flex-direction:column; min-width:300px;}
+  #sceneMenu[hidden]{display:none;}
   .popBody{display:flex; flex-direction:column; gap:10px; padding:14px 16px 16px;}
   #sceneName{width:100%; min-height:48px; font-size:16px; font-weight:700;}
   .popList{display:flex; flex-direction:column; gap:6px;}
@@ -2892,6 +2922,7 @@
 <svg aria-hidden="true" width="0" height="0" style="position:absolute">
   <defs>
     <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4.5 19.5l3.6-.9L19.3 7.4a1.9 1.9 0 0 0-2.7-2.7L5.4 15.9l-.9 3.6z"/><path d="M14.2 7.1l2.7 2.7"/></symbol>
+    <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M4.5 9.5h5v-5M19.5 9.5h-5v-5M4.5 14.5h5v5M19.5 14.5h-5v5"/></symbol>
     <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9.5 4.5h-5v5M14.5 4.5h5v5M9.5 19.5h-5v-5M14.5 19.5h5v-5"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M7.5 11L12 6.5 16.5 11M7.5 18L12 13.5 16.5 18"/></symbol>
     <symbol id="i-resize" viewBox="0 0 24 24"><path d="M9.5 14.5l-5 5M4.5 19.5v-4.5M4.5 19.5H9M14.5 9.5l5-5M19.5 4.5V9M19.5 4.5H15"/></symbol>
@@ -3061,7 +3092,7 @@
       <!-- v6.17: pick a preset, get JUST the running wheel — never the card -->
       <div id="focusTimerMenu" role="group" aria-label="Timer presets" hidden></div>
     </div>
-    <button id="inkBtnStage" type="button" aria-label="Draw over the board" aria-pressed="false"><svg class="wIcon"><use href="#i-pencil"/></svg> Draw</button>
+
     <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
   </div>
   <section class="card widget w-clock" id="clockWidget" aria-label="Current time and bell schedule">
@@ -3138,13 +3169,15 @@
   </section>
 </main>
 
+<!-- v7.15: fullscreen in the top-right corner, a quiet blob like the folded dock -->
+<button id="fsBtn" type="button" aria-label="Fullscreen (F)" aria-pressed="false"><svg class="wIcon fsIn"><use href="#i-expand"/></svg><svg class="wIcon fsOut"><use href="#i-shrink"/></svg></button>
 <nav id="dock" aria-label="Board tools">
   <button class="pill" id="dockTog" type="button" aria-label="Collapse the dock"
     aria-expanded="true"><svg class="wIcon"><use href="#i-chev"/></svg></button>
   <div id="sceneWrap">
     <select id="sceneSel" aria-label="Scene"></select>
-    <button class="pill" id="sceneBtn" type="button" aria-expanded="false"
-      aria-haspopup="true" aria-label="Manage scenes"><svg class="wIcon dots"><use href="#i-dots"/></svg></button>
+    <!-- v7.15 (Croix: "We have vertical and horizontal dots. Why?"): the scene manager
+         opens from ⋮ → Scenes; it still pops up here, over the scene it manages -->
     <div id="sceneMenu" class="pop" role="group" aria-label="Scene manager" hidden>
       <div class="strip">SCENE <span class="sheetSub" id="sceneMenuName"></span></div>
       <div class="popBody">
@@ -3201,8 +3234,9 @@
   <button class="pill" id="lockBtn" type="button" aria-pressed="false">Lock</button>
   <button class="pill" id="inkBtn" type="button" aria-pressed="false" aria-label="Draw over the board"><svg class="wIcon"><use href="#i-pencil"/></svg> Draw</button>
   <!-- v7.7: the header folded into the dock — one chrome bar. Settings stays a
-       pill (its coral dot is the store's health light); Home, Sound and
-       Fullscreen live under ⋮ with the brand. -->
+       pill (its coral dot is the store's health light); Scenes, Home and Sound
+       live under ⋮ with the brand. v7.15: Fullscreen is back in the top-right
+       corner (#fsBtn), where it was before 7.7. -->
   <button class="pill" id="setBtn" type="button">Settings</button>
   <div id="moreWrap">
     <button class="pill" id="moreBtn" type="button" aria-expanded="false" aria-haspopup="true"
@@ -3211,9 +3245,9 @@
       <div class="strip"><span id="brand">DECKHAND<small id="brandVer">v7</small></span></div>
       <div class="popBody">
         <div class="popList">
+          <button class="popItem" id="sceneBtn" type="button" aria-expanded="false" aria-haspopup="true">Scenes <span class="popSub">new, duplicate, rename, delete</span></button>
           <button class="popItem" id="homeBtn" type="button">Home <span class="popSub">pick the week <span class="kbd">(H)</span></span></button>
           <button class="popItem" id="soundBtn" type="button" aria-pressed="true">Sound On</button>
-          <button class="popItem" id="fsBtn" type="button">Fullscreen <span class="popSub"><span class="kbd">(F)</span></span></button>
         </div>
       </div>
     </div>
@@ -3950,6 +3984,9 @@
      it only takes the pointer while armed, so the board stays usable
      underneath the annotations. Session-only, like the sketch pad. -->
 <canvas id="ink" aria-hidden="true"></canvas>
+<!-- v7.15 (Croix: "When the slides are up, I would like the ink to be a pop up… semi
+     transparent and start in bottom right corner alongside the bottom menu blob") -->
+<button id="inkBlob" type="button" aria-label="Draw over the slides" aria-pressed="false"><svg class="wIcon"><use href="#i-pencil"/></svg></button>
 <div id="inkBar" role="toolbar" aria-label="Draw over the board" hidden>
   <div class="inkGroup" aria-label="Pen color">
     <button class="inkTool inkSwatch" type="button" data-color="#17324D" style="background:#17324D" aria-label="Navy pen" aria-pressed="true"></button>
@@ -3969,7 +4006,7 @@
     <button class="inkTool" type="button" id="inkUndo" aria-label="Undo the last stroke">Undo</button>
     <button class="inkTool" type="button" id="inkClear" aria-label="Clear the drawing">Clear</button>
   </div>
-  <button class="inkDone" type="button" id="inkDone">Done</button>
+  <button class="inkDone" type="button" id="inkDone" aria-label="Done — clear the drawing and go back to the slides">Done</button>
 </div>
 
 <div id="alarm" role="alert">
@@ -4021,7 +4058,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.14.0",
+  appVersion: "7.15.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -8804,7 +8841,7 @@ function makeNumline(host, wcfg){
   if (!isObj(wcfg.line)) wcfg.line = normLine(-10, 10, 1);
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
-      '<div class="nlWrap"><svg class="nlSvg" viewBox="0 0 1000 300" aria-label="Number line"></svg></div>' +
+      '<div class="nlWrap"><svg class="nlSvg" aria-label="Number line"></svg></div>' +
       '<div class="nlTools">' +
         '<span class="chips nlMode" role="group" aria-label="Tool">' +
           '<button type="button" class="chip" data-mode="point" aria-pressed="true">Point</button>' +
@@ -8812,11 +8849,11 @@ function makeNumline(host, wcfg){
         '</span>' +
         '<button class="dwTool nlUndo" type="button">Undo</button>' +
         '<button class="dwTool nlClear" type="button">Clear</button>' +
-      '</div>' +
-      '<div class="nlLine">' +
+      '<span class="nlLine">' +
         '<label>From <input class="nlIn" data-k="min" type="number" step="any" aria-label="Start"></label>' +
         '<label>to <input class="nlIn" data-k="max" type="number" step="any" aria-label="End"></label>' +
         '<label>by <input class="nlIn" data-k="step" type="number" step="any" min="0" aria-label="Step"></label>' +
+      '</span>' +
       '</div>' +
     '</div>');
   var svg = host.querySelector(".nlSvg"), NS = "http://www.w3.org/2000/svg";
@@ -8825,7 +8862,23 @@ function makeNumline(host, wcfg){
   if (parked) marks = parked;
   if (!Array.isArray(marks.log)) marks.log = [];
   function park(){ DayStore.set(wcfg, marks); }
-  var X0 = 70, X1 = 930, Y = 190;
+  /* v7.15 (Croix: "It stretched so weird when I tried to make it bigger… clunky as all heck"):
+     the drawing used a fixed 1000×300 box scaled to fit, so a wider card left the line short and
+     centred, a taller one left it floating in empty space and every label grew with it. Now the
+     SVG is drawn in the card's own pixels: the line runs the full width, the labels keep one
+     readable size, and a taller card gives the jumps more room above the line. */
+  var VW = 1000, VH = 300, X0 = 70, X1 = 930, Y = 190, FS = 26;
+  var wrapEl = host.querySelector(".nlWrap");
+  function layout(){
+    var r = wrapEl.getBoundingClientRect();
+    VW = Math.max(200, Math.round(r.width)); VH = Math.max(90, Math.round(r.height));
+    svg.setAttribute("viewBox", "0 0 " + VW + " " + VH);
+    FS = Math.round(Math.max(22, Math.min(34, VW / 48)));   // readable from the back at any card size, never ballooning
+    X0 = Math.max(FS * 1.6, VW * .04); X1 = VW - X0;
+    /* the line sits low (labels under it, the jumps' room above), and a tall card doesn't push it
+       into the bottom edge — it stays at about two-thirds of the height */
+    Y = Math.round(Math.min(VH - FS * 2.4 - 6, Math.max(VH * .66, FS * 4)));
+  }
   function ln(){ return wcfg.line; }
   function nT(){ return Math.round((ln().max - ln().min) / ln().step); }
   function xOf(v){ return X0 + (v - ln().min) / (ln().max - ln().min) * (X1 - X0); }
@@ -8836,45 +8889,47 @@ function makeNumline(host, wcfg){
   }
   function el(tag, attrs, cls){ var e = document.createElementNS(NS, tag); Object.keys(attrs).forEach(function(k){ e.setAttribute(k, attrs[k]); }); if (cls) e.setAttribute("class", cls); return e; }
   function render(){
+    layout();
     svg.innerHTML = "";
     var n = nT(), step = (X1 - X0) / n;
     /* labels every 1, 2, 4, 5, 10… ticks — the first spacing whose labels fit side by side */
     var chars = 1, every = 1;
     for (var k = 0; k <= n; k++) chars = Math.max(chars, fmtTick(ln().min + k * ln().step).length);
-    var lw = chars * 26 * .62 + 14;
+    var lw = chars * FS * .62 + FS * .6;
     [1, 2, 4, 5, 10, 20, 25, 50, 100].some(function(e){ every = e; return (n / e + 1) * lw <= X1 - X0 + 40; });
-    svg.appendChild(el("path", { d: "M" + (X0 - 30) + " " + Y + "H" + (X1 + 30) }, "nlAxis"));
-    svg.appendChild(el("path", { d: "M" + (X1 + 30) + " " + Y + "l-16 -10v20z" }, "nlHead neg"));
-    svg.appendChild(el("path", { d: "M" + (X0 - 30) + " " + Y + "l16 -10v20z" }, "nlHead neg"));
-    var lf = 26;
+    var ov = Math.min(30, X0 - 6);
+    svg.appendChild(el("path", { d: "M" + (X0 - ov) + " " + Y + "H" + (X1 + ov) }, "nlAxis"));
+    svg.appendChild(el("path", { d: "M" + (X1 + ov) + " " + Y + "l-16 -10v20z" }, "nlHead neg"));
+    svg.appendChild(el("path", { d: "M" + (X0 - ov) + " " + Y + "l16 -10v20z" }, "nlHead neg"));
+    var lf = FS, tk = Math.round(FS * .6);
     for (var i = 0; i <= n; i++){
       var v = +(ln().min + i * ln().step).toFixed(6), x = X0 + i * step, big = i % every === 0;
-      svg.appendChild(el("line", { x1: x, y1: Y - (big ? 18 : 11), x2: x, y2: Y + (big ? 18 : 11) }, "nlTick" + (big ? " big" : "")));
+      svg.appendChild(el("line", { x1: x, y1: Y - (big ? tk : tk * .6), x2: x, y2: Y + (big ? tk : tk * .6) }, "nlTick" + (big ? " big" : "")));
       if (big){
-        var t = el("text", { x: x, y: Y + 52, "font-size": lf }, "nlLab" + (Math.abs(v) < 1e-9 ? " zero" : ""));
+        var t = el("text", { x: x, y: Y + tk + FS * 1.05, "font-size": lf }, "nlLab" + (Math.abs(v) < 1e-9 ? " zero" : ""));
         t.textContent = fmtTick(v); svg.appendChild(t);
       }
     }
     marks.jumps.concat(ghost ? [ghost] : []).forEach(function(j, k){
       var a = xOf(j[0]), b = xOf(j[1]), d = +(j[1] - j[0]).toFixed(6), neg = d < 0;
-      var lift = Math.min(120, 30 + Math.abs(b - a) * .35), mid = (a + b) / 2;
+      var lift = Math.max(20, Math.min(Y - FS * 2 - 12, 30 + Math.abs(b - a) * .35)), mid = (a + b) / 2;   // the arc and its label stay inside the card
       var p = el("path", { d: "M" + a + " " + (Y - 8) + " Q" + mid + " " + (Y - 8 - lift * 2) + " " + b + " " + (Y - 8) }, "nlJump" + (neg ? " neg" : "") + (j === ghost ? " ghost" : ""));
       svg.appendChild(p);
       var dir = neg ? -1 : 1;
       svg.appendChild(el("path", { d: "M" + b + " " + (Y - 6) + "l" + (-14 * dir) + " -18l" + (10 * dir) + " -2z" }, "nlHead" + (neg ? " neg" : "")));
-      var lab = el("text", { x: mid, y: Y - 14 - lift - 8 }, "nlJLab" + (neg ? " neg" : ""));
+      var lab = el("text", { x: mid, y: Y - 14 - lift - 8, "font-size": Math.round(FS * 1.15) }, "nlJLab" + (neg ? " neg" : ""));
       lab.textContent = (d > 0 ? "+" : "\u2212") + fmtTick(Math.abs(d)); svg.appendChild(lab);
     });
     marks.points.forEach(function(v, i){
-      var c = el("circle", { cx: xOf(v), cy: Y, r: 15 }, "nlPt" + (drag && drag.i === i ? " drag" : ""));
+      var c = el("circle", { cx: xOf(v), cy: Y, r: Math.round(FS * .58) }, "nlPt" + (drag && drag.i === i ? " drag" : ""));
       c.dataset.i = i; svg.appendChild(c);
     });
     host.querySelector(".nlUndo").disabled = !marks.points.length && !marks.jumps.length;
   }
-  function toX(e){ var r = svg.getBoundingClientRect(); return (e.clientX - r.left) / r.width * 1000; }
-  function toY(e){ var r = svg.getBoundingClientRect(); return (e.clientY - r.top) / r.height * 300; }
+  function toX(e){ var r = svg.getBoundingClientRect(); return (e.clientX - r.left) / r.width * VW; }
+  function toY(e){ var r = svg.getBoundingClientRect(); return (e.clientY - r.top) / r.height * VH; }
   function nearPoint(x){
-    var best = -1, bd = 26;
+    var best = -1, bd = Math.max(26, FS);
     marks.points.forEach(function(v, i){ var d = Math.abs(xOf(v) - x); if (d < bd){ bd = d; best = i; } });
     return best;
   }
@@ -8883,7 +8938,7 @@ function makeNumline(host, wcfg){
     if (pid !== null) return;
     pid = e.pointerId; try { svg.setPointerCapture(pid); } catch(err){}
     var x = toX(e), y = toY(e), v = snap(x);
-    if (Math.abs(y - Y) > 80 && mode === "point"){ pid = null; return; }   // far from the line: nothing
+    if (Math.abs(y - Y) > Math.max(80, FS * 3) && mode === "point"){ pid = null; return; }   // far from the line: nothing
     if (mode === "point"){
       var i = nearPoint(x);
       if (i >= 0) drag = { i: i, moved: false, from: marks.points[i] };
@@ -8945,16 +9000,19 @@ function makeNumline(host, wcfg){
     });
   });
   fillLine(); render();
+  var ro = null, roTid = null;
+  try { ro = new ResizeObserver(function(){ clearTimeout(roTid); roTid = setTimeout(render, 30); }); ro.observe(wrapEl); } catch(e){}
   return {
     kind: "numline",
     label: function(){ return wcfg.label || "Number Line"; },
     startPause: function(){}, reset: clearAll,
     marks: function(){ return { points: marks.points.slice(), jumps: marks.jumps.map(function(j){ return j.slice(); }) }; },   // test hook
     setMode: function(m){ mode = m; },              // test hook
+    at: function(v){ var r = svg.getBoundingClientRect(); return { x: r.left + xOf(v) / VW * r.width, y: r.top + Y / VH * r.height }; },   // test hook: a number's point on screen
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: function(){ fillLine(); render(); }, resync: function(){},
-    destroy: function(){}
+    destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} clearTimeout(roTid); }
   };
 }
 
@@ -11709,6 +11767,8 @@ var Canvas = (function(){
     en.el.style.top = en.cfg.y + "%";
     en.el.style.width = en.cfg.w + "%";
     en.el.style.height = en.cfg.h + "%";
+    /* v7.15: a card in the top-right corner keeps its ✕ clear of the fullscreen blob */
+    en.el.classList.toggle("wCornerTR", en.cfg.x + en.cfg.w >= 96 && en.cfg.y <= 3);
   }
   /* Pinned widgets live in a stratum far above the tap-to-raise stack, so
      a ⛶-focused deck (which is only ever tap-raised) can never cover them.
@@ -11832,6 +11892,9 @@ var Canvas = (function(){
   function refocusDeck(){
     if (!focusedEntry ||
         (focusedEntry.type !== "embed" && focusedEntry.type !== "yt")) return;
+    /* v7.15: while the pen is out the clicker must reach Deckhand (it ends the drawing) —
+       a deck that took the keys mid-drawing would turn the slide under the ink */
+    try { if (Ink.isArmed()) return; } catch(e){}
     if (selected && selected.api.entryActive && selected.api.entryActive()) return;
     var fr = focusedEntry.el.querySelector(".embFrame");
     if (fr && !fr.hidden){ try { fr.focus(); } catch(e){} }
@@ -12259,6 +12322,9 @@ var Canvas = (function(){
        TOTAL count so at least no two adds ever coincide. */
     var spot = opts && opts.spot ? opts.spot : null;
     if (spot && spot.w){ ww = spot.w; wh = spot.h; }
+    /* v7.15 (Croix: "It should open, full size, towards the bottom of the screen"): the number
+       line is a strip — the whole width, the bottom of the board (on a staged deck too) */
+    if (type === "numline" && !spot){ ww = 96; wh = 42; spot = { x: 2, y: 56 }; }
     if (staged && !spot){
       /* over the deck: the sketch pad gets a tall LEFT half-panel
          ("demonstrate something next to the slides") — left, so it never
@@ -12649,7 +12715,7 @@ var Canvas = (function(){
         wireButton($(pair[0]), function(){ addWidget(pair[1]); hideAddMenu(); });
       });
       wireButton($("moreBtn"), toggleMoreMenu);
-      ["homeBtn", "soundBtn", "fsBtn"].forEach(function(id){   // a pick closes ⋮
+      ["homeBtn", "soundBtn"].forEach(function(id){   // a pick closes ⋮
         $(id).addEventListener("click", hideMoreMenu);
       });
       document.addEventListener("pointerdown", function(e){
@@ -12758,6 +12824,7 @@ var Canvas = (function(){
     },
     unfocus: function(){ setFocus(null); },
     refocusDeck: refocusDeck,          // alarm dismiss hands keys back
+    dockMin: function(v){ setDockMin(!!v); },   // v7.15: the pen folds the dock back on a staged deck
     /* v7.5: the sea's director asks — a running timer or settle-in means
        a working room, so only the quiet visitors play */
     timerRunning: function(){
@@ -12795,6 +12862,12 @@ var FS = (function(){
          instead of leaving a button that silently does nothing */
       if (document.fullscreenEnabled === false) el.fsBtn.hidden = true;
       wireButton(el.fsBtn, toggle);
+      /* v7.15: the corner button shows which way it goes */
+      document.addEventListener("fullscreenchange", function(){
+        var on = !!document.fullscreenElement;
+        el.fsBtn.setAttribute("aria-pressed", on ? "true" : "false");
+        el.fsBtn.setAttribute("aria-label", on ? "Leave fullscreen (F)" : "Fullscreen (F)");
+      });
     },
     toggle: toggle
   };
@@ -13799,11 +13872,30 @@ var Ink = (function(){
     armed = !!on;
     document.body.classList.toggle("inking", armed);
     bar.hidden = !armed;
-    ["inkBtn", "inkBtnStage"].forEach(function(id){
+    ["inkBtn", "inkBlob"].forEach(function(id){
       var b = $(id); if (b) b.setAttribute("aria-pressed", armed ? "true" : "false");
     });
     if (armed){ fit(); paintBar(); }
     else if (cur){ endStroke(); }
+  }
+  /* v7.15 (Croix, after class: "It was awkward to walk over, clear the screen, click done,
+     collapse the bar, click back into the slides frame, to continue the lesson"): leaving the
+     pen is ONE action, however it is left — Done, Escape, D, the Draw button again, or the
+     clicker. The drawing is cleared (five seconds of Undo), the palette folds, a staged deck's
+     dock folds back to its handle, and the slides get the keys back, so the next click of the
+     clicker moves the slide. */
+  function finish(){
+    if (!armed) return;
+    if (cur) endStroke();
+    var had = strokes.slice();
+    strokes = []; cur = null; redraw();
+    arm(false);
+    try { if (document.body.classList.contains("focusMode")) Canvas.dockMin(true); } catch(e){}
+    try { Canvas.refocusDeck(); } catch(e){}
+    if (had.length) Undo.show("Drawing cleared", function(){
+      strokes = had; redraw();
+      try { Canvas.refocusDeck(); } catch(e){}    // the Undo tap took the keys; give them back
+    });
   }
   function endStroke(){
     if (cur){
@@ -13854,14 +13946,15 @@ var Ink = (function(){
         else if (b.id === "inkEraser"){ erase = !erase; }
         else if (b.id === "inkUndo"){ strokes.pop(); redraw(); }
         else if (b.id === "inkClear"){ strokes = []; cur = null; redraw(); }
-        else if (b.id === "inkDone"){ arm(false); return; }
+        else if (b.id === "inkDone"){ finish(); return; }
         paintBar();
       });
-      wireButton($("inkBtn"), function(){ arm(!armed); });
-      var sb = $("inkBtnStage"); if (sb) wireButton(sb, function(){ arm(!armed); });
+      wireButton($("inkBtn"), function(){ if (armed) finish(); else arm(true); });
+      var sb = $("inkBlob"); if (sb) wireButton(sb, function(){ if (armed) finish(); else arm(true); });
       document.addEventListener("deckhand:home", function(){ arm(false); });
     },
-    toggle: function(){ arm(!armed); },
+    toggle: function(){ if (armed) finish(); else arm(true); },
+    finish: finish,                              // v7.15: clear, fold, hand the slides the keys
     arm: arm,
     isArmed: function(){ return armed; },
     clear: function(){ strokes = []; cur = null; redraw(); },
@@ -14050,7 +14143,13 @@ var Keys = (function(){
     // 7. global shortcuts (Space/R act on the selected widget)
     if (isButton && (k === " " || k === "Enter")) return;
     var lk = k.length === 1 ? k.toLowerCase() : k;
-    if (Ink.isArmed() && k === "Escape"){ Ink.arm(false); e.preventDefault(); return; }
+    if (Ink.isArmed() && k === "Escape"){ Ink.finish(); e.preventDefault(); return; }
+    /* v7.15: the clicker ends the drawing — its first press clears the ink and hands the deck
+       the keys, the next one moves the slide (a press can't be passed on into the deck's frame) */
+    if (Ink.isArmed() && !Settings.isOpen() &&
+        ["PageDown", "PageUp", "ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].indexOf(k) !== -1){
+      Ink.finish(); e.preventDefault(); return;
+    }
     /* v7.7: while the clock IS the settle count, Space restarts it and R
        stands it down (the card's old chips) — the selected timer waits */
     var settleLive = false, wrapLive = false;

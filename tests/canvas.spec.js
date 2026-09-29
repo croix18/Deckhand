@@ -250,7 +250,7 @@ test.describe("lock", () => {
     ok(await dh.attr("#lockBtn", "aria-pressed") === "true", "one tap unlocked");
     // scene SWITCHING stays live while locked (view action); the ⋯ manager doesn't
     ok(!(await page.locator("#sceneSel").isDisabled()), "sceneSel dead while locked");
-    ok(await page.locator("#sceneBtn").isDisabled(), "⋯ manager usable while locked");
+    ok(await page.locator("#sceneBtn").isDisabled(), "the scene manager usable while locked");
     // a deliberate 1.5s hold unlocks
     await dh.unlock();
     ok(await dh.attr("#lockBtn", "aria-pressed") === "false", "unlock failed");

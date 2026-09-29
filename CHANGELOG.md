@@ -2,6 +2,26 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.15.0 — 2026-09-29
+
+**After the first day with the pen.** Croix: the drawing "worked out really great, except when
+I was done. It was awkward to walk over, clear the screen, click done, collapse the bar, click
+back into the slides frame." Leaving the pen is now **one action**, however it is left — Done,
+Escape, D, the pen button again, or **the clicker**: the drawing clears (five seconds of Undo),
+the palette folds, the dock folds back to its handle on a staged deck, and the slides get the
+keys back. From the back of the room the first click of the clicker ends the drawing and the
+next one turns the slide (a key press can't be passed on into the deck's frame, so the first
+one is spent). **On a staged deck the pen is a blob** in the bottom-right corner, mirroring the
+folded dock's blob in the bottom-left; the palette pops up from it, see-through, and folds
+back into it (Draw left the stage bar, which is Timer · Exit now). **The dock has one ⋮**: the
+horizontal ⋯ (the scene manager) is gone — ⋮ → Scenes opens the same sheet over the scene
+select, and ⋮ keeps Home and Sound. **Fullscreen is back in the top-right corner** as a quiet
+blob (it shows which way it goes), and a card in that corner moves its ✕ clear of it. **The
+Number Line** opens as a full-width strip along the bottom of the board, and it is drawn in the
+card's own pixels: a resized card no longer letterboxes or blows up the labels — the line runs
+the width, the labels keep a readable size, the tools and the range share one row. Three
+tests; 252.
+
 ## 7.14.0 — 2026-09-27
 
 **Routines and math** — the tools audit's third release (§4). **The wrap-up at the bell**, the

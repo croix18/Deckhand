@@ -216,26 +216,26 @@ test.describe("scenes", () => {
   test("scene manager: new, duplicate, rename, two-tap delete", async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     ok(!(await page.locator("#sceneMenu").isHidden()), "menu did not open");
     await page.fill("#sceneName", "Warm-up");
     await page.click("#sceneNewBtn");
     ok(await page.inputValue("#sceneSel") === "Warm-up", "new scene not active");
     ok(await page.locator("#canvas .widget:visible").count() === 1, "new scene not clock-only");
     await dh.addW("addTimerBtn");                // give it something to copy
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     await page.click("#sceneDupBtn");
     ok(await page.inputValue("#sceneSel") === "Warm-up copy", "dup name: " +
       await page.inputValue("#sceneSel"));
     ok(await page.locator("#canvas .widget:visible").count() === 2, "widgets not copied");
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     await page.fill("#sceneName", "Test Day");
     await page.click("#sceneRenBtn");
     ok(await page.inputValue("#sceneSel") === "Test Day", "rename failed");
     ok(await page.evaluate(() => window.Deckhand.config.activeScene) === "Test Day",
       "config activeScene stale");
     const before = await page.evaluate(() => window.Deckhand.config.scenes.length);
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     await page.click("#sceneDelBtn");            // first tap: arm
     ok((await page.locator("#sceneDelBtn").textContent()).trim() === "Really delete?",
       "no confirm step");
@@ -253,10 +253,10 @@ test.describe("scenes", () => {
   test('scene delete: switching scenes disarms an armed "Really delete?"', async ({ page, dh }) => {
     await dh.openAt("");
     await dh.launch();
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     await page.fill("#sceneName", "KeepMe");
     await page.click("#sceneNewBtn");            // 3 scenes now, KeepMe active
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     await page.click("#sceneDelBtn");            // armed on KeepMe
     await page.selectOption("#sceneSel", "Daily Board");
     await expect(page.locator("#sceneDelBtn")).not.toHaveClass(/confirm/);
@@ -268,9 +268,9 @@ test.describe("scenes", () => {
     ok(!state.armed && state.txt === "Delete current",
       "confirm survived a scene switch: " + JSON.stringify(state));
     ok(state.n === 3, "a scene was deleted: " + state.n);
-    // closing via the ⋯ button also disarms (menu is still open after the switch)
+    // closing the sheet also disarms (v7.15: opening ⋮ closes it; ⋮ → Scenes reopens it)
     await page.click("#sceneDelBtn");            // arm
-    await page.click("#sceneBtn");               // close via toggle
+    await page.click("#moreBtn");                // closes the scene sheet
     await page.click("#sceneBtn");               // reopen
     ok((await page.locator("#sceneDelBtn").textContent()).trim() === "Delete current",
       "confirm survived the toggle close");

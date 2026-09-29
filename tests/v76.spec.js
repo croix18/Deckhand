@@ -19,7 +19,7 @@ test.describe("v7.6 robustness", () => {
     await expect.poll(() => page.evaluate(() => document.querySelector(".w-timer")._entry.api.running())).toBe(true);
     ok((await page.evaluate(() => document.querySelector(".w-stopwatch")._entry.api.running())) === false, "stopwatch should be idle");
     // a fresh scene: only the clock lives there…
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     await page.fill("#sceneName", "Warm-up");
     await page.click("#sceneNewBtn");
     ok(await page.inputValue("#sceneSel") === "Warm-up", "new scene not active");

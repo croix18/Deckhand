@@ -95,7 +95,9 @@ test.describe("v7.7 one chrome bar", () => {
     await expect(page.locator("#moreMenu #brand")).toContainText("DECKHAND");
     await expect(page.locator("#moreMenu #brandVer")).toHaveText("v7");
     await expect(page.locator("#moreMenu #homeBtn")).toBeVisible();
-    await expect(page.locator("#moreMenu #fsBtn")).toBeVisible();
+    await expect(page.locator("#moreMenu #sceneBtn")).toBeVisible();   // v7.15: Scenes lives here; Fullscreen went back to the top-right corner
+    ok(await page.locator("#moreMenu #fsBtn").count() === 0, "Fullscreen is still under ⋮");
+    await expect(page.locator("#fsBtn")).toBeVisible();
     // Sound toggles from there (and closes the menu); M still works
     await expect(page.locator("#soundBtn")).toHaveText("Sound On");
     await page.click("#soundBtn");
@@ -113,13 +115,13 @@ test.describe("v7.7 one chrome bar", () => {
     await page.click("#moreBtn");
     await expect(page.locator("#soundBtn")).toHaveText("Sound On");
     await page.click("#moreBtn");
-    // + Add, ⋯ and ⋮ are one open menu at a time
+    // + Add, the scene sheet and ⋮ are one open menu at a time
     await page.click("#addBtn");
     await expect(page.locator("#addMenu")).toBeVisible();
     await page.click("#moreBtn");
     await expect(page.locator("#addMenu")).toBeHidden();
     await expect(page.locator("#moreMenu")).toBeVisible();
-    await page.click("#sceneBtn");
+    await page.click("#sceneBtn");                               // v7.15: ⋮ → Scenes opens the scene sheet and closes ⋮
     await expect(page.locator("#moreMenu")).toBeHidden();
     await expect(page.locator("#sceneMenu")).toBeVisible();
     await page.keyboard.press("Escape");
@@ -158,7 +160,7 @@ test.describe("v7.7 one chrome bar", () => {
     await expect(page.locator("#addSettleBtn")).toHaveCount(0);
     await page.keyboard.press("Escape");
     // a clockless scene: the bell passes, nothing runs (there is no card to hold the moment)
-    await page.click("#sceneBtn");
+    await page.click("#moreBtn"); await page.click("#sceneBtn");
     await page.fill("#sceneName", "Blank");
     await page.click("#sceneNewBtn");
     await page.click("#clockWidget .wClose");

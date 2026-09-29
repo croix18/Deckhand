@@ -20,7 +20,7 @@ test("v7.2: the boat runs up a '<name> Rules' pennant now and then, and it follo
   await expect(pg.locator("#boat .btPenText")).toHaveText("Ms. Rivera Rules");
 });
 
-test("v7.2: Ink — draw over the board, Done keeps the ink and the board stays usable, Undo/Clear, D and Escape", async ({ page, dh }) => {
+test("v7.2: Ink — draw over the board, Done clears it (with Undo) and the board stays usable, Undo/Clear, D and Escape", async ({ page, dh }) => {
   await dh.openAt("#t=2026-09-24T10:30");
   await dh.launch();
   await expect(page.locator("#inkBar")).toBeHidden();
@@ -40,10 +40,12 @@ test("v7.2: Ink — draw over the board, Done keeps the ink and the board stays 
     return [...c.getContext("2d").getImageData(Math.round(700 * k), Math.round(695 * k), 1, 1).data];
   });
   ok(px[3] > 0 && px[0] > 200, "coral stroke not painted: " + px);
-  // Done: the ink stays, the palette folds, taps reach the board again
+  // Done (v7.15): the drawing clears, the palette folds, taps reach the board again; Undo brings the drawing back
   await page.click("#inkDone");
   await expect(page.locator("body")).not.toHaveClass(/inking/);
-  ok((await page.evaluate(() => window.Deckhand.ink.count())) === 2, "Done erased the ink");
+  ok((await page.evaluate(() => window.Deckhand.ink.count())) === 0, "Done kept the ink");
+  await page.click("#undoToast button");
+  ok((await page.evaluate(() => window.Deckhand.ink.count())) === 2, "Undo did not bring the drawing back");
   ok((await page.evaluate(() => getComputedStyle(document.getElementById("ink")).pointerEvents)) === "none", "overlay still armed");
   await page.evaluate(() => window.Deckhand.settle.start());           // v7.7: the clock becomes the count
   await expect.poll(() => page.evaluate(() => window.Deckhand.settle.running())).toBe(true);
@@ -60,8 +62,8 @@ test("v7.2: Ink — draw over the board, Done keeps the ink and the board stays 
   await expect(page.locator("body")).not.toHaveClass(/inking/);
   // a staged deck has its own Draw button; the overlay sits above the stage
   await page.click("#clockWidget .wFocus");
-  await expect(page.locator("#inkBtnStage")).toBeVisible();
-  await page.click("#inkBtnStage");
+  await expect(page.locator("#inkBlob")).toBeVisible();
+  await page.click("#inkBlob");
   await expect(page.locator("body")).toHaveClass(/inking/);
   await page.mouse.move(600, 500); await page.mouse.down(); await page.mouse.move(900, 520); await page.mouse.up();
   ok((await page.evaluate(() => window.Deckhand.ink.count())) === 1, "could not draw over the stage");
