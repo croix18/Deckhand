@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.20.0 — 2026-09-29
+
+**The tape always has a pause.** Croix: "I played some of the lofi music, but closed the window
+before hitting pause. The music kept playing and there wasn't a way for me to stop it." The lofi
+tape kept playing when its card was minimized, on Home, or covered by a staged deck — with no
+control in sight. Now a **Now Playing** pill (top centre: the side's name and **Pause**) appears
+whenever the tape plays and no playing card is on screen, and one tap stops it. **Sound Off** (M,
+or ⋮ → Sound) silences the tape too. Removing the card or switching scenes already stopped it.
+One test; 257.
+
 ## 7.19.0 — 2026-09-29
 
 **Ready for a web address.** Croix: "why don't we go ahead and run the whole thing in one of my

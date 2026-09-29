@@ -958,3 +958,46 @@ test.describe("v7.19", () => {
   });
 });
 
+
+/* v7.20 — the tape always has a pause within reach (Croix: "I played some of the lofi music, but
+ * closed the window before hitting pause. The music kept playing and there wasn't a way for me to
+ * stop it"). */
+test.describe("v7.20", () => {
+  test("v7.20: while the tape plays with its card out of sight — minimized, on Home, under a staged deck — a Now Playing pill pauses it; Sound Off silences it; a card on screen needs no pill", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addMusicBtn"); await page.keyboard.press("Escape");
+    const playing = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
+    const pill = () => page.locator("#nowPlaying");
+    const play = async () => { await page.evaluate(() => { const a = document.querySelector(".w-music")._entry.api; if (!a.running()) a.startPause(); }); await expect.poll(playing).toBe(true); };
+    await play();
+    await page.waitForTimeout(700);
+    await expect(pill()).toBeHidden();                              // the card is right there
+    // minimized
+    await page.click(".w-music .wMin");
+    await expect(pill()).toBeVisible();
+    await expect(pill()).toContainText("Pause");
+    await pill().click();
+    await expect.poll(playing).toBe(false);
+    await expect(pill()).toBeHidden();
+    await page.click("#shelf .minChip");
+    // Home
+    await play();
+    await page.keyboard.press("h");
+    await expect(pill()).toBeVisible();
+    await pill().click();
+    await expect.poll(playing).toBe(false);
+    await page.click("#launchBtn");
+    // under a staged card
+    await play();
+    await dh.addW("addTimerBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-timer .wFocus");
+    await expect(pill()).toBeVisible();
+    await page.click("#unfocusBtn");
+    await expect(pill()).toBeHidden({ timeout: 2000 });
+    // Sound Off (M) silences the tape too
+    await page.keyboard.press("m");
+    await expect.poll(playing).toBe(false);
+    await page.keyboard.press("m");
+  });
+});

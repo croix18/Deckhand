@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.19.0",
+  "appVersion": "7.20.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -406,6 +406,19 @@
   #minFlash.go{animation:minFlash 2.6s ease-in-out;}
   @keyframes minFlash{0%{opacity:0; transform:scale(.94);} 25%{opacity:.24; transform:scale(1);} 60%{opacity:.24;} 100%{opacity:0; transform:scale(1.02);}}
   @media (prefers-reduced-motion: reduce){ @keyframes minFlash{0%, 100%{opacity:0;} 20%, 70%{opacity:.24;}} }
+
+  /* v7.20 the Now Playing pill: navy, top centre, over everything but the alarm */
+  #nowPlaying{position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:900003; display:inline-flex; align-items:center; gap:10px;
+    background:var(--navy); color:var(--white); border:2px solid var(--turq); border-radius:999px; padding:6px 8px 6px 14px; min-height:44px;
+    font:inherit; font-weight:900; font-size:15px; cursor:pointer; box-shadow:3px 4px 0 var(--shadow);}
+  #nowPlaying[hidden]{display:none;}
+  #nowPlaying .npName{font-weight:700; opacity:.9; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #nowPlaying .npStop{background:var(--turq); color:var(--navy); border-radius:999px; padding:6px 14px;}
+  .npBars{display:inline-flex; gap:2px; align-items:flex-end; height:14px;}
+  .npBars i{width:3px; background:var(--turq); border-radius:2px; height:40%; animation:npBar .9s ease-in-out infinite;}
+  .npBars i:nth-child(2){animation-delay:.3s;} .npBars i:nth-child(3){animation-delay:.6s;}
+  @keyframes npBar{0%, 100%{height:30%;} 50%{height:100%;}}
+  @media (prefers-reduced-motion: reduce){ .npBars i{animation:none; height:70%;} }
 
   /* v7.2 INK overlay */
   #ink{
@@ -4033,6 +4046,10 @@
 <!-- v7.18 (Croix: "a faint over all the screens warning that there are 3 minutes left in class no
      matter what screen I'm on. Just a 3 will do… it can be just a quick flash") -->
 <div id="minFlash" aria-hidden="true"></div>
+<!-- v7.20 (Croix: "I played some of the lofi music, but closed the window before hitting pause. The
+     music kept playing and there wasn't a way for me to stop it"): whenever the tape plays and its
+     card isn't on screen — minimized, behind a staged deck, or on Home — this pill is the pause. -->
+<button id="nowPlaying" type="button" hidden><span class="npBars" aria-hidden="true"><i></i><i></i><i></i></span><span class="npName">Music</span><span class="npStop">Pause</span></button>
 <canvas id="ink" aria-hidden="true"></canvas>
 <!-- v7.15 (Croix: "When the slides are up, I would like the ink to be a pop up… semi
      transparent and start in bottom right corner alongside the bottom menu blob") -->
@@ -4108,7 +4125,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.19.0",
+  appVersion: "7.20.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5857,7 +5874,10 @@ var Sound = (function(){
     el.soundBtn.textContent = on ? "Sound On" : "Sound Off";
     el.soundBtn.setAttribute("aria-pressed", on ? "true" : "false");
   }
-  function toggle(){ on = !on; cfg.sound.enabled = on; paint(); }   // v7.11.5: M writes the setting, so Settings → Apply no longer un-mutes
+  function toggle(){
+    on = !on; cfg.sound.enabled = on; paint();   // v7.11.5: M writes the setting, so Settings → Apply no longer un-mutes
+    if (!on){ try { document.dispatchEvent(new CustomEvent("deckhand:music-stop")); } catch(e){} }   // v7.20: Sound Off means the tape too
+  }
   function setOn(v){ on = !!v; paint(); }
   function primed(){ return !!ctx && ctx.state === "running"; }   // v7.7: has a gesture woken the audio yet?
   return { init: function(){ paint(); wireButton(el.soundBtn, toggle); },
@@ -9180,6 +9200,43 @@ function makeNumline(host, wcfg){
   };
 }
 
+/* v7.20: NOW PLAYING — the tape's pause, always within reach. The Music card reports play/stop;
+   the pill shows while something plays and no playing card is actually on screen (minimized, on
+   Home, or covered by a staged card), and a tap stops every tape. */
+var NowPlaying = (function(){
+  var live = [];                                 // [{host, name}]
+  var el = null;
+  function onScreen(host){
+    if (document.body.classList.contains("landing")) return false;
+    if (!host.offsetParent || host.classList.contains("wMinned")) return false;
+    if (document.body.classList.contains("focusMode") && !host.classList.contains("wFull")){
+      /* a staged card covers the board; a pinned or floating music card rides above it */
+      var z = +host.style.zIndex || 0;
+      if (z < 500000) return false;
+    }
+    return true;
+  }
+  function paint(){
+    if (!el) return;
+    var show = live.length > 0 && !live.some(function(x){ return onScreen(x.host); });
+    el.hidden = !show;
+    if (show) el.querySelector(".npName").textContent = live[0].name || "Music";
+  }
+  return {
+    init: function(){
+      el = $("nowPlaying");
+      wireButton(el, function(){ try { document.dispatchEvent(new CustomEvent("deckhand:music-stop")); } catch(e){} paint(); });
+      setInterval(paint, 500);                   // stage, minimize, Home and scene changes all move the answer
+    },
+    report: function(host, playing, name){
+      live = live.filter(function(x){ return x.host !== host && x.host.isConnected; });
+      if (playing) live.push({ host: host, name: name });
+      paint();
+    },
+    showing: function(){ return !!el && !el.hidden; }   // test hook
+  };
+})();
+
 /* v7.18: the minutes-left FLASH. Once per class block (Lunch excepted), when the bell is
    `minutes` away, a faint numeral fills the screen for 2.6 s — over the stage, the landing page,
    the pen — and is gone. Only at the crossing: a board opened with 2:30 left says nothing. */
@@ -9568,6 +9625,7 @@ function makeMusic(host, wcfg){
     whatEl.textContent = sideName();
     playBtn.textContent = playing ? "Pause" : "Play";
     host.classList.toggle("muOn", playing);
+    try { NowPlaying.report(host, playing, sideName()); } catch(e){}   // v7.20: the pause that's always within reach
   }
   /* every voice plays into a SIDE BUS under the master; swapping the
      bus on a skip fades the old side's ringing chords out under the
@@ -9626,6 +9684,9 @@ function makeMusic(host, wcfg){
      music" (quiet modes play, team modes stop) and, with the Timer setting on, any timer
      (plays while it runs; stops when it ends or pauses, but only if the timer started it) */
   var byTimer = false;
+  /* v7.20: stop from anywhere — the Now Playing pill, and Sound Off (M / ⋮) silences the tape too */
+  function onStop(){ if (!destroyed && playing) pause(); }
+  document.addEventListener("deckhand:music-stop", onStop);
   function onWorkMode(e){
     if (destroyed || !e.detail || e.detail.music == null) return;
     if (e.detail.music && !playing) play();
@@ -9661,7 +9722,9 @@ function makeMusic(host, wcfg){
       destroyed = true;
       document.removeEventListener("deckhand:workmode", onWorkMode);
       document.removeEventListener("deckhand:timer", onTimer);
+      document.removeEventListener("deckhand:music-stop", onStop);
       pause();
+      try { NowPlaying.report(host, false, ""); } catch(e){}
       if (ctx){ try { ctx.close(); } catch(e){} ctx = null; }
     }
   };
@@ -14482,7 +14545,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, Season, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, Season, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -14518,6 +14581,7 @@ window.Deckhand = {
   settle: Settle,                               // v7.7: the settle-in, a moment of the clock (tests)
   wrapup: Wrapup,                               // v7.14: the wrap-up at the bell (tests)
   flash: Flash,                                 // v7.18: the minutes-left flash (tests)
+  nowPlaying: NowPlaying,                       // v7.20: the pause that's always within reach (tests)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)
   season: Season,                               // v7.10: active()/apply() (tests)
   bell: Bell,                                   // v7.13: schoolDaysBetween() (tests)
