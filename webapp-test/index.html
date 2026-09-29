@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deckhand · Web test</title>
+<meta name="theme-color" content="#1B2E45">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;900&display=swap">
+<!-- Deckhand web test (Croix, Sep 29 2026: "make the test page and I'll try it tomorrow").
+     Open this from a web address on the classroom Chromebox. If you can read this page at all,
+     the district filter let the address through — that's the first answer. The rest checks what
+     a hosted Deckhand could do on that machine. Nothing here is sent anywhere. -->
+<style>
+  :root{
+    --navy:#1B2E45; --teal:#127A85; --turq:#40E0D0; --pale:#D8F4F0; --sand:#E6D5B8; --cream:#F8F2E4;
+    --white:#FFFFFF; --coral:#FF7F6A; --grid:#E3D4B4; --ink:#1B2E45;
+  }
+  *{box-sizing:border-box;}
+  html, body{margin:0; background:var(--cream); color:var(--ink);
+    font-family:"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;}
+  body{min-height:100vh; padding:28px 24px 48px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:22px;}
+  header img{width:64px; height:64px;}
+  h1{margin:0; font-size:clamp(26px, 4vw, 40px); font-weight:900; letter-spacing:-.01em;}
+  .sub{color:var(--teal); font-weight:700; font-size:clamp(14px, 1.8vw, 18px); margin-top:2px;}
+  .hero{background:var(--navy); color:var(--white); border-radius:20px; padding:22px 26px; margin-bottom:22px;
+    box-shadow:6px 8px 0 rgba(27,46,69,.18); display:flex; gap:22px; align-items:center; flex-wrap:wrap;}
+  .hero b{font-size:clamp(22px, 3vw, 32px); font-weight:900; color:var(--turq);}
+  .hero p{margin:6px 0 0; font-size:16px; line-height:1.45; max-width:760px; opacity:.92;}
+  .hero .where{font-family:ui-monospace, Menlo, Consolas, monospace; font-size:14px; background:rgba(255,255,255,.1); padding:3px 8px; border-radius:8px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px;}
+  .card{background:var(--white); border:2px solid var(--grid); border-radius:18px; padding:16px 18px 18px;
+    box-shadow:4px 6px 0 rgba(27,46,69,.08); display:flex; flex-direction:column; gap:10px;}
+  .card h2{margin:0; font-size:18px; font-weight:900; display:flex; align-items:center; gap:10px;}
+  .card p{margin:0; font-size:14.5px; line-height:1.45; color:#39485a;}
+  .badge{margin-left:auto; font-size:13px; font-weight:900; letter-spacing:.04em; padding:5px 11px; border-radius:999px;
+    background:var(--grid); color:var(--navy); white-space:nowrap;}
+  .badge.ok{background:var(--turq); color:var(--navy);}
+  .badge.no{background:var(--coral); color:var(--navy);}
+  .badge.wait{background:var(--pale); color:var(--teal);}
+  .detail{font-size:13.5px; color:var(--teal); font-weight:700; min-height:1.2em; overflow-wrap:anywhere;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  button{font:inherit; font-weight:900; font-size:15px; border:none; border-radius:12px; padding:10px 16px; min-height:44px;
+    cursor:pointer; background:var(--turq); color:var(--navy);}
+  button.ghost{background:var(--white); border:2px solid var(--navy);}
+  button.small{min-height:36px; padding:6px 12px; font-size:14px;}
+  button:disabled{opacity:.4; cursor:default;}
+  input[type=text]{font:inherit; font-size:15px; border:2px solid var(--grid); border-radius:10px; padding:9px 12px; flex:1; min-width:0; color:var(--navy);}
+  .frame{width:100%; aspect-ratio:16/9; border:0; border-radius:12px; background:var(--cream);}
+  .frame[hidden]{display:none;}
+  .keypad{border:2px dashed var(--grid); border-radius:12px; padding:14px; text-align:center; font-weight:900; color:var(--teal); outline:none;}
+  .keypad:focus{border-color:var(--turq);}
+  .touch{height:84px; border-radius:12px; background:var(--pale); display:flex; align-items:center; justify-content:center; font-weight:900; color:var(--teal); touch-action:none; user-select:none;}
+  .summary{margin-top:24px; background:var(--white); border:2px solid var(--grid); border-radius:18px; padding:18px 20px;}
+  .summary h2{margin:0 0 10px; font-size:20px; font-weight:900;}
+  pre{white-space:pre-wrap; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:13px; background:var(--cream);
+    border-radius:12px; padding:14px; margin:10px 0 0; color:var(--navy); max-height:360px; overflow:auto;}
+  .foot{margin-top:18px; font-size:13px; color:#5b6878;}
+  @media (max-width:520px){ body{padding:16px;} .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="icon-192.png" alt="">
+    <div>
+      <h1>Deckhand · Web test</h1>
+      <div class="sub">What would a hosted Deckhand be able to do on this machine?</div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div>
+      <b>You got through.</b>
+      <p>If this page loaded on the classroom Chromebox, the district filter let this address through — that was the big question.
+      The cards below check the rest. The top ones run by themselves; the rest need a tap. When you're done, tap <strong>Copy results</strong>
+      at the bottom and paste them to Claude (or take a photo).</p>
+      <p>Opened at <span class="where" id="where"></span></p>
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- automatic -->
+    <div class="card" data-id="secure"><h2>Secure web address <span class="badge wait">…</span></h2>
+      <p>A real https address fixes YouTube's Error 153 and is what an installable app needs.</p><div class="detail"></div></div>
+    <div class="card" data-id="storage"><h2>Remembers the board <span class="badge wait">…</span></h2>
+      <p>Saves a counter in this browser. Reload the page — the number should go up. That's how the board would keep your layout and rosters.</p><div class="detail"></div></div>
+    <div class="card" data-id="offline"><h2>Works offline <span class="badge wait">…</span></h2>
+      <p>Keeps a copy of the page on this machine so it opens even when the network hiccups. Reload once for this to finish.</p><div class="detail"></div></div>
+    <div class="card" data-id="install"><h2>Installs as an app <span class="badge wait">…</span></h2>
+      <p>Chrome can add it to the shelf with its own icon, opening in its own full-screen window.</p>
+      <div class="row"><button id="installBtn" disabled>Install</button></div><div class="detail"></div></div>
+    <div class="card" data-id="fonts"><h2>Google Fonts <span class="badge wait">…</span></h2>
+      <p>Deckhand's lettering (DM Sans) comes from Google Fonts. If it's blocked, the board falls back to a system font.</p><div class="detail"></div></div>
+    <div class="card" data-id="device"><h2>This machine <span class="badge wait">…</span></h2>
+      <p>The screen and browser, for the record.</p><div class="detail"></div></div>
+
+    <!-- one tap each -->
+    <div class="card" data-id="fullscreen"><h2>Full screen <span class="badge">tap</span></h2>
+      <p>Tap, then press Esc (or tap again) to come back.</p>
+      <div class="row"><button id="fsBtn">Go full screen</button></div><div class="detail"></div></div>
+    <div class="card" data-id="sound"><h2>Sound <span class="badge">tap</span></h2>
+      <p>Plays the three-note chime. Did you hear it?</p>
+      <div class="row"><button id="soundBtn">Play the chime</button><button class="ghost small" data-ans="sound:yes" disabled>Heard it</button><button class="ghost small" data-ans="sound:no" disabled>Nothing</button></div><div class="detail"></div></div>
+    <div class="card" data-id="mic"><h2>Microphone (Noise Meter) <span class="badge">tap</span></h2>
+      <p>From a file the Chromebox refuses the mic with no question asked. A web address might be different — or the district might still say no.</p>
+      <div class="row"><button id="micBtn">Ask for the microphone</button></div><div class="detail"></div></div>
+    <div class="card" data-id="youtube"><h2>YouTube <span class="badge">tap</span></h2>
+      <p>Loads the Lofi Girl stream the way the YouTube card does. Does it play, or show "Error 153"?</p>
+      <div class="row"><button id="ytBtn">Load the video</button><button class="ghost small" data-ans="youtube:plays" disabled>It plays</button><button class="ghost small" data-ans="youtube:error" disabled>Error / blank</button></div>
+      <iframe class="frame" id="ytFrame" title="YouTube test" hidden allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe><div class="detail"></div></div>
+    <div class="card" data-id="slides"><h2>Google Slides <span class="badge">tap</span></h2>
+      <p>Paste one of your deck links (the normal edit link is fine) and load it.</p>
+      <div class="row"><input type="text" id="slidesIn" placeholder="https://docs.google.com/presentation/d/…"><button id="slidesBtn">Load</button></div>
+      <div class="row"><button class="ghost small" data-ans="slides:shows" disabled>The deck shows</button><button class="ghost small" data-ans="slides:blocked" disabled>Blocked / blank</button></div>
+      <iframe class="frame" id="slidesFrame" title="Slides test" hidden allowfullscreen></iframe><div class="detail"></div></div>
+    <div class="card" data-id="clicker"><h2>The clicker <span class="badge">tap</span></h2>
+      <p>Tap the box, then press the clicker's forward button.</p>
+      <div class="keypad" id="keypad" tabindex="0">Tap here, then click the clicker</div><div class="detail"></div></div>
+    <div class="card" data-id="touch"><h2>The panel's touch <span class="badge">tap</span></h2>
+      <p>Touch the box with a finger (not the pen or a mouse).</p>
+      <div class="touch" id="touchPad">Touch here</div><div class="detail"></div></div>
+  </div>
+
+  <section class="summary">
+    <h2>Results</h2>
+    <div class="row"><button id="copyBtn">Copy results</button><button class="ghost" id="reloadBtn">Reload (checks storage + offline)</button></div>
+    <pre id="report"></pre>
+  </section>
+  <p class="foot">Nothing on this page is sent anywhere — the checks run in this browser, and the results only leave it if you copy them.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var R = {};                                              // id -> {state, text}
+  var ORDER = ["secure","storage","offline","install","fonts","device","fullscreen","sound","mic","youtube","slides","clicker","touch"];
+  var NAMES = { secure:"Secure address", storage:"Remembers the board", offline:"Works offline", install:"Installs as an app",
+    fonts:"Google Fonts", device:"This machine", fullscreen:"Full screen", sound:"Sound", mic:"Microphone", youtube:"YouTube",
+    slides:"Google Slides", clicker:"Clicker", touch:"Touch" };
+  function $(s){ return document.querySelector(s); }
+  function card(id){ return document.querySelector('.card[data-id="' + id + '"]'); }
+  function set(id, state, text){
+    R[id] = { state: state, text: text || "" };
+    var c = card(id); if (!c) return;
+    var b = c.querySelector(".badge");
+    b.className = "badge " + (state === "ok" ? "ok" : state === "no" ? "no" : state === "wait" ? "wait" : "");
+    b.textContent = state === "ok" ? "YES" : state === "no" ? "NO" : state === "wait" ? "…" : state === "info" ? "INFO" : state.toUpperCase();
+    c.querySelector(".detail").textContent = text || "";
+    report();
+  }
+  function report(){
+    var lines = ["Deckhand web test — " + new Date().toLocaleString(), "Address: " + location.href, ""];
+    ORDER.forEach(function(id){
+      var r = R[id];
+      var mark = !r ? "·  " : r.state === "ok" ? "✓  " : r.state === "no" ? "✗  " : r.state === "info" ? "i  " : "·  ";
+      lines.push(mark + NAMES[id] + (r ? (r.state === "wait" ? " — waiting" : r.text ? " — " + r.text : "") : " — not tried"));
+    });
+    $("#report").textContent = lines.join("\n");
+  }
+  $("#where").textContent = location.href;
+
+  /* ---- automatic ---- */
+  set("secure", window.isSecureContext && location.protocol === "https:" ? "ok" : (location.protocol === "http:" && /^(localhost|127\.)/.test(location.hostname) ? "info" : "no"),
+      location.protocol + "//" + location.host + (window.isSecureContext ? " · secure context" : " · not secure"));
+
+  try {
+    var n = +(localStorage.getItem("deckhandTest.visits") || 0) + 1;
+    localStorage.setItem("deckhandTest.visits", String(n));
+    var back = +localStorage.getItem("deckhandTest.visits");
+    set("storage", back === n ? "ok" : "no", "visit " + n + " on this browser" + (n === 1 ? " — reload to see it count" : " — it remembered"));
+  } catch (e){ set("storage", "no", "blocked: " + (e && e.name || e)); }
+
+  if ("serviceWorker" in navigator && window.isSecureContext){
+    set("offline", "wait", "setting up…");
+    navigator.serviceWorker.register("sw.js").then(function(reg){
+      function done(){ set("offline", "ok", navigator.serviceWorker.controller ? "this page is running from the offline copy's worker" : "ready — reload once and it takes over"); }
+      if (reg.active) done(); else {
+        var w = reg.installing || reg.waiting;
+        if (w) w.addEventListener("statechange", function(){ if (w.state === "activated") done(); });
+        else done();
+      }
+    }).catch(function(e){ set("offline", "no", "refused: " + (e && e.message || e)); });
+  } else set("offline", "no", window.isSecureContext ? "no service workers in this browser" : "needs a secure (https) address");
+
+  var standalone = window.matchMedia && (matchMedia("(display-mode: standalone)").matches || matchMedia("(display-mode: fullscreen)").matches);
+  var deferred = null;
+  if (standalone) set("install", "ok", "you're in the installed app right now");
+  else set("install", "wait", "waiting for Chrome to offer it (can take a few seconds; an address has to be secure)");
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault(); deferred = e; $("#installBtn").disabled = false;
+    set("install", "ok", "Chrome offers it — tap Install to try (you can remove it later from the shelf)");
+  });
+  window.addEventListener("appinstalled", function(){ set("install", "ok", "installed"); });
+  $("#installBtn").addEventListener("click", function(){
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function(c){ set("install", c.outcome === "accepted" ? "ok" : "info", c.outcome === "accepted" ? "installed" : "offered, you said not now"); deferred = null; });
+  });
+  setTimeout(function(){
+    if (R.install && R.install.state === "wait")
+      set("install", "no", "Chrome didn't offer it" + (window.isSecureContext ? " (it may already be installed, or the district turns app installs off)" : " — needs a secure address"));
+  }, 12000);
+
+  var gf = $("#gf"), fontDone = false;
+  function fontResult(ok, why){ if (fontDone) return; fontDone = true; set("fonts", ok ? "ok" : "no", why); }
+  gf.addEventListener("load", function(){
+    document.fonts.load("900 20px 'DM Sans'").then(function(){ fontResult(document.fonts.check("900 20px 'DM Sans'"), document.fonts.check("900 20px 'DM Sans'") ? "DM Sans loaded" : "the stylesheet loaded but the font didn't"); })
+      .catch(function(){ fontResult(false, "the font files were blocked"); });
+  });
+  gf.addEventListener("error", function(){ fontResult(false, "fonts.googleapis.com is blocked"); });
+  setTimeout(function(){ fontResult(false, "no answer from Google Fonts in 8 s"); }, 8000);
+
+  set("device", "info", screen.width + "×" + screen.height + " screen · window " + innerWidth + "×" + innerHeight +
+      " · scale " + (window.devicePixelRatio || 1) + " · " + (navigator.maxTouchPoints || 0) + " touch points · " +
+      ((navigator.userAgent.match(/(Chrome|CrOS)[^ ]*( [^ )]*)?/g) || [navigator.userAgent]).join(" ")) +
+      (/CrOS/.test(navigator.userAgent) ? " · ChromeOS" : ""));
+
+  /* ---- one tap each ---- */
+  $("#fsBtn").addEventListener("click", function(){
+    if (document.fullscreenElement){ document.exitFullscreen(); return; }
+    if (document.fullscreenEnabled === false){ set("fullscreen", "no", "not allowed here"); return; }
+    document.documentElement.requestFullscreen().then(function(){ set("fullscreen", "ok", "went full screen"); })
+      .catch(function(e){ set("fullscreen", "no", "refused: " + (e && e.message || e)); });
+  });
+  document.addEventListener("fullscreenchange", function(){ $("#fsBtn").textContent = document.fullscreenElement ? "Leave full screen" : "Go full screen"; });
+
+  $("#soundBtn").addEventListener("click", function(){
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [523.25, 659.25, 783.99].forEach(function(f, i){
+        var t0 = ctx.currentTime + 0.05 + i * 0.22, o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.3);
+        o.connect(g).connect(ctx.destination); o.start(t0); o.stop(t0 + 1.35);
+      });
+      set("sound", "wait", "played — did you hear it?");
+      document.querySelectorAll('[data-ans^="sound:"]').forEach(function(b){ b.disabled = false; });
+    } catch (e){ set("sound", "no", "the browser refused to play: " + (e && e.message || e)); }
+  });
+
+  $("#micBtn").addEventListener("click", function(){
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){ set("mic", "no", "no microphone access in this browser" + (window.isSecureContext ? "" : " (needs a secure address)")); return; }
+    var t0 = Date.now();
+    set("mic", "wait", "asking…");
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s){
+      s.getTracks().forEach(function(t){ t.stop(); });
+      set("mic", "ok", "allowed — the Noise Meter would work here");
+    }).catch(function(e){
+      var quick = Date.now() - t0 < 400, name = e && e.name || "refused";
+      set("mic", "no", name === "NotFoundError" ? "no microphone found on this machine" :
+        name === "NotAllowedError" ? (quick ? "refused instantly — a district/device policy, no question asked" : "refused at the prompt") :
+        name + " — " + (e && e.message || "refused"));
+    });
+  });
+
+  $("#ytBtn").addEventListener("click", function(){
+    var f = $("#ytFrame"); f.hidden = false;
+    f.src = "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk?rel=0";
+    set("youtube", "wait", "loaded — does it play?");
+    document.querySelectorAll('[data-ans^="youtube:"]').forEach(function(b){ b.disabled = false; });
+  });
+
+  function slidesEmbed(u){
+    var m = String(u || "").trim().match(/^https?:\/\/docs\.google\.com\/presentation\/(?:u\/\d+\/)?d\/(e\/[^\/?#]+|[^\/?#]+)/i);
+    return m ? "https://docs.google.com/presentation/d/" + m[1] + "/embed?start=false&loop=false&delayms=60000" : "";
+  }
+  $("#slidesBtn").addEventListener("click", function(){
+    var u = slidesEmbed($("#slidesIn").value);
+    if (!u){ set("slides", "info", "that isn't a Google Slides link"); return; }
+    var f = $("#slidesFrame"); f.hidden = false; f.src = u;
+    set("slides", "wait", "loaded — does the deck show?");
+    document.querySelectorAll('[data-ans^="slides:"]').forEach(function(b){ b.disabled = false; });
+  });
+
+  document.querySelectorAll("[data-ans]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var p = b.dataset.ans.split(":"), id = p[0], a = p[1];
+      var map = { yes: ["ok", "heard it"], no: ["no", "silent (check the panel's volume and Sound in Chrome)"],
+                  plays: ["ok", "plays"], error: ["no", "Error 153 or blank"], shows: ["ok", "the deck shows"], blocked: ["no", "blocked or blank"] };
+      set(id, map[a][0], map[a][1]);
+    });
+  });
+
+  var kp = $("#keypad");
+  kp.addEventListener("keydown", function(e){
+    set("clicker", "ok", "the clicker sends “" + (e.key === " " ? "Space" : e.key) + "”");
+    kp.textContent = "Got “" + (e.key === " " ? "Space" : e.key) + "” — press again to check the back button";
+    e.preventDefault();
+  });
+
+  var tp = $("#touchPad");
+  tp.addEventListener("pointerdown", function(e){
+    set("touch", e.pointerType === "touch" ? "ok" : "info", e.pointerType === "touch" ? "a finger reads as touch" : "that was a " + (e.pointerType || "click") + ", not a finger");
+    tp.textContent = e.pointerType === "touch" ? "Touch works" : "That was a " + e.pointerType;
+  });
+
+  $("#copyBtn").addEventListener("click", function(){
+    var t = $("#report").textContent;
+    var ok = function(){ $("#copyBtn").textContent = "Copied"; setTimeout(function(){ $("#copyBtn").textContent = "Copy results"; }, 1800); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(ok).catch(fallback); else fallback();
+    function fallback(){
+      var r = document.createRange(); r.selectNodeContents($("#report"));
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand("copy"); ok(); } catch (e){ $("#copyBtn").textContent = "Selected — copy it"; }
+    }
+  });
+  $("#reloadBtn").addEventListener("click", function(){ location.reload(); });
+  report();
+})();
+</script>
+</body>
+</html>

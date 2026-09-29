@@ -24,7 +24,7 @@ export GIT_CONFIG_VALUE_0="Authorization: Basic $B"
 # v7.5.1 (audit): stage an ALLOWLIST, never -A — a Seating Chart backup or a board photo
 # dropped into this folder would otherwise publish unchecked
 git add Deckhand.html index.html Deckhand_v6.html README.md CHANGELOG.md LICENSE .nojekyll .gitignore \
-        package.json package-lock.json playwright.config.js tests tools docs hosting .github archive screenshots 2>/dev/null || true
+        package.json package-lock.json playwright.config.js tests tools docs hosting .github archive screenshots webapp-test 2>/dev/null || true
 UNTRACKED=$(git ls-files --others --exclude-standard | grep -v '^tests/tmp_' || true)
 if [ -n "$UNTRACKED" ]; then
   echo "push.sh: NOT staged (add by hand if they belong in a public repo):"; echo "$UNTRACKED" | sed 's/^/   /'

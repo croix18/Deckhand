@@ -6,7 +6,8 @@ const http = require("http"), fs = require("fs"), path = require("path");
 const root = path.resolve(__dirname, "..");
 const port = +(process.argv[2] || process.env.PORT || 4173);
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".json": "application/json",
-  ".png": "image/png", ".md": "text/markdown; charset=utf-8", ".css": "text/css" };
+  ".png": "image/png", ".md": "text/markdown; charset=utf-8", ".css": "text/css",
+  ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml" };
 http.createServer((req, res) => {
   let p;
   try { p = decodeURIComponent(req.url.split("?")[0].split("#")[0]); } catch (e) { res.writeHead(400); return res.end("bad url"); }
