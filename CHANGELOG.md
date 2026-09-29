@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.17.0 — 2026-09-29
+
+**A bigger number line.** Croix: "Can I have the option to have a bigger number line. Like more
+digits." Beside the range chip, **− and +** give fewer or more numbers without typing: a line
+through zero grows both ways (±5 → ±10 → ±20 → ±50 → ±100 → ±200 …), a line from zero grows to
+the right, and the step follows the span (±20 by 1, ±50 by 5, ±100 by 5; a fraction line keeps its
+step). The presets add −20 to 20, −50 to 50 by 5, 0 to 100 by 10 and 0 to 1 by 0.1. Labels shrink
+toward 22 px before they thin out, so ±100 shows every ten. A range change no longer moves your
+dots: −13 stays −13 on a line counted by 5, between the ticks, until a finger moves it.
+
 ## 7.16.0 — 2026-09-29
 
 **The Number Line by hand.** Croix: "make it so I don't have to type in the number. I want to be

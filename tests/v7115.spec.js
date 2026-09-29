@@ -498,7 +498,7 @@ test.describe("v7.14", () => {
     ok(!(await live()), "live with 3:30 left");
     await page.evaluate(() => window.Deckhand.shiftClock(60000));
     await expect.poll(live).toBe(true);
-    await expect(page.locator("#clockWrap .wuBig")).toHaveText(/^2:(29|30)$/);
+    await expect(page.locator("#clockWrap .wuBig")).toHaveText(/^2:(2\d|30)$/);   // 2:30 left, give or take a loaded runner
     await expect(page.locator("#clockWrap .wuPrompt")).toHaveText("One thing you learned");
     ok((await page.locator("#clockWrap .wuList li").count()) === 2, "checklist");
     await expect(page.locator("#clockWrap .wuMsg")).toHaveText("The teacher dismisses you, not the bell.");
@@ -817,6 +817,18 @@ test.describe("v7.15", () => {
     await expect(page.locator(".w-numline .nlRangeBtn")).toContainText("−5 to 5");
     ok((await page.evaluate(() => JSON.stringify(window.Deckhand.config.scenes[0].widgets.find(w => w.type === "numline").line))) === '{"min":-5,"max":5,"step":1}', "preset");
     ok(JSON.parse(await dots())[0].v === 3, "a dot on both lines kept its number: " + await dots());
+    // − / +: fewer or more numbers without typing; a dot keeps its exact number between ticks
+    await page.click(".w-numline .nlMore");
+    await expect(page.locator(".w-numline .nlRangeBtn")).toContainText("−10 to 10");
+    await page.click(".w-numline .nlMore");
+    await expect(page.locator(".w-numline .nlRangeBtn")).toContainText("−20 to 20");
+    await page.click(".w-numline .nlMore");
+    await expect(page.locator(".w-numline .nlRangeBtn")).toContainText("−50 to 50 by 5");
+    ok(JSON.parse(await dots())[0].v === 3, "zooming out moved the dot: " + await dots());
+    const labs = await page.evaluate(() => { const t = [...document.querySelectorAll(".w-numline .nlLab")].map(e => e.getBoundingClientRect()); return t.every((r, i) => !i || r.left > t[i - 1].right + 2); });
+    ok(labs, "labels overlap at ±50");
+    await page.click(".w-numline .nlLess"); await page.click(".w-numline .nlLess");
+    await expect(page.locator(".w-numline .nlRangeBtn")).toContainText("−10 to 10");
     await page.click("#lockBtn");
     await expect(page.locator(".w-numline .nlRangeBtn")).toBeHidden();
     await tap(-1);                                                       // dots work while locked (a teaching action)

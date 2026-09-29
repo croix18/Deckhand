@@ -23,7 +23,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.16.0",
+  "appVersion": "7.17.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1332,7 +1332,9 @@
   .nlLine{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; font-weight:700; color:var(--teal); font-size:clamp(11px, 2.4cqw, 15px);}
   .nlRange{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;}
   .nlRange[hidden]{display:none;}
-  body.locked .nlRange, body.locked .nlRangeBtn{display:none;}
+  body.locked .nlRange, body.locked .nlZoom{display:none;}
+  .nlZoom{display:inline-flex; gap:4px; align-items:center;}
+  .nlZoom .nlLess, .nlZoom .nlMore{min-width:44px; font-size:clamp(16px, 3cqw, 22px); padding:0 10px;}
   .nlSw{display:inline-block; width:.8em; height:.8em; border-radius:50%; border:3px solid var(--navy); background:var(--navy); margin-right:.35em; vertical-align:-.08em; box-sizing:border-box;}
   .nlSw.open{background:var(--white);}
   .nlRangeBtn{white-space:nowrap;}
@@ -4068,7 +4070,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.16.0",
+  appVersion: "7.17.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -8855,7 +8857,7 @@ function makeStations(host, wcfg){
    Today's marks outlive a scene switch. */
 function makeNumline(host, wcfg){
   if (!isObj(wcfg.line)) wcfg.line = normLine(-10, 10, 1);
-  var PRESETS = [[-10, 10, 1], [-5, 5, 1], [0, 10, 1], [0, 20, 1], [-20, 20, 2], [-100, 100, 10], [0, 1, 0.25], [-2, 2, 0.5]];
+  var PRESETS = [[-5, 5, 1], [-10, 10, 1], [-20, 20, 1], [-50, 50, 5], [-100, 100, 10], [0, 10, 1], [0, 20, 1], [0, 100, 10], [0, 1, 0.1], [0, 1, 0.25], [-2, 2, 0.5]];
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="nlWrap"><svg class="nlSvg" aria-label="Number line"></svg></div>' +
@@ -8868,7 +8870,11 @@ function makeNumline(host, wcfg){
         '</span>' +
         '<button class="dwTool nlUndo" type="button">Undo</button>' +
         '<button class="dwTool nlClear" type="button">Clear</button>' +
-        '<button class="dwTool nlRangeBtn" type="button" aria-expanded="false"></button>' +
+        '<span class="nlZoom" role="group" aria-label="How many numbers">' +
+          '<button class="dwTool nlLess" type="button" aria-label="Fewer numbers">\u2212</button>' +
+          '<button class="dwTool nlRangeBtn" type="button" aria-expanded="false"></button>' +
+          '<button class="dwTool nlMore" type="button" aria-label="More numbers">+</button>' +
+        '</span>' +
       '</div>' +
       '<div class="nlRange" hidden>' +
         '<span class="chips nlPresets" role="group" aria-label="Range"></span>' +
@@ -8918,8 +8924,14 @@ function makeNumline(host, wcfg){
     /* labels every 1, 2, 4, 5, 10… ticks — the first spacing whose labels fit side by side */
     var chars = 1, every = 1;
     for (var k = 0; k <= n; k++) chars = Math.max(chars, fmtTick(ln().min + k * ln().step).length);
-    var lw = chars * FS * .62 + FS * .6;
-    [1, 2, 4, 5, 10, 20, 25, 50, 100].some(function(e){ every = e; return (n / e + 1) * lw <= X1 - X0 + 40; });
+    /* v7.16: more numbers on the line (Croix: "Can I have the option to have a bigger number line.
+       Like more digits") — before labels thin out to every other tick, they shrink toward 22 px */
+    var fits = function(e, f){ return (n / e + 1) * (chars * f * .66 + f * .6) <= X1 - X0 + 40; };
+    var EV = [1, 2, 4, 5, 10, 20, 25, 50, 100];
+    var bestAt = function(f){ var r = 100; EV.some(function(e){ r = e; return fits(e, f); }); return r; };
+    var target = bestAt(22);
+    if (target < bestAt(FS)){ while (FS > 22 && !fits(target, FS)) FS -= 2; }   // shrink only when it labels more ticks
+    every = bestAt(FS);
     var ov = Math.min(30, X0 - 6);
     svg.appendChild(el("path", { d: "M" + (X0 - ov) + " " + Y + "H" + (X1 + ov) }, "nlAxis"));
     svg.appendChild(el("path", { d: "M" + (X1 + ov) + " " + Y + "l-16 -10v20z" }, "nlHead neg"));
@@ -9061,15 +9073,38 @@ function makeNumline(host, wcfg){
     });
   }
   wireButton(rangeBtn, function(){ rangeRow.hidden = !rangeRow.hidden; paintRange(); });
+  /* − / +: fewer or more numbers without typing. A line through zero grows both ways (±5 → ±10 →
+     ±20 → ±50 → ±100 …); a line from zero grows to the right. The step stays when it still gives a
+     sensible count of ticks (4–40), else the nearest friendly step that does. */
+  var SPANS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+  var STEPS = [0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200];
+  function zoom(dir){
+    var l = wcfg.line, zero = l.min >= 0;
+    var cur = zero ? l.max - l.min : Math.max(Math.abs(l.min), Math.abs(l.max));
+    var i = 0; while (i < SPANS.length && SPANS[i] <= cur + 1e-9) i++;       // the next rung up
+    var j = SPANS.length - 1; while (j >= 0 && SPANS[j] >= cur - 1e-9) j--;  // the next rung down
+    var span = dir > 0 ? SPANS[Math.min(i, SPANS.length - 1)] : SPANS[Math.max(j, 0)];
+    if (span === cur) return;
+    var min = zero ? l.min : -span, max = zero ? l.min + span : span;
+    /* whole-number lines take the smallest friendly whole step that keeps ≤ 40 ticks (±20 by 1,
+       ±50 by 5, ±100 by 5, ±200 by 10); a fraction line keeps its step while that still works */
+    var whole = function(s){ var c = (max - min) / s; return s >= 1 && c <= 40 && Math.abs(c - Math.round(c)) < 1e-6; };
+    var step = l.step, cnt = (max - min) / step;
+    if (l.step >= 1 || cnt > 40 || cnt < 4 || Math.abs(cnt - Math.round(cnt)) > 1e-6){
+      step = STEPS.filter(whole)[0] || l.step;
+    }
+    setLine(normLine(min, max, step));
+  }
+  wireButton(host.querySelector(".nlMore"), function(){ zoom(1); });
+  wireButton(host.querySelector(".nlLess"), function(){ zoom(-1); });
   var ins = host.querySelectorAll(".nlIn");
   function fillLine(){ ins.forEach(function(inp){ if (inp !== document.activeElement) inp.value = wcfg.line[inp.dataset.k]; }); }
   function setLine(l){
     var b0 = snapshot();
     wcfg.line = l;
-    /* marks off the new line are dropped; the rest snap to the new ticks */
+    /* marks off the new line are dropped; the rest keep their numbers exactly (a −13 stays −13 on a
+       line counted by 5 — it sits between ticks until a finger moves it) */
     marks.dots = marks.dots.filter(function(d){ return d.v >= l.min && d.v <= l.max; });
-    render();
-    marks.dots.forEach(function(d){ d.v = snap(xOf(d.v)); });
     marks.jumps = marks.jumps.filter(function(j){ return j[0] >= l.min && j[0] <= l.max && j[1] >= l.min && j[1] <= l.max; });
     commit(b0); fillLine(); render(); paintRange();
   }
@@ -9094,6 +9129,7 @@ function makeNumline(host, wcfg){
     startPause: function(){}, reset: clearAll,
     marks: function(){ return { points: marks.dots.map(function(d){ return d.v; }), dots: JSON.parse(JSON.stringify(marks.dots)), jumps: marks.jumps.map(function(j){ return j.slice(); }) }; },   // test hook
     setMode: setMode,                               // test hook
+    zoom: zoom,                                     // test hook
     at: function(v){ render(); var r = svg.getBoundingClientRect(); return { x: r.left + xOf(v) / VW * r.width, y: r.top + Y / VH * r.height }; },   // test hook: a number's point on screen
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
