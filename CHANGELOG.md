@@ -2,6 +2,22 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.23.0 — 2026-09-30
+
+**A new tape.** Croix: "Several of the tracks sound almost the same. I want some good study music
+lofi." They did: the old sides shared one recipe, and four of them were the same e-piano over the
+same beat. The Music card now plays a rebuilt engine where every side is its own band and its own
+song. Rhodes, felt piano, nylon and clean guitar, kalimba, vibes, pads and synths. Melodies on
+piano, flute, vibes, glockenspiel, guitar and a synth lead. Upright, sub or synth bass. Boom bap,
+dusty half-time, jazz-hop ride, bossa, a waltz with brushes, and a steady four-on-the-floor. The
+chords are 7ths, 9ths and 13ths, voice-led. Each side has a form: a filtered intro, the tune, a
+B section, a breakdown with the drums out, the tune again, and a filtered outro, about two minutes
+long. Each side has its own melody and plays the same tune every time. The tape adds a room, a
+tempo-synced echo, wow and flutter, saturation, a compressor that pumps with the kick, vinyl
+crackle, and rain on the rainy sides. The sides: Porch swing, Rainy window, Late bus, Library,
+Kalimba, Night drive, Brushes, Bossa, Fog, Corner store (and Graveyard shift in October). It is
+still pure Web Audio: no files, works offline. One test; 260.
+
 ## 7.22.0 — 2026-09-29
 
 **Pick the side.** Croix: "the low fi music. Can I get a way to pick which track I'm listening to."

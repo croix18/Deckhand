@@ -1095,3 +1095,34 @@ test.describe("v7.22", () => {
     await expect(page.locator(".w-music .muWhat")).toContainText(sides[8]);
   });
 });
+
+/* v7.23 — a new tape (Croix: "Several of the tracks sound almost the same. I want some good study music lofi"). */
+test.describe("v7.23", () => {
+  test("v7.23: every side is its own band (no two share keys + melody + drums), renders real sound at one loudness, and the picker says how each feels", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    const r = await page.evaluate(async () => {
+      const L = window.Deckhand.lofi, all = L.TRACKS.concat([L.OCT]), out = [];
+      for (const tr of all) {
+        const buf = await L.render(tr, 6, 4);
+        const d = buf.getChannelData(0), e = buf.getChannelData(1);
+        let pk = 0, ss = 0, bad = 0;
+        for (let i = 0; i < d.length; i++) { if (!isFinite(d[i]) || !isFinite(e[i])) bad++; pk = Math.max(pk, Math.abs(d[i]), Math.abs(e[i])); ss += d[i] * d[i]; }
+        out.push({ name: tr.name, band: [tr.keys, tr.mel, tr.drums].join("/"), pk, db: 10 * Math.log10(ss / d.length), bad, feel: tr.feel });
+      }
+      return out;
+    });
+    ok(r.length === 11, "sides: " + r.length);
+    const bands = new Set(r.map(x => x.band));
+    ok(bands.size === r.length, "two sides share a band: " + r.map(x => x.band).join(" | "));
+    for (const x of r) {
+      ok(!x.bad, x.name + " rendered NaN");
+      ok(x.pk > .1 && x.pk < .99, x.name + " peak " + x.pk);
+      ok(x.db > -30 && x.db < -8, x.name + " loudness " + x.db.toFixed(1));
+      ok(/·/.test(x.feel), x.name + " has no feel line");
+    }
+    await dh.addW("addMusicBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-music .muWhat");
+    await expect(page.locator(".w-music .muSide span").first()).toHaveText(r[0].feel);
+  });
+});
