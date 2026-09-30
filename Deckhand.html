@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.28.0",
+  "appVersion": "7.29.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -892,6 +892,75 @@
      why "stretching tiles" still died on the tablet with a live video. */
   body.dragging iframe{pointer-events:none;}
   .wBody{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4cqh; padding:2cqh 2cqw; min-height:0; overflow:hidden;}
+
+
+  /* v7.29 LUNCH on the clock card: a tray of characters left of the time, a milk carton right.
+     Sized by the card (cq units) and gone when the card is too small to spare the room. Colours
+     are the board's own (coral stays the alarm's): wheat bread, a green apple, a cheddar slice. */
+  #lunchArt{display:none;}
+  .w-clock.lunchTime #lunchArt{display:block;}
+  #lunchArt svg{position:absolute; top:17cqh; height:min(36cqh, 15cqw); width:auto; overflow:visible; pointer-events:none;}
+  #lunchArt .lunchTray{left:3cqw;}
+  #lunchArt .lunchMilk{right:4cqw;}
+  @container (max-width: 860px){ #lunchArt{display:none !important;} }
+  @container (max-height: 420px){ #lunchArt{display:none !important;} }
+  #lunchArt .lTap{pointer-events:auto; cursor:pointer;}
+  #lunchArt .lShadow{fill:var(--grid);}
+  #lunchArt .lTrayBody{fill:var(--turq); stroke:var(--navy); stroke-width:4;}
+  #lunchArt .lTrayShine{stroke:var(--paleturq); stroke-width:4; stroke-linecap:round; fill:none;}
+  #lunchArt .lBread{fill:#EDBE72; stroke:var(--navy); stroke-width:4; stroke-linejoin:round;}
+  #lunchArt .lCrumb{fill:#FBE6B8;}
+  #lunchArt .lLettuce{fill:none; stroke:#62BF6A; stroke-width:7; stroke-linecap:round;}
+  #lunchArt .lCheese{fill:var(--octLit, #FFE45C); stroke:var(--navy); stroke-width:3; stroke-linejoin:round;}
+  #lunchArt .lEyes circle{fill:var(--navy);}
+  #lunchArt .lSmile{fill:none; stroke:var(--navy); stroke-width:3.5; stroke-linecap:round;}
+  #lunchArt .lAppleBody{fill:#8ED36B; stroke:var(--navy); stroke-width:4; stroke-linejoin:round;}
+  #lunchArt .lShine{fill:none; stroke:var(--white); stroke-width:4; stroke-linecap:round; opacity:.85;}
+  #lunchArt .lStem{fill:none; stroke:var(--navy); stroke-width:4; stroke-linecap:round;}
+  #lunchArt .lLeaf{fill:#4FAE5A; stroke:var(--navy); stroke-width:3; stroke-linejoin:round;}
+  #lunchArt .lCookieBody{fill:#D9A15B; stroke:var(--navy); stroke-width:4;}
+  #lunchArt .lChips circle{fill:var(--navy);}
+  #lunchArt .lBite{fill:var(--white); stroke:var(--navy); stroke-width:3; opacity:0; transition:opacity .08s;}
+  #lunchArt .lCookie[data-bites="1"] .lBite[data-b="1"],
+  #lunchArt .lCookie[data-bites="2"] .lBite[data-b="1"], #lunchArt .lCookie[data-bites="2"] .lBite[data-b="2"],
+  #lunchArt .lCookie[data-bites="3"] .lBite{opacity:1;}
+  #lunchArt .lCarton{fill:var(--white); stroke:var(--navy); stroke-width:4; stroke-linejoin:round;}
+  #lunchArt .lCartonFill{fill:var(--white);}
+  #lunchArt .lCartonLine{fill:none; stroke:var(--navy); stroke-width:4;}
+  #lunchArt .lLabel{fill:var(--turq);}
+  #lunchArt .lLabelText{font-family:inherit; font-weight:900; font-size:20px; letter-spacing:.08em; fill:var(--navy); text-anchor:middle;}
+  #lunchArt .lCheek{fill:#F4C9B8; opacity:.8;}
+  #lunchArt .lStrawOut{fill:none; stroke:var(--navy); stroke-width:10; stroke-linecap:round; stroke-linejoin:round;}
+  #lunchArt .lStrawIn{fill:none; stroke:var(--turq); stroke-width:5; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:6 6;}
+  #lunchArt g{transform-box:fill-box;}
+  #lunchArt .lTop{transform-origin:50% 100%;}
+  #lunchArt .lApple{transform-origin:50% 100%;}
+  #lunchArt .lMilk{transform-origin:50% 100%;}
+  #lunchArt .lStraw{transform-origin:0% 100%;}
+  #lunchArt .lEyes{transform-origin:50% 50%;}
+  @media (prefers-reduced-motion: no-preference){
+    .lunchTime #lunchArt .lTop{animation:lChomp 5.2s ease-in-out infinite;}
+    .lunchTime #lunchArt .lApple{animation:lBob 3.4s ease-in-out infinite;}
+    .lunchTime #lunchArt .lMilk{animation:lSway 5.8s ease-in-out infinite;}
+    .lunchTime #lunchArt .lStraw{animation:lWiggle 2.6s ease-in-out infinite;}
+    .lunchTime #lunchArt .lEyes{animation:lBlink 4.4s infinite;}
+    .lunchTime #lunchArt .lApple .lEyes{animation-delay:1.3s;}
+    .lunchTime #lunchArt .lMilk .lEyes{animation-delay:2.6s;}
+  }
+  @keyframes lChomp{0%, 78%, 100%{transform:none;} 83%{transform:translateY(-8px) rotate(-4deg);} 88%{transform:none;} 92%{transform:translateY(-5px) rotate(-2deg);} 96%{transform:none;}}
+  @keyframes lBob{0%, 100%{transform:none;} 50%{transform:translateY(-5px);}}
+  @keyframes lSway{0%, 100%{transform:rotate(-1.5deg);} 50%{transform:rotate(1.5deg);}}
+  @keyframes lWiggle{0%, 100%{transform:rotate(0);} 50%{transform:rotate(-7deg);}}
+  @keyframes lBlink{0%, 94%, 100%{transform:none;} 97%{transform:scaleY(.12);}}
+  /* the taps */
+  #lunchArt .lSand.go .lTop{animation:lBigChomp .5s ease-out;}
+  #lunchArt .lApple.go{animation:lHop .7s cubic-bezier(.3,.7,.4,1); transform-origin:50% 55%;}   /* spins about its middle */
+  #lunchArt .lMilk.go{animation:lSlurp .6s ease-in-out;}
+  #lunchArt .lCookie.go{animation:lNom .3s ease-out;}
+  @keyframes lBigChomp{0%{transform:none;} 30%{transform:translateY(-16px) rotate(-8deg);} 60%{transform:translateY(2px);} 100%{transform:none;}}
+  @keyframes lHop{0%{transform:none;} 40%{transform:translateY(-34px) rotate(180deg);} 75%{transform:translateY(0) rotate(360deg) scaleY(.9);} 100%{transform:rotate(360deg);}}
+  @keyframes lSlurp{0%, 100%{transform:none;} 30%{transform:scaleY(.9) scaleX(1.05);} 60%{transform:scaleY(1.03) scaleX(.98);}}
+  @keyframes lNom{0%{transform:none;} 40%{transform:scale(.9) rotate(-6deg);} 100%{transform:none;}}
 
   /* container-query sizing inside widgets */
   /* sized to read from the BACK of the room (Croix, Sep 1);
@@ -3222,6 +3291,61 @@
           <div id="dayStrip" hidden></div>
           <div id="bathPill" hidden>—</div>
         </div>
+        <!-- v7.29 (Croix: "Can I get a fun lunch graphic for during lunch time?"): a lunch tray
+             of characters beside the time, a milk carton on the other side. Only during the Lunch
+             block. Small taps: the sandwich chomps, the apple hops, the cookie loses a bite (three,
+             then it's a fresh cookie), the milk slurps. -->
+        <div id="lunchArt" aria-hidden="true">
+          <svg class="lunchTray" viewBox="0 0 240 190">
+            <defs><clipPath id="lCookieClip"><circle cx="205" cy="132" r="20"/></clipPath></defs>
+            <ellipse cx="120" cy="180" rx="108" ry="7" class="lShadow"/>
+            <rect x="10" y="150" width="220" height="24" rx="11" class="lTrayBody"/>
+            <path d="M26 158 H214" class="lTrayShine"/>
+            <g class="lSand lTap" data-l="sand">
+              <rect x="22" y="128" width="86" height="22" rx="8" class="lBread"/>
+              <path d="M20 128 q7 -9 14 0 t14 0 t14 0 t14 0 t14 0 t14 0" class="lLettuce"/>
+              <path d="M28 121 H102 L95 133 L86 125 L76 135 L66 125 L56 133 L46 125 L37 132 Z" class="lCheese"/>
+              <g class="lTop">
+                <path d="M24 118 V94 q0 -16 14 -17 q4 -15 27 -15 q23 0 27 15 q14 1 14 17 V118 q0 5 -5 5 H29 q-5 0 -5 -5 Z" class="lBread"/>
+                <path d="M33 114 V96 q0 -10 10 -11 q3 -13 22 -13 q19 0 22 13 q10 1 10 11 V114 Z" class="lCrumb"/>
+                <g class="lEyes"><circle cx="54" cy="96" r="4.6"/><circle cx="76" cy="96" r="4.6"/></g>
+                <path d="M56 105 q9 8 18 0" class="lSmile"/>
+              </g>
+            </g>
+            <g class="lApple lTap" data-l="apple">
+              <path d="M150 104 c-10 -8 -30 -6 -32 14 c-2 18 12 36 24 34 c4 -1 6 -2 8 -2 c2 0 4 1 8 2 c12 2 26 -16 24 -34 c-2 -20 -22 -22 -32 -14 z" class="lAppleBody"/>
+              <path d="M130 118 q2 -8 9 -10" class="lShine"/>
+              <path d="M150 104 q1 -10 6 -14" class="lStem"/>
+              <path d="M156 92 q10 -9 19 -2 q-9 9 -19 2 z" class="lLeaf"/>
+              <g class="lEyes"><circle cx="142" cy="124" r="4"/><circle cx="158" cy="124" r="4"/></g>
+              <path d="M144 133 q6 6 12 0" class="lSmile"/>
+            </g>
+            <g class="lCookie lTap" data-l="cookie">
+              <circle cx="205" cy="132" r="18" class="lCookieBody"/>
+              <g class="lChips"><circle cx="198" cy="125" r="2.8"/><circle cx="210" cy="123" r="2.8"/><circle cx="213" cy="136" r="2.8"/><circle cx="199" cy="140" r="2.8"/><circle cx="205" cy="132" r="2.8"/></g>
+              <g clip-path="url(#lCookieClip)">
+                <circle cx="222" cy="120" r="7.5" class="lBite" data-b="1"/>
+                <circle cx="225" cy="136" r="7.5" class="lBite" data-b="2"/>
+                <circle cx="215" cy="150" r="7.5" class="lBite" data-b="3"/>
+              </g>
+            </g>
+          </svg>
+          <svg class="lunchMilk" viewBox="0 0 130 200">
+            <ellipse cx="65" cy="192" rx="46" ry="6" class="lShadow"/>
+            <g class="lMilk lTap" data-l="milk">
+              <g class="lStraw"><path d="M80 44 V16 L98 6" class="lStrawOut"/><path d="M80 44 V16 L98 6" class="lStrawIn"/></g>
+              <rect x="36" y="30" width="58" height="12" rx="2" class="lCarton"/>
+              <path d="M22 74 L38 42 H92 L108 74 Z" class="lCarton"/>
+              <rect x="22" y="72" width="86" height="112" rx="6" class="lCartonFill"/>
+              <rect x="22" y="130" width="86" height="34" class="lLabel"/>
+              <rect x="22" y="72" width="86" height="112" rx="6" class="lCartonLine"/>
+              <text x="65" y="154" class="lLabelText">MILK</text>
+              <g class="lEyes"><circle cx="52" cy="100" r="5"/><circle cx="78" cy="100" r="5"/></g>
+              <ellipse cx="42" cy="111" rx="6" ry="3.4" class="lCheek"/><ellipse cx="88" cy="111" rx="6" ry="3.4" class="lCheek"/>
+              <path d="M56 112 q9 9 18 0" class="lSmile"/>
+            </g>
+          </svg>
+        </div>
       </div>
       <!-- v7.7: the settle-in is a MOMENT of the clock — at the bell the card
            becomes the count (or the flag), then the face comes back -->
@@ -4198,7 +4322,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.28.0",
+  appVersion: "7.29.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5434,6 +5558,7 @@ var Bell = (function(){
     }
     prevStType = st.type;
     el.bellWrap.classList.toggle("passing", st.type === "passing");
+    try { $("clockWidget").classList.toggle("lunchTime", st.type === "in" && /^lunch$/i.test(st.label || "")); } catch(e){}   // v7.29: the lunch tray
     el.bellWrap.classList.toggle("warn", warnActive);
     // hero
     el.periodNow.textContent =
@@ -15760,6 +15885,27 @@ var Ink = (function(){
   };
 })();
 
+/* ================= v7.29 Lunch: the tray's taps ================= */
+var LunchArt = (function(){
+  function restart(g){ g.classList.remove("go"); void g.getBBox(); g.classList.add("go"); clearTimeout(g._t); g._t = setTimeout(function(){ g.classList.remove("go"); }, 800); }
+  return {
+    init: function(){
+      var art = $("lunchArt"); if (!art) return;
+      art.querySelectorAll(".lTap").forEach(function(g){
+        g.addEventListener("pointerdown", function(e){
+          e.stopPropagation();                   // a tap on lunch never drags the clock
+          if (g.dataset.l === "cookie"){
+            var b = (+g.dataset.bites || 0) + 1;
+            g.dataset.bites = String(b > 3 ? 0 : b);   // three bites, then a fresh cookie
+          }
+          restart(g);
+        });
+      });
+    },
+    bites: function(){ var c = document.querySelector("#lunchArt .lCookie"); return c ? +(c.dataset.bites || 0) : 0; }   // test hook
+  };
+})();
+
 /* ================= v7.10 Season =================
    October (Croix: "spiderwebs, pumpkins, stuff like that"). One body class,
    `october`, set from the board's own clock for the month and cleared on
@@ -15981,7 +16127,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, Season, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, Season, LunchArt, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });

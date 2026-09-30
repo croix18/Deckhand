@@ -2,6 +2,17 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.29.0 — 2026-09-30
+
+**Lunch on the board.** Croix: "Can I get a fun lunch graphic for during lunch time?" During the
+Lunch block the clock card gets company. On the left is a tray: a sandwich with a face, a green
+apple, and a chocolate-chip cookie. On the right is a milk carton with a bendy straw. They blink,
+the sandwich chomps now and then, the apple bobs and the straw wiggles. Small taps: the sandwich
+takes a big chomp, the apple hops and spins, the milk slurps, and the cookie loses a bite (after
+three it's a fresh cookie). They're drawn in the board's own colours (coral stays the alarm's),
+sized to the card, and left out when the card is too small or motion is turned off. When the bell
+ends Lunch, they're gone. One test; 268.
+
 ## 7.28.0 — 2026-09-30
 
 **Three fixes from the day's teaching.**

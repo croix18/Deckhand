@@ -1350,3 +1350,26 @@ test.describe("v7.28", () => {
     await page.click("#inkDone");
   });
 });
+
+/* v7.29 — lunch on the board (Croix: "Can I get a fun lunch graphic for during lunch time?"). */
+test.describe("v7.29", () => {
+  test("v7.29: during Lunch the clock card has the tray and the milk carton; taps chomp, hop and bite (three bites, then a fresh cookie); outside Lunch they're gone", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T12:50");                           // Black Tuesday: Lunch 12:42–1:12
+    await dh.launch();
+    await expect(page.locator("#periodNow")).toHaveText("Lunch");
+    await expect(page.locator("#lunchArt .lunchTray")).toBeVisible();
+    await expect(page.locator("#lunchArt .lunchMilk")).toBeVisible();
+    const tray = await page.locator("#lunchArt .lunchTray").boundingBox(), clock = await page.locator("#clock").boundingBox();
+    ok(tray.x + tray.width <= clock.x + 10, "the tray sits on the time: " + JSON.stringify([tray, clock]));
+    const cookie = page.locator("#lunchArt .lCookie");
+    const bites = () => page.evaluate(() => +(document.querySelector("#lunchArt .lCookie").dataset.bites || 0));
+    for (const n of [1, 2, 3, 0]) { await cookie.click({ force: true }); ok((await bites()) === n, "bites " + (await bites()) + " not " + n); }
+    await page.locator("#lunchArt .lApple").click({ force: true });
+    ok(await page.evaluate(() => document.querySelector("#lunchArt .lApple").classList.contains("go")), "the apple did not hop");
+    const before = await page.evaluate(() => { const w = document.getElementById("clockWidget"); return w.style.left + "," + w.style.top; });
+    ok(before === await page.evaluate(() => { const w = document.getElementById("clockWidget"); return w.style.left + "," + w.style.top; }), "a lunch tap moved the clock");
+    await page.evaluate(() => window.Deckhand.shiftClock(30 * 60000));   // 1:20, 4th period
+    await page.waitForTimeout(1200);
+    await expect(page.locator("#lunchArt .lunchTray")).toBeHidden();
+  });
+});
