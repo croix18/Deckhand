@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.23.0",
+  "appVersion": "7.24.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1208,12 +1208,16 @@
   .muPickHead{display:flex; align-items:center; gap:8px;}
   .muPickHead b{font-weight:900; color:var(--navy); margin-right:auto; font-size:clamp(13px, 4cqw, 18px);}
   .muPickX{background:none; border:0; font:inherit; font-weight:900; font-size:18px; color:var(--navy); min-width:44px; min-height:44px; cursor:pointer;}
-  .muList{flex:1; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap:6px; align-content:start;}
-  .muSide{display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left; border:0; border-radius:12px; padding:8px 12px; min-height:48px;
+  .muScroll{flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:6px;}
+  .muSec{font-weight:900; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal); margin-top:4px;}
+  .muSec span{font-weight:700; letter-spacing:0; text-transform:none; opacity:.8; margin-left:6px;}
+  .muList, .muNatList{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap:6px; align-content:start;}
+  .muSide, .muNone, .muNat{display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left; border:0; border-radius:12px; padding:8px 12px; min-height:48px;
     background:var(--paleturq); color:var(--navy); font:inherit; cursor:pointer;}
-  .muSide b{font-weight:900; font-size:clamp(13px, 3.6cqw, 17px);}
-  .muSide span{font-size:clamp(11px, 2.8cqw, 13px); color:var(--teal); font-weight:700;}
-  .muSide[aria-pressed="true"]{background:var(--turq);}
+  .muSide b, .muNone b, .muNat b{font-weight:900; font-size:clamp(13px, 3.6cqw, 17px);}
+  .muSide span, .muNone span, .muNat span{font-size:clamp(11px, 2.8cqw, 13px); color:var(--teal); font-weight:700;}
+  .muSide[aria-pressed="true"], .muNone[aria-pressed="true"], .muNat[aria-pressed="true"]{background:var(--turq);}
+  .muNone, .muNatOff{background:var(--white); box-shadow:inset 0 0 0 2px var(--paleturq);}
   .w-music .wBody{position:relative;}
   .muRow{display:flex; gap:8px; align-items:center; justify-content:center;}
   .muVol{width:130px; height:44px; accent-color:var(--turq);}
@@ -4167,7 +4171,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.23.0",
+  appVersion: "7.24.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4433,6 +4437,8 @@ function sanitize(c){
         wc.volume = numIn(w.volume, 0, 1, 0.5);
         if (typeof w.side === "number" && w.side >= 0 && w.side < 12) wc.side = Math.round(w.side);   // v7.22: the picked side
         wc.repeat = bool(w.repeat, false);
+        wc.lofi = bool(w.lofi, true);                                                         // v7.24: "No music" = false
+        wc.nature = ["fire", "rain", "storm", "brook", "forest", "brown", "white"].indexOf(w.nature) >= 0 ? w.nature : "";   // v7.24
       }
       if (ty === "yt"){
         /* the card's runtime rule is YouTube-ONLY — sanitize must agree,
@@ -9320,7 +9326,7 @@ var Flash = (function(){
    the audio must come from him); until then, YouTube covers Mozart.
    Play/volume are PLAY actions: live while LOCKED. Ducks hard under a
    ringing alarm. Never auto-plays on load. */
-/* ================= v7.23 LOFI 3.0 =================
+/* ================= v7.23 LOFI 3.0 (v7.24: the quiet album) =================
    Croix: "Several of the tracks sound almost the same. I want some good study music lofi."
    The v7.3 sides shared one recipe (four of them were the same e-piano over the same beat), so
    this is a new tape, not new settings. Each side is its own little song:
@@ -9350,54 +9356,58 @@ var Lofi = (function(){
     d13: [4, 10, 14, 21], d9: [4, 10, 14], d7b9: [4, 10, 13, 20], sus: [5, 10, 14, 7]
   };
   /* the SIDES. prog = [semitones above the key, quality] per chord; per = bars per chord.
-     Names 1, 2 and 10 are kept from the old tape; the rest are new sides. */
+     v7.24 (Croix: "The second track was really cool. Everything else was terrible. They were too
+     fast paced or scratchy. Mostly too fast paced. Not at all relaxing."): the album is rebuilt
+     around Rainy window, which is kept exactly as it was. Every side is 56–68 bpm, the keys hold
+     and roll instead of stabbing, the drums are soft or absent (dvol), the crackle is a whisper
+     and the tape barely wobbles. */
   var TRACKS = [
-    { name: "Porch swing",  feel: "the classic · Rhodes, boom bap",       seed: 11, key: 3,  bpm: 76, swing: .17,
-      prog: [[5, "maj9"], [4, "m7"], [2, "m9"], [0, "maj9"]], per: 1,
-      keys: "rhodes", comp: "stab", compB: "arp", mel: "piano", melOct: 1, bass: "sub", bassPat: "lofi",
-      drums: "boombap", tone: 5200, wow: 1, room: .22, echo: .25, dust: .55, rain: 0 },
-    { name: "Rainy window", trim: 1.26, feel: "rain on the glass · piano, soft beat",  seed: 23, key: 9, minor: true, bpm: 68, swing: .12,
+    { name: "Rainy window", trim: 1.26, feel: "rain on the glass \u00b7 piano, soft beat",  seed: 23, key: 9, minor: true, bpm: 68, swing: .12,
       prog: [[0, "m9"], [8, "maj7"], [3, "maj9"], [10, "69"]], per: 1,
       keys: "piano", comp: "sustain", compB: "arp", mel: "piano", melOct: 0, bass: "sub", bassPat: "long",
       drums: "dusty", tone: 4300, wow: .8, room: .42, echo: .2, dust: .25, rain: .85 },
-    { name: "Late bus",     feel: "warbly tape · piano, flute",            seed: 37, key: 2, minor: true, bpm: 82, swing: .2,
-      prog: [[0, "m9"], [5, "d13"], [10, "maj7"], [7, "d7b9"]], per: 1,
-      keys: "piano", comp: "stab", compB: "stab", mel: "flute", melOct: 1, bass: "sub", bassPat: "lofi",
-      drums: "busy", tone: 4600, wow: 2.2, room: .28, echo: .3, dust: .65, rain: 0 },
-    { name: "Library", trim: 0.75,      feel: "jazz hop · vibes, walking bass",        seed: 41, key: 10, bpm: 88, swing8: .3,
-      prog: [[2, "m9"], [7, "d13"], [0, "maj9"], [9, "d7b9"]], per: 1,
-      keys: "rhodes", comp: "charleston", compB: "charleston", mel: "vibes", melOct: 1, bass: "upright", bassPat: "walk",
-      drums: "jazzhop", tone: 6200, wow: .6, room: .3, echo: .12, dust: .45, rain: 0 },
-    { name: "Kalimba",      feel: "bright and bouncy · kalimba, bells",   seed: 53, key: 7, bpm: 90, swing: .1,
+    { name: "Slow morning", trim: 1.2, feel: "warm \u00b7 Rhodes, piano, a soft beat",         seed: 29, key: 5, bpm: 64, swing: .1,
+      prog: [[0, "maj9"], [4, "m7"], [9, "m9"], [5, "maj9"]], per: 1,
+      keys: "rhodes", comp: "sustain", compB: "slowarp", mel: "piano", melOct: 0, bass: "sub", bassPat: "long",
+      drums: "lull", dvol: .8, tone: 4200, wow: .3, room: .38, echo: .2, dust: .08, rain: 0 },
+    { name: "Reading nook", trim: 1.38, feel: "quiet \u00b7 felt piano, brushes",             seed: 31, key: 2, bpm: 62, swing: .08,
+      prog: [[0, "maj9"], [9, "m9"], [7, "maj9"], [9, "sus"]], per: 1,
+      keys: "piano", comp: "slowarp", compB: "sustain", mel: "piano", melOct: 0, bass: "sub", bassPat: "long",
+      drums: "brushes", dvol: .8, tone: 4000, wow: .25, room: .45, echo: .18, dust: .06, rain: 0 },
+    { name: "Snowfall", trim: 1.23, feel: "no drums \u00b7 pads, music box",                  seed: 43, key: 1, bpm: 58, swing: 0,
+      prog: [[0, "maj9"], [5, "maj9"], [2, "m7"], [7, "sus"]], per: 2,
+      keys: "pad", comp: "sustain", compB: "sustain", mel: "bell", melOct: 1, bass: "sub", bassPat: "long",
+      drums: "none", tone: 3800, wow: .3, room: .6, echo: .35, dust: .05, rain: 0 },
+    { name: "Lanterns", trim: 0.86, feel: "late jazz \u00b7 Rhodes, vibes, upright bass",     seed: 47, key: 10, bpm: 66, swing8: .2,
+      prog: [[2, "m9"], [7, "d13"], [0, "maj9"], [9, "m7"]], per: 1,
+      keys: "rhodes", comp: "sustain", compB: "sustain", mel: "vibes", melOct: 1, bass: "upright", bassPat: "twofeel",
+      drums: "brushes", dvol: .75, tone: 4600, wow: .25, room: .4, echo: .15, dust: .08, rain: 0 },
+    { name: "Sunday tea", trim: 0.88, feel: "gentle \u00b7 nylon guitar, piano",              seed: 59, key: 7, bpm: 64, swing: .06,
+      prog: [[0, "maj7"], [4, "m7"], [9, "m9"], [5, "69"]], per: 1,
+      keys: "nylon", comp: "finger", compB: "finger", mel: "piano", melOct: 0, bass: "upright", bassPat: "twofeel",
+      drums: "shaker", dvol: .7, tone: 4400, wow: .2, room: .35, echo: .15, dust: .06, rain: 0 },
+    { name: "Night study", trim: 1.25, feel: "dim lamp \u00b7 piano, pads, a slow beat",       seed: 61, key: 4, minor: true, bpm: 60, swing: .1,
+      prog: [[0, "m9"], [8, "maj7"], [5, "m9"], [7, "sus"]], per: 1,
+      keys: "piano", comp: "sustain", compB: "slowarp", pad: true, mel: "piano", melOct: 0, bass: "sub", bassPat: "long",
+      drums: "lull", dvol: .75, tone: 3900, wow: .3, room: .45, echo: .2, dust: .1, rain: 0 },
+    { name: "Window seat", trim: 1.32, feel: "soft \u00b7 kalimba, pads, piano",               seed: 73, key: 0, bpm: 64, swing: .08,
       prog: [[0, "add9"], [9, "m7"], [5, "maj9"], [7, "sus"]], per: 1,
-      keys: "kalimba", comp: "kalimba", compB: "kalimba", mel: "bell", melOct: 1, bass: "sub", bassPat: "bounce",
-      drums: "kalimba", tone: 7200, wow: .4, room: .3, echo: .4, dust: .2, rain: 0 },
-    { name: "Night drive", trim: 1.12,  feel: "after dark · synths, steady kick",      seed: 67, key: 4, minor: true, bpm: 86, swing: 0,
-      prog: [[0, "m9"], [8, "maj7"], [3, "maj9"], [10, "sus"]], per: 1,
-      keys: "synth", comp: "pulse", compB: "pulse", pad: true, mel: "lead", melOct: 1, bass: "synth", bassPat: "pulse",
-      drums: "four", tone: 5600, wow: .7, room: .35, echo: .35, dust: .15, rain: 0 },
-    { name: "Brushes", trim: 0.8,      feel: "a slow waltz · piano trio, brushes",   seed: 71, key: 5, meter: 3, bpm: 104, swing8: .22,
-      prog: [[0, "maj7"], [9, "d7b9"], [2, "m9"], [7, "d13"]], per: 1,
-      keys: "piano", comp: "waltz", compB: "waltz", mel: "piano", melOct: 1, bass: "upright", bassPat: "waltz",
-      drums: "waltz", tone: 5400, wow: .5, room: .4, echo: .1, dust: .35, rain: 0 },
-    { name: "Bossa", trim: 0.9,        feel: "bossa nova · nylon guitar",             seed: 83, key: 5, bpm: 80, swing: .04,
-      prog: [[0, "maj9"], [2, "d13"], [2, "m9"], [7, "d7b9"]], per: 1,
-      keys: "nylon", comp: "bossa", compB: "bossa", mel: "nylon", melOct: 1, bass: "upright", bassPat: "bossa",
-      drums: "bossa", tone: 5800, wow: .3, room: .3, echo: .2, dust: .3, rain: 0 },
-    { name: "Fog", trim: 1.6,          feel: "no drums · pads, piano, drift",        seed: 97, key: 1, bpm: 60, swing: 0,
-      prog: [[0, "maj9"], [4, "m7"], [9, "m9"], [5, "maj9"]], per: 2,
-      keys: "pad", comp: "sustain", compB: "sustain", mel: "piano", melOct: 1, sparse: true, bass: "sub", bassPat: "long",
-      drums: "none", tone: 3900, wow: .8, room: .7, echo: .5, dust: .45, rain: .25 },
-    { name: "Corner store", trim: 1.12, feel: "sunny · guitar, snappy drums",          seed: 101, key: 2, bpm: 94, swing: .14,
-      prog: [[5, "maj9"], [4, "m7"], [9, "m7"], [0, "add9"]], per: 1,
-      keys: "guitar", comp: "strum", compB: "strum", mel: "rhodes", melOct: 1, bass: "sub", bassPat: "bounce",
-      drums: "bounce", tone: 7000, wow: .4, room: .2, echo: .3, dust: .3, rain: 0 }
+      keys: "kalimba", comp: "slowarp", compB: "slowarp", pad: true, mel: "piano", melOct: 1, bass: "sub", bassPat: "long",
+      drums: "shaker", dvol: .6, tone: 4200, wow: .2, room: .45, echo: .3, dust: .05, rain: 0 },
+    { name: "Harbor lights", trim: 1.23, feel: "evening \u00b7 Rhodes, clean guitar",          seed: 79, key: 3, bpm: 62, swing: .1,
+      prog: [[5, "maj9"], [4, "m7"], [2, "m9"], [0, "maj9"]], per: 1,
+      keys: "rhodes", comp: "sustain", compB: "slowarp", mel: "guitar", melOct: 1, bass: "sub", bassPat: "long",
+      drums: "lull", dvol: .7, tone: 4100, wow: .3, room: .42, echo: .25, dust: .08, rain: 0 },
+    { name: "Last light", trim: 1.32, feel: "no drums \u00b7 just the piano",                  seed: 89, key: 8, bpm: 56, swing: 0,
+      prog: [[0, "maj9"], [9, "m9"], [5, "maj9"], [7, "sus"]], per: 1,
+      keys: "piano", comp: "slowarp", compB: "sustain", mel: "piano", melOct: 0, bass: "sub", bassPat: "long",
+      drums: "none", tone: 4000, wow: .2, room: .5, echo: .2, dust: .05, rain: 0 }
   ];
-  /* v7.10's haunted side, rebuilt: October only */
-  var OCT = { name: "Graveyard shift", trim: 1.26, feel: "spooky · music box, fog", seed: 131, key: 9, minor: true, bpm: 62, swing: .1,
+  /* v7.10's haunted side, rebuilt: October only (v7.24: slower, quieter tape) */
+  var OCT = { name: "Graveyard shift", trim: 1.39, feel: "spooky \u00b7 music box, fog", seed: 131, key: 9, minor: true, bpm: 58, swing: .1,
     prog: [[0, "m9"], [8, "maj7"], [5, "m9"], [4, "d7b9"]], per: 1,
     keys: "pad", comp: "sustain", compB: "sustain", mel: "bell", melOct: 1, bass: "sub", bassPat: "long",
-    drums: "dusty", tone: 3500, wow: 1.8, room: .6, echo: .5, dust: .7, rain: .3 };
+    drums: "lull", dvol: .7, tone: 3500, wow: .8, room: .6, echo: .5, dust: .15, rain: .3 };
 
   /* the FORM: [section, bars]; a waltz's phrases are twice as many (shorter) bars */
   var FORM4 = [["intro", 4], ["A", 8], ["B", 8], ["brk", 4], ["A2", 8], ["outro", 4]];
@@ -9423,6 +9433,13 @@ var Lofi = (function(){
                B: { k: "o..o..o.o..o..o.", rim: "....x...x.......", shk: "o-x-o-x-o-x-o-x-" } },
     bounce:  { A: { k: "x.....x...x.....", s: "....x.......x...", h: "x-x-x-x-x-x-x-x-", tb: "..x...x...x...x." },
                B: { k: "x.....x.x.x.....", s: "....x.......x..o", h: "x-x-x-x-x-x-x-x-", tb: "..x...x...x...x." } },
+    /* v7.24 the quiet kits */
+    lull:    { A: { k: "x.........o.....", s: "........o.......", h: "o...-...o...-..." },
+               B: { k: "x.....-...o.....", s: "........o.....-.", h: "o.-.o.-.o.-.o.-." } },
+    brushes: { A: { k: "o.......-.......", br: "....o.......o..." },
+               B: { k: "o.......-.......", br: "....o.......o...", shk: "-...-...-...-..." } },
+    shaker:  { A: { k: "o.........-.....", shk: "-.o.-.o.-.o.-.o.", rim: "........-......." },
+               B: { k: "o.....-...-.....", shk: "-.o.-.o.-.o.-.o.", rim: "........-......." } },
     none:    { A: {}, B: {} }
   };
   var LEVEL = { x: 1, o: .6, "-": .3 };
@@ -9900,6 +9917,20 @@ var Lofi = (function(){
           var notes = h[2] > 0 ? V : V.slice().reverse();
           hit(h[0] * spb, h[1] * spb * 1.1, vel * (h[2] > 0 ? .85 : .55), .018, notes);
         });
+      } else if (style === "slowarp"){                  // v7.24: one note a beat, each left ringing
+        var up = V.concat([V[0] + 12]);
+        for (var q = 0; q < m; q++){
+          var nn = up[(q + (barNo % 2) * 2) % up.length];
+          I(nn, t + q * spb + (q ? hum(.01) : 0), spb * 2.6, vel * (q ? .62 : .8), { pan: (q % 2 ? .18 : -.18), rev: .25, echo: .12 });
+        }
+        if (Math.random() < .5) I(V[V.length - 1] + 12, t + spb * (m - .5), spb * 1.5, vel * .35, { rev: .35, echo: .2 });
+      } else if (style === "finger"){                   // v7.24: a thumb on the root, fingers rolling over the chord
+        var fp2 = [0, 2, 1, 3, 2, 1, 3, 2];
+        I(V[0] - 12 >= 45 ? V[0] - 12 : V[0], t, spb * 2.5, vel * .85, { rev: .2 });
+        for (var f8 = 1; f8 < m * 2; f8++){
+          if (Math.random() < .1) continue;
+          I(V[fp2[f8] % V.length], t + f8 * spb / 2 + (f8 % 2 ? (tr.swing || 0) * spb * .25 : 0) + hum(.008), spb * 1.4, vel * .55, { pan: (f8 % 2 ? .2 : -.1), rev: .2 });
+        }
       } else if (style === "bossa"){
         var bp = (barNo % 2) ? [[0, .9], [1.5, .9], [3, .9]] : [[.75, .8], [1.5, .9], [2.75, .8], [3.5, .5]];
         bp.forEach(function(h){ hit(h[0] * spb, h[1] * spb, vel * .75, .02); });
@@ -9927,6 +9958,8 @@ var Lofi = (function(){
         [[0, R, .8, .95], [1.5, R, .4, .6], [2, fifth, .6, .8], [2.75, R, .3, .55], [3.5, R + 12, .35, .6]].forEach(function(b){
           bass(b[1], t + b[0] * spb + (b[0] % 1 ? (tr.swing || 0) * spb * .25 : 0), b[2] * spb, b[3]);
         });
+      } else if (style === "twofeel"){                  // v7.24: two notes a bar, unhurried
+        bass(R, t, spb * 1.9, .85); bass(Math.random() < .6 ? fifth : R, t + spb * 2, spb * 1.9, .7);
       } else if (style === "waltz"){
         bass((barNo % 2) ? fifth : R, t, spb * 1.8, .9);
         if (Math.random() < .35) bass(NR + (NR > R ? -1 : 1), t + spb * 2, spb * .9, .6);
@@ -9935,9 +9968,9 @@ var Lofi = (function(){
     function drumBar(t, spb, sec, p, len){
       var g = GROOVES[tr.drums] || GROOVES.none, pat = (sec === "B") ? g.B : g.A;
       var steps = M() * 4, st = spb / 4, last = p === len - 1;
-      var only = null, vmul = 1;
-      if (sec === "intro"){ if (p < 2) return; only = ["h", "shk", "ride", "hp", "tb", "br"]; vmul = .55; }
-      if (sec === "outro"){ if (p >= 2) return; only = ["h", "shk", "ride", "hp", "tb", "br"]; vmul = .5; }
+      var only = null, vmul = tr.dvol || 1;      // v7.24: the quiet sides play their kit softly
+      if (sec === "intro"){ if (p < 2) return; only = ["h", "shk", "ride", "hp", "tb", "br"]; vmul *= .55; }
+      if (sec === "outro"){ if (p >= 2) return; only = ["h", "shk", "ride", "hp", "tb", "br"]; vmul *= .5; }
       if (sec === "brk") return;
       Object.keys(pat).forEach(function(part){
         if (only && only.indexOf(part) < 0) return;
@@ -9947,6 +9980,7 @@ var Lofi = (function(){
           if (!v) continue;
           if (last && part === "k" && i >= steps - 4) continue;                  // the kick lays out into the next section
           if (part === "h" && Math.random() < .08) continue;
+          if (part === "k" && v < .4 && Math.random() < .5) continue;             // a ghost kick, sometimes
           var off = i * st;
           if (i % 2) off += (tr.swing || 0) * st;                                 // 16th swing
           if (i % 4 === 2) off += swing8(spb);                                    // 8th swing (jazz)
@@ -9955,8 +9989,8 @@ var Lofi = (function(){
       });
       if (last && sec !== "outro" && (pat.s || pat.clap || pat.rim)){           // a little fill into what's next
         var fp = pat.s ? "s" : pat.clap ? "clap" : "rim";
-        DR[fp](t + (steps - 2) * st + (tr.swing || 0) * st * 0, .35);
-        DR[fp](t + (steps - 1) * st + (tr.swing || 0) * st, .5);
+        DR[fp](t + (steps - 2) * st, .35 * (tr.dvol || 1));
+        DR[fp](t + (steps - 1) * st + (tr.swing || 0) * st, .5 * (tr.dvol || 1));
       }
     }
 
@@ -10023,6 +10057,7 @@ var Lofi = (function(){
       newBus: newBus,
       done: function(){ return done; },
       seek: function(n){ barNo = n; },
+      quiet: function(){ var at = ctx.currentTime; dustG.gain.setTargetAtTime(0, at, .4); rainG.gain.setTargetAtTime(0, at, .4); },   // v7.24: nature alone, no needle
       restart: function(){ barNo = 0; done = false; prevV = null; toneTo(tr.tone * .3, ctx.currentTime, .3); },
       at: function(){ var w = where(barNo); return { bar: barNo, section: w ? w.sec : "end" }; },
       stop: function(){ try { wowL.stop(); flut.stop(); dustS.stop(); rainS.stop(); } catch(e){} }
@@ -10041,6 +10076,332 @@ var Lofi = (function(){
   return { TRACKS: TRACKS, OCT: OCT, create: create, render: render, _voice: voiceChord };
 })();
 
+/* ================= v7.24 NATURE =================
+   Croix: "are you able to produce nature noises as well? I'd love a crackling fire, heavy rain, a
+   thunderstorm, a babbling brook, forest sounds." (and "a brown noise and a white noise"). All made here, no recordings:
+   - beds are long LOOPS written once into buffers (noise shaped into rain, roar, wind, water;
+     each loop cross-fades into itself, and layers of different lengths never line up the same
+     way twice);
+   - EVENTS are scheduled live, never looped: the fire's crackles and pops, the storm's thunder,
+     the forest's birds — so nothing repeats on a pattern the ear can catch.
+   Water is thousands of tiny bubbles (a sine that rises as it dies); thunder is rumbling brown
+   noise shaped by a few rolling swells; birds are whistles bent by frequency curves.
+   `create(ctx, out)` → {set, tick, level, stop}; `render(id, seconds)` into an OfflineAudioContext. */
+var Nature = (function(){
+  var SOUNDS = [
+    { id: "fire",   name: "Crackling fire", feel: "logs popping, a low roar",     trim: 1.7 },
+    { id: "rain",   name: "Heavy rain",     feel: "a downpour on the roof",       trim: 2.2 },
+    { id: "storm",  name: "Thunderstorm",   feel: "heavy rain, rolling thunder",  trim: 1.6 },
+    { id: "brook",  name: "Babbling brook", feel: "water over stones",            trim: 1.75 },
+    { id: "forest", name: "Forest",         feel: "wind in the leaves, birds",    trim: 2.5 },
+    /* Croix: "can you also give me a brown noise and a white noise on there too" */
+    { id: "brown",  name: "Brown noise",    feel: "a deep, steady rumble",        trim: 1.33 },
+    { id: "white",  name: "White noise",    feel: "an even, bright hush",         trim: 1 }
+  ];
+  function byId(id){ for (var i = 0; i < SOUNDS.length; i++) if (SOUNDS[i].id === id) return SOUNDS[i]; return null; }
+  function R(){ return Math.random(); }
+
+  function create(ctx, out){
+    var sr = ctx.sampleRate, bufs = {};
+    /* ---- sample-level helpers: every buffer is written once, then looped ---- */
+    function white(){ return R() * 2 - 1; }
+    function pinkGen(){ var b0 = 0, b1 = 0, b2 = 0; return function(){ var w = white(); b0 = .99765 * b0 + w * .099046; b1 = .963 * b1 + w * .2965164; b2 = .57 * b2 + w * 1.0526913; return (b0 + b1 + b2 + w * .1848) * .2; }; }
+    function brownGen(){ var b = 0; return function(){ b = (b + .02 * white()) / 1.02; return b * 3.5; }; }
+    var LOOPN = 0;                                         // the loop's length: slow envelopes wrap on it
+    function smooth(n, hz, lo, hi){
+      /* a slow random wander between lo and hi (cosine-interpolated points about hz times a
+         second). It WRAPS on the loop length, so the seam never jumps from loud to quiet. */
+      var P = LOOPN || n, segs = Math.max(1, Math.round(P / (sr / hz))), step = P / segs, pts = [], i;
+      for (i = 0; i < segs; i++) pts.push(R());
+      pts.push(pts[0]);
+      var a = new Float32Array(n);
+      for (i = 0; i < n; i++){
+        var pos = (i % P) / step, k = Math.floor(pos), x = (1 - Math.cos(Math.PI * (pos - k))) / 2;
+        a[i] = lo + (hi - lo) * (pts[k] + (pts[k + 1] - pts[k]) * x);
+      }
+      return a;
+    }
+    function norm(d, peak){ var m = 0, i; for (i = 0; i < d.length; i++) m = Math.max(m, Math.abs(d[i])); if (m) for (i = 0; i < d.length; i++) d[i] *= (peak || 1) / m; }
+    function loop(key, sec, chans, fill){
+      if (bufs[key]) return bufs[key];
+      var n = Math.floor(sr * sec), x = Math.floor(sr * .4);
+      var b = ctx.createBuffer(chans, n, sr);
+      for (var c = 0; c < chans; c++){
+        var tmp = new Float32Array(n + x); LOOPN = n; fill(tmp, c); LOOPN = 0;
+        var d = b.getChannelData(c);
+        for (var i = 0; i < n; i++) d[i] = i < x ? tmp[i] * (i / x) + tmp[n + i] * (1 - i / x) : tmp[i];   // a seamless seam
+        norm(d, .9);
+      }
+      return (bufs[key] = b);
+    }
+    function oneShot(key, sec, fill){
+      if (bufs[key]) return bufs[key];
+      var n = Math.floor(sr * sec), b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0);
+      fill(d); norm(d, .95);
+      return (bufs[key] = b);
+    }
+
+    /* ---- the beds ---- */
+    var BEDS = {
+      roar: function(){ return loop("roar", 9.1, 2, function(d){
+        var br = brownGen(), env = smooth(d.length, 1.4, .45, 1);
+        for (var i = 0; i < d.length; i++) d[i] = br() * env[i];
+      }); },
+      hiss: function(){ return loop("hiss", 7.3, 2, function(d){
+        var env = smooth(d.length, .4, .3, 1);
+        for (var i = 0; i < d.length; i++) d[i] = white() * env[i];
+      }); },
+      embers: function(){ return loop("embers", 6.7, 2, function(d){   // the fine crackle under everything
+        var n = Math.floor(d.length / sr * 45);
+        for (var k = 0; k < n; k++){
+          var at = Math.floor(R() * (d.length - 200)), a = Math.pow(R(), 3) * (R() < .5 ? -1 : 1), len = 20 + Math.floor(R() * 120);
+          for (var j = 0; j < len; j++) d[at + j] += a * white() * Math.exp(-j / (len / 5));
+        }
+      }); },
+      wash: function(){ return loop("wash", 11.3, 2, function(d){
+        var pk = pinkGen(), env = smooth(d.length, .25, .8, 1);
+        for (var i = 0; i < d.length; i++) d[i] = pk() * env[i];
+      }); },
+      drops: function(){ return loop("drops", 7.7, 2, function(d){
+        var n = Math.floor(d.length / sr * 520), k, j;
+        for (k = 0; k < n; k++){                                        // a downpour: hundreds of hits a second
+          var at = Math.floor(R() * (d.length - 400)), a = Math.pow(R(), 2), len = 20 + Math.floor(R() * 110), lp = .15 + R() * .7, y = 0;
+          for (j = 0; j < len; j++){ y += (white() - y) * lp; d[at + j] += a * y * Math.exp(-j / (len / 4)); }
+        }
+        var m = Math.floor(d.length / sr * 14);
+        for (k = 0; k < m; k++){                                        // and some that ring on something
+          var at2 = Math.floor(R() * (d.length - 800)), f = 1800 + R() * 2800, a2 = .35 * Math.pow(R(), 2), tau = sr * (.003 + R() * .005);
+          for (j = 0; j < 700; j++) d[at2 + j] += a2 * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / tau);
+        }
+      }); },
+      roof: function(){ return loop("roof", 12.7, 2, function(d){
+        var br = brownGen(), env = smooth(d.length, .15, .7, 1);
+        for (var i = 0; i < d.length; i++) d[i] = br() * env[i];
+      }); },
+      gusts: function(){ return loop("gusts", 17.9, 2, function(d){
+        var pk = pinkGen(), env = smooth(d.length, .08, 0, 1);
+        for (var i = 0; i < d.length; i++){ var e = env[i]; d[i] = pk() * (.15 + e * e); }
+      }); },
+      bubbles: function(key, sec, rate){ return loop(key, sec, 2, function(d){
+        /* a brook: bubbles — each a sine that rises in pitch as it dies away */
+        var n = Math.floor(d.length / sr * rate);
+        for (var k = 0; k < n; k++){
+          var f0 = 320 * Math.pow(2, R() * 2.5), tau = sr * (.004 + .022 * R() * (500 / f0) + .002);
+          var len = Math.min(Math.floor(tau * 6), 3000), at = Math.floor(R() * (d.length - len - 1));
+          var a = (.25 + .75 * Math.pow(R(), 2)) * Math.pow(600 / f0, .35), rise = .15 + R() * .45, ph = 0;
+          for (var j = 0; j < len; j++){
+            ph += 2 * Math.PI * f0 * (1 + rise * j / len) / sr;
+            d[at + j] += a * Math.sin(ph) * Math.exp(-j / tau) * Math.min(1, j / 12);
+          }
+        }
+      }); },
+      flow: function(){ return loop("flow", 10.3, 2, function(d){
+        var pk = pinkGen(), env = smooth(d.length, .6, .5, 1);
+        for (var i = 0; i < d.length; i++) d[i] = pk() * env[i];
+      }); },
+      brown: function(){ return loop("brown", 13.3, 2, function(d){ var br = brownGen(); for (var i = 0; i < d.length; i++) d[i] = br(); }); },
+      white: function(){ return loop("white", 10.1, 2, function(d){ for (var i = 0; i < d.length; i++) d[i] = white(); }); },
+      leaves: function(){ return loop("leaves", 15.1, 2, function(d){
+        var pk = pinkGen(), env = smooth(d.length, .07, 0, 1), flut = smooth(d.length, 6, .6, 1);
+        for (var i = 0; i < d.length; i++){ var e = env[i]; d[i] = pk() * (.12 + e * e) * flut[i]; }
+      }); }
+    };
+    /* each sound: its layers [bed, gain, filters…] */
+    var MIX = {
+      fire:   [["roar", .55, ["lowpass", 520]], ["hiss", .035, ["bandpass", 2600, .6]], ["embers", .22, ["highpass", 1400]]],
+      rain:   [["wash", .38, ["highpass", 280], ["lowpass", 7200]], ["drops", .42, ["highpass", 900]], ["roof", .3, ["lowpass", 260]]],
+      storm:  [["wash", .34, ["highpass", 260], ["lowpass", 6000]], ["drops", .34, ["highpass", 900], ["lowpass", 7000]], ["roof", .34, ["lowpass", 240]], ["gusts", .3, ["bandpass", 480, .7]]],
+      brook:  [["bubblesA", .5, ["highpass", 250]], ["bubblesB", .35, ["highpass", 250]], ["flow", .12, ["bandpass", 900, .45]], ["roof", .1, ["lowpass", 380]]],
+      forest: [["leaves", .35, ["highpass", 500], ["lowpass", 5200]]],
+      brown:  [["brown", .6, ["highpass", 25]]],
+      white:  [["white", .25]]
+    };
+    function bed(name){
+      if (name === "bubblesA") return BEDS.bubbles("bubblesA", 9.3, 150);
+      if (name === "bubblesB") return BEDS.bubbles("bubblesB", 13.1, 90);
+      return BEDS[name]();
+    }
+
+    /* ---- the output: sound → level (quieter under the music) → out ---- */
+    var lvl = ctx.createGain(); lvl.gain.value = 1; lvl.connect(out);
+    var cur = null, curId = "", nextEv = {}, singer = null;
+    /* a small room for the birds and the far thunder */
+    var room = ctx.createConvolver(), wet = ctx.createGain(); wet.gain.value = .5; room.connect(wet); wet.connect(lvl);
+    room.buffer = (function(){
+      var len = Math.floor(sr * 1.8), b = ctx.createBuffer(2, len, sr);
+      for (var c = 0; c < 2; c++){ var d = b.getChannelData(c), y = 0; for (var i = 0; i < len; i++){ var k = i / len; y += (white() - y) * (.8 - .6 * k); d[i] = y * Math.pow(1 - k, 3); } }
+      return b;
+    })();
+
+    function set(id, at){
+      at = at == null ? ctx.currentTime : at;
+      if (cur){                                            // the old sound fades out and lets go
+        var old = cur;
+        old.g.gain.cancelScheduledValues(at); old.g.gain.setTargetAtTime(0, at, .5);
+        setTimeout(function(){ old.src.forEach(function(s){ try { s.stop(); } catch(e){} }); try { old.g.disconnect(); } catch(e){} }, 4000);
+        cur = null;
+      }
+      curId = byId(id) ? id : "";
+      if (!curId) return;
+      var g = ctx.createGain(), src = [];
+      g.gain.setValueAtTime(0, at); g.gain.setTargetAtTime(byId(curId).trim, at, .9);   // a slow fade in
+      g.connect(lvl);
+      MIX[curId].forEach(function(L){
+        var s = ctx.createBufferSource(); s.buffer = bed(L[0]); s.loop = true;
+        var node = s, gg = ctx.createGain(); gg.gain.value = L[1];
+        for (var i = 2; i < L.length; i++){ var f = ctx.createBiquadFilter(); f.type = L[i][0]; f.frequency.value = L[i][1]; if (L[i][2]) f.Q.value = L[i][2]; node.connect(f); node = f; }
+        node.connect(gg); gg.connect(g);
+        s.start(at, R() * s.buffer.duration * .9);            // start somewhere in the loop
+        src.push(s);
+      });
+      cur = { g: g, src: src };
+      nextEv = { small: at + .2, burst: at + 2 + R() * 4, pop: at + 3 + R() * 5, thunder: at + 5 + R() * 6, bird: at + 1 + R() * 2 };
+      singer = null;
+      if (curId === "fire" || curId === "storm" || curId === "forest") shared = {};
+    }
+
+    /* ---- the events ---- */
+    var shared = {};
+    function pan(p){ var k = Math.round(p * 5); if (!shared["p" + k]){ var n = ctx.createStereoPanner(); n.pan.value = k / 5; n.connect(cur.g); shared["p" + k] = n; } return shared["p" + k]; }
+    function grain(key, sec, fill){ return oneShot(key, sec, fill); }
+    function crackleBuf(i, big){
+      return grain((big ? "pop" : "crk") + i, big ? .09 : .03, function(d){
+        var spikes = big ? 3 + Math.floor(R() * 4) : 1 + Math.floor(R() * 3), prev = 0, k, j;
+        for (k = 0; k < spikes; k++){
+          var at = Math.floor(R() * sr * (big ? .006 : .003)), a = (.4 + .6 * R()) * (R() < .5 ? -1 : 1), len = Math.floor(sr * (big ? .004 + R() * .01 : .001 + R() * .004));
+          for (j = 0; j < len && at + j < d.length; j++) d[at + j] += a * white() * Math.exp(-j / (len / 4));
+        }
+        if (big){ var f = 380 + R() * 700, tau = sr * .012; for (j = 0; j < d.length; j++) d[j] += .5 * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / tau); }
+        for (j = 0; j < d.length; j++){ var x = d[j]; d[j] = x - prev * .6; prev = x; }   // a little high-pass: snap, not thud
+      });
+    }
+    function play(buf, t, gain, p, opts){
+      opts = opts || {};
+      var s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf;
+      if (opts.rate) s.playbackRate.value = opts.rate;
+      g.gain.value = gain;
+      var node = s;
+      if (opts.lp){ var f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = opts.lp; node.connect(f); node = f; }
+      node.connect(g); g.connect(pan(p));
+      if (opts.rev){ var r = ctx.createGain(); r.gain.value = opts.rev; g.connect(r); r.connect(room); }
+      s.start(t);
+    }
+    function thunderBuf(i){
+      return grain("thunder" + i, 12, function(d){
+        var n = d.length, br = brownGen(), lp1 = 0, lp2 = 0, near = i === 0, rolls = [], k;
+        var count = 3 + Math.floor(R() * 4);
+        for (k = 0; k < count; k++) rolls.push([R() * (near ? 5 : 7) + (near ? .15 : .6), .3 + R() * 1.3, .4 + R() * .6]);
+        for (var j = 0; j < n; j++){
+          var t = j / sr, e = 0;
+          for (k = 0; k < rolls.length; k++){ var z = (t - rolls[k][0]) / rolls[k][1]; e += rolls[k][2] * Math.exp(-z * z); }
+          e *= Math.exp(-t / 4.5) * Math.min(1, t / (near ? .02 : .4));
+          lp1 += (br() - lp1) * .06; lp2 += (lp1 - lp2) * .06;
+          d[j] = lp2 * e;
+          if (near && t < .6){                               // the crack overhead
+            var c = Math.exp(-t / .07) + .5 * Math.exp(-Math.abs(t - .22) / .05) + .3 * Math.exp(-Math.abs(t - .41) / .04);
+            d[j] += white() * c * .35;
+          }
+        }
+      });
+    }
+    var CHIRP = {};
+    function tone(t, dur, f0, f1, a, p, opts){
+      /* one bird note: a sine swept f0 → f1 (a curve for the shape), soft edges */
+      opts = opts || {};
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine";
+      if (opts.curve){ var c = new Float32Array(opts.curve.length); for (var i = 0; i < c.length; i++) c[i] = opts.curve[i]; o.frequency.setValueCurveAtTime(c, t, dur); }
+      else { o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur); }
+      if (opts.vib){ var v = ctx.createOscillator(), vg = ctx.createGain(); v.frequency.value = opts.vib[0]; vg.gain.value = opts.vib[1]; v.connect(vg); vg.connect(o.frequency); v.start(t); v.stop(t + dur + .05); }
+      var att = Math.min(.02, dur * .25);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + att);
+      g.gain.setValueAtTime(a, t + dur - att); g.gain.linearRampToValueAtTime(0, t + dur);
+      var node = o;
+      if (opts.lp){ var f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = opts.lp; o.connect(f); node = f; }
+      node.connect(g); g.connect(pan(p));
+      var r = ctx.createGain(); r.gain.value = opts.rev || .4; g.connect(r); r.connect(room);
+      o.start(t); o.stop(t + dur + .02);
+    }
+    var SPECIES = {
+      /* a clear two-note whistle, the second lower ("fee-bee") */
+      whistle: function(t, s){ var f = 3000 + R() * 700; tone(t, .36, f * 1.02, f * .98, .1 * s.a, s.p, { vib: [7, 12], lp: s.lp }); tone(t + .46, .42, f * .84, f * .8, .09 * s.a, s.p, { vib: [7, 10], lp: s.lp }); return 1.1; },
+      /* a warbler: a quick run of slurred notes */
+      warble: function(t, s){
+        var n = 6 + Math.floor(R() * 7), at = t, f = 3000 + R() * 1500;
+        for (var i = 0; i < n; i++){ var d = .05 + R() * .05, g = f * (R() < .5 ? 1.25 : .8); tone(at, d, f, g, .06 * s.a, s.p, { lp: s.lp }); f = Math.max(2400, Math.min(5200, g * (.9 + R() * .2))); at += d + .015 + R() * .03; }
+        return at - t;
+      },
+      /* a trill: one chirp repeated fast, swelling and fading */
+      trill: function(t, s){
+        var n = 12 + Math.floor(R() * 10), f = 4800 + R() * 800;
+        for (var i = 0; i < n; i++){ var sw = Math.sin(Math.PI * (i + .5) / n); tone(t + i * .055, .04, f, f * .72, .07 * s.a * (.3 + .7 * sw), s.p, { lp: s.lp }); }
+        return n * .055;
+      },
+      /* a dove, far off: hoo-OO, hoo, hoo */
+      dove: function(t, s){
+        var f = 520 + R() * 60, at = t;
+        [[.34, 1, 1.12], [.62, 1.12, .96], [.36, .96, .95], [.36, .96, .95]].forEach(function(n, i){
+          tone(at, n[0], f * n[1], f * n[2], (i === 1 ? .09 : .07) * s.a, s.p * .6, { lp: 1400, rev: .6 });
+          at += n[0] + (i === 1 ? .35 : .12);
+        });
+        return at - t;
+      },
+      /* two quick upward chips */
+      chip: function(t, s){ var f = 3400 + R() * 1200; tone(t, .06, f * .8, f * 1.15, .07 * s.a, s.p, { lp: s.lp }); tone(t + .14, .06, f * .82, f * 1.2, .06 * s.a, s.p, { lp: s.lp }); return .25; }
+    };
+    var KINDS = ["whistle", "warble", "trill", "dove", "chip", "warble", "whistle"];
+    function newSinger(){
+      var far = R();
+      return { kind: KINDS[Math.floor(R() * KINDS.length)], p: (R() * 2 - 1) * .8, a: .45 + (1 - far) * .55, lp: 3500 + (1 - far) * 5000, songs: 2 + Math.floor(R() * 4) };
+    }
+
+    function tick(ahead){
+      if (!cur) return;
+      var e = nextEv, t, now0 = ctx.currentTime;
+      Object.keys(e).forEach(function(k){ if (e[k] < now0 - .5) e[k] = now0 + .1 + R() * .5; });   // back from a pause: no pile-up of missed events
+      if (curId === "fire"){
+        while (e.small < ahead){ t = e.small; play(crackleBuf(Math.floor(R() * 12)), t, .15 + .35 * Math.pow(R(), 2), (R() * 2 - 1) * .5); e.small += -Math.log(1 - R()) / 9; }
+        while (e.burst < ahead){                            // a pocket of sap: a flurry of pops
+          t = e.burst; var n = 5 + Math.floor(R() * 10), p0 = (R() * 2 - 1) * .5;
+          for (var i = 0; i < n; i++) play(crackleBuf(Math.floor(R() * 12)), t + R() * .45, .2 + .4 * R(), p0 + (R() - .5) * .2);
+          e.burst += 3 + R() * 6;
+        }
+        while (e.pop < ahead){ t = e.pop; play(crackleBuf(Math.floor(R() * 6), true), t, .5 + .4 * R(), (R() * 2 - 1) * .4); e.pop += 4 + R() * 7; }
+      } else if (curId === "storm"){
+        while (e.thunder < ahead){
+          t = e.thunder; var k = Math.floor(R() * 4), dist = k === 0 ? .1 : R();
+          play(thunderBuf(k), t, .9 - dist * .45, (R() * 2 - 1) * .35, { rate: .8 + R() * .3, lp: 1600 - dist * 1200, rev: .25 });
+          e.thunder += 18 + R() * 32;
+        }
+      } else if (curId === "forest"){
+        while (e.bird < ahead){
+          t = e.bird;
+          if (!singer || singer.songs <= 0) singer = newSinger();
+          var len = SPECIES[singer.kind](t, singer);
+          singer.songs--;
+          if (R() < .15){ var other = newSinger(); SPECIES[other.kind](t + len + .3 + R(), other); }   // someone answers
+          e.bird = t + len + 1.5 + R() * (singer.songs > 0 ? 3.5 : 6);
+        }
+      }
+    }
+    return {
+      set: set,
+      tick: tick,
+      id: function(){ return curId; },
+      level: function(v, at){ lvl.gain.setTargetAtTime(v, at == null ? ctx.currentTime : at, .4); },
+      stop: function(){ set(""); }
+    };
+  }
+  function render(id, seconds){
+    var sr = 44100, oc = new OfflineAudioContext(2, Math.ceil(sr * seconds), sr);
+    var vol = oc.createGain(); vol.gain.value = .5; vol.connect(oc.destination);
+    var n = create(oc, vol); n.set(id, 0);
+    n.tick(seconds);                                        // every event, scheduled up front
+    return oc.startRendering();
+  }
+  return { SOUNDS: SOUNDS, byId: byId, create: create, render: render };
+})();
+
 function makeMusic(host, wcfg){
   wcfg.channel = "lofi";      // mozart returns as REAL audio, not a synth
   if (typeof wcfg.volume !== "number" || !isFinite(wcfg.volume)) wcfg.volume = 0.5;
@@ -10050,11 +10411,16 @@ function makeMusic(host, wcfg){
         '<div class="muBars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>' +
         '<button type="button" class="muWhat" aria-haspopup="true" aria-expanded="false"></button>' +
       '</div>' +
-      '<div class="muPick" role="group" aria-label="Pick a side" hidden>' +
-        '<div class="muPickHead"><b>Pick a side</b>' +
+      '<div class="muPick" role="group" aria-label="Pick what plays" hidden>' +
+        '<div class="muPickHead"><b>Pick what plays</b>' +
           '<button type="button" class="chip chipSm muRepeat" aria-pressed="false">Repeat this side</button>' +
           '<button type="button" class="muPickX" aria-label="Close">\u2715</button></div>' +
-        '<div class="muList"></div>' +
+        '<div class="muScroll">' +
+          '<div class="muSec">Lofi</div>' +
+          '<div class="muList"></div>' +
+          '<div class="muSec">Nature <span>alone, or under the lofi</span></div>' +
+          '<div class="muNatList"></div>' +
+        '</div>' +
       '</div>' +
       '<div class="muRow">' +
         '<button type="button" class="chip muPlay">Play</button>' +
@@ -10089,8 +10455,18 @@ function makeMusic(host, wcfg){
      going instead of moving on to a shuffled next side */
   if (typeof wcfg.side === "number" && wcfg.side >= 0 && wcfg.side < sides().length) trackIdx = wcfg.side;
   if (typeof wcfg.repeat !== "boolean") wcfg.repeat = false;
+  /* v7.24 (Croix: "are you able to produce nature noises as well?"): the card plays lofi, a
+     nature sound, or both — wcfg.lofi (false = "No music") and wcfg.nature ("" or a sound's id) */
+  if (typeof wcfg.lofi !== "boolean") wcfg.lofi = true;
+  if (!Nature.byId(wcfg.nature)) wcfg.nature = "";
+  var nat = null;
   var order = null, orderPos = 0;                // v7.3: sides shuffle after side A
-  function sideName(){ return "Lofi \u2014 " + side(trackIdx).name; }
+  function sideName(){
+    var parts = [];
+    if (wcfg.lofi) parts.push("Lofi \u2014 " + side(trackIdx).name);
+    if (wcfg.nature) parts.push(Nature.byId(wcfg.nature).name);
+    return parts.join(" + ") || "Lofi \u2014 " + side(trackIdx).name;
+  }
   function nextSide(){
     /* the first listen goes A→B→C…; from then on the order shuffles,
        never landing on the side that just played */
@@ -10131,6 +10507,7 @@ function makeMusic(host, wcfg){
       /* v7.23: the tape (room, echo, wow, crackle, glue) is the engine's, into the volume */
       eng = Lofi.create(ctx, master);
       eng.side(side(trackIdx));
+      nat = Nature.create(ctx, master);            // v7.24: the nature sounds, into the same volume
       return true;
     } catch(e){ ctx = null; return false; }
   }
@@ -10140,9 +10517,10 @@ function makeMusic(host, wcfg){
     duckG.gain.setTargetAtTime(alarmOn() ? 0.08 : 1, ctx.currentTime, 0.15);
     var ahead = ctx.currentTime + 0.35;
     if (nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.05;   // v7.11.5: a main-thread stall must not clump the missed bars
-    while (nextTime < ahead){
+    while (wcfg.lofi && nextTime < ahead){
       nextTime += lofiBar(nextTime);
     }
+    if (nat) nat.tick(ahead);                      // v7.24: crackles, thunder, birds
     tickTid = setTimeout(tick, 120);
   }
   function paint(){
@@ -10156,6 +10534,11 @@ function makeMusic(host, wcfg){
   function newBus(){ if (eng) eng.newBus(); }
   /* Next ›: skip to another side — a PLAY action, live while locked */
   function skip(){
+    if (!wcfg.lofi && wcfg.nature){              // v7.24: with no music, Next walks the nature sounds
+      var ids = Nature.SOUNDS.map(function(x){ return x.id; });
+      pickNature(ids[(ids.indexOf(wcfg.nature) + 1) % ids.length], true);
+      return;
+    }
     if (ctx) newBus();
     nextSide();
     if (playing) nextTime = ctx.currentTime + 0.2;
@@ -10163,21 +10546,55 @@ function makeMusic(host, wcfg){
   }
   wireButton(nextBtn, skip);
   /* v7.22 the side picker: tap the side's name; each side says how it feels */
-  var pickEl = q(".muPick"), listEl = q(".muList"), repBtn = q(".muRepeat");
+  var pickEl = q(".muPick"), listEl = q(".muList"), natEl = q(".muNatList"), repBtn = q(".muRepeat");
   function feel(tr){ return tr.feel || ""; }
+  function choice(cls, name, sub, pressed, fn){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = cls;
+    b.setAttribute("aria-pressed", pressed ? "true" : "false");
+    var nm = document.createElement("b"); nm.textContent = name;
+    var sp = document.createElement("span"); sp.textContent = sub;
+    b.appendChild(nm); b.appendChild(sp);
+    wireButton(b, fn);
+    return b;
+  }
   function paintPick(){
-    listEl.innerHTML = "";
+    listEl.innerHTML = ""; natEl.innerHTML = "";
     sides().forEach(function(tr, i){
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "muSide"; b.dataset.i = i;
-      b.setAttribute("aria-pressed", i === trackIdx ? "true" : "false");
-      var nm = document.createElement("b"); nm.textContent = tr.name;
-      var sub = document.createElement("span"); sub.textContent = feel(tr);
-      b.appendChild(nm); b.appendChild(sub);
-      wireButton(b, function(){ pickSide(i); });
+      var b = choice("muSide", tr.name, feel(tr), wcfg.lofi && i === trackIdx, function(){ pickSide(i); });
+      b.dataset.i = i;
       listEl.appendChild(b);
     });
+    listEl.appendChild(choice("muNone", "No music", "just the nature sound", !wcfg.lofi, pickNoMusic));
+    Nature.SOUNDS.forEach(function(s){
+      var b = choice("muNat", s.name, s.feel, wcfg.nature === s.id, function(){ pickNature(s.id); });
+      b.dataset.n = s.id;
+      natEl.appendChild(b);
+    });
+    natEl.appendChild(choice("muNat muNatOff", "Off", "no nature sound", !wcfg.nature, function(){ pickNature(""); }));
     repBtn.setAttribute("aria-pressed", wcfg.repeat ? "true" : "false");
+    repBtn.hidden = !wcfg.lofi;
+  }
+  function mixLevels(){
+    /* alone, a nature sound is full; under the lofi it sits back */
+    if (nat) nat.level(wcfg.lofi ? .45 : 1);
+    if (eng && !wcfg.lofi) eng.quiet();
+  }
+  function pickNature(id, keepOpen){
+    wcfg.nature = Nature.byId(id) ? id : "";
+    if (!wcfg.nature && !wcfg.lofi) wcfg.lofi = true;   // never pick silence: Off with No music brings the lofi back
+    if (!keepOpen) openPick(false);
+    if (nat){ nat.set(wcfg.nature); mixLevels(); }
+    if (playing) paint(); else play();
+  }
+  function pickNoMusic(){
+    if (!wcfg.lofi) { openPick(false); return; }
+    wcfg.lofi = false;
+    if (eng) newBus();                            // the ringing chords fade out
+    openPick(false);
+    if (!wcfg.nature){ pause(); paint(); return; }
+    mixLevels();
+    if (playing) paint(); else play();
   }
   function openPick(open){
     pickEl.hidden = !open; whatEl.setAttribute("aria-expanded", open ? "true" : "false");
@@ -10186,8 +10603,9 @@ function makeMusic(host, wcfg){
   }
   function pickSide(i){
     if (i < 0 || i >= sides().length) return;
-    trackIdx = i; wcfg.side = i;
+    trackIdx = i; wcfg.side = i; wcfg.lofi = true;
     if (eng){ newBus(); eng.side(side(i)); }
+    mixLevels();
     order = null;                                // the shuffle starts over after the picked side
     openPick(false);
     if (playing){ nextTime = ctx.currentTime + 0.2; paint(); }
@@ -10214,8 +10632,13 @@ function makeMusic(host, wcfg){
     if (!ensureCtx()) return;
     if (ctx.state === "suspended"){ try { ctx.resume(); } catch(e){} }
     playing = true;
-    if (eng.at().bar > 0) newBus();              // v7.11.5: a bar already scheduled fades out under the new one instead of over it
-    eng.restart();                               // top of the current side
+    if (!wcfg.lofi && !wcfg.nature) wcfg.lofi = true;
+    if (wcfg.lofi){
+      if (eng.at().bar > 0) newBus();            // v7.11.5: a bar already scheduled fades out under the new one instead of over it
+      eng.side(side(trackIdx));                  // top of the current side (and its needle and rain back up)
+    }
+    if (nat.id() !== wcfg.nature) nat.set(wcfg.nature);
+    mixLevels();
     nextTime = ctx.currentTime + 0.08;
     unhush();
     clearTimeout(tickTid);
@@ -10259,7 +10682,8 @@ function makeMusic(host, wcfg){
   return {
     kind: "music",
     sides: function(){ return sides().map(function(t){ return t.name; }); },   // v7.10 test hook
-    current: function(){ return { i: trackIdx, name: side(trackIdx).name, repeat: wcfg.repeat }; },   // v7.22 test hook
+    current: function(){ return { i: trackIdx, name: side(trackIdx).name, repeat: wcfg.repeat, lofi: wcfg.lofi, nature: wcfg.nature }; },   // v7.22 test hook (v7.24: + lofi, nature)
+    pickNature: pickNature,
     pick: pickSide,
     label: function(){ return wcfg.label || "Music"; },
     startPause: toggle,                          // Space = play/pause
@@ -15260,6 +15684,7 @@ window.Deckhand = {
   flash: Flash,                                 // v7.18: the minutes-left flash (tests)
   nowPlaying: NowPlaying,                       // v7.20: the pause that's always within reach (tests)
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
+  nature: Nature,                               // v7.24: the nature sounds (tests render them offline)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)
   season: Season,                               // v7.10: active()/apply() (tests)
   bell: Bell,                                   // v7.13: schoolDaysBetween() (tests)

@@ -369,16 +369,16 @@ test.describe("music", () => {
     const what = () => page.locator(".w-music .muWhat").textContent();
     const running = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
     const level = () => page.evaluate(() => document.querySelector(".w-music")._entry.api._level());
-    expect(await what()).toBe("Lofi — Porch swing");     // side A is the original tape
+    expect(await what()).toBe("Lofi — Rainy window");    // v7.24: side A is the one Croix liked
     // Next › before Play just turns the tape over: no context, no sound
     await page.click(".w-music .muNext");
-    expect(await what()).toBe("Lofi — Rainy window");
+    expect(await what()).toBe("Lofi — Slow morning");
     ok(!(await running()), "Next started playback");
     await page.click(".w-music .muPlay");
     await expect(page.locator(".w-music .muPlay")).toHaveText("Pause");
     await expect.poll(level, { timeout: 6000 }).toBeGreaterThan(0.1);
     // the first pass walks the sides in order; each keeps playing
-    const seen = new Set(["Lofi — Porch swing", await what()]);
+    const seen = new Set(["Lofi — Rainy window", await what()]);
     for (let i = 0; i < 8; i++) {
       await page.click(".w-music .muNext");
       const name = await what();
@@ -389,7 +389,7 @@ test.describe("music", () => {
     }
     expect(seen.size).toBe(10);
     await page.click(".w-music .muNext");            // the pass is over: a shuffled side, never the one just played
-    ok(/^Lofi — /.test(await what()) && (await what()) !== "Lofi — Corner store", "shuffle repeated the last side");
+    ok(/^Lofi — /.test(await what()) && (await what()) !== "Lofi — Last light", "shuffle repeated the last side");
     // locked, Next is still a play action
     await page.click("#lockBtn");
     const before = await what();

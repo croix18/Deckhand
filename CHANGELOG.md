@@ -2,6 +2,26 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.24.0 — 2026-09-30
+
+**The quiet album, and nature sounds.** Croix: "The second track was really cool. Everything else
+was terrible. They were too fast paced or scratchy. Mostly too fast paced. Not at all relaxing…
+are you able to produce nature noises as well? I'd love a crackling fire, heavy rain, a
+thunderstorm, a babbling brook, forest sounds, as well as a revamped lofi album."
+
+The album is rebuilt around Rainy window, which is now side A and unchanged. Every side runs at
+56–68 bpm. The keys hold or roll slowly, one note a beat, instead of stabbing. The drums are soft
+(new quiet kits: a slow beat, brushes, a shaker) or absent. The crackle is barely there and the
+tape hardly wobbles. The sides: Rainy window, Slow morning, Reading nook, Snowfall, Lanterns,
+Sunday tea, Night study, Window seat, Harbor lights, Last light (and Graveyard shift in October,
+slowed down too).
+
+The Music card's picker now has a **Nature** row: Crackling fire, Heavy rain, Thunderstorm,
+Babbling brook, Forest, and (asked for mid-build) **Brown noise** and **White noise**. A sound plays under the lofi (quieter) or alone with **No music**. With no
+music, Next › walks the sounds. It's all made in the browser: the beds are long loops that never
+line up the same way twice, and the crackles, thunder and birds are scheduled live so nothing
+repeats on a pattern. The choice is saved with the board. One test; 261.
+
 ## 7.23.0 — 2026-09-30
 
 **A new tape.** Croix: "Several of the tracks sound almost the same. I want some good study music

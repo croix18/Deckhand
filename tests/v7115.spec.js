@@ -1126,3 +1126,65 @@ test.describe("v7.23", () => {
     await expect(page.locator(".w-music .muSide span").first()).toHaveText(r[0].feel);
   });
 });
+
+/* v7.24 — the quiet album and nature sounds (Croix: "The second track was really cool. Everything
+ * else was terrible. They were too fast paced or scratchy… are you able to produce nature noises
+ * as well? I'd love a crackling fire, heavy rain, a thunderstorm, a babbling brook, forest sounds"). */
+test.describe("v7.24", () => {
+  test("v7.24: every side is slow and quiet on the needle; the five nature sounds render real sound; the card plays nature alone or under the lofi, Next walks the sounds with no music, and it all survives a reload", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    const r = await page.evaluate(async () => {
+      const L = window.Deckhand.lofi, N = window.Deckhand.nature;
+      const sides = L.TRACKS.concat([L.OCT]).map(t => ({ name: t.name, bpm: t.bpm, dust: t.dust, wow: t.wow }));
+      const nat = [];
+      for (const s of N.SOUNDS) {
+        const buf = await N.render(s.id, 8);
+        const d = buf.getChannelData(0); let pk = 0, ss = 0, bad = 0;
+        for (let i = 44100 * 3; i < d.length; i++) { if (!isFinite(d[i])) bad++; pk = Math.max(pk, Math.abs(d[i])); ss += d[i] * d[i]; }
+        nat.push({ id: s.id, pk, db: 10 * Math.log10(ss / (d.length - 44100 * 3)), bad });
+      }
+      return { sides, nat };
+    });
+    for (const s of r.sides) ok(s.bpm <= 68 && s.dust <= .25 && s.wow <= .8, "not relaxing: " + JSON.stringify(s));
+    ok(r.sides[0].name === "Rainy window", "Rainy window is not side A");
+    ok(r.nat.length === 7, "sounds: " + r.nat.length);
+    for (const n of r.nat) {
+      ok(!n.bad && n.pk > .05 && n.pk < .99, n.id + " peak " + n.pk);
+      ok(n.db > -34 && n.db < -12, n.id + " loudness " + n.db.toFixed(1));
+    }
+    await dh.addW("addMusicBtn"); await page.keyboard.press("Escape");
+    const what = () => page.locator(".w-music .muWhat").textContent();
+    const cur = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.current());
+    const running = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
+    await page.click(".w-music .muWhat");
+    await expect(page.locator(".w-music .muNat")).toHaveCount(8);            // five nature sounds, brown and white noise, and Off
+    await page.click('.w-music .muNat[data-n="rain"]');
+    await expect.poll(running).toBe(true);
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Rainy window + Heavy rain");
+    await page.click(".w-music .muWhat");
+    await page.click(".w-music .muNone");                                     // No music: the rain alone
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Heavy rain");
+    ok(await running(), "No music stopped the rain");
+    await page.click(".w-music .muNext");
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Thunderstorm");
+    let c = await cur();
+    ok(!c.lofi && c.nature === "storm", "state: " + JSON.stringify(c));
+    await page.waitForTimeout(1200);
+    const saved = await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "music"));
+    ok(saved.lofi === false && saved.nature === "storm", "saved: " + JSON.stringify(saved));
+    await page.click(".w-music .muWhat");
+    await page.click('.w-music .muSide[data-i="2"]');                         // a side brings the music back, the storm stays under it
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Reading nook + Thunderstorm");
+    await page.click(".w-music .muWhat");
+    await page.click(".w-music .muNatOff");
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Reading nook");
+    await page.click(".w-music .muWhat");
+    await page.click('.w-music .muNat[data-n="fire"]');
+    await page.waitForTimeout(1200);
+    await dh.reopen("#t=2026-09-29T10:30");
+    await dh.launch();
+    c = await cur();
+    ok(c.lofi && c.nature === "fire" && c.name === "Reading nook", "after a reload: " + JSON.stringify(c));
+  });
+});
