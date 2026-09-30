@@ -2,6 +2,29 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.27.0 — 2026-09-30
+
+**Softer rain, a forest you can hear, a sea that breaks.** Croix: "The forest, there's like a white
+noise and I can't hear many forest sounds besides the birds. It's almost there. Ocean sounded super
+artificial. Not at all like a real ocean. The rain was too much, it was like sitting next to a
+faucet instead of rain on the roof or rain on the window."
+
+**Rain** is now two sounds, and neither has the bright hiss. **Rain on the roof** (it replaces Heavy
+rain) is a muffled patter of drops landing dull, a low roof rumble, and two gutters dripping into a
+puddle at their own pace. **Rain on the window** is drops tapping the glass and ringing for a moment,
+the odd bigger splat, and now and then a drop running down, with the rain outside muffled behind
+it. The **Thunderstorm** sits on the roof rain.
+
+The **forest's** wind is mostly still now: a gust comes through now and then and dies away, with no
+hiss underneath. The other animals come far more often and louder: crickets for 15–35 seconds at a
+time, a woodpecker, frogs, a crow, a squirrel chattering, something walking through the leaves, and
+an owl. The two birds are still there.
+
+The **ocean** has no more filter sweeps. Each wave is one of four pre-made breakers: a rough swell
+made of thousands of small splashes, a crash, then foam fizzing as it drains. Each plays at its own
+size and speed along the beach, sometimes with a smaller one further down, over a low surf that
+breathes. One test; 264.
+
 ## 7.26.0 — 2026-09-30
 
 **A real forest, an ocean, and smoother changes.** Croix: "The forest one was super washed out with

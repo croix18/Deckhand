@@ -1148,7 +1148,7 @@ test.describe("v7.24", () => {
     });
     for (const s of r.sides) ok(s.bpm <= 68 && s.dust <= .25 && s.wow <= .8, "not relaxing: " + JSON.stringify(s));
     ok(r.sides[0].name === "Rainy window", "Rainy window is not side A");
-    ok(r.nat.length === 8, "sounds: " + r.nat.length);
+    ok(r.nat.length === 9, "sounds: " + r.nat.length);
     for (const n of r.nat) {
       ok(!n.bad && n.pk > .05 && n.pk < .99, n.id + " peak " + n.pk);
       ok(n.db > -34 && n.db < -12, n.id + " loudness " + n.db.toFixed(1));
@@ -1158,24 +1158,24 @@ test.describe("v7.24", () => {
     const cur = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.current());
     const running = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
     await page.click(".w-music .muWhat");
-    await expect(page.locator(".w-music .muNat")).toHaveCount(9);            // six nature sounds, brown and white noise, and Off
+    await expect(page.locator(".w-music .muNat")).toHaveCount(10);           // seven nature sounds, brown and white noise, and Off
     await page.click('.w-music .muNat[data-n="rain"]');
     await expect.poll(running).toBe(true);
-    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Rainy window + Heavy rain");
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Rainy window + Rain on the roof");
     await page.click(".w-music .muWhat");
     await page.click(".w-music .muNone");                                     // No music: the rain alone
-    await expect(page.locator(".w-music .muWhat")).toHaveText("Heavy rain");
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Rain on the roof");
     ok(await running(), "No music stopped the rain");
     await page.click(".w-music .muNext");
-    await expect(page.locator(".w-music .muWhat")).toHaveText("Thunderstorm");
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Rain on the window");
     let c = await cur();
-    ok(!c.lofi && c.nature === "storm", "state: " + JSON.stringify(c));
+    ok(!c.lofi && c.nature === "window", "state: " + JSON.stringify(c));
     await page.waitForTimeout(1200);
     const saved = await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "music"));
-    ok(saved.lofi === false && saved.nature === "storm", "saved: " + JSON.stringify(saved));
+    ok(saved.lofi === false && saved.nature === "window", "saved: " + JSON.stringify(saved));
     await page.click(".w-music .muWhat");
     await page.click('.w-music .muSide[data-i="2"]');                         // a side brings the music back, the storm stays under it
-    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Reading nook + Thunderstorm");
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Reading nook + Rain on the window");
     await page.click(".w-music .muWhat");
     await page.click(".w-music .muNatOff");
     await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Reading nook");
@@ -1241,5 +1241,33 @@ test.describe("v7.26", () => {
     await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Rainy window + Ocean");
     const saved = await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "music").nature);
     ok(saved === "ocean", "ocean not kept: " + saved);
+  });
+});
+
+/* v7.27 — softer rain, a forest you can hear, a sea that breaks (Croix: "The forest, there's like a white noise and I
+ * can't hear many forest sounds besides the birds… Ocean sounded super artificial… The rain was too much, it was like
+ * sitting next to a faucet instead of rain on the roof or rain on the window"). */
+test.describe("v7.27", () => {
+  test("v7.27: the roof rain is dark (no faucet hiss), the window rain is its own sound, the forest's wind leaves room, and the ocean still breaks in waves", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    const r = await page.evaluate(async () => {
+      const N = window.Deckhand.nature, out = {};
+      for (const id of ["rain", "window", "forest", "ocean"]) {
+        const buf = await N.render(id, 20);
+        const d = buf.getChannelData(0), from = 44100 * 4;
+        let hf = 0, all = 0, prev = 0; const w = [];
+        for (let i = from; i < d.length; i++) { const x = d[i]; hf += (x - prev) * (x - prev); all += x * x; prev = x; }
+        for (let i = from; i + 22050 <= d.length; i += 22050) { let s = 0; for (let j = 0; j < 22050; j++) s += d[i + j] * d[i + j]; w.push(Math.sqrt(s / 22050)); }
+        out[id] = { bright: hf / all, swell: Math.max(...w) / Math.min(...w) };
+      }
+      return out;
+    });
+    ok(r.rain.bright < .02, "the roof rain hisses like a tap: " + JSON.stringify(r.rain));
+    ok(r.window.bright > r.rain.bright * 3, "the window rain is the roof rain again: " + JSON.stringify(r));
+    ok(r.forest.bright < .08, "the forest hisses: " + JSON.stringify(r.forest));
+    ok(r.ocean.swell > 1.6, "the ocean doesn't break: " + JSON.stringify(r.ocean));
+    const names = await page.evaluate(() => window.Deckhand.nature.SOUNDS.map(s => s.name));
+    ok(names.includes("Rain on the roof") && names.includes("Rain on the window") && !names.includes("Heavy rain"), "rains: " + names.join("|"));
   });
 });

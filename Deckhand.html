@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.26.0",
+  "appVersion": "7.27.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -4171,7 +4171,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.26.0",
+  appVersion: "7.27.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4438,7 +4438,7 @@ function sanitize(c){
         if (typeof w.side === "number" && w.side >= 0 && w.side < 13) wc.side = Math.round(w.side);   // v7.22: the picked side
         wc.repeat = bool(w.repeat, false);
         wc.lofi = bool(w.lofi, true);                                                         // v7.24: "No music" = false
-        wc.nature = ["fire", "rain", "storm", "brook", "forest", "ocean", "brown", "white"].indexOf(w.nature) >= 0 ? w.nature : "";   // v7.24
+        wc.nature = ["fire", "rain", "window", "storm", "brook", "forest", "ocean", "brown", "white"].indexOf(w.nature) >= 0 ? w.nature : "";   // v7.24
       }
       if (ty === "yt"){
         /* the card's runtime rule is YouTube-ONLY — sanitize must agree,
@@ -10120,12 +10120,15 @@ var Lofi = (function(){
 var Nature = (function(){
   var SOUNDS = [
     { id: "fire",   name: "Crackling fire", feel: "logs popping, a low roar",     trim: 1.7 },
-    { id: "rain",   name: "Heavy rain",     feel: "a downpour on the roof",       trim: 2.2 },
-    { id: "storm",  name: "Thunderstorm",   feel: "heavy rain, rolling thunder",  trim: 1.6 },
+    /* v7.27 (Croix: "The rain was too much, it was like sitting next to a faucet instead of rain on
+       the roof or rain on the window"): two rains, both soft — no bright wash at all */
+    { id: "rain",   name: "Rain on the roof",   feel: "muffled patter, a drip from the gutter", trim: 2.4 },
+    { id: "window", name: "Rain on the window", feel: "drops tapping the glass",   trim: 4.3 },
+    { id: "storm",  name: "Thunderstorm",   feel: "rain on the roof, rolling thunder", trim: 1.75 },
     { id: "brook",  name: "Babbling brook", feel: "water over stones",            trim: 1.75 },
-    { id: "forest", name: "Forest",         feel: "wind, birds, crickets, a woodpecker", trim: 1.1 },
+    { id: "forest", name: "Forest",         feel: "birds, crickets, frogs, a woodpecker", trim: 1.6 },
     /* v7.26 (Croix: "Can you add in an ocean one") */
-    { id: "ocean",  name: "Ocean",          feel: "waves rolling in",             trim: 2 },
+    { id: "ocean",  name: "Ocean",          feel: "waves breaking on the shore",  trim: 1.7 },
     /* Croix: "can you also give me a brown noise and a white noise on there too" */
     { id: "brown",  name: "Brown noise",    feel: "a deep, steady rumble",        trim: 1.33 },
     { id: "white",  name: "White noise",    feel: "an even, bright hush",         trim: 1 }
@@ -10236,29 +10239,79 @@ var Nature = (function(){
       /* v7.26 (Croix: "The forest one was super washed out with static"): wind is a moving
          resonance, not hiss — noise through a band that rises and opens with each gust — and
          the leaves only rustle at the top of a gust */
-      wind: function(){ return loop("wind", 19.7, 2, function(d){
-        var pk = pinkGen(), env = smooth(d.length, .06, 0, 1), low = 0, band = 0, prev = 0;
+      wind: function(){ return loop("wind", 23.3, 2, function(d){
+        /* v7.27 (Croix: "there's like a white noise"): the wind is mostly still — a gust now and
+           then (the envelope cubed), then quiet again; no floor under it */
+        var pk = pinkGen(), env = smooth(d.length, .05, 0, 1), low = 0, band = 0, prev = 0;
         for (var i = 0; i < d.length; i++){
-          var e = env[i], fc = 180 + 520 * e, f = 2 * Math.sin(Math.PI * fc / sr), x = pk();
+          var e = env[i], e3 = e * e * e, fc = 160 + 420 * e, f = 2 * Math.sin(Math.PI * fc / sr), x = pk();
           var high = x - low - 1.1 * band; band += f * high; low += f * band;
-          var rustle = (x - prev * .92) * e * e * e * .35; prev = x;
-          d[i] = band * (.25 + e * e) + rustle;
+          var rustle = (x - prev * .92) * e3 * e * .3; prev = x;
+          d[i] = band * (.03 + e3) + rustle;
         }
       }); },
-      sea: function(){ return loop("sea", 12.1, 2, function(d){ var pk = pinkGen(); for (var i = 0; i < d.length; i++) d[i] = pk(); }); },
+      /* rain on a roof: drops land dull (shingles swallow the top end), not a hiss */
+      patter: function(key, sec){ return loop(key, sec, 2, function(d){
+        var n = Math.floor(d.length / sr * 230), k, j;
+        for (k = 0; k < n; k++){
+          var at = Math.floor(R() * (d.length - 400)), a = Math.pow(R(), 1.5), len = 40 + Math.floor(R() * 220), lp = .03 + R() * .15, y = 0;
+          for (j = 0; j < len; j++){ y += (white() - y) * lp; d[at + j] += a * y * Math.exp(-j / (len / 4)); }
+        }
+      }); },
+      /* rain on glass: small hard ticks that ring for a moment, and a few bigger splats */
+      glass: function(key, sec){ return loop(key, sec, 2, function(d){
+        var n = Math.floor(d.length / sr * 55), k, j;
+        for (k = 0; k < n; k++){
+          var at = Math.floor(R() * (d.length - 600)), a = Math.pow(R(), 2), f = 1500 + R() * 2300, tau = sr * (.001 + R() * .0015);
+          for (j = 0; j < 4; j++) d[at + j] += a * white() * .6;
+          for (j = 0; j < 500; j++) d[at + j] += a * .3 * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / tau);
+        }
+        var m = Math.floor(d.length / sr * 7);
+        for (k = 0; k < m; k++){
+          var at2 = Math.floor(R() * (d.length - 800)), a2 = .5 + .5 * R(), y = 0, len = 300 + Math.floor(R() * 300);
+          for (j = 0; j < len; j++){ y += (white() - y) * .3; d[at2 + j] += a2 * y * Math.exp(-j / (len / 5)); }
+        }
+      }); },
+      /* the sea: a wave is rough, not smooth — a swell of noise made of thousands of splashes,
+         a crash, then foam that fizzes as it drains. Four of them, each channel its own. */
+      wave: function(i){ return loop("wave" + i, 9, 2, function(d){
+        var n = d.length, rise = sr * (1.6 + R() * 1.4), tau = sr * (1.3 + R() * 1.1), pk = pinkGen(), lp = 0, k, j;
+        var env = new Float32Array(n);
+        for (j = 0; j < n; j++){
+          env[j] = j < rise ? Math.pow(j / rise, 2.2) : Math.exp(-(j - rise) / tau);
+          env[j] *= j > n - sr * .5 ? (n - j) / (sr * .5) : 1;            // lands at silence at the end
+        }
+        for (j = 0; j < n; j++){ lp += (pk() - lp) * .12; d[j] = lp * env[j] * .8; }   // the body: dark and full
+        var grains = Math.floor(n / sr * 1600);                           // the splash: many small ones
+        for (k = 0; k < grains; k++){
+          var at = Math.floor(R() * (n - 300)), e = env[at];
+          if (R() > e * e) continue;
+          var a = (.2 + .8 * R()) * e, len = 30 + Math.floor(R() * 200), c = .1 + R() * .5, y = 0;
+          for (j = 0; j < len; j++){ y += (white() - y) * c; d[at + j] += a * y * .5 * Math.exp(-j / (len / 3)); }
+        }
+        var pops = Math.floor(n / sr * 500);                              // the foam: tiny bubbles bursting as it drains
+        for (k = 0; k < pops; k++){
+          var at3 = Math.floor(rise + R() * (n - rise - 300)), e3 = Math.exp(-(at3 - rise) / (tau * 1.8));
+          if (R() > e3) continue;
+          var f = 2500 + R() * 4500, t3 = sr * (.0006 + R() * .0015), a3 = .12 * e3 * R();
+          for (j = 0; j < 150; j++) d[at3 + j] += a3 * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / t3);
+        }
+      }); },
       surf: function(){ return loop("surf", 17.3, 2, function(d){
-        var br = brownGen(), env = smooth(d.length, .1, .6, 1);
-        for (var i = 0; i < d.length; i++) d[i] = br() * env[i];
+        /* the rest of the beach: waves further along, a steady low roar that breathes */
+        var pk = pinkGen(), br = brownGen(), env = smooth(d.length, .12, .55, 1), lp = 0;
+        for (var i = 0; i < d.length; i++){ lp += (pk() - lp) * .06; d[i] = (lp * 1.4 + br() * .5) * env[i]; }
       }); }
     };
     /* each sound: its layers [bed, gain, filters…] */
     var MIX = {
       fire:   [["roar", .55, ["lowpass", 520]], ["hiss", .035, ["bandpass", 2600, .6]], ["embers", .22, ["highpass", 1400]]],
-      rain:   [["wash", .38, ["highpass", 280], ["lowpass", 7200]], ["drops", .3, ["highpass", 900]], ["dropsB", .3, ["highpass", 900]], ["roof", .3, ["lowpass", 260]]],
-      storm:  [["wash", .34, ["highpass", 260], ["lowpass", 6000]], ["drops", .24, ["highpass", 900], ["lowpass", 7000]], ["dropsB", .24, ["highpass", 900], ["lowpass", 7000]], ["roof", .34, ["lowpass", 240]], ["gusts", .3, ["bandpass", 480, .7]]],
+      rain:   [["patterA", .5, ["highpass", 120], ["lowpass", 2400]], ["patterB", .4, ["highpass", 120], ["lowpass", 2400]], ["roof", .3, ["lowpass", 260]], ["wash", .08, ["lowpass", 900]]],
+      window: [["glassA", .3, ["highpass", 400], ["lowpass", 5000]], ["glassB", .25, ["highpass", 400], ["lowpass", 5000]], ["patterA", .35, ["lowpass", 1600]], ["roof", .12, ["lowpass", 260]], ["wash", .06, ["lowpass", 800]]],
+      storm:  [["patterA", .5, ["highpass", 120], ["lowpass", 2600]], ["patterB", .45, ["highpass", 120], ["lowpass", 2600]], ["roof", .36, ["lowpass", 240]], ["wash", .1, ["lowpass", 1000]], ["gusts", .28, ["bandpass", 420, .7]]],
       brook:  [["bubblesA", .5, ["highpass", 250]], ["bubblesB", .35, ["highpass", 250]], ["flow", .12, ["bandpass", 900, .45]], ["roof", .1, ["lowpass", 380]]],
-      forest: [["wind", .5, ["highpass", 60], ["lowpass", 3800]]],
-      ocean:  [["surf", .3, ["lowpass", 380]]],
+      forest: [["wind", .3, ["highpass", 60], ["lowpass", 2500]]],
+      ocean:  [["surf", .32, ["lowpass", 1100]]],
       brown:  [["brown", .6, ["highpass", 25]]],
       white:  [["white", .25]]
     };
@@ -10267,6 +10320,11 @@ var Nature = (function(){
       if (name === "bubblesB") return BEDS.bubbles("bubblesB", 13.1, 90);
       if (name === "drops") return BEDS.drops("drops", 7.7);
       if (name === "dropsB") return BEDS.drops("dropsB", 11.9);
+      if (/^wave\d$/.test(name)) return BEDS.wave(+name.slice(4));
+      if (name === "patterA") return BEDS.patter("patterA", 9.7);
+      if (name === "patterB") return BEDS.patter("patterB", 13.3);
+      if (name === "glassA") return BEDS.glass("glassA", 8.3);
+      if (name === "glassB") return BEDS.glass("glassB", 11.7);
       return BEDS[name]();
     }
 
@@ -10307,7 +10365,8 @@ var Nature = (function(){
       cur = { g: g, src: src };
       nextEv = { small: at + .2, burst: at + 2 + R() * 4, pop: at + 3 + R() * 5, thunder: at + 5 + R() * 6, bird: at + 1 + R() * 2,
         crk: at + 8 + R() * 20, bird2: at + 3 + R() * 4, peck: at + 12 + R() * 25, crow: at + 25 + R() * 40, owl: at + 45 + R() * 60, frog: at + 18 + R() * 30,
-        wave: at + .5, gull: at + 30 + R() * 60 };
+        wave: at + .5, gull: at + 30 + R() * 60, drip: at + 1 + R(), drip2: at + 1.7 + R(), trickle: at + 4 + R() * 6,
+        squirrel: at + 20 + R() * 20, steps: at + 25 + R() * 30 };
       singer = null; singer2 = null; cricket = null;
       shared = {};                                         // every sound's events pan into its own fader
     }
@@ -10424,40 +10483,49 @@ var Nature = (function(){
     function tapBuf(){ return grain("tap", .04, function(d){ var f = 1000 + R() * 300; for (var j = 0; j < d.length; j++) d[j] = (white() * Math.exp(-j / (sr * .002)) + .7 * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / (sr * .006))); }); }
     function woodpecker(t){
       var n = 12 + Math.floor(R() * 10), gap = .052, p = (R() * 2 - 1) * .7, a = .35 + R() * .3, lp = 2200 + R() * 2500;
-      for (var i = 0; i < n; i++){ play(tapBuf(), t, a * (i < 2 ? .6 : 1) * (1 - i / n * .4), p, { lp: lp, rev: .35 }); t += gap; gap *= 1.02; }
+      for (var i = 0; i < n; i++){ play(tapBuf(), t, 1.4 * a * (i < 2 ? .6 : 1) * (1 - i / n * .4), p, { lp: lp, rev: .35 }); t += gap; gap *= 1.02; }
     }
     function crow(t){
       var n = 2 + Math.floor(R() * 3), p = (R() * 2 - 1) * .8, far = R();
-      for (var i = 0; i < n; i++){ var f = 560 + R() * 60; tone(t + i * .6, .32, f, f * .82, .05 * (1 - far * .5), p, { type: "sawtooth", bp: 1300, q: 1.5, lp: 2600 - far * 1200, rev: .5 }); }
+      for (var i = 0; i < n; i++){ var f = 560 + R() * 60; tone(t + i * .6, .32, f, f * .82, .07 * (1 - far * .5), p, { type: "sawtooth", bp: 1300, q: 1.5, lp: 2600 - far * 1200, rev: .5 }); }
     }
     function owl(t){
       var f = 380 + R() * 30, p = (R() * 2 - 1) * .5, at = t;
-      [[.28, .45], [.16, .12], [.18, .45], [.55, 0]].forEach(function(n){ tone(at, n[0], f * 1.02, f * .96, .06, p, { lp: 900, rev: .7 }); at += n[0] + n[1]; });
+      [[.28, .45], [.16, .12], [.18, .45], [.55, 0]].forEach(function(n){ tone(at, n[0], f * 1.02, f * .96, .09, p, { lp: 900, rev: .7 }); at += n[0] + n[1]; });
     }
     function frogs(t){
       var n = 3 + Math.floor(R() * 4), p = (R() * 2 - 1) * .7, f = 380 + R() * 200;
-      for (var i = 0; i < n; i++){ var at = t + i * (1 + R()); tone(at, .09, f, f * .95, .07, p, { type: "triangle", bp: 900, q: 1.2, am: 28, rev: .3 }); tone(at + .14, .11, f, f * .93, .07, p, { type: "triangle", bp: 900, q: 1.2, am: 28, rev: .3 }); }
+      for (var i = 0; i < n; i++){ var at = t + i * (1 + R()); tone(at, .09, f, f * .95, .11, p, { type: "triangle", bp: 900, q: 1.2, am: 28, rev: .3 }); tone(at + .14, .11, f, f * .93, .11, p, { type: "triangle", bp: 900, q: 1.2, am: 28, rev: .3 }); }
     }
     function chirpCricket(t, c){
-      for (var k = 0; k < 3; k++) tone(t + k * .032, .018, c.f, c.f * .995, .022, c.p, { rev: .15 });
+      for (var k = 0; k < 3; k++) tone(t + k * .032, .018, c.f, c.f * .995, .032, c.p, { rev: .15 });
+    }
+    function drip(t, f, p, a){                              // a drop into a puddle: a bubble that rises
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.45, t + .05);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + .003); g.gain.setTargetAtTime(0, t + .003, .018);
+      o.connect(g); g.connect(pan(p)); o.start(t); o.stop(t + .15);
+    }
+    function squirrel(t){
+      var n = 8 + Math.floor(R() * 12), p = (R() * 2 - 1) * .8, f = 2600 + R() * 600;
+      for (var i = 0; i < n; i++) tone(t + i * (.065 + R() * .02), .03, f * 1.1, f * .85, .035, p, { type: "sawtooth", bp: 3000, q: 3, rev: .3 });
+    }
+    function footsteps(t){
+      /* something walking through the leaves, passing by */
+      var n = 4 + Math.floor(R() * 5), p0 = (R() * 2 - 1) * .8, dir = p0 > 0 ? -1 : 1;
+      for (var i = 0; i < n; i++){
+        var st = t + i * (.45 + R() * .3), pp = p0 + dir * i * .12, crunch = 10 + Math.floor(R() * 14);
+        for (var k = 0; k < crunch; k++) play(crackleBuf(Math.floor(R() * 12)), st + R() * .09, (.08 + .12 * R()) * (1 - Math.abs(i - n / 2) / n), pp, { lp: 3500 });
+      }
     }
     function wave(t){
-      /* a wave: the body swells and brightens as it rises, crashes, and the foam fizzes back */
-      var s = .6 + R() * .4, rise = 2.2 + R() * 1.4, dcy = 5 + R() * 2.5, p = (R() * 2 - 1) * .5, end = t + rise + dcy * 1.6;
-      var src = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
-      src.buffer = bed("sea"); src.loop = true;
-      lp.type = "lowpass"; lp.Q.value = .4;
-      lp.frequency.setValueAtTime(220, t); lp.frequency.exponentialRampToValueAtTime(900 + 1500 * s, t + rise); lp.frequency.exponentialRampToValueAtTime(320, t + rise + dcy);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22 * s, t + rise * .75); g.gain.linearRampToValueAtTime(.55 * s, t + rise); g.gain.setTargetAtTime(0, t + rise, dcy / 3.5);
-      src.connect(lp); lp.connect(g); g.connect(pan(p));
-      src.start(t, R() * 10); src.stop(end);
-      var src2 = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), g2 = ctx.createGain();
-      src2.buffer = bed("sea"); src2.loop = true;
-      hp.type = "highpass"; hp.frequency.value = 1800;
-      g2.gain.setValueAtTime(0, t); g2.gain.setValueAtTime(0, t + rise - .25); g2.gain.linearRampToValueAtTime(.3 * s, t + rise + .35); g2.gain.setTargetAtTime(0, t + rise + .35, dcy / 3);
-      src2.connect(hp); hp.connect(g2); g2.connect(pan(p * .3));
-      src2.start(t, R() * 10); src2.stop(end);
-      return rise + dcy * (.55 + R() * .35);                // the next one comes in as this one pulls back
+      /* v7.27 (Croix: the ocean "sounded super artificial"): no filter sweeps. A wave is one of
+         four pre-made breakers (a rough swell of splashes, a crash, draining foam), played at its
+         own size, speed and place along the beach; the next one comes in before this one's done */
+      var k = Math.floor(R() * 4), size = .55 + R() * .45, p = (R() * 2 - 1) * .55;
+      play(bed("wave" + k), t, size * .9, p, { rate: .9 + R() * .15, lp: 1800 + size * 3000 });
+      if (R() < .25) play(bed("wave" + ((k + 1) % 4)), t + 1.5 + R() * 2, size * .45, -p * .7, { rate: .85 + R() * .1, lp: 1500 });   // a smaller one further along
+      return 5.5 + R() * 5;
     }
     function newSinger(){
       var far = R();
@@ -10469,7 +10537,16 @@ var Nature = (function(){
       if (!cur) return;
       var e = nextEv, t, now0 = ctx.currentTime;
       Object.keys(e).forEach(function(k){ if (e[k] < now0 - .5) e[k] = now0 + .1 + R() * .5; });   // back from a pause: no pile-up of missed events
-      if (curId === "fire"){
+      if (curId === "rain"){                                  // two gutters dripping at their own pace
+        while (e.drip < ahead){ drip(e.drip, 1100 + R() * 150, -.6, .05 + R() * .03); e.drip += .8 + R() * .5; }
+        while (e.drip2 < ahead){ drip(e.drip2, 1500 + R() * 300, .5, .03 + R() * .03); e.drip2 += 1.1 + R() * .9; }
+      } else if (curId === "window"){                         // now and then a drop runs down the glass
+        while (e.trickle < ahead){
+          t = e.trickle; var tp = (R() * 2 - 1) * .7;
+          for (var ti = 0; ti < 6 + Math.floor(R() * 7); ti++) drip(t + ti * (.08 + R() * .12), 2200 + R() * 1400, tp, .015 + R() * .015);
+          e.trickle += 4 + R() * 8;
+        }
+      } else if (curId === "fire"){
         while (e.small < ahead){ t = e.small; play(crackleBuf(Math.floor(R() * 12)), t, .15 + .35 * Math.pow(R(), 2), (R() * 2 - 1) * .5); e.small += -Math.log(1 - R()) / 9; }
         while (e.burst < ahead){                            // a pocket of sap: a flurry of pops
           t = e.burst; var n = 5 + Math.floor(R() * 10), p0 = (R() * 2 - 1) * .5;
@@ -10478,6 +10555,7 @@ var Nature = (function(){
         }
         while (e.pop < ahead){ t = e.pop; play(crackleBuf(Math.floor(R() * 6), true), t, .5 + .4 * R(), (R() * 2 - 1) * .4); e.pop += 4 + R() * 7; }
       } else if (curId === "storm"){
+        while (e.drip < ahead){ drip(e.drip, 1100 + R() * 150, -.6, .04 + R() * .03); e.drip += .7 + R() * .5; }
         while (e.thunder < ahead){
           t = e.thunder; var k = Math.floor(R() * 4), dist = k === 0 ? .1 : R();
           play(thunderBuf(k), t, .9 - dist * .45, (R() * 2 - 1) * .35, { rate: .8 + R() * .3, lp: 1600 - dist * 1200, rev: .25 });
@@ -10502,14 +10580,16 @@ var Nature = (function(){
         /* crickets now and then: a bout of 10–25 s, one or two of them */
         while (e.crk < ahead){
           t = e.crk;
-          if (!cricket){ cricket = { until: t + 10 + R() * 15, list: [{ f: 4300 + R() * 500, p: (R() * 2 - 1) * .8, n: t }, { f: 4600 + R() * 500, p: (R() * 2 - 1) * .8, n: t + .3 }].slice(0, R() < .5 ? 1 : 2) }; }
+          if (!cricket){ cricket = { until: t + 15 + R() * 20, list: [{ f: 4300 + R() * 500, p: (R() * 2 - 1) * .8, n: t }, { f: 4600 + R() * 500, p: (R() * 2 - 1) * .8, n: t + .3 }].slice(0, R() < .5 ? 1 : 2) }; }
           cricket.list.forEach(function(c){ while (c.n < t + .35){ chirpCricket(c.n, c); c.n += .55 + R() * .2; } });
-          if (t > cricket.until){ cricket = null; e.crk = t + 25 + R() * 35; } else e.crk = t + .3;
+          if (t > cricket.until){ cricket = null; e.crk = t + 12 + R() * 15; } else e.crk = t + .3;
         }
-        while (e.peck < ahead){ woodpecker(e.peck); e.peck += 30 + R() * 45; }
-        while (e.crow < ahead){ crow(e.crow); e.crow += 45 + R() * 60; }
-        while (e.owl < ahead){ owl(e.owl); e.owl += 80 + R() * 90; }
-        while (e.frog < ahead){ frogs(e.frog); e.frog += 35 + R() * 50; }
+        while (e.peck < ahead){ woodpecker(e.peck); e.peck += 15 + R() * 20; }
+        while (e.crow < ahead){ crow(e.crow); e.crow += 25 + R() * 30; }
+        while (e.owl < ahead){ owl(e.owl); e.owl += 45 + R() * 50; }
+        while (e.frog < ahead){ frogs(e.frog); e.frog += 16 + R() * 20; }
+        while (e.squirrel < ahead){ squirrel(e.squirrel); e.squirrel += 25 + R() * 30; }
+        while (e.steps < ahead){ footsteps(e.steps); e.steps += 30 + R() * 35; }
       } else if (curId === "ocean"){
         while (e.wave < ahead){ e.wave += wave(e.wave); }
         while (e.gull < ahead){                              // a gull, far off, now and then
