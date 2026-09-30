@@ -111,7 +111,7 @@ test.describe("v7.10 October", () => {
     // the tape
     await dh.addW("addMusicBtn");
     const octSides = await page.evaluate(() => window.Deckhand.lofiSides());
-    ok(octSides.length === 11 && octSides[10] === "Graveyard shift", "no haunted side in October: " + octSides.join("|"));
+    ok(octSides.length === 12 && octSides[11] === "Graveyard shift", "no haunted side in October: " + octSides.join("|"));
     // September: nothing October about it
     await dh.openAt("#t=2026-09-30T10:30");
     await dh.launch();

@@ -1098,7 +1098,7 @@ test.describe("v7.22", () => {
 
 /* v7.23 — a new tape (Croix: "Several of the tracks sound almost the same. I want some good study music lofi"). */
 test.describe("v7.23", () => {
-  test("v7.23: every side is its own band (no two share keys + melody + drums), renders real sound at one loudness, and the picker says how each feels", async ({ page, dh }) => {
+  test("v7.23: every side is its own band (no two share keys + comping + melody + drums), renders real sound at one loudness, and the picker says how each feels", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-29T10:30");
     await dh.launch();
     const r = await page.evaluate(async () => {
@@ -1108,11 +1108,11 @@ test.describe("v7.23", () => {
         const d = buf.getChannelData(0), e = buf.getChannelData(1);
         let pk = 0, ss = 0, bad = 0;
         for (let i = 0; i < d.length; i++) { if (!isFinite(d[i]) || !isFinite(e[i])) bad++; pk = Math.max(pk, Math.abs(d[i]), Math.abs(e[i])); ss += d[i] * d[i]; }
-        out.push({ name: tr.name, band: [tr.keys, tr.mel, tr.drums].join("/"), pk, db: 10 * Math.log10(ss / d.length), bad, feel: tr.feel });
+        out.push({ name: tr.name, band: [tr.keys, tr.comp, tr.mel, tr.drums].join("/"), pk, db: 10 * Math.log10(ss / d.length), bad, feel: tr.feel });
       }
       return out;
     });
-    ok(r.length === 11, "sides: " + r.length);
+    ok(r.length === 12, "sides: " + r.length);
     const bands = new Set(r.map(x => x.band));
     ok(bands.size === r.length, "two sides share a band: " + r.map(x => x.band).join(" | "));
     for (const x of r) {
@@ -1186,5 +1186,29 @@ test.describe("v7.24", () => {
     await dh.launch();
     c = await cur();
     ok(c.lofi && c.nature === "fire" && c.name === "Reading nook", "after a reload: " + JSON.stringify(c));
+  });
+});
+
+/* v7.25 — Midnight jazz (Croix: "I really like the slow piano jazz with the storm going on. It's cozy. Think you can replicate this?"). */
+test.describe("v7.25", () => {
+  test("v7.25: Midnight jazz is a slow piano ballad that brings the Thunderstorm with it when no sound is on; Off afterwards sticks", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    const tr = await page.evaluate(() => window.Deckhand.lofi.TRACKS.find(t => t.name === "Midnight jazz"));
+    ok(tr && tr.keys === "piano" && tr.comp === "ballad" && tr.bpm <= 62 && tr.prog.length === 8, "the ballad: " + JSON.stringify(tr));
+    await dh.addW("addMusicBtn"); await page.keyboard.press("Escape");
+    const i = await page.evaluate(() => document.querySelector(".w-music")._entry.api.sides().indexOf("Midnight jazz"));
+    await page.click(".w-music .muWhat");
+    await page.click('.w-music .muSide[data-i="' + i + '"]');
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Midnight jazz + Thunderstorm");
+    await page.click(".w-music .muWhat");
+    await page.click(".w-music .muNatOff");
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Midnight jazz");
+    await page.click(".w-music .muNext");
+    await page.click(".w-music .muWhat");
+    await page.click('.w-music .muNat[data-n="brook"]');
+    await page.click(".w-music .muWhat");
+    await page.click('.w-music .muSide[data-i="' + i + '"]');
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Midnight jazz + Babbling brook");   // a sound already on stays
   });
 });

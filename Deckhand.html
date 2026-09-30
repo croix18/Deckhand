@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.24.0",
+  "appVersion": "7.25.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -4171,7 +4171,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.24.0",
+  appVersion: "7.25.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4435,7 +4435,7 @@ function sanitize(c){
       if (ty === "music"){
         wc.channel = "lofi";   // mozart returns when the real audio lands
         wc.volume = numIn(w.volume, 0, 1, 0.5);
-        if (typeof w.side === "number" && w.side >= 0 && w.side < 12) wc.side = Math.round(w.side);   // v7.22: the picked side
+        if (typeof w.side === "number" && w.side >= 0 && w.side < 13) wc.side = Math.round(w.side);   // v7.22: the picked side
         wc.repeat = bool(w.repeat, false);
         wc.lofi = bool(w.lofi, true);                                                         // v7.24: "No music" = false
         wc.nature = ["fire", "rain", "storm", "brook", "forest", "brown", "white"].indexOf(w.nature) >= 0 ? w.nature : "";   // v7.24
@@ -9401,7 +9401,16 @@ var Lofi = (function(){
     { name: "Last light", trim: 1.32, feel: "no drums \u00b7 just the piano",                  seed: 89, key: 8, bpm: 56, swing: 0,
       prog: [[0, "maj9"], [9, "m9"], [5, "maj9"], [7, "sus"]], per: 1,
       keys: "piano", comp: "slowarp", compB: "sustain", mel: "piano", melOct: 0, bass: "sub", bassPat: "long",
-      drums: "none", tone: 4000, wow: .2, room: .5, echo: .2, dust: .05, rain: 0 }
+      drums: "none", tone: 4000, wow: .2, room: .5, echo: .2, dust: .05, rain: 0 },
+    /* v7.25 (Croix: "I really like the slow piano jazz with the storm going on. It's cozy.
+       Think you can replicate this?"): a piano trio ballad — eight jazz changes (ii–V–I, the
+       VI7 that pulls back to ii), the left hand holding rootless voicings and answering softly,
+       a run down the chord at the end of a phrase, a swung melody with a grace note leaning
+       into the strong beats, upright bass in two, brushes barely there. Best under Thunderstorm. */
+    { name: "Midnight jazz", trim: .9, feel: "slow piano jazz \u00b7 comes with the storm",   seed: 107, key: 5, bpm: 60, swing8: .32, jazz: true,
+      prog: [[2, "m9"], [7, "d13"], [0, "maj9"], [9, "d7b9"], [2, "m9"], [7, "d7b9"], [4, "m7"], [9, "d7b9"]], per: 1,
+      keys: "piano", comp: "ballad", compB: "ballad", mel: "piano", melOct: 1, bass: "upright", bassPat: "twofeel",
+      drums: "brushes", dvol: .6, tone: 4800, wow: .15, room: .42, echo: .08, dust: .05, rain: 0, nature: "storm" }
   ];
   /* v7.10's haunted side, rebuilt: October only (v7.24: slower, quieter tape) */
   var OCT = { name: "Graveyard shift", trim: 1.39, feel: "spooky \u00b7 music box, fog", seed: 131, key: 9, minor: true, bpm: 58, swing: .1,
@@ -9855,7 +9864,10 @@ var Lofi = (function(){
           m = home; d = Math.max(d, 2 * M() - h.b);
         } else if (strong) m = snap(m, ch);
         if (m > 88) m -= 12;
-        melNote(m, t + h.b * spb, d * spb * .95, .78 + Math.random() * .12);
+        var at = h.b * spb + (tr.jazz && h.b % 1 === .5 ? swing8(spb) : 0);   // v7.25: the jazz side swings its line
+        var prev = j ? hook[j - 1] : null, room = prev ? h.b - (prev.b + prev.d) : 0;
+        if (tr.jazz && strong && prev && room >= .5 && Math.random() < .45) melNote(m - 1, t + at - spb / 3, spb / 3, .5);   // a grace note leaning in, only into a rest
+        melNote(m, t + at, d * spb * .95, .78 + Math.random() * .12);
       });
     }
     function noodle(t, p, spb, sparse){
@@ -9870,12 +9882,12 @@ var Lofi = (function(){
         for (var d = -2; d <= 2; d++){ var q = (((pc + d) % 12) + 12) % 12; if (s.indexOf(q) >= 0 && Math.abs(d) < bd){ bd = Math.abs(d); best = m + d; } }
         if (b === 0) best = snap(best, ch);
         var len = k === beats.length - 1 ? (M() - b) + (sparse ? 2 : 1) : (beats[k + 1] - b);
-        melNote(best, t + b * spb, len * spb * .9, .6 + Math.random() * .15);
+        melNote(best, t + b * spb + (tr.jazz && b % 1 === .5 ? swing8(spb) : 0), len * spb * .9, .6 + Math.random() * .15);
       });
     }
 
     /* ---- one bar of comping ---- */
-    function comp(style, V, ch, t, spb, vel, sec){
+    function comp(style, V, ch, t, spb, vel, sec, p){
       var I = INST[tr.keys], m = M(), wide = function(i){ return (i / Math.max(1, V.length - 1) - .5) * .5; };
       function hit(at, len, v, spread, notes){
         (notes || V).forEach(function(n, i){ I(n, t + at + i * (spread || .012) + hum(.008), len, v * (.9 + Math.random() * .15), { pan: wide(i), rev: .18 }); });
@@ -9924,6 +9936,16 @@ var Lofi = (function(){
           I(nn, t + q * spb + (q ? hum(.01) : 0), spb * 2.6, vel * (q ? .62 : .8), { pan: (q % 2 ? .18 : -.18), rev: .25, echo: .12 });
         }
         if (Math.random() < .5) I(V[V.length - 1] + 12, t + spb * (m - .5), spb * 1.5, vel * .35, { rev: .35, echo: .2 });
+      } else if (style === "ballad"){                   // v7.25: the left hand of a jazz ballad
+        hit(0, spb * 2.9, vel * .8, .03);
+        var rb = Math.random();
+        if (rb < .4) hit(spb * 1.5 + swing8(spb), spb * 1.4, vel * .42, .015, V.slice(1));
+        else if (rb < .7) hit(spb * 2, spb * 1.8, vel * .48, .02);
+        /* at the end of a phrase, where the tune rests: a run down the chord into the next bar */
+        if ((p % 8 === 3) || ((sec === "B" || sec === "brk") && p % 4 === 3)){
+          var run = V.concat(V.map(function(x){ return x + 12; })).sort(function(a, b){ return b - a; }).slice(0, 6);
+          run.forEach(function(x, ri){ I(x, t + spb * (m - 1) + ri * spb / 6 + (ri % 2 ? swing8(spb) * .3 : 0), spb * .6, vel * (.55 - ri * .04), { pan: .12 - ri * .04, rev: .3 }); });
+        }
       } else if (style === "finger"){                   // v7.24: a thumb on the root, fingers rolling over the chord
         var fp2 = [0, 2, 1, 3, 2, 1, 3, 2];
         I(V[0] - 12 >= 45 ? V[0] - 12 : V[0], t, spb * 2.5, vel * .85, { rev: .2 });
@@ -10026,7 +10048,7 @@ var Lofi = (function(){
       var V = voiceChord(ch.pcs, prevV); prevV = V;
       var style = sec === "B" ? tr.compB : sec === "brk" || sec === "outro" ? (tr.keys === "pad" ? "sustain" : tr.comp === "pulse" ? "pulse" : "sustain") : tr.comp;
       var cv = sec === "intro" || sec === "outro" ? .7 : sec === "brk" ? .6 : .8;
-      if (!(sec === "outro" && p === w.len - 1)) comp(style, V, ch, t, spb, cv, sec);
+      if (!(sec === "outro" && p === w.len - 1)) comp(style, V, ch, t, spb, cv, sec, p);
       else INST[tr.keys](V[0], t, blen * 1.5, .5, { rev: .5 });   // the last chord's last note, ringing out
       if (sec === "outro" && p === w.len - 1) V.slice(1).forEach(function(n, i){ INST[tr.keys](n, t + (i + 1) * .04, blen * 1.5, .5, { rev: .5, pan: (i - 1) * .2 }); });
       if (tr.pad && sec !== "intro") INST.pad(V[0] - 12, t, blen * 1.02, .5, {});
@@ -10605,6 +10627,9 @@ function makeMusic(host, wcfg){
     if (i < 0 || i >= sides().length) return;
     trackIdx = i; wcfg.side = i; wcfg.lofi = true;
     if (eng){ newBus(); eng.side(side(i)); }
+    /* v7.25: a side that comes with a sound (Midnight jazz → the storm) brings it when none is on;
+       turning the sound Off afterwards sticks */
+    if (side(i).nature && !wcfg.nature){ wcfg.nature = side(i).nature; if (nat) nat.set(wcfg.nature); }
     mixLevels();
     order = null;                                // the shuffle starts over after the picked side
     openPick(false);

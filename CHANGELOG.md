@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.25.0 — 2026-09-30
+
+**Midnight jazz.** Croix: "I really like the slow piano jazz with the storm going on. It's cozy.
+Think you can replicate this?" A new side: a slow piano trio ballad at 60 bpm. Eight jazz chords
+(ii–V–I, and a VI7 pulling back to ii). The left hand holds soft jazz voicings and answers them
+quietly. A run falls down the chord where the tune rests. The melody swings and leans into its
+strong notes with a grace note. Upright bass plays in two and brushes are barely there. It comes
+with the storm: picking it when no nature sound is on turns on Thunderstorm underneath. Turning the
+storm off afterwards sticks, and a sound that's already on is kept. One test; 262.
+
 ## 7.24.0 — 2026-09-30
 
 **The quiet album, and nature sounds.** Croix: "The second track was really cool. Everything else
