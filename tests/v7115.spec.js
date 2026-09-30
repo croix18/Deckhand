@@ -747,12 +747,14 @@ test.describe("v7.15", () => {
     await expect(page.locator("#inkBlob")).toBeVisible();
     ok((await page.locator("#focusBar #inkBtnStage").count()) === 0, "Draw is still in the stage bar");
     const blob = await page.evaluate(() => { const r = document.getElementById("inkBlob").getBoundingClientRect(); return { right: innerWidth - r.right, bottom: innerHeight - r.bottom, op: +getComputedStyle(document.getElementById("inkBlob")).opacity }; });
-    ok(blob.right < 40 && blob.bottom < 40 && blob.op < 0.8, "the pen blob is not a quiet bottom-right blob: " + JSON.stringify(blob));
+    /* v7.28: the pen now lives mid-left by default (⇄ sends it back to the bottom-right — see v7.28) */
+    const left = await page.evaluate(() => document.getElementById("inkBlob").getBoundingClientRect().left);
+    ok(left < 40 && blob.op < 0.8, "the pen blob is not a quiet blob at the left edge: " + JSON.stringify(blob) + " left " + left);
     await page.click("#inkBlob");
     await expect(page.locator("#inkBar")).toBeVisible();
     await expect(page.locator("#inkBlob")).toBeHidden();
-    const bar = await page.evaluate(() => { const b = document.getElementById("inkBar"), r = b.getBoundingClientRect(); return { right: innerWidth - r.right, bottom: innerHeight - r.bottom, bg: getComputedStyle(b).backgroundColor }; });
-    ok(bar.right < 40 && bar.bottom < 40 && /rgba\(255, 255, 255, 0\.[0-9]+\)/.test(bar.bg), "the palette should pop up see-through from the corner: " + JSON.stringify(bar));
+    const bar = await page.evaluate(() => { const b = document.getElementById("inkBar"), r = b.getBoundingClientRect(); return { left: r.left, bg: getComputedStyle(b).backgroundColor }; });
+    ok(bar.left < 40 && /rgba\(255, 255, 255, 0\.[0-9]+\)/.test(bar.bg), "the palette should pop up see-through at the left edge (v7.28): " + JSON.stringify(bar));
     await page.click("#inkDone");
     await expect(page.locator("#inkBlob")).toBeVisible();
   });
@@ -1269,5 +1271,82 @@ test.describe("v7.27", () => {
     ok(r.ocean.swell > 1.6, "the ocean doesn't break: " + JSON.stringify(r.ocean));
     const names = await page.evaluate(() => window.Deckhand.nature.SOUNDS.map(s => s.name));
     ok(names.includes("Rain on the roof") && names.includes("Rain on the window") && !names.includes("Heavy rain"), "rains: " + names.join("|"));
+  });
+});
+
+/* v7.28 — from the day's teaching (Croix: "Can I have the ability to move the now playing pill? It's front and center
+ * and blocks my slides… Can I get a refresh button for the embed?… Can I have a vertical pen menu on the left side of
+ * the screen"). */
+test.describe("v7.28", () => {
+  test("v7.28: the Now Playing pill drags anywhere and stays there (a drag never pauses; a tap still does)", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addMusicBtn"); await page.keyboard.press("Escape");
+    const playing = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
+    await page.evaluate(() => document.querySelector(".w-music")._entry.api.startPause());
+    await expect.poll(playing).toBe(true);
+    await page.evaluate(() => window.Deckhand.landing.show());
+    const pill = page.locator("#nowPlaying");
+    await expect(pill).toBeVisible({ timeout: 3000 });
+    const a = await pill.boundingBox();
+    await page.mouse.move(a.x + 20, a.y + a.height / 2); await page.mouse.down();
+    await page.mouse.move(a.x - 300, a.y + 400, { steps: 8 }); await page.mouse.up();
+    const b = await pill.boundingBox();
+    ok(b.y > a.y + 300 && b.x < a.x - 200, "the pill did not move: " + JSON.stringify([a, b]));
+    ok(await playing(), "a drag paused the music");
+    const pos = await page.evaluate(() => window.Deckhand.config.ui.npPos);
+    ok(pos && pos.y > .3, "position not kept: " + JSON.stringify(pos));
+    await page.waitForTimeout(500);
+    await pill.click();
+    await expect.poll(playing).toBe(false);
+  });
+
+  test("v7.28: ↻ Refresh loads the deck's latest edits — on the card and from the stage bar — and the clicker keeps working", async ({ page, dh }) => {
+    const deck = path.join(dh.fixtureDir, "tmp_refresh_deck.html");
+    const write = t => fs.writeFileSync(deck, '<!DOCTYPE html><title>Deck</title><body><h1 id="n">' + t + '</h1><script>var n=1;addEventListener("keydown",function(e){if(e.key==="PageDown"){n++;document.getElementById("n").textContent="' + t + ' "+n;}});</script>');
+    write("Version 1");
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn");
+      inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets; w[w.length - 1].url = u;
+      document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    const slide = () => page.frameLocator(".w-embed .embFrame").locator("#n").textContent();
+    await expect.poll(slide).toBe("Version 1");
+    await expect(page.locator(".w-embed .wReload")).toBeVisible();
+    write("Version 2");
+    await page.click(".w-embed .wReload");
+    await expect.poll(slide, { timeout: 5000 }).toBe("Version 2");
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#reloadStageBtn")).toBeVisible();
+    write("Version 3");
+    await page.click("#reloadStageBtn");
+    await expect.poll(slide, { timeout: 5000 }).toBe("Version 3");
+    await page.waitForTimeout(400);
+    await page.keyboard.press("PageDown");
+    await expect.poll(slide).toBe("Version 3 2");                  // the clicker's keys went back to the slides
+    await page.click("#unfocusBtn");
+    await page.click("#clockWidget .wFocus");
+    await expect(page.locator("#reloadStageBtn")).toBeHidden();    // only for slides
+  });
+
+  test("v7.28: the pen tools stand up along the left edge; ⇄ moves them (and the pen) to the right and back, remembered", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await page.click("#inkBtn");
+    const geo = () => page.evaluate(() => { const r = document.getElementById("inkBar").getBoundingClientRect(); return { left: r.left, right: innerWidth - r.right, bottom: innerHeight - r.bottom, top: r.top, w: r.width, h: r.height }; });
+    let g = await geo();
+    ok(g.left < 40 && g.h > g.w && g.top > 40, "not a tall bar on the left: " + JSON.stringify(g));
+    await page.click("#inkSide");
+    g = await geo();
+    ok(g.right < 40 && g.bottom < 40 && g.w > g.h, "⇄ did not send it to the bottom-right: " + JSON.stringify(g));
+    ok((await page.evaluate(() => window.Deckhand.config.ui.inkSide)) === "right", "side not kept");
+    await page.click("#inkSide");
+    g = await geo();
+    ok(g.left < 40, "⇄ did not bring it back: " + JSON.stringify(g));
+    await page.click("#inkDone");
   });
 });

@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.27.0",
+  "appVersion": "7.28.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -412,6 +412,13 @@
     background:var(--navy); color:var(--white); border:2px solid var(--turq); border-radius:999px; padding:6px 8px 6px 14px; min-height:44px;
     font:inherit; font-weight:900; font-size:15px; cursor:pointer; box-shadow:3px 4px 0 var(--shadow);}
   #nowPlaying[hidden]{display:none;}
+  /* v7.28 (Croix: "Can I have the ability to move the now playing pill? It's front and center and
+     blocks my slides"): drag it anywhere; it stays there (cfg.ui.npPos) */
+  #nowPlaying{touch-action:none; user-select:none; -webkit-user-select:none;}
+  #nowPlaying.npMoved{transform:none;}
+  #nowPlaying.npDragging{cursor:grabbing; opacity:.85;}
+  .npGrip{width:8px; height:18px; margin-left:-4px; opacity:.55; cursor:grab;
+    background-image:radial-gradient(circle, var(--white) 1.3px, transparent 1.6px); background-size:4px 6px;}
   #nowPlaying .npName{font-weight:700; opacity:.9; max-width:40vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   #nowPlaying .npStop{background:var(--turq); color:var(--navy); border-radius:999px; padding:6px 14px;}
   .npBars{display:inline-flex; gap:2px; align-items:flex-end; height:14px;}
@@ -460,6 +467,20 @@
   @keyframes inkPop{from{opacity:0; transform:scale(.6);} to{opacity:1; transform:none;}}
   @media (prefers-reduced-motion: reduce){ body.focusMode #inkBar{animation:none;} }
   @media (max-width: 780px), (max-height: 540px){ #ink, #inkBar, #inkBtn, #inkBlob, #zoomBlob{display:none !important;} }
+  /* v7.28 (Croix: "Can I have a vertical pen menu on the left side of the screen. It's awkward to
+     walk across the board every time to click it open"): the pen tools stand up along the left
+     edge, centred, and the pen and magnifier blobs sit there too; ⇄ on the bar sends them back to
+     the right (cfg.ui.inkSide, remembered) */
+  .inkSideBtn{font-size:20px;}
+  body.inkLeft #inkBar{right:auto; bottom:auto; left:14px; top:0; bottom:0; margin:auto 0; height:max-content;
+    flex-direction:column; align-items:stretch; padding:10px 8px; transform-origin:0 50%;}
+  body.inkLeft #inkBar .inkGroup{display:grid; grid-template-columns:repeat(2, auto); justify-content:center; gap:2px;}
+  body.inkLeft #inkBar .inkGroup .inkTool:not(.inkSwatch){padding:6px 8px;}
+  body.inkLeft #inkBar .inkGroup:nth-of-type(2), body.inkLeft #inkBar .inkGroup:nth-of-type(3){grid-template-columns:1fr; justify-items:center;}
+  body.inkLeft.focusMode #inkBar{left:12px; right:auto;}
+  body.inkLeft #inkBlob{right:auto; bottom:auto; left:12px; top:calc(50% - 50px);}
+  body.inkLeft #zoomBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 6px);}
+  body.inkLeft #zoomBar{right:auto; bottom:auto; left:12px; top:calc(50% + 2px);}
 
   /* ===== settings panel (v7.2 design pass) =====
      A preferences panel, not a scroll of collapsibles: a tab rail on the
@@ -657,11 +678,14 @@
   }
   @media (hover:hover){ .wEdit:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
   body.locked .wEdit{display:none;}
+  /* v7.28: ↻ refresh on a Slides card — like ✎, but it stays when the board is locked (it changes nothing) */
+  .wReload{background:none; border:none; cursor:pointer; color:inherit; opacity:.65; font:inherit; padding:2px 8px; line-height:1;}
+  @media (hover:hover){ .wReload:hover{opacity:1;} }
   /* 44px effective touch targets for the strip icons (they measured
      27×20 — 43% of the minimum, INSIDE a drag surface where a missed
      press starts dragging the widget). Negative margins keep the strip
      visually identical while the hit boxes grow. */
-  .wClose, .wEdit, .wFocus, .wPin, .wSize{
+  .wClose, .wEdit, .wReload, .wFocus, .wPin, .wSize{
     min-width:44px; min-height:44px; margin:-13px -8px;
     display:inline-flex; align-items:center; justify-content:center;
   }
@@ -775,7 +799,8 @@
   .widget.wMinned{display:none !important;}
   #shelf .minChip{display:inline-flex; align-items:center; gap:6px; background:var(--sand); color:var(--navy);}
   #shelf .minChip svg{width:14px; height:14px;}
-  #minStageBtn[hidden]{display:none;}
+  #minStageBtn[hidden], #reloadStageBtn[hidden]{display:none;}
+  .embReloading .embFrame{opacity:.35; transition:opacity .2s;}
   .widget.wFull .wHandle{display:none;}          /* no resizing a focused widget */
   /* Resize handles: both bottom corners + left/right/bottom edges.
      The top has none — the strip up there is the MOVE handle and holds
@@ -847,7 +872,7 @@
     border-radius:3px; background:var(--navy); opacity:.28; pointer-events:none;}
   .widget .wLabel{opacity:0; font-weight:900; margin-right:auto;}   /* opacity, not visibility: the label is still the drag surface */
   .widget.wNamed .wLabel{opacity:.7;}
-  .widget .wClose, .widget .wEdit, .widget .wFocus, .widget .wPin, .widget .wMin, .widget .wSize{margin:-7px -2px; min-width:44px; min-height:44px;}   /* 44px hit boxes on a 30px band */
+  .widget .wClose, .widget .wEdit, .widget .wReload, .widget .wFocus, .widget .wPin, .widget .wMin, .widget .wSize{margin:-7px -2px; min-width:44px; min-height:44px;}   /* 44px hit boxes on a 30px band */
   .widget .strip .wIcon{width:16px; height:16px;}
   body.locked .widget .strip{position:absolute; left:0; right:0; top:0; height:0; min-height:0; padding:0; background:transparent;
     overflow:visible; pointer-events:none; z-index:3;}
@@ -3176,6 +3201,7 @@
       <div id="focusTimerMenu" role="group" aria-label="Timer presets" hidden></div>
     </div>
 
+    <button id="reloadStageBtn" type="button" aria-label="Refresh the slides"><svg class="wIcon"><use href="#i-reload"/></svg> Refresh</button>
     <button id="minStageBtn" type="button" aria-label="Minimize this card to the dock"><svg class="wIcon"><use href="#i-min"/></svg> Minimize</button>
     <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
   </div>
@@ -4086,7 +4112,7 @@
 <!-- v7.20 (Croix: "I played some of the lofi music, but closed the window before hitting pause. The
      music kept playing and there wasn't a way for me to stop it"): whenever the tape plays and its
      card isn't on screen — minimized, behind a staged deck, or on Home — this pill is the pause. -->
-<button id="nowPlaying" type="button" hidden><span class="npBars" aria-hidden="true"><i></i><i></i><i></i></span><span class="npName">Music</span><span class="npStop">Pause</span></button>
+<button id="nowPlaying" type="button" hidden title="Drag to move it; tap to pause"><span class="npGrip" aria-hidden="true"></span><span class="npBars" aria-hidden="true"><i></i><i></i><i></i></span><span class="npName">Music</span><span class="npStop">Pause</span></button>
 <canvas id="ink" aria-hidden="true"></canvas>
 <!-- v7.15 (Croix: "When the slides are up, I would like the ink to be a pop up… semi
      transparent and start in bottom right corner alongside the bottom menu blob") -->
@@ -4119,6 +4145,7 @@
     <button class="inkTool" type="button" id="inkUndo" aria-label="Undo the last stroke">Undo</button>
     <button class="inkTool" type="button" id="inkClear" aria-label="Clear the drawing">Clear</button>
   </div>
+  <button class="inkTool inkSideBtn" type="button" id="inkSide" aria-label="Move the pen tools to the other side" title="Move to the other side">&#8644;</button>
   <button class="inkDone" type="button" id="inkDone" aria-label="Done — clear the drawing and go back to the slides">Done</button>
 </div>
 
@@ -4171,7 +4198,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.27.0",
+  appVersion: "7.28.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4574,7 +4601,10 @@ function sanitize(c){
     ui: { locked: bool(u.locked, false),
           motion: ["auto","on","off"].indexOf(u.motion) !== -1 ? u.motion : "auto",
           seaWeather: u.seaWeather === "calm" ? "calm" : "varies",
-          season: u.season === "off" ? "off" : "auto" },        // v7.10: seasonal touches (October…)
+          season: u.season === "off" ? "off" : "auto",          // v7.10: seasonal touches (October…)
+          npPos: isObj(u.npPos) && typeof u.npPos.x === "number" && typeof u.npPos.y === "number" && isFinite(u.npPos.x) && isFinite(u.npPos.y)
+            ? { x: Math.max(0, Math.min(1, u.npPos.x)), y: Math.max(0, Math.min(1, u.npPos.y)) } : null,   // v7.28: where the Now Playing pill sits
+          inkSide: u.inkSide === "right" ? "right" : "left" },  // v7.28: the pen tools' side
     activeScene: activeScene,
     scenes: scenes,
     rosters: rosters,
@@ -9266,18 +9296,68 @@ var NowPlaying = (function(){
     }
     return true;
   }
+  function place(x, y){
+    var w = el.offsetWidth || 200, hh = el.offsetHeight || 44;
+    x = Math.max(4, Math.min(window.innerWidth - w - 4, x));
+    y = Math.max(4, Math.min(window.innerHeight - hh - 4, y));
+    el.classList.add("npMoved");
+    el.style.left = Math.round(x) + "px"; el.style.top = Math.round(y) + "px";
+  }
+  function restore(){
+    if (!el) return;
+    var p = cfg.ui && cfg.ui.npPos;
+    if (p && typeof p.x === "number"){ place(p.x * window.innerWidth, p.y * window.innerHeight); }
+    else { el.classList.remove("npMoved"); el.style.left = ""; el.style.top = ""; }
+  }
   function paint(){
     if (!el) return;
     var show = live.length > 0 && !live.some(function(x){ return onScreen(x.host); });
+    var was = el.hidden;
     el.hidden = !show;
+    if (was && show) restore();                  // measured now that it has a size
     if (show) el.querySelector(".npName").textContent = live[0].name || "Music";
   }
   return {
     init: function(){
       el = $("nowPlaying");
-      wireButton(el, function(){ try { document.dispatchEvent(new CustomEvent("deckhand:music-stop")); } catch(e){} paint(); });
+      wireButton(el, function(){
+        if (dragged){ dragged = false; return; }   // v7.28: the end of a drag is not a tap
+        try { document.dispatchEvent(new CustomEvent("deckhand:music-stop")); } catch(e){}
+        paint();
+      });
+      /* v7.28: a press that travels more than a few pixels drags the pill instead of pausing */
+      var drag = null, dragged = false;
+      el.addEventListener("pointerdown", function(e){
+        var r = el.getBoundingClientRect();
+        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, l: r.left, t: r.top, moving: false };
+        dragged = false;
+        try { el.setPointerCapture(e.pointerId); } catch(_){}   // a fast drag leaves the pill before the first move lands
+      });
+      el.addEventListener("pointermove", function(e){
+        if (!drag || e.pointerId !== drag.id) return;
+        var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if (!drag.moving && Math.abs(dx) + Math.abs(dy) < 8) return;
+        if (!drag.moving){ drag.moving = true; el.classList.add("npDragging"); }
+        place(drag.l + dx, drag.t + dy);
+      });
+      function end(e){
+        if (!drag || (e && e.pointerId !== drag.id)) return;
+        if (drag.moving){
+          dragged = true;
+          el.classList.remove("npDragging");
+          var r = el.getBoundingClientRect();
+          cfg.ui.npPos = { x: +(r.left / window.innerWidth).toFixed(4), y: +(r.top / window.innerHeight).toFixed(4) };
+          setTimeout(function(){ dragged = false; }, 400);   // a click that never comes must not eat the next tap
+        }
+        drag = null;
+      }
+      el.addEventListener("pointerup", end);
+      el.addEventListener("pointercancel", end);
+      window.addEventListener("resize", restore);
+      restore();
       setInterval(paint, 500);                   // stage, minimize, Home and scene changes all move the answer
     },
+    restore: restore,                            // test hook / Settings reset
     report: function(host, playing, name){
       live = live.filter(function(x){ return x.host !== host && x.host.isConnected; });
       if (playing) live.push({ host: host, name: name });
@@ -12543,9 +12623,39 @@ function makeEmbed(host, wcfg){
   });
   wireButton(q(".embGo:not(.embStar)"), function(){   // reload the deck in place
     applyInput();
-    var u = activeURL();                         // the deck actually SHOWING —
-    if (u){ frame.src = ""; frame.src = u; }     // never the stale single-mode url
+    reload();
   });
+  /* v7.28 (Croix: "Can I get a refresh button for the embed? I made some edits to my Google
+     slides, and I couldn't get the embed to update. I ended up having to close out of it and
+     reopen"): ↻ on the card and on the stage bar. The frame goes blank for a moment and loads the
+     deck fresh; on a staged card the clicker gets the keys back once it's in. */
+  var reloadTid = null;
+  function reload(){
+    var u = activeURL();                         // the deck actually SHOWING — never the stale single-mode url
+    if (!u || frame.hidden) return false;
+    host.classList.add("embReloading");
+    frame.src = "about:blank";
+    clearTimeout(reloadTid);
+    reloadTid = setTimeout(function(){
+      frame.setAttribute("src", u);
+      var once = function(){
+        frame.removeEventListener("load", once);
+        host.classList.remove("embReloading");
+        try { Canvas.refocusDeck(); } catch(e){}
+      };
+      frame.addEventListener("load", once);
+      setTimeout(function(){ host.classList.remove("embReloading"); }, 8000);
+    }, 120);
+    return true;
+  }
+  var refreshBtn = document.createElement("button");
+  refreshBtn.type = "button";
+  refreshBtn.className = "wReload";
+  refreshBtn.setAttribute("aria-label", "Refresh the slides");
+  refreshBtn.title = "Refresh — load your latest edits";
+  refreshBtn.innerHTML = '<svg class="wIcon"><use href="#i-reload"/></svg>';
+  stripEl.insertBefore(refreshBtn, pencil);
+  wireButton(refreshBtn, function(){ reload(); });
   /* focus indicator: when the window blurs and the active element is
      THIS frame, the deck has the keyboard */
   var pillTid = null;
@@ -12578,6 +12688,7 @@ function makeEmbed(host, wcfg){
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     hide: onHome, show: function(){ render(); },  // v7.18: minimize / bring back (the period's deck)
+    reload: reload,                              // v7.28: ↻ on the card and the stage bar
     rebuild: render,
     resync: function(){},
     destroy: function(){                         // scene switch unloads the iframe
@@ -13482,6 +13593,7 @@ var Canvas = (function(){
     refocusDeck();     // clicker keys belong to the deck from second one
     $("focusBar").hidden = !focusedEntry;        // the no-keyboard exit + ⏱
     $("minStageBtn").hidden = !focusedEntry || focusedEntry.type === "clock";   // v7.18: the clock is the board, not a card to put away
+    $("reloadStageBtn").hidden = !focusedEntry || focusedEntry.type !== "embed";   // v7.28: fresh slides without leaving the stage
     /* STAGE MODE: header/waves fold away; the dock folds to its handle
        (it sat on the Slides ‹ › arrows); grid re-anchors */
     document.body.classList.toggle("focusMode", !!focusedEntry);
@@ -14310,6 +14422,7 @@ var Canvas = (function(){
       wireButton($("addBtn"), toggleAddMenu);
       wireButton($("unfocusBtn"), function(){ setFocus(null); });
       wireButton($("minStageBtn"), function(){ minimize(focusedEntry); });   // v7.18
+      wireButton($("reloadStageBtn"), function(){ if (focusedEntry && focusedEntry.api.reload) focusedEntry.api.reload(); });   // v7.28
       wireButton($("zoomBlob"), zoomOn);                                     // v7.21
       wireButton($("zoomBar").querySelector(".zmIn"), function(){ zoomStep(1); refocusDeck(); });
       wireButton($("zoomBar").querySelector(".zmOut"), function(){ zoomStep(-1); refocusDeck(); });
@@ -15548,6 +15661,7 @@ var Ink = (function(){
     });
     $("inkEraser").setAttribute("aria-pressed", erase ? "true" : "false");
   }
+  function side(){ document.body.classList.toggle("inkLeft", !cfg.ui || cfg.ui.inkSide !== "right"); }   // v7.28
   function arm(on){
     armed = !!on;
     document.body.classList.toggle("inking", armed);
@@ -15610,6 +15724,7 @@ var Ink = (function(){
   return {
     init: function(){
       fit();
+      side();
       window.addEventListener("resize", fit);
       cv.addEventListener("pointerdown", down);
       cv.addEventListener("pointermove", move);
@@ -15627,6 +15742,7 @@ var Ink = (function(){
         else if (b.id === "inkUndo"){ strokes.pop(); redraw(); }
         else if (b.id === "inkClear"){ strokes = []; cur = null; redraw(); }
         else if (b.id === "inkDone"){ finish(); return; }
+        else if (b.id === "inkSide"){ cfg.ui.inkSide = cfg.ui.inkSide === "right" ? "left" : "right"; side(); }   // v7.28
         paintBar();
       });
       wireButton($("inkBtn"), function(){ if (armed) finish(); else arm(true); });
@@ -15635,6 +15751,7 @@ var Ink = (function(){
     },
     toggle: function(){ if (armed) finish(); else arm(true); },
     finish: finish,                              // v7.15: clear, fold, hand the slides the keys
+    side: side,                                  // v7.28: re-read cfg.ui.inkSide
     arm: arm,
     isArmed: function(){ return armed; },
     clear: function(){ strokes = []; cur = null; redraw(); },

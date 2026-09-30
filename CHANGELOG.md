@@ -2,6 +2,27 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.28.0 — 2026-09-30
+
+**Three fixes from the day's teaching.**
+
+- **The Now Playing pill moves.** Croix: "Can I have the ability to move the now playing pill?
+  It's front and center and blocks my slides." Drag it anywhere (a small grip shows it can be
+  dragged). It stays where you left it, on every screen and after a reload. A tap still pauses; a
+  drag never does.
+- **Refresh the slides.** Croix: "Can I get a refresh button for the embed? I made some edits to my
+  Google slides, and I couldn't get the embed to update." A ↻ on the Slides card's strip, and
+  **Refresh** on the stage bar (Timer · Refresh · Minimize · Exit) when slides are staged. The deck
+  reloads with your edits, and the clicker keeps working. It starts again from the first slide,
+  and a "Publish to web" link can take Google a few minutes to update.
+- **The pen tools on the left.** Croix: "Can I have a vertical pen menu on the left side of the
+  screen. It's awkward to walk across the board every time to click it open." The pen tools now
+  stand upright along the left edge, centred, and on staged slides the pen and magnifier sit
+  mid-left too. ⇄ on the bar sends them to the bottom-right corner and back, and the side is
+  remembered.
+
+Three tests; 267.
+
 ## 7.27.0 — 2026-09-30
 
 **Softer rain, a forest you can hear, a sea that breaks.** Croix: "The forest, there's like a white
