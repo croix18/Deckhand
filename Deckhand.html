@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.25.0",
+  "appVersion": "7.26.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -4171,7 +4171,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.25.0",
+  appVersion: "7.26.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4438,7 +4438,7 @@ function sanitize(c){
         if (typeof w.side === "number" && w.side >= 0 && w.side < 13) wc.side = Math.round(w.side);   // v7.22: the picked side
         wc.repeat = bool(w.repeat, false);
         wc.lofi = bool(w.lofi, true);                                                         // v7.24: "No music" = false
-        wc.nature = ["fire", "rain", "storm", "brook", "forest", "brown", "white"].indexOf(w.nature) >= 0 ? w.nature : "";   // v7.24
+        wc.nature = ["fire", "rain", "storm", "brook", "forest", "ocean", "brown", "white"].indexOf(w.nature) >= 0 ? w.nature : "";   // v7.24
       }
       if (ty === "yt"){
         /* the card's runtime rule is YouTube-ONLY — sanitize must agree,
@@ -10018,6 +10018,15 @@ var Lofi = (function(){
 
     /* ---- the side's settings on the tape ---- */
     function toneTo(f, at, tau){ tone.frequency.setTargetAtTime(Math.max(300, f), at, tau); }
+    /* v7.26 (Croix: "The rain and storm sounded obvious when it changed tracks. I need it
+       smoother"): the side's own rain and needle glide over several seconds between sides, and
+       when a nature sound is on the card mutes this rain entirely — so the rain you hear never
+       changes when the music changes */
+    var bedOn = { rain: true, dust: true };
+    function bedsTo(at){
+      dustG.gain.setTargetAtTime(bedOn.dust ? tr.dust * 1.5 : 0, at, 2.5);
+      rainG.gain.setTargetAtTime(bedOn.rain ? tr.rain * .55 : 0, at, 2.5);
+    }
     function side(next, at){
       tr = next || TRACKS[0]; at = at == null ? ctx.currentTime : at;
       barNo = 0; done = false; prevV = null; lastLead = 0;
@@ -10028,8 +10037,7 @@ var Lofi = (function(){
       revOut.gain.setTargetAtTime(tr.room * 1.4, at, .3);
       mk.gain.setTargetAtTime(1.4 * (tr.trim || 1), at, .3);           // the sides sit at one loudness
       dly.delayTime.setValueAtTime(Math.min(1.5, spb * .75), at);
-      dustG.gain.setTargetAtTime(tr.dust * 1.5, at, .6);
-      rainG.gain.setTargetAtTime(tr.rain * .55, at, 1);
+      bedsTo(at);
     }
     function bar(t){
       var m = M(), spb = 60 / tr.bpm, blen = spb * m;
@@ -10079,7 +10087,7 @@ var Lofi = (function(){
       newBus: newBus,
       done: function(){ return done; },
       seek: function(n){ barNo = n; },
-      quiet: function(){ var at = ctx.currentTime; dustG.gain.setTargetAtTime(0, at, .4); rainG.gain.setTargetAtTime(0, at, .4); },   // v7.24: nature alone, no needle
+      beds: function(o){ bedOn.rain = !!o.rain; bedOn.dust = !!o.dust; bedsTo(ctx.currentTime); },   // v7.26: the card says which of the side's beds may sound
       restart: function(){ barNo = 0; done = false; prevV = null; toneTo(tr.tone * .3, ctx.currentTime, .3); },
       at: function(){ var w = where(barNo); return { bar: barNo, section: w ? w.sec : "end" }; },
       stop: function(){ try { wowL.stop(); flut.stop(); dustS.stop(); rainS.stop(); } catch(e){} }
@@ -10115,7 +10123,9 @@ var Nature = (function(){
     { id: "rain",   name: "Heavy rain",     feel: "a downpour on the roof",       trim: 2.2 },
     { id: "storm",  name: "Thunderstorm",   feel: "heavy rain, rolling thunder",  trim: 1.6 },
     { id: "brook",  name: "Babbling brook", feel: "water over stones",            trim: 1.75 },
-    { id: "forest", name: "Forest",         feel: "wind in the leaves, birds",    trim: 2.5 },
+    { id: "forest", name: "Forest",         feel: "wind, birds, crickets, a woodpecker", trim: 1.1 },
+    /* v7.26 (Croix: "Can you add in an ocean one") */
+    { id: "ocean",  name: "Ocean",          feel: "waves rolling in",             trim: 2 },
     /* Croix: "can you also give me a brown noise and a white noise on there too" */
     { id: "brown",  name: "Brown noise",    feel: "a deep, steady rumble",        trim: 1.33 },
     { id: "white",  name: "White noise",    feel: "an even, bright hush",         trim: 1 }
@@ -10184,7 +10194,7 @@ var Nature = (function(){
         var pk = pinkGen(), env = smooth(d.length, .25, .8, 1);
         for (var i = 0; i < d.length; i++) d[i] = pk() * env[i];
       }); },
-      drops: function(){ return loop("drops", 7.7, 2, function(d){
+      drops: function(key, sec){ return loop(key, sec, 2, function(d){
         var n = Math.floor(d.length / sr * 520), k, j;
         for (k = 0; k < n; k++){                                        // a downpour: hundreds of hits a second
           var at = Math.floor(R() * (d.length - 400)), a = Math.pow(R(), 2), len = 20 + Math.floor(R() * 110), lp = .15 + R() * .7, y = 0;
@@ -10223,24 +10233,40 @@ var Nature = (function(){
       }); },
       brown: function(){ return loop("brown", 13.3, 2, function(d){ var br = brownGen(); for (var i = 0; i < d.length; i++) d[i] = br(); }); },
       white: function(){ return loop("white", 10.1, 2, function(d){ for (var i = 0; i < d.length; i++) d[i] = white(); }); },
-      leaves: function(){ return loop("leaves", 15.1, 2, function(d){
-        var pk = pinkGen(), env = smooth(d.length, .07, 0, 1), flut = smooth(d.length, 6, .6, 1);
-        for (var i = 0; i < d.length; i++){ var e = env[i]; d[i] = pk() * (.12 + e * e) * flut[i]; }
+      /* v7.26 (Croix: "The forest one was super washed out with static"): wind is a moving
+         resonance, not hiss — noise through a band that rises and opens with each gust — and
+         the leaves only rustle at the top of a gust */
+      wind: function(){ return loop("wind", 19.7, 2, function(d){
+        var pk = pinkGen(), env = smooth(d.length, .06, 0, 1), low = 0, band = 0, prev = 0;
+        for (var i = 0; i < d.length; i++){
+          var e = env[i], fc = 180 + 520 * e, f = 2 * Math.sin(Math.PI * fc / sr), x = pk();
+          var high = x - low - 1.1 * band; band += f * high; low += f * band;
+          var rustle = (x - prev * .92) * e * e * e * .35; prev = x;
+          d[i] = band * (.25 + e * e) + rustle;
+        }
+      }); },
+      sea: function(){ return loop("sea", 12.1, 2, function(d){ var pk = pinkGen(); for (var i = 0; i < d.length; i++) d[i] = pk(); }); },
+      surf: function(){ return loop("surf", 17.3, 2, function(d){
+        var br = brownGen(), env = smooth(d.length, .1, .6, 1);
+        for (var i = 0; i < d.length; i++) d[i] = br() * env[i];
       }); }
     };
     /* each sound: its layers [bed, gain, filters…] */
     var MIX = {
       fire:   [["roar", .55, ["lowpass", 520]], ["hiss", .035, ["bandpass", 2600, .6]], ["embers", .22, ["highpass", 1400]]],
-      rain:   [["wash", .38, ["highpass", 280], ["lowpass", 7200]], ["drops", .42, ["highpass", 900]], ["roof", .3, ["lowpass", 260]]],
-      storm:  [["wash", .34, ["highpass", 260], ["lowpass", 6000]], ["drops", .34, ["highpass", 900], ["lowpass", 7000]], ["roof", .34, ["lowpass", 240]], ["gusts", .3, ["bandpass", 480, .7]]],
+      rain:   [["wash", .38, ["highpass", 280], ["lowpass", 7200]], ["drops", .3, ["highpass", 900]], ["dropsB", .3, ["highpass", 900]], ["roof", .3, ["lowpass", 260]]],
+      storm:  [["wash", .34, ["highpass", 260], ["lowpass", 6000]], ["drops", .24, ["highpass", 900], ["lowpass", 7000]], ["dropsB", .24, ["highpass", 900], ["lowpass", 7000]], ["roof", .34, ["lowpass", 240]], ["gusts", .3, ["bandpass", 480, .7]]],
       brook:  [["bubblesA", .5, ["highpass", 250]], ["bubblesB", .35, ["highpass", 250]], ["flow", .12, ["bandpass", 900, .45]], ["roof", .1, ["lowpass", 380]]],
-      forest: [["leaves", .35, ["highpass", 500], ["lowpass", 5200]]],
+      forest: [["wind", .5, ["highpass", 60], ["lowpass", 3800]]],
+      ocean:  [["surf", .3, ["lowpass", 380]]],
       brown:  [["brown", .6, ["highpass", 25]]],
       white:  [["white", .25]]
     };
     function bed(name){
       if (name === "bubblesA") return BEDS.bubbles("bubblesA", 9.3, 150);
       if (name === "bubblesB") return BEDS.bubbles("bubblesB", 13.1, 90);
+      if (name === "drops") return BEDS.drops("drops", 7.7);
+      if (name === "dropsB") return BEDS.drops("dropsB", 11.9);
       return BEDS[name]();
     }
 
@@ -10259,14 +10285,16 @@ var Nature = (function(){
       at = at == null ? ctx.currentTime : at;
       if (cur){                                            // the old sound fades out and lets go
         var old = cur;
-        old.g.gain.cancelScheduledValues(at); old.g.gain.setTargetAtTime(0, at, .5);
-        setTimeout(function(){ old.src.forEach(function(s){ try { s.stop(); } catch(e){} }); try { old.g.disconnect(); } catch(e){} }, 4000);
+        /* v7.26 (Croix: "The rain and storm sounded obvious when it changed tracks. I need it
+           smoother"): a long cross-fade — the old sound takes ~5 s to let go under the new one */
+        old.g.gain.cancelScheduledValues(at); old.g.gain.setTargetAtTime(0, at, 1.3);
+        setTimeout(function(){ old.src.forEach(function(s){ try { s.stop(); } catch(e){} }); try { old.g.disconnect(); } catch(e){} }, 10000);
         cur = null;
       }
       curId = byId(id) ? id : "";
       if (!curId) return;
       var g = ctx.createGain(), src = [];
-      g.gain.setValueAtTime(0, at); g.gain.setTargetAtTime(byId(curId).trim, at, .9);   // a slow fade in
+      g.gain.setValueAtTime(0, at); g.gain.setTargetAtTime(byId(curId).trim, at, 1.3);   // a slow fade in
       g.connect(lvl);
       MIX[curId].forEach(function(L){
         var s = ctx.createBufferSource(); s.buffer = bed(L[0]); s.loop = true;
@@ -10277,14 +10305,28 @@ var Nature = (function(){
         src.push(s);
       });
       cur = { g: g, src: src };
-      nextEv = { small: at + .2, burst: at + 2 + R() * 4, pop: at + 3 + R() * 5, thunder: at + 5 + R() * 6, bird: at + 1 + R() * 2 };
-      singer = null;
-      if (curId === "fire" || curId === "storm" || curId === "forest") shared = {};
+      nextEv = { small: at + .2, burst: at + 2 + R() * 4, pop: at + 3 + R() * 5, thunder: at + 5 + R() * 6, bird: at + 1 + R() * 2,
+        crk: at + 8 + R() * 20, bird2: at + 3 + R() * 4, peck: at + 12 + R() * 25, crow: at + 25 + R() * 40, owl: at + 45 + R() * 60, frog: at + 18 + R() * 30,
+        wave: at + .5, gull: at + 30 + R() * 60 };
+      singer = null; singer2 = null; cricket = null;
+      shared = {};                                         // every sound's events pan into its own fader
     }
 
     /* ---- the events ---- */
     var shared = {};
-    function pan(p){ var k = Math.round(p * 5); if (!shared["p" + k]){ var n = ctx.createStereoPanner(); n.pan.value = k / 5; n.connect(cur.g); shared["p" + k] = n; } return shared["p" + k]; }
+    function pan(p){
+      var k = Math.round(p * 5);
+      if (!shared["p" + k]){
+        var n = ctx.createStereoPanner(); n.pan.value = k / 5; n.connect(cur.g); shared["p" + k] = n;
+        if (curId !== "fire"){ var rs = ctx.createGain(); rs.gain.value = .35; n.connect(rs); rs.connect(room); }   // v7.26: one room send per position, not per note (the fire stays dry)
+      }
+      return shared["p" + k];
+    }
+    function lpAt(f, p){                                    // a shared distance filter per (cutoff, position)
+      var key = "lp" + Math.round(f / 400) + "_" + Math.round(p * 5);
+      if (!shared[key]){ var n = ctx.createBiquadFilter(); n.type = "lowpass"; n.frequency.value = Math.round(f / 400) * 400; n.connect(pan(p)); shared[key] = n; }
+      return shared[key];
+    }
     function grain(key, sec, fill){ return oneShot(key, sec, fill); }
     function crackleBuf(i, big){
       return grain((big ? "pop" : "crk") + i, big ? .09 : .03, function(d){
@@ -10326,12 +10368,12 @@ var Nature = (function(){
         }
       });
     }
-    var CHIRP = {};
+    var cricket = null, singer2 = null;
     function tone(t, dur, f0, f1, a, p, opts){
       /* one bird note: a sine swept f0 → f1 (a curve for the shape), soft edges */
       opts = opts || {};
       var o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine";
+      o.type = opts.type || "sine";
       if (opts.curve){ var c = new Float32Array(opts.curve.length); for (var i = 0; i < c.length; i++) c[i] = opts.curve[i]; o.frequency.setValueCurveAtTime(c, t, dur); }
       else { o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur); }
       if (opts.vib){ var v = ctx.createOscillator(), vg = ctx.createGain(); v.frequency.value = opts.vib[0]; vg.gain.value = opts.vib[1]; v.connect(vg); vg.connect(o.frequency); v.start(t); v.stop(t + dur + .05); }
@@ -10339,9 +10381,15 @@ var Nature = (function(){
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + att);
       g.gain.setValueAtTime(a, t + dur - att); g.gain.linearRampToValueAtTime(0, t + dur);
       var node = o;
-      if (opts.lp){ var f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = opts.lp; o.connect(f); node = f; }
-      node.connect(g); g.connect(pan(p));
-      var r = ctx.createGain(); r.gain.value = opts.rev || .4; g.connect(r); r.connect(room);
+      if (opts.bp){ var bpf = ctx.createBiquadFilter(); bpf.type = "bandpass"; bpf.frequency.value = opts.bp; bpf.Q.value = opts.q || 2; node.connect(bpf); node = bpf; }
+      if (opts.am){                                        // a croak: the note chopped by a fast pulse
+        var am = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+        am.gain.value = .5; lfo.type = "square"; lfo.frequency.value = opts.am; lg.gain.value = .5;
+        lfo.connect(lg); lg.connect(am.gain); lfo.start(t); lfo.stop(t + dur + .05);
+        node.connect(am); node = am;
+      }
+      node.connect(g); g.connect(opts.lp ? lpAt(opts.lp, p) : pan(p));
+      if (opts.rev != null && opts.rev > .35){ var r = ctx.createGain(); r.gain.value = opts.rev - .35; g.connect(r); r.connect(room); }   // extra room for the far ones
       o.start(t); o.stop(t + dur + .02);
     }
     var SPECIES = {
@@ -10356,7 +10404,7 @@ var Nature = (function(){
       /* a trill: one chirp repeated fast, swelling and fading */
       trill: function(t, s){
         var n = 12 + Math.floor(R() * 10), f = 4800 + R() * 800;
-        for (var i = 0; i < n; i++){ var sw = Math.sin(Math.PI * (i + .5) / n); tone(t + i * .055, .04, f, f * .72, .07 * s.a * (.3 + .7 * sw), s.p, { lp: s.lp }); }
+        for (var i = 0; i < n; i++){ var sw = Math.sin(Math.PI * (i + .5) / n); tone(t + i * .055, .04, f, f * .72, .05 * s.a * (.3 + .7 * sw), s.p, { lp: s.lp }); }
         return n * .055;
       },
       /* a dove, far off: hoo-OO, hoo, hoo */
@@ -10371,10 +10419,50 @@ var Nature = (function(){
       /* two quick upward chips */
       chip: function(t, s){ var f = 3400 + R() * 1200; tone(t, .06, f * .8, f * 1.15, .07 * s.a, s.p, { lp: s.lp }); tone(t + .14, .06, f * .82, f * 1.2, .06 * s.a, s.p, { lp: s.lp }); return .25; }
     };
-    var KINDS = ["whistle", "warble", "trill", "dove", "chip", "warble", "whistle"];
+    var KINDS = ["whistle", "warble", "trill", "chip", "warble", "whistle", "trill", "chip", "warble", "dove"];   // the dove is the rare one
+    /* v7.26 the other animals */
+    function tapBuf(){ return grain("tap", .04, function(d){ var f = 1000 + R() * 300; for (var j = 0; j < d.length; j++) d[j] = (white() * Math.exp(-j / (sr * .002)) + .7 * Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / (sr * .006))); }); }
+    function woodpecker(t){
+      var n = 12 + Math.floor(R() * 10), gap = .052, p = (R() * 2 - 1) * .7, a = .35 + R() * .3, lp = 2200 + R() * 2500;
+      for (var i = 0; i < n; i++){ play(tapBuf(), t, a * (i < 2 ? .6 : 1) * (1 - i / n * .4), p, { lp: lp, rev: .35 }); t += gap; gap *= 1.02; }
+    }
+    function crow(t){
+      var n = 2 + Math.floor(R() * 3), p = (R() * 2 - 1) * .8, far = R();
+      for (var i = 0; i < n; i++){ var f = 560 + R() * 60; tone(t + i * .6, .32, f, f * .82, .05 * (1 - far * .5), p, { type: "sawtooth", bp: 1300, q: 1.5, lp: 2600 - far * 1200, rev: .5 }); }
+    }
+    function owl(t){
+      var f = 380 + R() * 30, p = (R() * 2 - 1) * .5, at = t;
+      [[.28, .45], [.16, .12], [.18, .45], [.55, 0]].forEach(function(n){ tone(at, n[0], f * 1.02, f * .96, .06, p, { lp: 900, rev: .7 }); at += n[0] + n[1]; });
+    }
+    function frogs(t){
+      var n = 3 + Math.floor(R() * 4), p = (R() * 2 - 1) * .7, f = 380 + R() * 200;
+      for (var i = 0; i < n; i++){ var at = t + i * (1 + R()); tone(at, .09, f, f * .95, .07, p, { type: "triangle", bp: 900, q: 1.2, am: 28, rev: .3 }); tone(at + .14, .11, f, f * .93, .07, p, { type: "triangle", bp: 900, q: 1.2, am: 28, rev: .3 }); }
+    }
+    function chirpCricket(t, c){
+      for (var k = 0; k < 3; k++) tone(t + k * .032, .018, c.f, c.f * .995, .022, c.p, { rev: .15 });
+    }
+    function wave(t){
+      /* a wave: the body swells and brightens as it rises, crashes, and the foam fizzes back */
+      var s = .6 + R() * .4, rise = 2.2 + R() * 1.4, dcy = 5 + R() * 2.5, p = (R() * 2 - 1) * .5, end = t + rise + dcy * 1.6;
+      var src = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+      src.buffer = bed("sea"); src.loop = true;
+      lp.type = "lowpass"; lp.Q.value = .4;
+      lp.frequency.setValueAtTime(220, t); lp.frequency.exponentialRampToValueAtTime(900 + 1500 * s, t + rise); lp.frequency.exponentialRampToValueAtTime(320, t + rise + dcy);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22 * s, t + rise * .75); g.gain.linearRampToValueAtTime(.55 * s, t + rise); g.gain.setTargetAtTime(0, t + rise, dcy / 3.5);
+      src.connect(lp); lp.connect(g); g.connect(pan(p));
+      src.start(t, R() * 10); src.stop(end);
+      var src2 = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), g2 = ctx.createGain();
+      src2.buffer = bed("sea"); src2.loop = true;
+      hp.type = "highpass"; hp.frequency.value = 1800;
+      g2.gain.setValueAtTime(0, t); g2.gain.setValueAtTime(0, t + rise - .25); g2.gain.linearRampToValueAtTime(.3 * s, t + rise + .35); g2.gain.setTargetAtTime(0, t + rise + .35, dcy / 3);
+      src2.connect(hp); hp.connect(g2); g2.connect(pan(p * .3));
+      src2.start(t, R() * 10); src2.stop(end);
+      return rise + dcy * (.55 + R() * .35);                // the next one comes in as this one pulls back
+    }
     function newSinger(){
       var far = R();
-      return { kind: KINDS[Math.floor(R() * KINDS.length)], p: (R() * 2 - 1) * .8, a: .45 + (1 - far) * .55, lp: 3500 + (1 - far) * 5000, songs: 2 + Math.floor(R() * 4) };
+      var kind = KINDS[Math.floor(R() * KINDS.length)];
+      return { kind: kind, p: (R() * 2 - 1) * .8, a: .45 + (1 - far) * .55, lp: 3500 + (1 - far) * 5000, songs: kind === "dove" ? 1 + Math.floor(R() * 2) : 2 + Math.floor(R() * 4) };
     }
 
     function tick(ahead){
@@ -10402,7 +10490,32 @@ var Nature = (function(){
           var len = SPECIES[singer.kind](t, singer);
           singer.songs--;
           if (R() < .15){ var other = newSinger(); SPECIES[other.kind](t + len + .3 + R(), other); }   // someone answers
-          e.bird = t + len + 1.5 + R() * (singer.songs > 0 ? 3.5 : 6);
+          e.bird = t + len + .6 + R() * (singer.songs > 0 ? 2.4 : 3.5);
+        }
+        while (e.bird2 < ahead){                             // a second bird, further off, on its own time
+          t = e.bird2;
+          if (!singer2 || singer2.songs <= 0){ singer2 = newSinger(); singer2.a *= .6; singer2.lp = Math.min(singer2.lp, 5000); }
+          var len2 = SPECIES[singer2.kind](t, singer2);
+          singer2.songs--;
+          e.bird2 = t + len2 + 1.5 + R() * (singer2.songs > 0 ? 3 : 7);
+        }
+        /* crickets now and then: a bout of 10–25 s, one or two of them */
+        while (e.crk < ahead){
+          t = e.crk;
+          if (!cricket){ cricket = { until: t + 10 + R() * 15, list: [{ f: 4300 + R() * 500, p: (R() * 2 - 1) * .8, n: t }, { f: 4600 + R() * 500, p: (R() * 2 - 1) * .8, n: t + .3 }].slice(0, R() < .5 ? 1 : 2) }; }
+          cricket.list.forEach(function(c){ while (c.n < t + .35){ chirpCricket(c.n, c); c.n += .55 + R() * .2; } });
+          if (t > cricket.until){ cricket = null; e.crk = t + 25 + R() * 35; } else e.crk = t + .3;
+        }
+        while (e.peck < ahead){ woodpecker(e.peck); e.peck += 30 + R() * 45; }
+        while (e.crow < ahead){ crow(e.crow); e.crow += 45 + R() * 60; }
+        while (e.owl < ahead){ owl(e.owl); e.owl += 80 + R() * 90; }
+        while (e.frog < ahead){ frogs(e.frog); e.frog += 35 + R() * 50; }
+      } else if (curId === "ocean"){
+        while (e.wave < ahead){ e.wave += wave(e.wave); }
+        while (e.gull < ahead){                              // a gull, far off, now and then
+          t = e.gull; var gp = (R() * 2 - 1) * .8;
+          for (var gi = 0; gi < 2 + Math.floor(R() * 2); gi++) tone(t + gi * .5, .32, 1500 + R() * 200, 1050, .025, gp, { type: "sawtooth", bp: 1800, q: 2, lp: 2600, rev: .5 });
+          e.gull += 60 + R() * 80;
         }
       }
     }
@@ -10410,7 +10523,7 @@ var Nature = (function(){
       set: set,
       tick: tick,
       id: function(){ return curId; },
-      level: function(v, at){ lvl.gain.setTargetAtTime(v, at == null ? ctx.currentTime : at, .4); },
+      level: function(v, at){ lvl.gain.setTargetAtTime(v, at == null ? ctx.currentTime : at, 1.2); },   // v7.26: eases, never jumps
       stop: function(){ set(""); }
     };
   }
@@ -10600,7 +10713,7 @@ function makeMusic(host, wcfg){
   function mixLevels(){
     /* alone, a nature sound is full; under the lofi it sits back */
     if (nat) nat.level(wcfg.lofi ? .45 : 1);
-    if (eng && !wcfg.lofi) eng.quiet();
+    if (eng) eng.beds({ rain: wcfg.lofi && !wcfg.nature, dust: wcfg.lofi });   // v7.26: a nature sound replaces the side's own rain
   }
   function pickNature(id, keepOpen){
     wcfg.nature = Nature.byId(id) ? id : "";

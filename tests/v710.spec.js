@@ -118,6 +118,6 @@ test.describe("v7.10 October", () => {
     ok(!(await page.evaluate(() => window.Deckhand.sea("bats"))), "bats played in September");
     ok(!(await page.evaluate(() => window.Deckhand.sea("ghost"))), "the ghost played in September");
     await dh.addW("addMusicBtn");
-    ok((await page.evaluate(() => window.Deckhand.lofiSides())).length === 10, "the haunted side leaked into September");
+    ok(!(await page.evaluate(() => window.Deckhand.lofiSides())).includes("Graveyard shift"), "the haunted side leaked into September");
   });
 });

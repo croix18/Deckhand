@@ -2,6 +2,28 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.26.0 — 2026-09-30
+
+**A real forest, an ocean, and smoother changes.** Croix: "The forest one was super washed out with
+static. It should be animal noises and wind sounds, crickets occasionally, birds, other animals.
+Can you add in an ocean one. The rain and storm sounded obvious when it changed tracks. I need it
+smoother."
+
+The **forest** lost its hiss. The wind is now a low whoosh that rises and opens with each gust, and
+the leaves only rustle at the top of a gust. There are two birds singing on their own schedules
+(whistles, warblers, trills, chips, and now and then a dove), crickets in bouts of 10–25 seconds, a
+woodpecker, a crow, frogs and, rarely, an owl.
+
+**Ocean** is new: waves swell and brighten as they rise, crash, and fizz back, each one a different
+size, with the next coming in as the last pulls back. There's a low surf underneath and a gull far
+off now and then.
+
+**Smoother:** switching sounds is now a long cross-fade (about five seconds), and the level eases
+when the music comes or goes. When a nature sound is on, the lofi side's own rain is muted, so the
+rain you hear never changes when the track changes. Between sides, a side's own rain and needle
+glide over several seconds. The rain uses two drop layers of different lengths, so its pattern
+never lines up the same way. One test; 263.
+
 ## 7.25.0 — 2026-09-30
 
 **Midnight jazz.** Croix: "I really like the slow piano jazz with the storm going on. It's cozy.

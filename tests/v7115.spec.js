@@ -1148,7 +1148,7 @@ test.describe("v7.24", () => {
     });
     for (const s of r.sides) ok(s.bpm <= 68 && s.dust <= .25 && s.wow <= .8, "not relaxing: " + JSON.stringify(s));
     ok(r.sides[0].name === "Rainy window", "Rainy window is not side A");
-    ok(r.nat.length === 7, "sounds: " + r.nat.length);
+    ok(r.nat.length === 8, "sounds: " + r.nat.length);
     for (const n of r.nat) {
       ok(!n.bad && n.pk > .05 && n.pk < .99, n.id + " peak " + n.pk);
       ok(n.db > -34 && n.db < -12, n.id + " loudness " + n.db.toFixed(1));
@@ -1158,7 +1158,7 @@ test.describe("v7.24", () => {
     const cur = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.current());
     const running = () => page.evaluate(() => document.querySelector(".w-music")._entry.api.running());
     await page.click(".w-music .muWhat");
-    await expect(page.locator(".w-music .muNat")).toHaveCount(8);            // five nature sounds, brown and white noise, and Off
+    await expect(page.locator(".w-music .muNat")).toHaveCount(9);            // six nature sounds, brown and white noise, and Off
     await page.click('.w-music .muNat[data-n="rain"]');
     await expect.poll(running).toBe(true);
     await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Rainy window + Heavy rain");
@@ -1210,5 +1210,36 @@ test.describe("v7.25", () => {
     await page.click(".w-music .muWhat");
     await page.click('.w-music .muSide[data-i="' + i + '"]');
     await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Midnight jazz + Babbling brook");   // a sound already on stays
+  });
+});
+
+/* v7.26 — the forest and the ocean (Croix: "The forest one was super washed out with static. It should be animal
+ * noises and wind sounds, crickets occasionally, birds, other animals. Can you add in an ocean one. The rain and storm
+ * sounded obvious when it changed tracks. I need it smoother."). */
+test.describe("v7.26", () => {
+  test("v7.26: the forest is wind and animals, not hiss; the ocean rises and falls in waves; the card mutes a side's own rain under a nature sound", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    const r = await page.evaluate(async () => {
+      const N = window.Deckhand.nature, out = {};
+      for (const id of ["forest", "ocean"]) {
+        const buf = await N.render(id, 24);
+        const d = buf.getChannelData(0), from = 44100 * 4;
+        let hf = 0, all = 0, prev = 0;                     // brightness: the energy of the sample-to-sample change
+        const w = [];
+        for (let i = from; i < d.length; i++) { const x = d[i]; hf += (x - prev) * (x - prev); all += x * x; prev = x; }
+        for (let i = from; i + 22050 <= d.length; i += 22050) { let s = 0; for (let j = 0; j < 22050; j++) s += d[i + j] * d[i + j]; w.push(Math.sqrt(s / 22050)); }
+        out[id] = { bright: hf / all, swell: Math.max(...w) / Math.min(...w) };
+      }
+      return out;
+    });
+    ok(r.forest.bright < .05, "the forest hisses: " + JSON.stringify(r.forest));
+    ok(r.ocean.swell > 1.6, "the ocean doesn't swell: " + JSON.stringify(r.ocean));
+    await dh.addW("addMusicBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-music .muWhat");
+    await page.click('.w-music .muNat[data-n="ocean"]');
+    await expect(page.locator(".w-music .muWhat")).toHaveText("Lofi — Rainy window + Ocean");
+    const saved = await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "music").nature);
+    ok(saved === "ocean", "ocean not kept: " + saved);
   });
 });
