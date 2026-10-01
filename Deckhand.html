@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.29.0",
+  "appVersion": "7.30.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -961,6 +961,46 @@
   @keyframes lHop{0%{transform:none;} 40%{transform:translateY(-34px) rotate(180deg);} 75%{transform:translateY(0) rotate(360deg) scaleY(.9);} 100%{transform:rotate(360deg);}}
   @keyframes lSlurp{0%, 100%{transform:none;} 30%{transform:scaleY(.9) scaleX(1.05);} 60%{transform:scaleY(1.03) scaleX(.98);}}
   @keyframes lNom{0%{transform:none;} 40%{transform:scale(.9) rotate(-6deg);} 100%{transform:none;}}
+
+
+  /* v7.30 (Croix: "it is October tomorrow, so they need to be haunted or spooky for this month"):
+     the same lunch, haunted — a Franken-sandwich (stitches, bolts, sleepy lids, a little green),
+     a jack-o'-lantern where the apple was (its candle flickers), a spider cookie with candy eyes,
+     an orange tray, and a carton that says BOO with a ghost hiding behind it who peeks out now and
+     then (and pops up when the milk is tapped). Only in October, like the rest of the month. */
+  #lunchArt .ocOnly{display:none;}
+  body.october #lunchArt .ocOnly{display:inline;}
+  body.october #lunchArt .ocNot{display:none;}
+  body.october #lunchArt .lTrayBody{fill:var(--oct);}
+  body.october #lunchArt .lTrayShine{stroke:#F6B871;}
+  body.october #lunchArt .lTop .lBread{fill:#B9D58C;}
+  body.october #lunchArt .lTop .lCrumb{fill:#E0EFBF;}
+  #lunchArt .lLid{stroke:var(--navy); stroke-width:4; stroke-linecap:round;}
+  #lunchArt .lStitch{fill:none; stroke:var(--navy); stroke-width:2.6; stroke-linecap:round;}
+  #lunchArt .lBolt{fill:#A9B6C2; stroke:var(--navy); stroke-width:3;}
+  #lunchArt .lPk{fill:var(--oct); stroke:var(--navy); stroke-width:4;}
+  #lunchArt .lPkRib{fill:none; stroke:var(--octDeep); stroke-width:3;}
+  #lunchArt .lPkStem{fill:none; stroke:#4E7A3A; stroke-width:6; stroke-linecap:round;}
+  #lunchArt .lPkFace path{fill:var(--octLit); stroke:var(--navy); stroke-width:2.4; stroke-linejoin:round;}
+  body.october #lunchArt .lCookieBody{fill:#5B3B2A;}
+  body.october #lunchArt .lChips{display:none;}
+  #lunchArt .lLegs path{fill:none; stroke:var(--navy); stroke-width:3.4; stroke-linecap:round;}
+  #lunchArt .lCandyEyes circle{fill:var(--white); stroke:var(--navy); stroke-width:1.6;}
+  #lunchArt .lCandyEyes .lPupil{fill:var(--navy); stroke:none;}
+  #lunchArt .lGhostBody{fill:var(--white); stroke:var(--navy); stroke-width:4; stroke-linejoin:round;}
+  #lunchArt .lGhostEye{fill:var(--navy);}
+  #lunchArt .lGhost{transform-box:fill-box; transform-origin:50% 100%; transform:translate(10px, 40px);}
+  @media (prefers-reduced-motion: no-preference){
+    body.october .lunchTime #lunchArt .lPkFace{animation:lFlicker 1.9s steps(1) infinite;}
+    body.october .lunchTime #lunchArt .lGhost{animation:lPeek 9s ease-in-out infinite;}
+    body.october .lunchTime #lunchArt .lLegs{animation:lScuttle 1.2s ease-in-out infinite;}
+  }
+  @keyframes lFlicker{0%, 100%{opacity:1;} 12%{opacity:.7;} 18%{opacity:1;} 46%{opacity:.82;} 52%{opacity:1;} 77%{opacity:.6;} 81%{opacity:.95;}}
+  /* the ghost: hidden behind the carton, it rises at its shoulder, looks, and sinks back */
+  @keyframes lPeek{0%, 62%, 100%{transform:translate(10px, 40px);} 70%, 84%{transform:translate(-30px, -20px) rotate(-8deg);} 90%{transform:translate(-26px, -14px) rotate(-4deg);}}
+  @keyframes lScuttle{0%, 100%{transform:none;} 50%{transform:translateY(-1.5px);}}
+  #lunchArt .lGhost.go{animation:lBoo 1.4s cubic-bezier(.3,.8,.4,1) !important;}
+  @keyframes lBoo{0%{transform:translate(10px, 40px);} 25%{transform:translate(-34px, -42px) scale(1.12) rotate(-10deg);} 70%{transform:translate(-30px, -36px) rotate(-6deg);} 100%{transform:translate(10px, 40px);}}
 
   /* container-query sizing inside widgets */
   /* sized to read from the BACK of the room (Croix, Sep 1);
@@ -3310,18 +3350,39 @@
                 <path d="M33 114 V96 q0 -10 10 -11 q3 -13 22 -13 q19 0 22 13 q10 1 10 11 V114 Z" class="lCrumb"/>
                 <g class="lEyes"><circle cx="54" cy="96" r="4.6"/><circle cx="76" cy="96" r="4.6"/></g>
                 <path d="M56 105 q9 8 18 0" class="lSmile"/>
+                <g class="ocOnly">
+                  <path d="M47 92 h14 M69 92 h14" class="lLid"/>
+                  <path d="M38 83 L92 83 M44 79 v8 M54 79 v8 M64 79 v8 M74 79 v8 M84 79 v8" class="lStitch"/>
+                  <rect x="15" y="97" width="10" height="9" rx="2" class="lBolt"/><rect x="105" y="97" width="10" height="9" rx="2" class="lBolt"/>
+                </g>
               </g>
             </g>
             <g class="lApple lTap" data-l="apple">
-              <path d="M150 104 c-10 -8 -30 -6 -32 14 c-2 18 12 36 24 34 c4 -1 6 -2 8 -2 c2 0 4 1 8 2 c12 2 26 -16 24 -34 c-2 -20 -22 -22 -32 -14 z" class="lAppleBody"/>
-              <path d="M130 118 q2 -8 9 -10" class="lShine"/>
-              <path d="M150 104 q1 -10 6 -14" class="lStem"/>
-              <path d="M156 92 q10 -9 19 -2 q-9 9 -19 2 z" class="lLeaf"/>
-              <g class="lEyes"><circle cx="142" cy="124" r="4"/><circle cx="158" cy="124" r="4"/></g>
-              <path d="M144 133 q6 6 12 0" class="lSmile"/>
+              <g class="ocNot">
+                <path d="M150 104 c-10 -8 -30 -6 -32 14 c-2 18 12 36 24 34 c4 -1 6 -2 8 -2 c2 0 4 1 8 2 c12 2 26 -16 24 -34 c-2 -20 -22 -22 -32 -14 z" class="lAppleBody"/>
+                <path d="M130 118 q2 -8 9 -10" class="lShine"/>
+                <path d="M150 104 q1 -10 6 -14" class="lStem"/>
+                <path d="M156 92 q10 -9 19 -2 q-9 9 -19 2 z" class="lLeaf"/>
+                <g class="lEyes"><circle cx="142" cy="124" r="4"/><circle cx="158" cy="124" r="4"/></g>
+                <path d="M144 133 q6 6 12 0" class="lSmile"/>
+              </g>
+              <g class="ocOnly">
+                <path d="M150 105 q-4 -9 2 -15" class="lPkStem"/>
+                <ellipse cx="150" cy="127" rx="29" ry="23" class="lPk"/>
+                <path d="M139 107 q-13 20 -2 41 M161 107 q13 20 2 41" class="lPkRib"/>
+                <g class="lPkFace">
+                  <path d="M136 121 l6 -9 l6 9 z M152 121 l6 -9 l6 9 z"/>
+                  <path d="M134 131 q16 14 32 0 l-5 2 l-3 -4 l-4 5 l-4 -5 l-4 5 l-4 -5 l-3 4 z"/>
+                </g>
+              </g>
             </g>
             <g class="lCookie lTap" data-l="cookie">
+              <g class="ocOnly lLegs">
+                <path d="M190 126 q-10 -8 -16 -2 M188 133 q-12 -2 -17 5 M190 140 q-9 4 -11 12 M196 146 q-5 6 -4 12"/>
+                <path d="M220 126 q10 -8 16 -2 M222 133 q12 -2 17 5 M220 140 q9 4 11 12 M214 146 q5 6 4 12"/>
+              </g>
               <circle cx="205" cy="132" r="18" class="lCookieBody"/>
+              <g class="ocOnly lCandyEyes"><circle cx="199" cy="128" r="5"/><circle cx="211" cy="128" r="5"/><circle cx="200" cy="129" r="2" class="lPupil"/><circle cx="210" cy="129" r="2" class="lPupil"/></g>
               <g class="lChips"><circle cx="198" cy="125" r="2.8"/><circle cx="210" cy="123" r="2.8"/><circle cx="213" cy="136" r="2.8"/><circle cx="199" cy="140" r="2.8"/><circle cx="205" cy="132" r="2.8"/></g>
               <g clip-path="url(#lCookieClip)">
                 <circle cx="222" cy="120" r="7.5" class="lBite" data-b="1"/>
@@ -3332,6 +3393,11 @@
           </svg>
           <svg class="lunchMilk" viewBox="0 0 130 200">
             <ellipse cx="65" cy="192" rx="46" ry="6" class="lShadow"/>
+            <g class="ocOnly lGhost">
+              <path d="M30 96 q0 -34 28 -34 q28 0 28 34 v26 l-7 -6 l-7 6 l-7 -6 l-7 6 l-7 -6 l-7 6 l-7 -6 l-7 6 z" class="lGhostBody"/>
+              <ellipse cx="50" cy="88" rx="3.6" ry="5.4" class="lGhostEye"/><ellipse cx="66" cy="88" rx="3.6" ry="5.4" class="lGhostEye"/>
+              <ellipse cx="58" cy="101" rx="4" ry="5" class="lGhostEye"/>
+            </g>
             <g class="lMilk lTap" data-l="milk">
               <g class="lStraw"><path d="M80 44 V16 L98 6" class="lStrawOut"/><path d="M80 44 V16 L98 6" class="lStrawIn"/></g>
               <rect x="36" y="30" width="58" height="12" rx="2" class="lCarton"/>
@@ -3339,7 +3405,8 @@
               <rect x="22" y="72" width="86" height="112" rx="6" class="lCartonFill"/>
               <rect x="22" y="130" width="86" height="34" class="lLabel"/>
               <rect x="22" y="72" width="86" height="112" rx="6" class="lCartonLine"/>
-              <text x="65" y="154" class="lLabelText">MILK</text>
+              <text x="65" y="154" class="lLabelText ocNot">MILK</text>
+              <text x="65" y="154" class="lLabelText ocOnly">BOO</text>
               <g class="lEyes"><circle cx="52" cy="100" r="5"/><circle cx="78" cy="100" r="5"/></g>
               <ellipse cx="42" cy="111" rx="6" ry="3.4" class="lCheek"/><ellipse cx="88" cy="111" rx="6" ry="3.4" class="lCheek"/>
               <path d="M56 112 q9 9 18 0" class="lSmile"/>
@@ -4322,7 +4389,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.29.0",
+  appVersion: "7.30.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -15899,6 +15966,7 @@ var LunchArt = (function(){
             g.dataset.bites = String(b > 3 ? 0 : b);   // three bites, then a fresh cookie
           }
           restart(g);
+          if (g.dataset.l === "milk"){ var gh = art.querySelector(".lGhost"); if (gh && document.body.classList.contains("october")) restart(gh); }   // v7.30: boo
         });
       });
     },

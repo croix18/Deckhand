@@ -1373,3 +1373,25 @@ test.describe("v7.29", () => {
     await expect(page.locator("#lunchArt .lunchTray")).toBeHidden();
   });
 });
+
+/* v7.30 — lunch, haunted (Croix: "it is October tomorrow, so they need to be haunted or spooky for this month"). */
+test.describe("v7.30", () => {
+  test("v7.30: in October the lunch is haunted — jack-o'-lantern, spider cookie, Franken-sandwich, BOO and a ghost that pops up for the milk; in September it's the everyday lunch", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-10-06T12:50");                           // Teal Tuesday: Lunch 12:42–1:12
+    await dh.launch();
+    await expect(page.locator("#lunchArt .lunchTray")).toBeVisible();
+    await expect(page.locator("#lunchArt .lPk")).toBeVisible();
+    await expect(page.locator("#lunchArt .lAppleBody")).toBeHidden();
+    await expect(page.locator("#lunchArt .lLegs")).toBeVisible();
+    await expect(page.locator("#lunchArt .lBolt").first()).toBeVisible();
+    await expect(page.locator("#lunchArt text.ocOnly")).toHaveText("BOO");
+    await expect(page.locator("#lunchArt text.ocNot")).toBeHidden();
+    await page.locator("#lunchArt .lMilk").click({ force: true });
+    ok(await page.evaluate(() => document.querySelector("#lunchArt .lGhost").classList.contains("go")), "no boo");
+    await dh.openAt("#t=2026-09-29T12:50");
+    await dh.launch();
+    await expect(page.locator("#lunchArt .lAppleBody")).toBeVisible();
+    await expect(page.locator("#lunchArt .lPk")).toBeHidden();
+    await expect(page.locator("#lunchArt .lGhost")).toBeHidden();
+  });
+});

@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.30.0 — 2026-10-01
+
+**Lunch, haunted.** Croix: "Well it is October tomorrow, so they need to be haunted or spooky for
+this month." In October the lunch tray turns spooky. The sandwich is a Franken-sandwich (green
+bread, stitches, bolts, sleepy eyes). The apple is a jack-o'-lantern whose candle flickers. The
+cookie is a spider cookie with candy eyes and legs that twitch. The tray turns pumpkin orange. The
+milk carton says BOO, and a ghost hiding behind it peeks over its shoulder every few seconds and
+pops right up when you tap the milk. The taps all still work (three bites of the spider cookie,
+then a fresh one). November 1 brings the everyday lunch back by itself. One test; 269.
+
 ## 7.29.0 — 2026-09-30
 
 **Lunch on the board.** Croix: "Can I get a fun lunch graphic for during lunch time?" During the
