@@ -70,10 +70,11 @@ test.describe("settle-in routine", () => {
     await dh.tab("bells");
     await page.fill("#sStSecs", "5");
     await page.fill("#sStMsg", "Cards out if standing");
+    await page.check("#sStCard");                  // v7.31: the message card is opt-in now
     await page.click("#applyBtn");
     await expect(page.locator("#setErrors")).toHaveText("Applied.");
     const cw = await page.evaluate(() => window.Deckhand.config.bell.settle);
-    ok(cw.seconds === 5 && cw.msgDone === "Cards out if standing" && cw.on === true,
+    ok(cw.seconds === 5 && cw.msgDone === "Cards out if standing" && cw.on === true && cw.doneCard === true,
       "edit did not commit: " + JSON.stringify(cw));
     // an EMPTIED seconds field is not a choice — Apply refuses it, the value stands
     await page.fill("#sStSecs", "");
@@ -230,6 +231,7 @@ test.describe("settle-in routine", () => {
       S.chime = function () { window.__chime++; return oC(); };
     });
     await st.seconds(8);
+    await page.evaluate(() => { window.Deckhand.config.bell.settle.doneCard = true; });   // v7.31: this test watches the message card
     await st.doneMs(1500);
     await st.start();
     await expect.poll(() => page.evaluate(() =>          // mid-count

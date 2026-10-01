@@ -1395,3 +1395,35 @@ test.describe("v7.30", () => {
     await expect(page.locator("#lunchArt .lGhost")).toBeHidden();
   });
 });
+
+/* v7.31 — passing music, and zero goes straight to the slides (Croix: "music to play during passing time, but then
+ * fade out during the 30 second settle in. For the last 10 seconds, I want the ticking down. Also remove the still
+ * standing comment card action and jump straight into the slides."). */
+test.describe("v7.31", () => {
+  test("v7.31: passing music starts when a class lets out, fades to silence before the settle-in's last ten seconds, and the count goes straight to the slides", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T11:08:52");                        // Black Tuesday: 5th ends 11:09, passing to HOWL at 11:12
+    await dh.launch();
+    await page.evaluate(() => { const b = window.Deckhand.config.bell; b.passing = { on: true, side: 0, nature: "", volume: 0.5 }; b.settle.seconds = 20; window.Deckhand.config.sound.enabled = true; });
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets; w[w.length - 1].url = "about:blank#deck"; });
+    const pm = () => page.evaluate(() => ({ p: window.Deckhand.passingMusic.playing(), f: window.Deckhand.passingMusic.fading(), l: window.Deckhand.passingMusic.level(), n: window.Deckhand.passingMusic.name() }));
+    await expect.poll(async () => (await pm()).p, { timeout: 30000 }).toBe(true);   // the bell at 11:09 lets the class out
+    let s = await pm();
+    ok(/Passing · Lofi — Rainy window/.test(s.n), "name: " + JSON.stringify(s));
+    await expect(page.locator("#nowPlaying")).toBeVisible({ timeout: 3000 });     // the pill can pause it
+    await expect(page.locator("#nowPlaying .npName")).toContainText("Passing");
+    // jump to just before the next bell (passing is 3 minutes)
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 12000); });   // 12 s before HOWL's bell
+    await page.waitForTimeout(400);
+    ok((await pm()).p && !(await pm()).f, "still passing, should still play");
+    await expect.poll(() => page.evaluate(() => window.Deckhand.settle.running()), { timeout: 30000 }).toBe(true);   // the bell: the count
+    await expect.poll(async () => (await pm()).f, { timeout: 3000 }).toBe(true);
+    // the fade: gone by the time 10 s remain (20 s count → a 10 s fade)
+    await expect.poll(async () => (await pm()).p, { timeout: 14000 }).toBe(false);
+    const rem = await page.evaluate(() => +document.querySelector("#clockSettle .stBig").textContent);
+    ok(rem >= 8, "the music outlasted the ticking's start: " + rem + " s left");
+    // zero → no message card: the stage goes straight to the slides
+    await expect.poll(() => page.evaluate(() => window.Deckhand.settle.live()), { timeout: 15000 }).toBe(false);
+    ok(!(await page.evaluate(() => /comment card/i.test(document.querySelector("#clockSettle").textContent))), "the comment card showed");
+  });
+});

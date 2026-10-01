@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.30.0",
+  "appVersion": "7.31.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -4045,8 +4045,25 @@
                   <input class="setInput" type="number" id="sStSecs" step="5" min="5" max="300">
                 </div>
                 <div class="fField">
-                  <label class="fLabel" for="sStMsg">When time is up</label>
-                  <input class="setInput" type="text" id="sStMsg" maxlength="60" placeholder="Still standing? Comment card.">
+                  <label class="fCheck"><input type="checkbox" id="sStCard"> A message at zero, then the slides</label>
+                  <input class="setInput" type="text" id="sStMsg" maxlength="60" placeholder="Still standing? Comment card." aria-label="The message at zero">
+                </div>
+              </div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sPmOn"> Music in passing time</label>
+                <div class="fField">
+                  <label class="fLabel" for="sPmSide">Lofi</label>
+                  <select class="setSelect" id="sPmSide"></select>
+                </div>
+                <div class="fField">
+                  <label class="fLabel" for="sPmNature">Nature</label>
+                  <select class="setSelect" id="sPmNature"></select>
+                </div>
+              </div>
+              <div class="fGrid c3">
+                <div class="fField">
+                  <label class="fLabel" for="sPmVol">Passing music volume</label>
+                  <select class="setSelect" id="sPmVol"><option value="0.3">Soft</option><option value="0.5">Medium</option><option value="0.75">Loud</option></select>
                 </div>
               </div>
               <div class="fGrid c3">
@@ -4057,7 +4074,7 @@
                 </div>
               </div>
               <div class="stPer" id="sStPer" aria-label="Seconds per period"></div>
-              <div class="fHint">The clock becomes the count when a class begins (Lunch excepted), then hands off to a Slides card if the scene has one. While it runs, Space restarts it and R stands it down. A scene needs a clock to run it.</div>
+              <div class="fHint">The clock becomes the count when a class begins (Lunch excepted), then hands off to a Slides card if the scene has one. While it runs, Space restarts it and R stands it down. A scene needs a clock to run it. <b>Music in passing time</b> starts when a class lets out and fades away during the settle-in, gone before its last ten seconds tick (with no settle-in, it fades over ten seconds at the bell). It stays quiet while the Music card is already playing; the Now Playing pill pauses it.</div>
             </div>
             <div class="fGroup">
               <div class="fSection">Wrap-up at the bell</div>
@@ -4382,14 +4399,18 @@ var DEFAULT_SCENES = [
     { type: "clock", x: 0, y: 0, w: 100, h: 100, label: "", pin: false }
   ]}
 ];
-var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", pledge: { on: true, minutes: 2 }, perPeriod: {} };
+var DEFAULT_SETTLE = { on: true, seconds: 30, msgDone: "", doneCard: false, pledge: { on: true, minutes: 2 }, perPeriod: {} };
+/* v7.31 (Croix: "Can I also get the option to have music to play during passing time, but then fade
+   out during the 30 second settle in"): music in the passing period, faded to silence before the
+   settle-in's last ten seconds tick */
+var DEFAULT_PASSING = { on: false, side: -1, nature: "", volume: 0.5 };
 /* v7.14: the wrap-up — the settle-in's twin at the other end of the period (tools audit §4.1) */
 var DEFAULT_WRAPUP = { on: false, minutes: 3, prompt: "", steps: "", msg: "" };
 var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.30.0",
+  appVersion: "7.31.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4762,6 +4783,7 @@ function sanitize(c){
       on: on,
       seconds: Math.round(numIn(src.seconds, 5, 300, 30)),
       msgDone: str(src.msgDone, "").trim().slice(0, 60),
+      doneCard: bool(src.doneCard, false),         // v7.31: the "still standing" card is opt-in; zero goes straight to the slides
       pledge: { on: bool(pl.on, true), minutes: Math.round(numIn(pl.minutes, 1, 10, 2)) },
       perPeriod: per
     };
@@ -4815,6 +4837,13 @@ function sanitize(c){
       showNextClass: bool(b.showNextClass, true),
       warnMinutes: Math.max(0, Math.min(60, Math.round(num(b.warnMinutes, 5)))),
       /* v7.18: a faint number over every screen when this many minutes are left in a class */
+      passing: (function(){                        // v7.31: music in passing time
+        var pm = isObj(b.passing) ? b.passing : {};
+        return { on: bool(pm.on, false),
+                 side: (typeof pm.side === "number" && isFinite(pm.side) && pm.side >= -2 && pm.side < 13) ? Math.round(pm.side) : -1,
+                 nature: ["fire", "rain", "window", "storm", "brook", "forest", "ocean", "brown", "white"].indexOf(pm.nature) >= 0 ? pm.nature : "",
+                 volume: numIn(pm.volume, 0.1, 1, 0.5) };
+      })(),
       flash: { on: bool(isObj(b.flash) ? b.flash.on : undefined, true),
                minutes: Math.round(numIn(isObj(b.flash) ? b.flash.minutes : undefined, 1, 10, 3)) },
       warnChime: bool(b.warnChime, false),
@@ -8719,8 +8748,17 @@ var Settle = (function(){
     if (t.endAt && Date.now() >= t.endAt){
       t.endAt = null;
       lastTickSec = null; clearTimeout(halfTid);
-      doneUntil = Date.now() + DONE_MS;
       try { Sound.soft(); } catch(e){}             // v6.30: one pleasant note
+      /* v7.31 (Croix: "remove the still standing comment card action and jump straight into the
+         slides"): unless the message card is turned on, zero IS the hand-off */
+      if (!S().doneCard){
+        paint();
+        if (pledgeUntil !== null && Date.now() < pledgeUntil) return;   // the flag still holds the stage
+        clearPledge();
+        tell("end");
+        return;
+      }
+      doneUntil = Date.now() + DONE_MS;
       doneTid = setTimeout(function(){
         doneUntil = null; paint();
         /* the Pledge holds the stage past the spell: the flag stays up
@@ -9555,7 +9593,142 @@ var NowPlaying = (function(){
       if (playing) live.push({ host: host, name: name });
       paint();
     },
-    showing: function(){ return !!el && !el.hidden; }   // test hook
+    showing: function(){ return !!el && !el.hidden; },  // test hook
+    othersPlaying: function(except){ return live.some(function(x){ return x.host !== except && x.host.isConnected; }); }   // v7.31
+  };
+})();
+
+/* ================= v7.31 Passing music =================
+   Croix: "Can I also get the option to have music to play during passing time, but then fade out
+   during the 30 second settle in. For the last 10 seconds, I want the ticking down." A player of
+   its own (the Lofi and Nature engines, its own AudioContext): it starts when a class lets out
+   (and on a board opened mid-passing), and at the next bell fades to silence by the moment the
+   settle-in's ticking begins (seconds − 10), then lets go. It never plays over the Music card,
+   Sound Off and the Now Playing pill stop it, and alarms duck it like the card. */
+var PassingMusic = (function(){
+  var ctx = null, master = null, duck = null, eng = null, nat = null;
+  var playing = false, fading = false, tickTid = null, nextTime = 0, prevType = null, stoppedFor = null, sideIdx = 0, fadeTid = null;
+  var pillHost = null, lastName = "";
+  function P(){ return (cfg.bell && isObj(cfg.bell.passing)) ? cfg.bell.passing : DEFAULT_PASSING; }
+  function sides(){ var on = false; try { on = Season.active(); } catch(e){} return on ? Lofi.TRACKS.concat([Lofi.OCT]) : Lofi.TRACKS; }
+  function report(on){
+    if (!pillHost){ pillHost = document.createElement("div"); pillHost.hidden = true; pillHost.id = "passingMusicHost"; document.body.appendChild(pillHost); }
+    try { NowPlaying.report(pillHost, on, lastName); } catch(e){}
+  }
+  function otherPlaying(){
+    try { return NowPlaying.othersPlaying(pillHost); } catch(e){ return false; }
+  }
+  function ensure(){
+    if (ctx) return true;
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      duck = ctx.createGain(); master = ctx.createGain(); master.gain.value = 0.0001;
+      master.connect(duck); duck.connect(ctx.destination);
+      eng = Lofi.create(ctx, master); nat = Nature.create(ctx, master);
+      return true;
+    } catch(e){ ctx = null; return false; }
+  }
+  function tick(){
+    if (!playing) return;
+    if (ctx.state === "suspended"){ try { ctx.resume(); } catch(e){} }
+    var a = document.getElementById("alarm");
+    duck.gain.setTargetAtTime(a && a.classList.contains("on") ? 0.08 : 1, ctx.currentTime, 0.15);
+    var ahead = ctx.currentTime + 0.35;
+    if (nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.05;
+    if (P().side !== -2){
+      while (nextTime < ahead){
+        nextTime += eng.bar(nextTime);
+        if (eng.done()){ pickSide(true); eng.side(sides()[sideIdx]); }
+      }
+    }
+    nat.tick(ahead);
+    tickTid = setTimeout(tick, 120);
+  }
+  function pickSide(next){
+    var all = sides(), s = P().side;
+    if (s >= 0 && s < all.length && !next){ sideIdx = s; return; }
+    if (s >= 0 && s < all.length){ sideIdx = s; return; }            // a chosen side repeats
+    var j = Math.floor(Math.random() * all.length);
+    if (all.length > 1 && j === sideIdx) j = (j + 1) % all.length;
+    sideIdx = j;
+  }
+  function start(){
+    if (playing || !P().on) return false;
+    if (!cfg.sound.enabled) return false;
+    if (otherPlaying()) return false;                                 // the teacher's own music wins
+    if (!ensure()) return false;
+    if (ctx.state === "suspended"){ try { ctx.resume(); } catch(e){} }
+    clearTimeout(fadeTid); fading = false;
+    playing = true;
+    var lofi = P().side !== -2;
+    if (lofi){ pickSide(false); eng.newBus(); eng.side(sides()[sideIdx]); eng.beds({ rain: !P().nature, dust: true }); }
+    else eng.beds({ rain: false, dust: false });
+    nat.set(P().nature || ""); nat.level(lofi ? 0.45 : 1);
+    var t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), t);
+    master.gain.linearRampToValueAtTime(P().volume, t + 3);           // in over three seconds
+    nextTime = t + 0.08;
+    lastName = "Passing \u00b7 " + (lofi ? "Lofi \u2014 " + sides()[sideIdx].name : "") + (P().nature ? (lofi ? " + " : "") + Nature.byId(P().nature).name : "");
+    report(true);
+    clearTimeout(tickTid); tick();
+    return true;
+  }
+  function fadeOut(seconds){
+    if (!playing || fading) return;
+    fading = true;
+    var t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), t);
+    master.gain.linearRampToValueAtTime(0.0001, t + seconds);
+    clearTimeout(fadeTid);
+    fadeTid = setTimeout(stop, seconds * 1000 + 150);
+  }
+  function stop(){
+    clearTimeout(fadeTid); clearTimeout(tickTid);
+    if (!playing) return;
+    playing = false; fading = false;
+    if (ctx){
+      master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.04);
+      try { nat.set(""); } catch(e){}
+      setTimeout(function(){ if (!playing && ctx && ctx.state === "running"){ try { ctx.suspend(); } catch(e){} } }, 6000);   // a quiet board costs nothing
+    }
+    report(false);
+  }
+  /* the bell: how long until the ticking starts, so the music is gone before it */
+  function fadeSecsAt(label){
+    var on = false, secs = 30;
+    try { on = !!(cfg.bell.settle && cfg.bell.settle.on) && !/lunch/i.test(label || "") && Canvas.clockMounted(); } catch(e){}
+    try { secs = Settle.secsFor(label); } catch(e){}
+    return on ? Math.max(3, secs - 10) : 10;
+  }
+  function watch(){
+    var s = null;
+    try { s = Bell.statusAt(now()); } catch(e){}
+    var type = s ? s.type : null;
+    var key = s && type === "passing" ? (s.next + "|" + dateKey(now())) : null;
+    if (type === "passing"){
+      if (!playing && P().on && stoppedFor !== key) start();
+      if (playing && otherPlaying()) fadeOut(2);                     // the Music card came on: step aside
+    } else if (playing && !fading){
+      fadeOut(type === "in" ? fadeSecsAt(s.label) : 4);
+    }
+    prevType = type;
+  }
+  return {
+    init: function(){
+      setInterval(watch, 500);
+      document.addEventListener("deckhand:music-stop", function(){
+        if (playing){
+          var s = null; try { s = Bell.statusAt(now()); } catch(e){}
+          stoppedFor = s && s.type === "passing" ? (s.next + "|" + dateKey(now())) : null;   // paused: stays off until the next passing time
+          stop();
+        }
+      });
+    },
+    playing: function(){ return playing; },
+    fading: function(){ return fading; },
+    level: function(){ return master ? master.gain.value : 0; },     // test hook
+    name: function(){ return lastName; },
+    start: start, stop: stop, fadeOut: fadeOut, _watch: watch
   };
 })();
 
@@ -14812,7 +14985,8 @@ var Settings = (function(){
     warn: $("sWarn"), warnChime: $("sWarnChime"), flash: $("sFlash"), flashMin: $("sFlashMin"),
     bath: $("sBath"), bathFirst: $("sBathFirst"), bathLast: $("sBathLast"),
     skipWeeks: $("sSkipWeeks"),
-    stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"),
+    stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"), stCard: $("sStCard"),
+    pmOn: $("sPmOn"), pmSide: $("sPmSide"), pmNature: $("sPmNature"), pmVol: $("sPmVol"),
     wuOn: $("sWuOn"), wuMin: $("sWuMin"), wuMsg: $("sWuMsg"), wuPrompt: $("sWuPrompt"), wuSteps: $("sWuSteps"),   // v7.14
     stPledge: $("sStPledge"), stPledgeMin: $("sStPledgeMin"), stPer: $("sStPer"),
     nudge: $("sNudge"), presets: $("sPresets"), timerMusic: $("sTimerMusic"), errors: $("setErrors"),
@@ -14981,6 +15155,17 @@ var Settings = (function(){
     f.stOn.checked = !!st.on;
     f.stSecs.value = st.seconds;
     f.stMsg.value = st.msgDone || "";
+    f.stCard.checked = !!st.doneCard;             // v7.31
+    var pm = cfg.bell.passing || DEFAULT_PASSING; // v7.31
+    if (!f.pmSide.options.length){
+      [["-1", "Shuffle the album"]].concat(Lofi.TRACKS.map(function(t, i){ return [String(i), t.name]; }))
+        .concat([[String(Lofi.TRACKS.length), Lofi.OCT.name + " (October)"], ["-2", "No music"]])
+        .forEach(function(o){ var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; f.pmSide.appendChild(op); });
+      [["", "None"]].concat(Nature.SOUNDS.map(function(s){ return [s.id, s.name]; }))
+        .forEach(function(o){ var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; f.pmNature.appendChild(op); });
+    }
+    f.pmOn.checked = !!pm.on; f.pmSide.value = String(pm.side); f.pmNature.value = pm.nature || "";
+    f.pmVol.value = pm.volume <= 0.35 ? "0.3" : pm.volume >= 0.65 ? "0.75" : "0.5";
     f.stPledge.checked = !!st.pledge.on;
     f.stPledgeMin.value = st.pledge.minutes;
     renderSettlePer(st);
@@ -15258,9 +15443,17 @@ var Settings = (function(){
     cfg.bell.settle = {                          // v7.7: the moment of the clock
       on: f.stOn.checked, seconds: stSecs,
       msgDone: f.stMsg.value.trim().slice(0, 60),
+      doneCard: f.stCard.checked,                // v7.31
       pledge: { on: f.stPledge.checked, minutes: stPledgeMin },
       perPeriod: stPer
     };
+    cfg.bell.passing = {                         // v7.31
+      on: f.pmOn.checked,
+      side: (function(v){ return isFinite(v) && v >= -2 && v < 13 ? v : -1; })(Math.round(+f.pmSide.value)),
+      nature: Nature.byId(f.pmNature.value) ? f.pmNature.value : "",
+      volume: Math.max(0.1, Math.min(1, +f.pmVol.value || 0.5))
+    };
+    if (cfg.bell.passing.side === -2 && !cfg.bell.passing.nature) cfg.bell.passing.side = -1;   // never "nothing"
     cfg.bell.wrapup = {                          // v7.14
       on: f.wuOn.checked,
       minutes: Math.max(1, Math.min(15, Math.round(+f.wuMin.value) || 3)),
@@ -16195,7 +16388,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, Season, LunchArt, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -16232,6 +16425,7 @@ window.Deckhand = {
   wrapup: Wrapup,                               // v7.14: the wrap-up at the bell (tests)
   flash: Flash,                                 // v7.18: the minutes-left flash (tests)
   nowPlaying: NowPlaying,                       // v7.20: the pause that's always within reach (tests)
+  passingMusic: PassingMusic,                   // v7.31: music between classes (tests)
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
   nature: Nature,                               // v7.24: the nature sounds (tests render them offline)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)
@@ -16241,6 +16435,7 @@ window.Deckhand = {
   parsePresetToken: parsePresetToken,           // v7.13: "0:30" → 0.5 (tests)
   lofiSides: function(){ var el = document.querySelector(".w-music"); return el && el._entry ? el._entry.api.sides() : null; },   // v7.10 test hook
   shiftClock: function(ms){ simOffset += ms; }, // test hook (v7.6): move the simulated clock
+  now: function(){ return now(); },             // v7.31 test hook: the board's clock
   qr: qrMatrix,                                 // test hook: decode-verified in CI
   settings: {                                   // v7.2: the settings tab rail
     showTab: Settings.showTab, currentTab: Settings.currentTab, textMode: Settings.textMode

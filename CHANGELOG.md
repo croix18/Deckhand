@@ -2,6 +2,28 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.31.0 — 2026-10-01
+
+**Music between classes, and straight to the slides.** Croix: "Can I also get the option to have
+music to play during passing time, but then fade out during the 30 second settle in. For the last
+10 seconds, I want the ticking down. Also remove the still standing comment card action and jump
+straight into the slides."
+
+- **Music in passing time** (Settings → Bells → Settle-in at the bell). When a class lets out, a
+  lofi side (one you pick, or the album shuffled), a nature sound, or both, fade in over three
+  seconds. At the next bell they fade out during the settle-in and are silent by the time the
+  last ten seconds start ticking. With no settle-in, they fade over ten seconds at the bell. A
+  volume choice (soft, medium, loud). It never plays over the Music card if that's already
+  playing. Sound Off or the Now Playing pill ("Passing · …") stops it until the next passing
+  time, and alarms duck it. Off until you turn it on.
+- **Zero goes straight to the slides.** The "Still standing? Comment card." message is gone from
+  the routine: when the count hits zero, the soft note sounds and the slides take the stage. The
+  message is still there as an option ("A message at zero, then the slides") for anyone who wants it.
+- The countdown's ticking is unchanged: silent until ten seconds remain, then a tick each second
+  that swells, with half-beats in the last five.
+
+One test; 270.
+
 ## 7.30.0 — 2026-10-01
 
 **Lunch, haunted.** Croix: "Well it is October tomorrow, so they need to be haunted or spooky for
