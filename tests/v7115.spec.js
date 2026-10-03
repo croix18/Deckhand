@@ -1669,3 +1669,41 @@ test.describe("v7.35", () => {
     await page.click("#inkDone");
   });
 });
+
+/* v7.38 — the reminder's minutes are a setting (Croix: "Yeah make it a setting"). */
+test.describe("v7.38", () => {
+  test("v7.38: Settings → Bells sets when the comment-card reminder comes up, and can turn it off (the bell still records)", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben"] }]; });
+    await page.click("#setBtn");
+    await dh.tab("bells");
+    await page.fill("#sCcMin", "6");
+    await page.click("#applyBtn");
+    await expect(page.locator("#setErrors")).toHaveText("Applied.");
+    await page.click("#closeBtn");
+    const cc = await page.evaluate(() => window.Deckhand.config.bell.ccard);
+    ok(cc.on === true && cc.minutes === 6, "setting: " + JSON.stringify(cc));
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    const tile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    await tile("Ben").click(); await tile("Ben").click();
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 5.5 * 60000); });   // 5:30 out: inside six minutes
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 4000 });
+    await page.click("#ccRemFull .ccRemDone");
+    // off: no reminder, the bell records
+    await page.evaluate(() => { window.Deckhand.config.bell.ccard.on = false; });
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs + 185000); });   // through the passing: HOWL Time
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => { window.Deckhand.settle.reset(); window.Deckhand.config.rosters.push({ period: "HOWL Time", names: ["Cal"] }); });
+    await page.evaluate(() => document.querySelector(".w-ccard")._entry.api.rebuild());
+    await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the settle-in staged the clock over the card
+    await tile("Cal").click(); await tile("Cal").click();
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 60000); });   // one minute out
+    await page.waitForTimeout(1500);
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+    await page.evaluate(() => window.Deckhand.shiftClock(70000));   // the bell
+    await page.waitForTimeout(1500);
+    const logd = await page.evaluate(() => window.Deckhand.config.cards.log.map(e => e.p + ":" + e.names.join()));
+    ok(logd.join("|") === "5th:Ben|HOWL Time:Cal", "log: " + JSON.stringify(logd));
+  });
+});

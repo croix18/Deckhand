@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.37.0",
+  "appVersion": "7.38.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -4142,7 +4142,14 @@
                   <input class="setInput" type="number" id="sFlashMin" step="1" min="1" max="10">
                 </div>
               </div>
-              <div class="fHint">Nudge shifts only the bell math, never the clock. The warning turns the countdown coral and pulses the bar; 0 turns it off.</div>
+              <div class="fGrid c3">
+                <label class="fCheck"><input type="checkbox" id="sCcOn"> Comment-card reminder before the bell</label>
+                <div class="fField">
+                  <label class="fLabel" for="sCcMin">&hellip;at (minutes before the bell)</label>
+                  <input class="setInput" type="number" id="sCcMin" step="1" min="1" max="15">
+                </div>
+              </div>
+              <div class="fHint">Nudge shifts only the bell math, never the clock. The warning turns the countdown coral and pulses the bar; 0 turns it off. The comment-card reminder fills the screen with the names of anyone who got a card this class and records them; off, the cards are still recorded at the bell.</div>
             </div>
             <div class="fGroup">
               <div class="fSection">Week rotation</div>
@@ -4476,7 +4483,7 @@
   <div class="ccGrid"></div>
   <div class="wEmpty ccEmpty"></div>
   <div class="ccNote" hidden></div>
-  <div class="ccPopHint">The reminder comes up on its own 3 minutes before the bell.</div>
+  <div class="ccPopHint">The reminder comes up on its own before the bell (Settings &rarr; Bells sets when).</div>
 </div>
 <!-- the quick-draw's reminder fills the screen, over the slides -->
 <div id="ccRemFull" class="ccRemind" role="dialog" aria-label="Comment cards due" hidden>
@@ -4567,7 +4574,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.37.0",
+  appVersion: "7.38.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5023,6 +5030,8 @@ function sanitize(c){
                  nature: ["fire", "rain", "window", "storm", "brook", "forest", "ocean", "brown", "white"].indexOf(pm.nature) >= 0 ? pm.nature : "",
                  volume: numIn(pm.volume, 0.1, 1, 0.5) };
       })(),
+      ccard: { on: bool(isObj(b.ccard) ? b.ccard.on : undefined, true),       // v7.38: the comment-card reminder
+               minutes: Math.round(numIn(isObj(b.ccard) ? b.ccard.minutes : undefined, 1, 15, 3)) },
       flash: { on: bool(isObj(b.flash) ? b.flash.on : undefined, true),
                minutes: Math.round(numIn(isObj(b.flash) ? b.flash.minutes : undefined, 1, 10, 3)) },
       warnChime: bool(b.warnChime, false),
@@ -7302,7 +7311,7 @@ function makeCcard(host, wcfg){
       '<div class="row">' +
         '<button class="btn btnSm ccLogBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy)">Log</button>' +
       '</div>' +
-      '<div class="tHint">Tap a name: warning \u2192 card \u2192 another card \u00b7 hold to take one back \u00b7 the reminder comes up 3 min before the bell</div>' +
+      '<div class="tHint">Tap a name: warning \u2192 card \u2192 another card \u00b7 hold to take one back \u00b7 the reminder comes up before the bell (Settings \u2192 Bells)</div>' +
       '<div class="ccLog" role="group" aria-label="Comment card log" hidden>' +
         '<div class="ccLogHead"><b>Comment cards</b>' +
           '<button type="button" class="chip chipSm ccCopy">Copy</button>' +
@@ -15724,7 +15733,7 @@ var Settings = (function(){
     volume: $("sVolume"), seconds: $("sSeconds"), next: $("sNext"),
     motion: $("sMotion"),
     seaWeather: $("sSeaWeather"), season: $("sSeason"),
-    warn: $("sWarn"), warnChime: $("sWarnChime"), flash: $("sFlash"), flashMin: $("sFlashMin"),
+    warn: $("sWarn"), warnChime: $("sWarnChime"), flash: $("sFlash"), flashMin: $("sFlashMin"), ccOn: $("sCcOn"), ccMin: $("sCcMin"),
     bath: $("sBath"), bathFirst: $("sBathFirst"), bathLast: $("sBathLast"),
     skipWeeks: $("sSkipWeeks"),
     stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"), stCard: $("sStCard"),
@@ -15890,6 +15899,8 @@ var Settings = (function(){
     f.warnChime.checked = !!cfg.bell.warnChime;
     var fl = cfg.bell.flash || { on: true, minutes: 3 };   // v7.18
     f.flash.checked = !!fl.on; f.flashMin.value = fl.minutes;
+    var cc = cfg.bell.ccard || { on: true, minutes: 3 };    // v7.38
+    f.ccOn.checked = !!cc.on; f.ccMin.value = cc.minutes;
     f.bath.checked = !!cfg.bell.bathroom.enabled;
     f.bathFirst.value = cfg.bell.bathroom.firstMinutes;
     f.bathLast.value = cfg.bell.bathroom.lastMinutes;
@@ -16179,6 +16190,7 @@ var Settings = (function(){
     cfg.bell.warnMinutes = warn;
     cfg.bell.warnChime = f.warnChime.checked;
     cfg.bell.flash = { on: f.flash.checked, minutes: Math.max(1, Math.min(10, Math.round(+f.flashMin.value) || 3)) };   // v7.18
+    cfg.bell.ccard = { on: f.ccOn.checked, minutes: Math.max(1, Math.min(15, Math.round(+f.ccMin.value) || 3)) };     // v7.38
     cfg.bell.bathroom.enabled = f.bath.checked;
     cfg.bell.bathroom.firstMinutes = bathFirst;
     cfg.bell.bathroom.lastMinutes = bathLast;
@@ -16921,7 +16933,8 @@ var CcardPop = (function(){
      class block ends (Lunch excepted), if cards are due, they are recorded and the reminder fills
      the screen — once per block; Done, Escape, Enter or Space take it down, and so does the bell.
      Cards added after that are recorded at the bell (the card's watch, or this one). */
-  var REMIND_MIN = 3, shownFor = null, lastIn = null;
+  var shownFor = null, lastIn = null;
+  function CC(){ return (cfg.bell && isObj(cfg.bell.ccard)) ? cfg.bell.ccard : { on: true, minutes: 3 }; }   // v7.38: Settings → Bells
   function showReminder(cards){
     var rem = $("ccRemFull"), names = rem.querySelector(".ccRemNames");
     names.innerHTML = "";
@@ -16948,8 +16961,8 @@ var CcardPop = (function(){
       paintBadge();
     }
     lastIn = key;
-    if (!inClass || shownFor === key) return;
-    if (s.remainMs <= REMIND_MIN * 60000 && s.remainMs > 0){
+    if (!inClass || shownFor === key || !CC().on) return;
+    if (s.remainMs <= CC().minutes * 60000 && s.remainMs > 0){
       shownFor = key;
       var cards = ccardDue(s.label);
       if (!cards.length) return;

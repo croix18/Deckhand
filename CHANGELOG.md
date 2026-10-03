@@ -2,6 +2,12 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.38.0 — 2026-10-03
+
+**The reminder's timing is a setting.** Croix: "Yeah make it a setting." Settings → Bells →
+"Comment-card reminder before the bell", on by default at 3 minutes (1–15). Off, the reminder
+never shows and the cards are still recorded at the bell. One test; 275.
+
 ## 7.37.0 — 2026-10-03
 
 **The reminder is automatic.** Croix: "Can it just automatic at 3 minutes left in class if there
