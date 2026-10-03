@@ -2,6 +2,14 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.34.0 — 2026-10-03
+
+**Mathle checks the dictionary.** Croix: "Add a dictionary so it rejects non-words." A guess has
+to be a real word now: about 35,000 common English words of four to thirteen letters are built
+into the file (every vocabulary word included), and a guess that isn't one shakes with "Not a
+word" instead of using up a try. Decoding a length's list takes a few milliseconds the first
+time it's needed, so nothing is slower. The file grew by about 180 KB.
+
 ## 7.33.0 — 2026-10-03
 
 **Cadence on the board, and Mathle.** Croix: "Add this as a tool. Also my kids go absolutely nuts

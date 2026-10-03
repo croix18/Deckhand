@@ -1562,13 +1562,31 @@ test.describe("v7.33", () => {
     ok((await state()).guesses.length === 0, "a short guess was taken");
     await expect(page.locator(".w-mathle .mlMsg")).toContainText("Not enough letters");
     for (let i = 0; i < 2; i++) await page.keyboard.press("Backspace");
+    // v7.34: not a word — the dictionary says no (the right number of letters, but nonsense)
+    const junk = "xq".repeat(7).slice(0, w1.length);
+    await page.keyboard.type(junk); await page.keyboard.press("Enter");
+    ok((await state()).guesses.length === 0, "nonsense was taken as a guess");
+    await expect(page.locator(".w-mathle .mlMsg")).toContainText("Not a word");
+    for (let i = 0; i < w1.length; i++) await page.keyboard.press("Backspace");
+    const has = w => page.evaluate(w => document.querySelector(".w-mathle")._entry.api.has(w), w);
+    ok((await has("house")) && (await has("triangle")) && !(await has("triang")) && !(await has("xqxqxq")), "the dictionary");
+    ok(await page.evaluate(() => window.Deckhand.mathleWords.every(x => document.querySelector(".w-mathle")._entry.api.has(x.w))), "a vocabulary word is missing from the dictionary");
     // Wordle's colouring with a repeated letter: play the word with its first two letters swapped (when they differ)
-    const wrong = w1[0] === w1[1] ? w1.slice(0, -1) + (w1[w1.length - 1] === "z" ? "a" : "z") : w1[1] + w1[0] + w1.slice(2);
-    await page.keyboard.type(wrong); await page.keyboard.press("Enter");
-    await page.waitForTimeout(300);
-    const tiles = await api(() => [...document.querySelectorAll(".w-mathle .mlRow")][0].children.length ? [...document.querySelectorAll(".w-mathle .mlRow")[0].children].map(t => (t.className.match(/\b(hit|near|miss)\b/) || [""])[0]) : []);
-    if (w1[0] !== w1[1]) ok(tiles[0] === "near" && tiles[1] === "near" && tiles.slice(2).every(c => c === "hit"), "swap colouring: " + tiles.join(","));
-    else ok(tiles[tiles.length - 1] === "miss" && tiles.slice(0, -1).every(c => c === "hit"), "colouring: " + tiles.join(","));
+    // Wordle's colouring with repeats, checked on the scorer directly (a guess now has to be a real word)
+    const colours = await page.evaluate(() => {
+      const api = document.querySelector(".w-mathle")._entry.api, st = api.state();
+      return { w: st.w };
+    });
+    ok(colours.w === w1, "state");
+    // a real word of the right length as the first guess: the first dictionary word of that length that isn't the answer
+    const guess1 = await page.evaluate(w => { const a = document.querySelector(".w-mathle")._entry.api; const cands = ["rational", "triangle", "equation", "function", "fraction", "diameter", "integers", "quadrant", "percent", "variable", "polygon", "outlier", "median", "volume", "radius", "slope", "range", "mean", "mode", "area", "data", "cube", "cone", "circle", "sample", "random", "linear", "origin", "scale", "surface", "theorem", "exponent", "constant", "domain", "inverse", "identity", "probability", "coefficient", "proportional", "distributive", "circumference", "parallelogram", "quadrilateral"]; return cands.find(c => c.length === w.length && c !== w && a.has(c)) || null; }, w1);
+    if (guess1){
+      await page.keyboard.type(guess1); await page.keyboard.press("Enter");
+      await page.waitForTimeout(300);
+      const tiles = await api(() => [...document.querySelectorAll(".w-mathle .mlRow")[0].children].map(t => (t.className.match(/\b(hit|near|miss)\b/) || [""])[0]));
+      const expect2 = await page.evaluate(([g, w]) => { const res = [], left = {}; for (let i = 0; i < w.length; i++){ if (g[i] === w[i]) res[i] = "hit"; else { left[w[i]] = (left[w[i]] || 0) + 1; res[i] = "miss"; } } for (let i = 0; i < w.length; i++){ if (res[i] !== "hit" && left[g[i]]){ res[i] = "near"; left[g[i]]--; } } return res; }, [guess1, w1]);
+      ok(tiles.join() === expect2.join(), "colouring " + guess1 + " vs " + w1 + ": " + tiles.join() + " expected " + expect2.join());
+    }
     // the hint blanks the word
     await page.click(".w-mathle .mlHint");
     const hint = await page.locator(".w-mathle .mlMsg").textContent();
@@ -1578,8 +1596,8 @@ test.describe("v7.33", () => {
     await page.keyboard.type(w1); await page.keyboard.press("Enter");
     await page.waitForTimeout(300);
     const st = await state();
-    ok(st.done && st.won && st.guesses.length === 2, "not won: " + JSON.stringify(st));
-    await expect(page.locator(".w-mathle .mlMsg")).toContainText("Got it in 2!");
+    ok(st.done && st.won && st.guesses.length === (guess1 ? 2 : 1), "not won: " + JSON.stringify(st));
+    await expect(page.locator(".w-mathle .mlMsg")).toContainText(guess1 ? "Got it in 2!" : "First try!");
     await expect(page.locator(".w-mathle .mlMsg .mlDef")).toBeVisible();
     // done: the keys go back to the board (M mutes now)
     await page.keyboard.type("m");
