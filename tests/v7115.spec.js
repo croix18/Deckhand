@@ -1582,7 +1582,7 @@ test.describe("v7.33", () => {
     const guess1 = await page.evaluate(w => { const a = document.querySelector(".w-mathle")._entry.api; const cands = ["rational", "triangle", "equation", "function", "fraction", "diameter", "integers", "quadrant", "percent", "variable", "polygon", "outlier", "median", "volume", "radius", "slope", "range", "mean", "mode", "area", "data", "cube", "cone", "circle", "sample", "random", "linear", "origin", "scale", "surface", "theorem", "exponent", "constant", "domain", "inverse", "identity", "probability", "coefficient", "proportional", "distributive", "circumference", "parallelogram", "quadrilateral"]; return cands.find(c => c.length === w.length && c !== w && a.has(c)) || null; }, w1);
     if (guess1){
       await page.keyboard.type(guess1); await page.keyboard.press("Enter");
-      await page.waitForTimeout(300);
+      await expect.poll(() => page.evaluate(() => document.querySelector(".w-mathle")._entry.api.revealing()), { timeout: 6000 }).toBe(false);   // the tiles turn one by one
       const tiles = await api(() => [...document.querySelectorAll(".w-mathle .mlRow")[0].children].map(t => (t.className.match(/\b(hit|near|miss)\b/) || [""])[0]));
       const expect2 = await page.evaluate(([g, w]) => { const res = [], left = {}; for (let i = 0; i < w.length; i++){ if (g[i] === w[i]) res[i] = "hit"; else { left[w[i]] = (left[w[i]] || 0) + 1; res[i] = "miss"; } } for (let i = 0; i < w.length; i++){ if (res[i] !== "hit" && left[g[i]]){ res[i] = "near"; left[g[i]]--; } } return res; }, [guess1, w1]);
       ok(tiles.join() === expect2.join(), "colouring " + guess1 + " vs " + w1 + ": " + tiles.join() + " expected " + expect2.join());
@@ -1594,7 +1594,7 @@ test.describe("v7.33", () => {
     // the solve: the reveal carries the definition
     await page.evaluate(() => document.querySelector(".w-mathle").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
     await page.keyboard.type(w1); await page.keyboard.press("Enter");
-    await page.waitForTimeout(300);
+    await expect.poll(() => page.evaluate(() => document.querySelector(".w-mathle")._entry.api.revealing()), { timeout: 6000 }).toBe(false);
     const st = await state();
     ok(st.done && st.won && st.guesses.length === (guess1 ? 2 : 1), "not won: " + JSON.stringify(st));
     await expect(page.locator(".w-mathle .mlMsg")).toContainText(guess1 ? "Got it in 2!" : "First try!");

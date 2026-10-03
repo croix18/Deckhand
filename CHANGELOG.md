@@ -2,6 +2,17 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.34.1 — 2026-10-03
+
+**Mathle, smoothed out.** Croix: "Mathle is kinda wonky. It works but it's not buttery smooth."
+The board is built once per word and updated in place, so a keystroke changes one tile instead
+of redrawing the grid. A typed letter pops in. A guess turns over tile by tile, each taking its
+colour at the half-turn, and the keys colour once the last tile lands; a win bounces the row. The
+message line keeps a fixed height, so nothing under it jumps when "Not a word" flashes or the
+hint appears. The tiles are only re-measured when the card itself changes size. On a small card
+the on-screen keyboard steps aside (type on the real one); on the stage it's there. Keys ignore
+double-tap zoom and text selection on the panel.
+
 ## 7.34.0 — 2026-10-03
 
 **Mathle checks the dictionary.** Croix: "Add a dictionary so it rejects non-words." A guess has

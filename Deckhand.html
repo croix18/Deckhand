@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.34.0",
+  "appVersion": "7.34.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1079,25 +1079,31 @@
   .mlTile.miss{background:#787C7E; border-color:#787C7E; color:#fff;}
   .mlRow.shake{animation:mlShake .35s ease-in-out;}
   @keyframes mlShake{0%, 100%{transform:none;} 25%{transform:translateX(-5px);} 50%{transform:translateX(5px);} 75%{transform:translateX(-3px);}}
-  .mlTile.flip{animation:mlFlip .45s ease-in-out;}
-  @keyframes mlFlip{0%{transform:scaleY(1);} 50%{transform:scaleY(0);} 100%{transform:scaleY(1);}}
-  @media (prefers-reduced-motion: reduce){ .mlRow.shake, .mlTile.flip{animation:none;} }
-  .mlMsg{font-weight:800; color:var(--navy); font-size:clamp(12px, 2.8cqw, 26px); text-align:center; min-height:1.3em; line-height:1.25; max-width:94%; overflow-wrap:anywhere; flex:none;}
+  .mlTile{transition:transform .15s ease-in; will-change:transform;}
+  .mlTile.turn{transform:scaleY(0);}
+  .mlTile.mlPopIn{animation:mlPop .1s ease-out;}   /* (".pop" is the popover sheets' class) */
+  @keyframes mlPop{0%{transform:scale(.85);} 60%{transform:scale(1.08);} 100%{transform:scale(1);}}
+  .mlTile.bounce{animation:mlBounce .5s ease-out;}
+  @keyframes mlBounce{0%, 100%{transform:none;} 30%{transform:translateY(-18%);} 60%{transform:translateY(6%);}}
+  @media (prefers-reduced-motion: reduce){ .mlRow.shake, .mlTile.mlPopIn, .mlTile.bounce{animation:none;} .mlTile{transition:none;} }
+  .mlMsg{font-weight:800; color:var(--navy); font-size:clamp(12px, 2.8cqw, 26px); text-align:center; height:2.75em; line-height:1.25; max-width:94%; overflow:hidden; overflow-wrap:anywhere; flex:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;}
   .mlMsg.win{color:#3E8A3A;}
-  .mlMsg .mlDef{display:block; font-weight:600; font-size:.82em; color:var(--teal); margin-top:.2em;}
+  .mlMsg .mlDef{display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; font-weight:600; font-size:.74em; line-height:1.2; color:var(--teal); margin-top:.15em;}
   .mlKeys{display:flex; flex-direction:column; gap:.5cqh; align-items:center; width:100%; flex:none; margin-top:auto;}
   .mlKeyRow{display:flex; gap:.5cqw; justify-content:center; width:100%;}
   .mlKey{
     flex:1 1 0; max-width:5.4cqw; min-width:0; min-height:max(28px, 5cqh); border:0; border-radius:6px; cursor:pointer;
     background:#D3D6DA; color:#1A1A1B; font:inherit; font-weight:900; font-size:clamp(9px, 2cqw, 18px); text-transform:uppercase;
-    display:inline-flex; align-items:center; justify-content:center; padding:0;
+    display:inline-flex; align-items:center; justify-content:center; padding:0; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    transition:background-color .2s;
   }
   .mlKey.wide{max-width:9cqw; flex-basis:9cqw; font-size:clamp(8px, 1.6cqw, 14px);}
   .mlKey.hit{background:#6AAA64; color:#fff;}
   .mlKey.near{background:#C9B458; color:#fff;}
   .mlKey.miss{background:#787C7E; color:#fff;}
   .w-mathle.wFull .mlKey{min-height:6cqh;}
-  @container (max-height: 300px){ .w-mathle .mlKeys{display:none;} }
+  @container (max-height: 440px){ .w-mathle .mlKeys{display:none;} }   /* a small card is for the keyboard; the stage has the keys on screen */
 
   /* container-query sizing inside widgets */
   /* sized to read from the BACK of the room (Croix, Sep 1);
@@ -4514,7 +4520,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.34.0",
+  appVersion: "7.34.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -7479,7 +7485,7 @@ function makeMathle(host, wcfg){
     '</div>');
   var q = function(s){ return host.querySelector(s); };
   var bandEl = q(".mlBand"), board = q(".mlBoard"), msgEl = q(".mlMsg"), keysEl = q(".mlKeys"), hintBtn = q(".mlHint");
-  var ROWS = 6, destroyed = false;
+  var ROWS = 6, destroyed = false, revealing = false, timers = [];
   function pool(){
     var b = wcfg.band, want = b === "78" ? [7, 8] : b === "678" ? [6, 7, 8] : [+b];
     var out = MATHLE_WORDS.filter(function(x){ return !x.g.length || x.g.some(function(g){ return want.indexOf(g) !== -1; }); });
@@ -7502,46 +7508,47 @@ function makeMathle(host, wcfg){
     for (i = 0; i < w.length; i++){ if (res[i] !== "hit" && left[guess[i]]){ res[i] = "near"; left[guess[i]]--; } }
     return res;
   }
-  var keyState = {};
-  /* the tiles are as big as the card allows: the width split by the letters, or the height left
-     over after the top row, the message and the keyboard split by six rows — whichever is less */
-  function size(){
-    var body = host.querySelector(".wBody"), n = N();
-    var strip = host.querySelector(".strip");
-    var bw = body.clientWidth - 24, bh = host.clientHeight - (strip ? strip.offsetHeight : 30) - 16;   // the card's own height, never the body's overgrown one
-    var used = q(".mlTop").offsetHeight + Math.max(msgEl.offsetHeight, msgEl.scrollHeight) + keysEl.offsetHeight + 6 * 3 + 16;
-    var g = Math.max(3, Math.round(Math.min(bw, bh) * .012));
-    var t = Math.floor(Math.min((bw - g * (n - 1)) / n, (bh - used - g * (ROWS - 1)) / ROWS));
-    t = Math.max(14, Math.min(120, t));
-    board.style.setProperty("--t", t + "px"); board.style.setProperty("--g", g + "px");
-    board.style.setProperty("--bw", (t * n + g * (n - 1)) + "px");
-  }
-  var ro = null;
-  try { ro = new ResizeObserver(function(){ if (!destroyed) size(); }); ro.observe(host); ro.observe(msgEl); } catch(e){}
-  function paint(animRow){
+  /* v7.34.1 (Croix: "Mathle is kinda wonky. It works but it's not buttery smooth"): the board is
+     built ONCE per word and updated in place — a keystroke changes one tile, never rebuilds the
+     grid; a guess reveals tile by tile (each flips, and takes its colour at the half-turn); the
+     message keeps a fixed height so nothing underneath it shifts; the tiles are re-measured only
+     when the card itself changes size. */
+  var tiles = [], keyEls = {};
+  function build(){
+    board.innerHTML = ""; tiles = [];
     board.style.setProperty("--n", N());
-    paintMsg(); size();                          // the message's height (a definition can take two lines) comes first
-    board.innerHTML = "";
-    keyState = {};
     for (var r = 0; r < ROWS; r++){
       var row = document.createElement("div"); row.className = "mlRow"; row.setAttribute("role", "row");
-      var g = st.guesses[r], sc = g ? score(g) : null;
-      var typing = !g && r === st.guesses.length && !st.done;
+      var cells = [];
       for (var i = 0; i < N(); i++){
         var t = document.createElement("div"); t.className = "mlTile"; t.setAttribute("role", "gridcell");
-        var ch = g ? g[i] : (typing ? (st.cur[i] || "") : "");
-        t.textContent = ch;
-        if (g){ t.classList.add(sc[i]); if (animRow === r){ t.classList.add("flip"); t.style.animationDelay = (i * 70) + "ms"; } }
-        else if (ch) t.classList.add("typed");
-        row.appendChild(t);
+        row.appendChild(t); cells.push(t);
       }
-      if (g) sc.forEach(function(s, i){ var c = g[i], rank = { hit: 3, near: 2, miss: 1 }; if ((rank[s] || 0) > (rank[keyState[c]] || 0)) keyState[c] = s; });
-      board.appendChild(row);
+      board.appendChild(row); tiles.push(cells);
     }
-    keysEl.querySelectorAll(".mlKey[data-k]").forEach(function(k){
-      k.className = "mlKey" + (k.dataset.k.length > 1 ? " wide" : "") + (keyState[k.dataset.k] ? " " + keyState[k.dataset.k] : "");
+    /* finished rows (a scene switch rebuilt the card mid-game) show their colours at once */
+    st.guesses.forEach(function(g, r){ var sc = score(g); for (var i = 0; i < N(); i++){ tiles[r][i].textContent = g[i]; tiles[r][i].className = "mlTile " + sc[i]; } });
+    paintCur(); paintKeys(); paintMsg(); size();
+  }
+  function paintCur(){
+    var r = st.guesses.length; if (r >= ROWS || st.done) return;
+    for (var i = 0; i < N(); i++){
+      var t = tiles[r][i], ch = st.cur[i] || "";
+      if (t.textContent !== ch) t.textContent = ch;
+      t.className = "mlTile" + (ch ? " typed" : "");
+    }
+  }
+  function keyStates(){
+    var ks = {}, rank = { hit: 3, near: 2, miss: 1 };
+    st.guesses.forEach(function(g){ var sc = score(g); for (var i = 0; i < g.length; i++){ if ((rank[sc[i]] || 0) > (rank[ks[g[i]]] || 0)) ks[g[i]] = sc[i]; } });
+    return ks;
+  }
+  function paintKeys(){
+    var ks = keyStates();
+    Object.keys(keyEls).forEach(function(k){
+      var cls = "mlKey" + (k.length > 1 ? " wide" : "") + (ks[k] ? " " + ks[k] : "");
+      if (keyEls[k].className !== cls) keyEls[k].className = cls;
     });
-    hintBtn.setAttribute("aria-pressed", st.hint ? "true" : "false");
   }
   function paintMsg(){
     msgEl.className = "mlMsg" + (st.won ? " win" : "");
@@ -7553,31 +7560,77 @@ function makeMathle(host, wcfg){
     } else if (st.hint){
       msgEl.appendChild(document.createTextNode(st.h || "No hint for this one."));
     } else {
-      msgEl.appendChild(document.createTextNode(N() + " letters \u00b7 " + (ROWS - st.guesses.length) + (ROWS - st.guesses.length === 1 ? " guess" : " guesses") + " left"));
+      var left = ROWS - st.guesses.length;
+      msgEl.appendChild(document.createTextNode(N() + " letters \u00b7 " + left + (left === 1 ? " guess" : " guesses") + " left"));
     }
+    hintBtn.setAttribute("aria-pressed", st.hint ? "true" : "false");
   }
+  /* the tiles are as big as the card allows: the width split by the letters, or the height left
+     over after the top row, the (fixed-height) message and the keyboard split by six rows */
+  function size(){
+    var body = host.querySelector(".wBody"), n = N(), strip = host.querySelector(".strip");
+    var bw = body.clientWidth - 24, bh = host.clientHeight - (strip ? strip.offsetHeight : 30) - 16;
+    var used = q(".mlTop").offsetHeight + msgEl.offsetHeight + keysEl.offsetHeight + 6 * 3 + 16;
+    var g = Math.max(3, Math.round(Math.min(bw, bh) * .012));
+    var t = Math.floor(Math.min((bw - g * (n - 1)) / n, (bh - used - g * (ROWS - 1)) / ROWS));
+    t = Math.max(14, Math.min(120, t));
+    board.style.setProperty("--t", t + "px"); board.style.setProperty("--g", g + "px");
+    board.style.setProperty("--bw", (t * n + g * (n - 1)) + "px");
+  }
+  var ro = null;
+  try { ro = new ResizeObserver(function(){ if (!destroyed) size(); }); ro.observe(host); } catch(e){}
   var noteTid = null;
   function flash(text){
     clearTimeout(noteTid);
-    msgEl.textContent = text;
+    msgEl.className = "mlMsg"; msgEl.textContent = text;
     noteTid = setTimeout(paintMsg, 1400);
   }
+  function later(fn, ms){ var id = setTimeout(function(){ if (!destroyed) fn(); }, ms); timers.push(id); return id; }
+  /* the reveal: one tile after another turns over and takes its colour; then the keys, the
+     message, and a little bounce on a win */
+  function reveal(r, guess, sc, then){
+    revealing = true;
+    var step = REDUCED ? 0 : 240, half = REDUCED ? 0 : 150;
+    for (var i = 0; i < N(); i++)(function(i){
+      var t = tiles[r][i];
+      t.textContent = guess[i];
+      if (REDUCED){ t.className = "mlTile " + sc[i]; return; }
+      later(function(){ t.classList.add("turn"); }, i * step);
+      later(function(){ t.className = "mlTile " + sc[i] + " turn"; }, i * step + half);
+      later(function(){ t.classList.remove("turn"); }, i * step + half * 2);
+    })(i);
+    later(function(){
+      revealing = false;
+      paintKeys(); paintMsg();
+      if (st.won && !REDUCED) for (var i = 0; i < N(); i++)(function(i){ later(function(){ tiles[r][i].classList.add("bounce"); }, i * 80); })(i);
+      if (then) then();
+    }, (N() - 1) * step + half * 2 + 20);
+  }
   function submit(){
-    if (st.done) return;
-    var row = board.children[st.guesses.length];
+    if (st.done || revealing) return;
+    var r = st.guesses.length, row = board.children[r];
     function shake(){ if (row){ row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake"); } }
     if (st.cur.length < N()){ flash("Not enough letters"); shake(); return; }
     if (st.cur !== st.w && !mathleHas(st.cur)){ flash("Not a word"); shake(); return; }   // v7.34: the dictionary
-    st.guesses.push(st.cur); var g = st.cur; st.cur = "";
-    if (g === st.w){ st.done = true; st.won = true; try { Sound.soft(); } catch(e){} }
+    var g = st.cur; st.cur = "";
+    st.guesses.push(g);
+    if (g === st.w){ st.done = true; st.won = true; }
     else if (st.guesses.length >= ROWS){ st.done = true; st.won = false; }
-    paint(st.guesses.length - 1);
+    reveal(r, g, score(g), function(){ if (st.won){ try { Sound.soft(); } catch(e){} } });
   }
   function typeKey(k){
-    if (st.done) return false;
-    if (k === "Backspace"){ st.cur = st.cur.slice(0, -1); paint(); return true; }
+    if (st.done || revealing) return st.done ? false : /^[a-zA-Z]$|^(Backspace|Enter)$/.test(k);   // mid-reveal: swallowed, not passed to shortcuts
+    if (k === "Backspace"){ if (st.cur){ st.cur = st.cur.slice(0, -1); paintCur(); } return true; }
     if (k === "Enter"){ submit(); return true; }
-    if (/^[a-zA-Z]$/.test(k)){ if (st.cur.length < N()) st.cur += k.toLowerCase(); paint(); return true; }
+    if (/^[a-zA-Z]$/.test(k)){
+      if (st.cur.length < N()){
+        st.cur += k.toLowerCase();
+        paintCur();
+        var t = tiles[st.guesses.length][st.cur.length - 1];
+        if (t && !REDUCED){ t.classList.remove("mlPopIn"); void t.offsetWidth; t.classList.add("mlPopIn"); }
+      }
+      return true;
+    }
     return false;
   }
   /* the on-screen keyboard */
@@ -7588,33 +7641,40 @@ function makeMathle(host, wcfg){
         var b = document.createElement("button"); b.type = "button"; b.className = "mlKey" + (k.length > 1 ? " wide" : ""); b.dataset.k = k;
         b.textContent = k === "Backspace" ? "\u232B" : k === "Enter" ? "Enter" : k;
         b.setAttribute("aria-label", k === "Backspace" ? "Delete" : k);
+        b.addEventListener("pointerdown", function(e){ e.preventDefault(); });   // no focus ring, no text selection, no double-tap zoom
         wireButton(b, function(){ typeKey(k); });
+        keyEls[k] = b;
         row.appendChild(b);
       });
     });
     keysEl.appendChild(row);
   });
+  function restart(entry, isDaily){
+    timers.forEach(clearTimeout); timers = []; revealing = false; clearTimeout(noteTid);
+    fresh(entry, isDaily); build();
+  }
   bandEl.value = wcfg.band;
-  bandEl.addEventListener("change", function(){ wcfg.band = this.value; this.blur(); fresh(daily(), true); paint(); });
-  wireButton(hintBtn, function(){ st.hint = !st.hint; paint(); });
+  bandEl.addEventListener("change", function(){ wcfg.band = this.value; this.blur(); restart(daily(), true); });
+  wireButton(hintBtn, function(){ st.hint = !st.hint; paintMsg(); });
   wireButton(q(".mlNew"), function(){
     var p = pool().filter(function(x){ return x.w !== st.w; });
-    fresh(p[Math.floor(Math.random() * p.length)] || pool()[0], false); paint();
+    restart(p[Math.floor(Math.random() * p.length)] || pool()[0], false);
   });
-  paint();
+  build();
   return {
     kind: "mathle",
     label: function(){ return wcfg.label || "Mathle"; },
-    startPause: function(){}, reset: function(){ fresh(daily(), true); paint(); },   // R: back to the word of the day
+    startPause: function(){}, reset: function(){ restart(daily(), true); },   // R: back to the word of the day
     canEnter: function(){ return false; },
-    entryActive: function(){ return !st.done; },        // a live game owns the keyboard while the card is selected
+    entryActive: function(){ return !st.done || revealing; },   // a live game owns the keyboard while the card is selected
     typeKey: typeKey,
     entryDigit: function(){}, entryBackspace: function(){ typeKey("Backspace"); }, entryCancel: function(){}, commitEntryAndStart: function(){},
-    rebuild: paint, resync: function(){},
+    rebuild: build, resync: function(){ size(); },
     word: function(){ return st.w; },                   // test hook
     has: mathleHas,                                     // test hook (v7.34)
+    revealing: function(){ return revealing; },         // test hook
     state: function(){ return JSON.parse(JSON.stringify(st)); },   // test hook
-    destroy: function(){ destroyed = true; clearTimeout(noteTid); try { if (ro) ro.disconnect(); } catch(e){} }
+    destroy: function(){ destroyed = true; timers.forEach(clearTimeout); clearTimeout(noteTid); try { if (ro) ro.disconnect(); } catch(e){} }
   };
 }
 
