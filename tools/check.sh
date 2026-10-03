@@ -46,7 +46,8 @@ try {
   if (!seed.scenes.size) seed = null;                 // no remote yet: nothing to compare against
 } catch (e) { seed = null; }
 function checkConfig(f, c) {
-  const names = (c.rosters || []).flatMap(r => (r && r.names) || []);
+  const names = (c.rosters || []).flatMap(r => (r && r.names) || [])
+    .concat((c.cards && c.cards.log || []).flatMap(e => (e && e.names) || []));   // v7.32: the comment-card log
   const urls = [];
   (c.scenes || []).forEach(s => (s.widgets || []).forEach(w => {
     if (!w) return;

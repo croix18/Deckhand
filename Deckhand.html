@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.31.0",
+  "appVersion": "7.32.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -587,6 +587,7 @@
   .btnSand{background:var(--sand); color:var(--navy);}
   .btnOutline{background:var(--white); color:var(--navy); border:3px solid var(--sand);}
   #setResetBtn.armed, #importBtn.armed{background:var(--coral) !important; border-color:var(--coral) !important;}
+  .ccClear.armed{background:var(--coral) !important; color:var(--navy) !important;}   /* v7.32: a destructive second tap wears the alarm colour */
   @media (max-width: 700px){
     #settingsCard{width:96vw; height:92vh;}
     #setLayout{flex-direction:column;}
@@ -1001,6 +1002,60 @@
   @keyframes lScuttle{0%, 100%{transform:none;} 50%{transform:translateY(-1.5px);}}
   #lunchArt .lGhost.go{animation:lBoo 1.4s cubic-bezier(.3,.8,.4,1) !important;}
   @keyframes lBoo{0%{transform:translate(10px, 40px);} 25%{transform:translate(-34px, -42px) scale(1.12) rotate(-10deg);} 70%{transform:translate(-30px, -36px) rotate(-6deg);} 100%{transform:translate(10px, 40px);}}
+
+  /* v7.32 COMMENT CARDS (Croix: "Let me pull students up and put them on warning. Then I'll tag
+     them as comment card. And I'll hit it at the end of class."): the class as name chips — a tap
+     is a warning (yellow), the next the card (navy), the next clears it; End of class records the
+     day's cards for that period in the log and clears the board. The log lists recent days and
+     each student's total, and copies as text. */
+  .ccNames{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-content:flex-start; flex:1; min-height:0; overflow:auto; padding:2px;}
+  .ccName{
+    font-family:inherit; font-weight:700; font-size:clamp(11px, 2.5cqw, 17px); line-height:1.15;
+    background:var(--white); color:var(--navy); border:2px solid var(--grid); border-radius:999px;
+    padding:5px 12px; min-height:34px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  }
+  .ccName.isWarn{background:#FFE45C; border-color:#E5C53A;}
+  .ccName.isWarn::before{content:"!"; font-weight:900; color:var(--navy);}
+  .ccName.isCard{background:var(--navy); color:var(--white); border-color:var(--navy);}
+  .ccName.isCard::before{content:""; width:.75em; height:.52em; border:2px solid currentColor; border-radius:2px; flex:none;}
+  .ccName.out{opacity:.4; text-decoration:line-through;}
+  .ccList{display:flex; flex-direction:column; gap:5px; flex:1; min-height:0; overflow:auto; padding:2px;}
+  .ccRow{display:flex; align-items:stretch; gap:4px;}
+  .ccWho{
+    flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:left;
+    font-family:inherit; font-weight:900; font-size:clamp(12px, 3cqw, 20px); color:var(--navy);
+    background:var(--cream); border:2px solid var(--grid); border-radius:12px; padding:6px 12px; min-height:40px; cursor:pointer;
+    overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  }
+  .ccTag{font-weight:900; font-size:clamp(10px, 2.2cqw, 13px); letter-spacing:.06em; text-transform:uppercase; border-radius:999px; padding:3px 10px; flex:none;}
+  .ccRow.isWarn .ccWho{background:#FFF4B8; border-color:#E5C53A;}
+  .ccRow.isWarn .ccTag{background:#FFE45C; color:var(--navy);}
+  .ccRow.isCard .ccWho{background:var(--navy); border-color:var(--navy); color:var(--white);}
+  .ccRow.isCard .ccTag{background:var(--white); color:var(--navy);}
+  .ccOff{flex:none; min-width:40px; border:2px solid var(--grid); border-radius:12px; background:var(--white); color:var(--navy); font:inherit; font-weight:900; cursor:pointer;}
+  .ccPick{position:absolute; inset:0; z-index:5; background:var(--white); display:flex; flex-direction:column; gap:8px; padding:10px 12px;}
+  .ccPick[hidden]{display:none;}
+  .ccPick .ccFind{flex:1; min-width:0; max-width:220px; font-size:clamp(12px, 2.6cqw, 16px); padding:6px 10px;}
+  .ccPick .ccNames{flex:1; min-height:0; overflow:auto; color:var(--teal); font-weight:700; font-size:clamp(11px, 2.5cqw, 15px);}
+  .ccSum{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--teal);}
+  .ccSum b{color:var(--navy);}
+  .ccEnd{background:var(--navy); color:var(--white);}
+  .ccNote{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--navy); text-align:center; background:var(--paleturq); border-radius:10px; padding:6px 12px;}
+  .ccNote[hidden]{display:none;}
+  .ccLog{position:absolute; inset:0; z-index:5; background:var(--white); display:flex; flex-direction:column; gap:8px; padding:10px 12px;}
+  .ccLog[hidden]{display:none;}
+  .ccLogHead{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .ccLogHead b{font-weight:900; color:var(--navy); margin-right:auto; font-size:clamp(13px, 4cqw, 18px);}
+  .ccLogX{background:none; border:0; font:inherit; font-weight:900; font-size:18px; color:var(--navy); min-width:44px; min-height:44px; cursor:pointer;}
+  .ccLogBody{flex:1; min-height:0; overflow:auto; font-size:clamp(11px, 2.6cqw, 15px); color:var(--navy); display:flex; flex-direction:column; gap:10px;}
+  .ccLogBody h4{margin:0; font-size:clamp(11px, 2.4cqw, 13px); letter-spacing:.08em; text-transform:uppercase; color:var(--teal);}
+  .ccLogBody ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:3px;}
+  .ccLogBody li{display:flex; gap:10px; align-items:baseline;}
+  .ccLogBody li .ccWhen{color:var(--teal); font-weight:700; white-space:nowrap; min-width:7.5em;}
+  .ccTotals{display:flex; flex-wrap:wrap; gap:6px;}
+  .ccTotals span{background:var(--paleturq); border-radius:999px; padding:3px 10px; font-weight:700;}
+  .ccTotals span b{color:var(--teal);}
+  .w-ccard .wBody{position:relative;}
 
   /* container-query sizing inside widgets */
   /* sized to read from the BACK of the room (Croix, Sep 1);
@@ -3170,6 +3225,7 @@
     <symbol id="i-sketch" viewBox="0 0 24 24"><path d="M4 20c4-1 5-2 6-4M6 14.5L16.5 4a2.1 2.1 0 0 1 3 3L9 17.5l-4 1z"/></symbol>
     <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 8.5h3.2a2 2 0 0 1 0 4H9.5zM9.5 12.5h3.8a2 2 0 0 1 0 4H9.5zM9.5 8.5v8"/></symbol>
     <symbol id="i-spin" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 5v8l5.7 5.6M12 13l-8-.5M12 13l6 5.3M12 2.5l-2 2.5h4z"/></symbol>
+    <symbol id="i-ccard" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 10h10M7 14h6"/></symbol>
     <symbol id="i-talk" viewBox="0 0 24 24"><path d="M3.5 5.5h10a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8l-3.5 3v-3h-1a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2z"/><path d="M17.5 9.5h2a2 2 0 0 1 2 2v3.5a2 2 0 0 1-2 2h-.5v2.5l-3-2.5h-3"/></symbol>
     <symbol id="i-stations" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4M17.5 10v4M14 17.5h-4M6.5 14v-4"/></symbol>
     <symbol id="i-numline" viewBox="0 0 24 24"><path d="M2 14h20M5 11.5v5M9.5 11.5v5M14 11.5v5M18.5 11.5v5"/><path d="M9.5 14a4.5 4.5 0 0 1 9 0"/><circle cx="5" cy="14" r="1.6" fill="currentColor"/></symbol>
@@ -3515,6 +3571,7 @@
       <button class="tile" id="addWorkBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-work"/></svg><span class="tName">Work Mode</span><span class="tDesc">Silent to group work</span></button>
       <button class="tile" id="addMeterBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-meter"/></svg><span class="tName">Noise Meter</span><span class="tDesc">Quiet streaks, records</span></button>
       <button class="tile" id="addMusicBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-music"/></svg><span class="tName">Music</span><span class="tDesc">Quiet lo-fi for work</span></button>
+      <button class="tile" id="addCcardBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-ccard"/></svg><span class="tName">Comment Cards</span><span class="tDesc">Warning, then the card</span></button>
       <div class="menuLabel">Post</div>
       <button class="tile" id="addAgendaBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-agenda"/></svg><span class="tName">Agenda</span><span class="tDesc">Today&rsquo;s plan, live</span></button>
       <button class="tile" id="addTextBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-note"/></svg><span class="tName">Text Box</span><span class="tDesc">A note on the board</span></button>
@@ -4410,7 +4467,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.31.0",
+  appVersion: "7.32.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4505,7 +4562,7 @@ function sanitize(c){
       if (!isObj(w)) return;
       var ty = (["timer","stopwatch","bell","clock","picker","groups",
                  "text","work","dice","coin","spin","cards","score","qr","meter","draw","embed",
-                 "event","tally","agenda","settle","music","yt","talk","stations","numline"].indexOf(w.type) !== -1) ? w.type : null;
+                 "event","tally","agenda","settle","music","yt","talk","stations","numline","ccard"].indexOf(w.type) !== -1) ? w.type : null;
       if (!ty) return;
       /* v7.7: the settle-in card is gone — its settings move to bell.settle
          (the first card's win); v7.8: the scene's clock grows into its row */
@@ -4653,6 +4710,10 @@ function sanitize(c){
         /* v7.13: count school days (weekends and the no-school weeks skipped) — the default for
            a card that has no event yet; a card already counting calendar days keeps counting them */
         wc.schoolDays = bool(w.schoolDays, !wc.when);
+      }
+      if (ty === "ccard"){                       // v7.32: the comment-card tracker (its log lives in cfg.cards)
+        wc.period = str(w.period, "").slice(0, 20);
+        if (wc.period === "__proto__") wc.period = "";
       }
       if (ty === "talk"){                        // v7.14: turn-and-talk
         wc.prompt = str(w.prompt, "").trim().slice(0, 120);
@@ -4821,6 +4882,18 @@ function sanitize(c){
     activeScene: activeScene,
     scenes: scenes,
     rosters: rosters,
+    /* v7.32: the comment-card log — one entry per class per day, newest last. Saved with the
+       board (device storage, like the rosters); never in the public file (tools/check.sh). */
+    cards: { log: (function(){
+      var src = isObj(c.cards) && Array.isArray(c.cards.log) ? c.cards.log : [];
+      return src.slice(-600).map(function(e){
+        if (!isObj(e)) return null;
+        var d = str(e.d, ""), p = str(e.p, "").trim().slice(0, 20);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !p || p === "__proto__") return null;
+        var names = (Array.isArray(e.names) ? e.names : []).filter(function(n){ return typeof n === "string" && n.trim(); }).map(function(n){ return n.trim().slice(0, 40); }).slice(0, 60);
+        return { d: d, p: p, names: names };
+      }).filter(Boolean);
+    })() },
     sound: { enabled: bool(s.enabled, true),
              volume: Math.max(0, Math.min(1, num(s.volume, 0.25))) },
     clock: { showSeconds: bool(ck.showSeconds, false) },
@@ -7012,6 +7085,232 @@ function makePicker(host, wcfg){
       clearInterval(refreshTid);
       if (spinTid) clearInterval(spinTid);
     }
+  };
+}
+
+
+/* v7.32 COMMENT CARDS — Croix: "A comment card tracker. Let me pull students up and put them on
+   warning. Then I'll tag them as comment card. And I'll hit it at the end of class." The roster
+   as chips: a tap puts a student on warning, the next tap makes it the card, a third clears it.
+   Marks are today's and that class's (DayStore "ccard:<period>"), so the card can switch classes
+   and scenes without losing them. END OF CLASS writes the cards to cfg.cards.log and clears the
+   marks; if the bell changes the class before the teacher gets to it, the cards are recorded then
+   (warnings are just warnings — only cards are logged). The log shows the last weeks and every
+   student's count; Copy puts it on the clipboard as text. A live teaching action: works locked. */
+function makeCcard(host, wcfg){
+  if (typeof wcfg.period !== "string") wcfg.period = "";
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="pkRow"><select class="pkSel" aria-label="Class period"></select>' +
+        '<span class="ccSum"></span></div>' +
+      '<div class="ccList" role="list" aria-label="Students on warning or a card"></div>' +
+      '<div class="wEmpty ccEmpty"></div>' +
+      '<div class="ccNote" hidden></div>' +
+      '<div class="row">' +
+        '<button class="btn ccAdd" type="button" style="background:var(--turq); color:var(--navy)">+ Warning</button>' +
+        '<button class="btn ccEnd" type="button">End of class</button>' +
+        '<button class="btn btnSm ccLogBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy)">Log</button>' +
+      '</div>' +
+      '<div class="tHint">Tap a name to make it the card; \u2715 takes it off</div>' +
+      '<div class="ccPick" role="group" aria-label="Pick a student" hidden>' +
+        '<div class="ccLogHead"><b>Who\u2019s on warning?</b>' +
+          '<input class="ccFind setInput" type="text" placeholder="Type to find" aria-label="Find a student" autocomplete="off" spellcheck="false">' +
+          '<button type="button" class="ccLogX ccPickX" aria-label="Close">\u2715</button></div>' +
+        '<div class="ccNames" role="group" aria-label="The class"></div>' +
+      '</div>' +
+      '<div class="ccLog" role="group" aria-label="Comment card log" hidden>' +
+        '<div class="ccLogHead"><b>Comment cards</b>' +
+          '<button type="button" class="chip chipSm ccCopy">Copy</button>' +
+          '<button type="button" class="chip chipSm ccClear">Clear today</button>' +
+          '<button type="button" class="ccLogX ccLogClose" aria-label="Close">\u2715</button></div>' +
+        '<div class="ccLogBody"></div>' +
+      '</div>' +
+    '</div>');
+  var q = function(s){ return host.querySelector(s); };
+  var sel = q(".pkSel"), namesEl = q(".ccNames"), listEl = q(".ccList"), sumEl = q(".ccSum"), emptyEl = q(".ccEmpty"), noteEl = q(".ccNote");
+  var pickEl = q(".ccPick"), findEl = q(".ccFind");
+  var logEl = q(".ccLog"), logBody = q(".ccLogBody");
+  var noteTid = null, refreshTid = null, destroyed = false, lastAuto = null;
+  var period = buildPeriodSelect(sel, wcfg, function(){ paint(); });
+  function marks(p){ var m = p ? DayStore.get("ccard:" + p) : null; if (!m && p){ m = Object.create(null); DayStore.set("ccard:" + p, m); } return m; }
+  function log(){ if (!cfg.cards || !Array.isArray(cfg.cards.log)) cfg.cards = { log: [] }; return cfg.cards.log; }
+  function note(msg){
+    noteEl.textContent = msg; noteEl.hidden = false;
+    clearTimeout(noteTid); noteTid = setTimeout(function(){ noteEl.hidden = true; }, 7000);
+  }
+  /* v7.32 (Croix, on the first cut: "I don't like the bubbles and the whole class up like
+     that"): the board shows only the students on the list. + Warning opens the class to pick
+     from (type a few letters to find one); a tap on a listed name makes it the card, another
+     puts it back to a warning, ✕ takes it off. */
+  function paint(){
+    var p = period.current();
+    var names = p ? Rosters.namesFor(p) : [];
+    listEl.innerHTML = "";
+    if (!names.length){
+      emptyEl.textContent = cfg.rosters.length ? "No roster for this period \u2014 pick one above" : "Add class rosters in Settings";
+      sumEl.textContent = ""; q(".ccAdd").disabled = true; return;
+    }
+    q(".ccAdd").disabled = false;
+    var m = marks(p), warn = 0, card = 0;
+    var listed = names.filter(function(n){ return m[n]; });
+    listed.sort(function(x, y){ return (m[y] === "card") - (m[x] === "card") || names.indexOf(x) - names.indexOf(y); });   // cards first, then roster order
+    listed.forEach(function(n){
+      var st = m[n];
+      if (st === "warn") warn++; else card++;
+      var row = document.createElement("div"); row.className = "ccRow " + (st === "card" ? "isCard" : "isWarn"); row.setAttribute("role", "listitem");
+      var b = document.createElement("button"); b.type = "button"; b.className = "ccWho";
+      b.textContent = n;                        // user data: textContent only
+      b.setAttribute("aria-label", n + (st === "card" ? ", comment card \u2014 tap for a warning" : ", on warning \u2014 tap for the card"));
+      var tag = document.createElement("span"); tag.className = "ccTag"; tag.textContent = st === "card" ? "Comment card" : "Warning";
+      b.appendChild(tag);
+      wireButton(b, function(){ m[n] = m[n] === "warn" ? "card" : "warn"; paint(); });
+      var x = document.createElement("button"); x.type = "button"; x.className = "ccOff"; x.textContent = "\u2715";
+      x.setAttribute("aria-label", "Take " + n + " off the list");
+      wireButton(x, function(){ delete m[n]; paint(); });
+      row.appendChild(b); row.appendChild(x);
+      listEl.appendChild(row);
+    });
+    emptyEl.textContent = listed.length ? "" : "Nobody on warning.";
+    sumEl.innerHTML = "";
+    if (warn || card){
+      var parts = [];
+      if (warn) parts.push("<b>" + warn + "</b> on warning");
+      if (card) parts.push("<b>" + card + "</b> " + (card === 1 ? "card" : "cards"));
+      sumEl.innerHTML = parts.join(" \u00b7 ");
+    }
+  }
+  /* the picker: the class, minus the list, filtered by what's typed */
+  function paintPick(){
+    var p = period.current(), m = marks(p), f = findEl.value.trim().toLowerCase();
+    namesEl.innerHTML = "";
+    Rosters.namesFor(p).filter(function(n){ return !m[n] && (!f || n.toLowerCase().indexOf(f) >= 0); }).forEach(function(n){
+      var b = document.createElement("button"); b.type = "button"; b.className = "ccName";
+      b.textContent = n;
+      if (Absent.isOut(p, n)) b.classList.add("out");
+      wireButton(b, function(){ m[n] = "warn"; openPick(false); paint(); });
+      namesEl.appendChild(b);
+    });
+    if (!namesEl.children.length) namesEl.textContent = f ? "No one matches." : "Everyone is on the list.";
+  }
+  function openPick(open){
+    if (open && !period.current()) return;
+    pickEl.hidden = !open;
+    if (open){ findEl.value = ""; paintPick(); try { findEl.focus(); } catch(e){} }
+    else if (document.activeElement === findEl) findEl.blur();
+  }
+  wireButton(q(".ccAdd"), function(){ openPick(pickEl.hidden); });
+  wireButton(q(".ccPickX"), function(){ openPick(false); });
+  findEl.addEventListener("input", paintPick);
+  findEl.addEventListener("keydown", function(e){
+    e.stopPropagation();                        // typing a name must not fire board shortcuts
+    if (e.key === "Escape") openPick(false);
+    if (e.key === "Enter"){ var first = namesEl.querySelector(".ccName"); if (first) first.click(); }
+  });
+  function cardsFor(p){ var m = marks(p); return Rosters.namesFor(p).filter(function(n){ return m[n] === "card"; }); }
+  /* END OF CLASS: today's cards for this class go in the log; the board clears */
+  function record(p, auto){
+    if (!p) return;
+    var cards = cardsFor(p), d = dateKey(now()), L = log();
+    var entry = null;
+    for (var i = L.length - 1; i >= 0; i--){ if (L[i].d === d && L[i].p === p){ entry = L[i]; break; } }
+    if (cards.length){
+      if (entry) cards.forEach(function(n){ if (entry.names.indexOf(n) < 0) entry.names.push(n); });
+      else L.push({ d: d, p: p, names: cards });
+      while (L.length > 600) L.shift();
+      note((auto ? "At the bell \u2014 " : "") + "Recorded " + cards.length + (cards.length === 1 ? " card" : " cards") + " for " + p + ": " + cards.join(", "));
+    } else if (!auto){
+      note("No cards today for " + p + ".");
+    }
+    DayStore.clear("ccard:" + p);
+    paint();
+  }
+  wireButton(q(".ccEnd"), function(){ record(period.current(), false); });
+  /* the bell: the class that just left had cards nobody recorded */
+  function watchBell(){
+    var auto = Rosters.autoPeriod();
+    if (lastAuto && auto !== lastAuto && cardsFor(lastAuto).length) record(lastAuto, true);
+    lastAuto = auto;
+  }
+  /* ---- the log ---- */
+  function fmtDay(d){
+    var p = d.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]);
+    return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()] + " " + (+p[1]) + "/" + (+p[2]);
+  }
+  function logText(){
+    var L = log(), p = period.current(), lines = [];
+    var mine = L.filter(function(e){ return !p || e.p === p; });
+    mine.slice().reverse().forEach(function(e){ lines.push(fmtDay(e.d) + " \u00b7 " + e.p + ": " + e.names.join(", ")); });
+    return lines.join("\n");
+  }
+  function paintLog(){
+    var L = log(), p = period.current();
+    logBody.innerHTML = "";
+    var mine = L.filter(function(e){ return !p || e.p === p; });
+    var h4 = document.createElement("h4"); h4.textContent = p ? p + " \u2014 totals" : "Totals"; logBody.appendChild(h4);
+    var tot = Object.create(null);
+    mine.forEach(function(e){ e.names.forEach(function(n){ tot[n] = (tot[n] || 0) + 1; }); });
+    var keys = Object.keys(tot).sort(function(a, b){ return tot[b] - tot[a] || a.localeCompare(b); });
+    var tEl = document.createElement("div"); tEl.className = "ccTotals";
+    if (!keys.length){ tEl.textContent = "No cards recorded yet" + (p ? " for " + p : "") + "."; }
+    keys.forEach(function(n){ var s = document.createElement("span"); s.textContent = n + " "; var b = document.createElement("b"); b.textContent = "\u00d7" + tot[n]; s.appendChild(b); tEl.appendChild(s); });
+    logBody.appendChild(tEl);
+    if (mine.length){
+      var h42 = document.createElement("h4"); h42.textContent = "By day"; logBody.appendChild(h42);
+      var ul = document.createElement("ul");
+      mine.slice().reverse().slice(0, 60).forEach(function(e){
+        var li = document.createElement("li"), w = document.createElement("span"); w.className = "ccWhen";
+        w.textContent = fmtDay(e.d) + (p ? "" : " \u00b7 " + e.p);
+        var t = document.createElement("span"); t.textContent = e.names.join(", ");
+        li.appendChild(w); li.appendChild(t); ul.appendChild(li);
+      });
+      logBody.appendChild(ul);
+    }
+  }
+  function openLog(open){ logEl.hidden = !open; if (open) paintLog(); }
+  wireButton(q(".ccLogBtn"), function(){ openLog(logEl.hidden); });
+  wireButton(q(".ccLogClose"), function(){ openLog(false); });
+  wireButton(q(".ccCopy"), function(){
+    var txt = logText() || "No cards recorded.";
+    var done = function(){ note("Copied the log."); openLog(false); };
+    try { navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt); done(); }); } catch(e){ fallbackCopy(txt); done(); }
+  });
+  function fallbackCopy(txt){
+    var ta = document.createElement("textarea"); ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta);
+  }
+  /* Clear today: an armed tap — the first asks, the second (within 6 s) removes today's entry for this class */
+  var clearArmed = null;
+  wireButton(q(".ccClear"), function(){
+    var p = period.current(), d = dateKey(now()), btn = q(".ccClear");
+    if (!p) return;
+    if (clearArmed){
+      clearTimeout(clearArmed); clearArmed = null;
+      btn.textContent = "Clear today"; btn.classList.remove("armed");
+      cfg.cards.log = log().filter(function(e){ return !(e.d === d && e.p === p); });
+      DayStore.clear("ccard:" + p);
+      paint(); paintLog(); note("Cleared today\u2019s cards for " + p + ".");
+      return;
+    }
+    btn.textContent = "Clear " + p + " today?"; btn.classList.add("armed");
+    clearArmed = setTimeout(function(){ clearArmed = null; btn.textContent = "Clear today"; btn.classList.remove("armed"); }, 6000);
+  });
+  refreshTid = setInterval(function(){ if (destroyed) return; period.fill(); watchBell(); paint(); }, 5000);   // follow the bells
+  lastAuto = Rosters.autoPeriod();
+  paint();
+  return {
+    kind: "ccard",
+    label: function(){ return wcfg.label || "Comment Cards"; },
+    startPause: function(){}, reset: function(){},
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    rebuild: function(){ period.fill(); paint(); },
+    resync: paint,
+    marks: function(){ var p = period.current(); return p ? Object.assign({}, marks(p)) : {}; },   // test hook
+    record: function(){ record(period.current(), false); },                                         // test hook
+    _watchBell: watchBell,
+    destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(noteTid); clearTimeout(clearArmed); }
   };
 }
 
@@ -13629,7 +13928,8 @@ var WIDGET_NAMES = {
   draw: "Sketch Pad", embed: "Slides",
   event: "Countdown", tally: "Tally", agenda: "Agenda",
   music: "Music", yt: "YouTube",
-  talk: "Talk Timer", stations: "Stations", numline: "Number Line"   // v7.14
+  talk: "Talk Timer", stations: "Stations", numline: "Number Line",   // v7.14
+  ccard: "Comment Cards"                                              // v7.32
 };
 /* boards saved before v7.12 carry the old default names as labels — those are not custom names */
 var LEGACY_NAMES = { picker: ["Picker"], groups: ["Groups"], text: ["Note"], draw: ["Sketch"] };
@@ -13647,7 +13947,8 @@ var WIDGET_MAKERS = {
   draw: makeDraw, embed: makeEmbed,
   event: makeEvent, tally: makeTally, agenda: makeAgenda,
   music: makeMusic, yt: makeYT,
-  talk: makeTalk, stations: makeStations, numline: makeNumline   // v7.14
+  talk: makeTalk, stations: makeStations, numline: makeNumline,  // v7.14
+  ccard: makeCcard                                               // v7.32
 };
 
 var Canvas = (function(){
@@ -14557,7 +14858,7 @@ var Canvas = (function(){
      "addTextBtn","addWorkBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn","addScoreBtn",
      "addQrBtn","addMeterBtn","addDrawBtn","addEmbedBtn",
      "addEventBtn","addTallyBtn","addAgendaBtn",
-     "addMusicBtn","addYtBtn","addTalkBtn","addStationsBtn","addNumlineBtn"].forEach(function(id){
+     "addMusicBtn","addYtBtn","addTalkBtn","addStationsBtn","addNumlineBtn","addCcardBtn"].forEach(function(id){
       $(id).disabled = locked || full;
     });
     var hasClock = activeSceneObj().widgets.some(function(w){ return w.type === "clock"; });
@@ -14807,7 +15108,7 @@ var Canvas = (function(){
        ["addTallyBtn","tally"], ["addAgendaBtn","agenda"],
        ["addMusicBtn","music"],
        ["addYtBtn","yt"],
-       ["addTalkBtn","talk"], ["addStationsBtn","stations"], ["addNumlineBtn","numline"]].forEach(function(pair){
+       ["addTalkBtn","talk"], ["addStationsBtn","stations"], ["addNumlineBtn","numline"], ["addCcardBtn","ccard"]].forEach(function(pair){
         wireButton($(pair[0]), function(){ addWidget(pair[1]); hideAddMenu(); });
       });
       wireButton($("moreBtn"), toggleMoreMenu);

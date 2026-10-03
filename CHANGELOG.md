@@ -2,6 +2,23 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.32.0 — 2026-10-03
+
+**Comment Cards.** Croix: "A comment card tracker. Let me pull students up and put them on
+warning. Then I'll tag them as comment card. And I'll hit it at the end of class." A new card in
++ Add → Room. The board shows only the students on the list (Croix, on the first cut: "I don't
+like the bubbles and the whole class up like that"). **+ Warning** opens the class in the room
+(following the bells, or a period you pick); type a couple of letters to find a student and tap
+the name, and they're on **warning** (yellow). Tap the name on the list to make it the **comment
+card** (navy), tap again for a warning, or ✕ to take them off. The strip counts warnings and
+cards. **End of class** records today's cards for
+that period in a log and clears the board. If the bell changes the class before you tap it, the
+cards are recorded at the bell (warnings are never recorded). **Log** shows every student's
+total for the period and the cards by day, with **Copy** to paste the list anywhere and **Clear
+today** (a second tap confirms). Works while locked. The log is saved with the board on this
+device, like the rosters; it never goes in the public file (the privacy guard now refuses a copy
+that carries one). One test; 271.
+
 ## 7.31.0 — 2026-10-01
 
 **Music between classes, and straight to the slides.** Croix: "Can I also get the option to have
