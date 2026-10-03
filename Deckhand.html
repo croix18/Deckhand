@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.34.1",
+  "appVersion": "7.35.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2039,14 +2039,14 @@
      auto-collapses it */
   /* v7.15: the corner blobs — fullscreen top-right, the pen bottom-right on a staged deck;
      navy like the dock, half there until a finger or a pointer comes near */
-  #fsBtn, #inkBlob, #zoomBlob{
+  #fsBtn, #inkBlob, #zoomBlob, #ccBlob{
     position:fixed; z-index:900001; width:44px; height:44px; border-radius:999px; border:0; padding:0;
     background:var(--navy); color:var(--white); box-shadow:3px 4px 0 var(--shadow);
     display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:.45;
     transition:opacity .15s;
   }
   #fsBtn{top:6px; right:6px; width:38px; height:38px;}
-  #fsBtn svg, #inkBlob svg, #zoomBlob svg{width:20px; height:20px;}
+  #fsBtn svg, #inkBlob svg, #zoomBlob svg, #ccBlob svg{width:20px; height:20px;}
   #fsBtn .fsOut{display:none;}
   #fsBtn[aria-pressed="true"] .fsIn{display:none;}
   #fsBtn[aria-pressed="true"] .fsOut{display:block;}
@@ -2057,6 +2057,37 @@
   #inkBlob{right:24px; bottom:16px; display:none;}
   /* v7.21 zoom: the magnifier sits left of the pen; zoomed, the bar takes its place */
   #zoomBlob{right:80px; bottom:16px; display:none;}
+  /* v7.35 the comment-card blob, third in the row; a badge counts the cards due */
+  #ccBlob{right:136px; bottom:16px; display:none;}
+  body.focusMode:not(.landing):not(.inking):not(.zooming) #ccBlob{display:inline-flex;}
+  #ccBlob[aria-expanded="true"]{opacity:1; background:var(--teal);}
+  @media (hover:hover){ #ccBlob:hover{opacity:1;} }
+  #ccBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
+  .ccBadge{position:absolute; top:-5px; right:-5px; min-width:20px; height:20px; border-radius:999px; background:#FFE45C; color:var(--navy);
+    font-size:12px; font-weight:900; line-height:20px; text-align:center; padding:0 5px; box-shadow:0 0 0 2px var(--white);}
+  .ccBadge[hidden]{display:none;}
+  #ccPop{position:fixed; z-index:900002; width:min(560px, 92vw); max-height:min(72vh, 640px); right:136px; bottom:70px;
+    background:rgba(255,255,255,.94); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); border:2px solid rgba(227,212,180,.8); border-radius:18px;
+    box-shadow:4px 6px 0 var(--shadow); padding:12px 14px; display:flex; flex-direction:column; gap:8px; container-type:inline-size;
+    transform-origin:100% 100%; animation:inkPop .16s ease-out;}
+  #ccPop[hidden]{display:none;}
+  body.inkLeft #ccPop{right:auto; left:66px; bottom:auto; top:50%; transform:translateY(-50%); transform-origin:0 50%; animation:ccPopL .16s ease-out;}
+  @keyframes ccPopL{from{opacity:0; transform:translateY(-50%) scale(.6);} to{opacity:1; transform:translateY(-50%);}}
+  @media (prefers-reduced-motion: reduce){ #ccPop{animation:none;} }
+  #ccPop .ccPopHead{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  #ccPop .ccPopHead b{font-weight:900; color:var(--navy); font-size:17px;}
+  #ccPop .ccPopPer{font-weight:900; color:var(--teal); background:var(--paleturq); border-radius:999px; padding:3px 12px; font-size:13px;}
+  #ccPop .ccSum{margin-left:auto; font-size:13px;}
+  #ccPop .ccPopX{margin:-6px -8px -6px 0;}
+  #ccPop .ccGrid{flex:1; min-height:0; overflow:auto; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr));}
+  #ccPop .ccTileName{font-size:15px;} #ccPop .ccTileTag{font-size:10px;}
+  #ccPop .ccPopRow{display:flex; justify-content:flex-end; gap:8px;}
+  #ccRemFull{position:fixed; inset:0; z-index:900003; gap:3vh; padding:4vh 4vw; background:rgba(255,255,255,.96);}
+  #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2.5vw;}
+  #ccRemFull .ccRemName{font-size:clamp(28px, 7vw, 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
+  #ccPop .ccNote, #ccPop .ccEmpty{font-size:13px;}
+  body.inkLeft #ccBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 62px);}
+  @media (max-width: 780px), (max-height: 540px){ #ccBlob, #ccPop{display:none !important;} }
   body.focusMode:not(.landing):not(.inking):not(.zooming) #zoomBlob{display:inline-flex;}
   @media (hover:hover){ #zoomBlob:hover{opacity:1;} }
   #zoomBar{position:fixed; right:80px; bottom:14px; z-index:900001; display:flex; align-items:center; gap:6px;
@@ -4438,6 +4469,23 @@
 <!-- v7.21 (Croix: "students claiming they can't see from the back row… what I'd really like is a way
      to zoom"): the magnifier beside the pen on a staged card; zoomed, a bar with − / + / Done -->
 <button id="zoomBlob" type="button" aria-label="Zoom in on the slide"><svg class="wIcon"><use href="#i-zoom"/></svg></button>
+<!-- v7.35 (Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly even if
+     slides are on the screen"): the comment-card tracker as a popover from a blob beside the pen -->
+<button id="ccBlob" type="button" aria-label="Comment cards" aria-expanded="false"><svg class="wIcon"><use href="#i-ccard"/></svg><span class="ccBadge" hidden></span></button>
+<div id="ccPop" role="dialog" aria-label="Comment cards" hidden>
+  <div class="ccPopHead"><b>Comment cards</b><span class="ccPopPer"></span><span class="ccSum"></span><button type="button" class="ccLogX ccPopX" aria-label="Close">&#x2715;</button></div>
+  <div class="ccGrid"></div>
+  <div class="wEmpty ccEmpty"></div>
+  <div class="ccNote" hidden></div>
+  <div class="ccPopRow"><button type="button" class="btn btnSm ccEnd">End of class</button></div>
+</div>
+<!-- the quick-draw's reminder fills the screen, over the slides -->
+<div id="ccRemFull" class="ccRemind" role="dialog" aria-label="Comment cards due" hidden>
+  <div class="ccRemTop">Comment cards</div>
+  <div class="ccRemNames"></div>
+  <div class="ccRemMsg"></div>
+  <button type="button" class="btn ccRemDone">Done</button>
+</div>
 <div id="zoomBar" role="group" aria-label="Zoom" hidden>
   <button type="button" class="zmOut" aria-label="Zoom out">&minus;</button>
   <span class="zmPct">150%</span>
@@ -4520,7 +4568,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.34.1",
+  appVersion: "7.35.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -7163,6 +7211,54 @@ function ccardDue(p){                            // the students whose card is d
   if (!m) return [];
   return Rosters.namesFor(p).filter(function(n){ return m[n] === "card"; });
 }
+/* v7.35: the pieces the card and the quick-draw popover share */
+function ccardMarks(p){ var m = p ? DayStore.get("ccard:" + p) : null; if (!m && p){ m = Object.create(null); DayStore.set("ccard:" + p, m); } return m; }
+function ccardLog(){ if (!cfg.cards || !Array.isArray(cfg.cards.log)) cfg.cards = { log: [] }; return cfg.cards.log; }
+/* today's cards for a class go in the log; the marks clear. Returns the names, and a note to show. */
+function ccardRecord(p, auto){
+  if (!p) return { cards: [], note: "" };
+  var cards = ccardDue(p), d = dateKey(now()), L = ccardLog(), entry = null, note = "";
+  for (var i = L.length - 1; i >= 0; i--){ if (L[i].d === d && L[i].p === p){ entry = L[i]; break; } }
+  if (cards.length){
+    if (entry) cards.forEach(function(n){ if (entry.names.indexOf(n) < 0) entry.names.push(n); });
+    else L.push({ d: d, p: p, names: cards });
+    while (L.length > 600) L.shift();
+    note = (auto ? "At the bell \u2014 " : "") + "Recorded " + cards.length + (cards.length === 1 ? " card" : " cards") + " for " + p + ": " + cards.join(", ");
+  } else if (!auto) note = "No cards today for " + p + ".";
+  DayStore.clear("ccard:" + p);
+  try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){}   // every view repaints
+  return { cards: cards, note: note };
+}
+/* the class as tiles into `gridEl`; a tap cycles ""→warn→card→"" and calls onChange. Returns {warn, card}. */
+function ccardTiles(gridEl, p, onChange){
+  var names = p ? Rosters.namesFor(p) : [], m = ccardMarks(p), warn = 0, card = 0;
+  gridEl.innerHTML = "";
+  names.forEach(function(n){
+    var st = m[n] || "";
+    if (st === "warn") warn++; else if (st === "card") card++;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "ccTile" + (st === "warn" ? " isWarn" : st === "card" ? " isCard" : "");
+    if (Absent.isOut(p, n)) b.classList.add("out");
+    var nm = document.createElement("span"); nm.className = "ccTileName"; nm.textContent = n;   // user data: textContent only
+    var tag = document.createElement("span"); tag.className = "ccTileTag"; tag.textContent = st === "warn" ? "Warning" : st === "card" ? "Comment card" : "";
+    b.appendChild(nm); b.appendChild(tag);
+    b.setAttribute("aria-label", n + (st === "warn" ? ", on warning" : st === "card" ? ", comment card" : ""));
+    wireButton(b, function(){
+      var cur = m[n] || "";
+      if (cur === "") m[n] = "warn"; else if (cur === "warn") m[n] = "card"; else delete m[n];
+      try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){}
+      if (onChange) onChange();
+    });
+    gridEl.appendChild(b);
+  });
+  return { warn: warn, card: card, names: names.length };
+}
+function ccardSummary(c){
+  var parts = [];
+  if (c.warn) parts.push("<b>" + c.warn + "</b> on warning");
+  if (c.card) parts.push("<b>" + c.card + "</b> " + (c.card === 1 ? "card" : "cards"));
+  return parts.join(" \u00b7 ");
+}
 function makeCcard(host, wcfg){
   if (typeof wcfg.period !== "string") wcfg.period = "";
   host.insertAdjacentHTML("beforeend",
@@ -7196,64 +7292,30 @@ function makeCcard(host, wcfg){
   var logEl = q(".ccLog"), logBody = q(".ccLogBody"), remEl = q(".ccRemind");
   var noteTid = null, refreshTid = null, destroyed = false, lastAuto = null, reminding = false;
   var period = buildPeriodSelect(sel, wcfg, function(){ paint(); });
-  function marks(p){ var m = p ? DayStore.get("ccard:" + p) : null; if (!m && p){ m = Object.create(null); DayStore.set("ccard:" + p, m); } return m; }
-  function log(){ if (!cfg.cards || !Array.isArray(cfg.cards.log)) cfg.cards = { log: [] }; return cfg.cards.log; }
+  var marks = ccardMarks, log = ccardLog;
   function note(msg){
     noteEl.textContent = msg; noteEl.hidden = false;
     clearTimeout(noteTid); noteTid = setTimeout(function(){ noteEl.hidden = true; }, 7000);
   }
   function paint(){
     var p = period.current();
-    var names = p ? Rosters.namesFor(p) : [];
-    gridEl.innerHTML = "";
-    if (!names.length){
+    if (!p || !Rosters.namesFor(p).length){
+      gridEl.innerHTML = "";
       emptyEl.textContent = cfg.rosters.length ? "No roster for this period \u2014 pick one above" : "Add class rosters in Settings";
       sumEl.textContent = ""; return;
     }
     emptyEl.textContent = "";
-    var m = marks(p), warn = 0, card = 0;
-    names.forEach(function(n){
-      var st = m[n] || "";
-      if (st === "warn") warn++; else if (st === "card") card++;
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "ccTile" + (st === "warn" ? " isWarn" : st === "card" ? " isCard" : "");
-      if (Absent.isOut(p, n)) b.classList.add("out");
-      var nm = document.createElement("span"); nm.className = "ccTileName"; nm.textContent = n;   // user data: textContent only
-      var tag = document.createElement("span"); tag.className = "ccTileTag"; tag.textContent = st === "warn" ? "Warning" : st === "card" ? "Comment card" : "";
-      b.appendChild(nm); b.appendChild(tag);
-      b.setAttribute("aria-label", n + (st === "warn" ? ", on warning" : st === "card" ? ", comment card" : ""));
-      wireButton(b, function(){
-        var cur = m[n] || "";
-        if (cur === "") m[n] = "warn"; else if (cur === "warn") m[n] = "card"; else delete m[n];
-        paint();
-      });
-      gridEl.appendChild(b);
-    });
-    sumEl.innerHTML = "";
-    if (warn || card){
-      var parts = [];
-      if (warn) parts.push("<b>" + warn + "</b> on warning");
-      if (card) parts.push("<b>" + card + "</b> " + (card === 1 ? "card" : "cards"));
-      sumEl.innerHTML = parts.join(" \u00b7 ");
-    }
+    sumEl.innerHTML = ccardSummary(ccardTiles(gridEl, p, paint));
   }
+  function onCcard(){ if (!destroyed) paint(); }                   // v7.35: the quick-draw popover changed a mark
+  document.addEventListener("deckhand:ccard", onCcard);
   /* END OF CLASS: today's cards go in the log; the reminder takes the stage; the board clears */
   function record(p, auto){
     if (!p) return;
-    var cards = ccardDue(p), d = dateKey(now()), L = log();
-    var entry = null;
-    for (var i = L.length - 1; i >= 0; i--){ if (L[i].d === d && L[i].p === p){ entry = L[i]; break; } }
-    if (cards.length){
-      if (entry) cards.forEach(function(n){ if (entry.names.indexOf(n) < 0) entry.names.push(n); });
-      else L.push({ d: d, p: p, names: cards });
-      while (L.length > 600) L.shift();
-      note((auto ? "At the bell \u2014 " : "") + "Recorded " + cards.length + (cards.length === 1 ? " card" : " cards") + " for " + p + ": " + cards.join(", "));
-    } else if (!auto){
-      note("No cards today for " + p + ".");
-    }
-    DayStore.clear("ccard:" + p);
+    var r = ccardRecord(p, auto);
+    if (r.note) note(r.note);
     paint();
-    return cards;
+    return r.cards;
   }
   function remind(cards){
     q(".ccRemNames").innerHTML = "";
@@ -7362,7 +7424,7 @@ function makeCcard(host, wcfg){
     marks: function(){ var p = period.current(); return p ? Object.assign({}, marks(p)) : {}; },   // test hook
     reminding: function(){ return reminding; },                                                     // test hook
     _watchBell: watchBell,
-    destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(noteTid); clearTimeout(clearArmed); }
+    destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(noteTid); clearTimeout(clearArmed); document.removeEventListener("deckhand:ccard", onCcard); }
   };
 }
 
@@ -16723,6 +16785,7 @@ var Ink = (function(){
   function side(){ document.body.classList.toggle("inkLeft", !cfg.ui || cfg.ui.inkSide !== "right"); }   // v7.28
   function arm(on){
     armed = !!on;
+    if (armed){ try { CcardPop.close(); } catch(e){} }   // v7.35: the pen and the cards don't share the corner
     document.body.classList.toggle("inking", armed);
     bar.hidden = !armed;
     ["inkBtn", "inkBlob"].forEach(function(id){
@@ -16817,6 +16880,79 @@ var Ink = (function(){
     count: function(){ return strokes.length; },  // test hook
     stats: function(){ return { full: stats.full, seg: stats.seg }; }   // test hook (v7.6)
   };
+})();
+
+/* ================= v7.35 Comment cards, quick-draw =================
+   Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly even if slides
+   are on the screen." A blob beside the pen and the magnifier on a staged card (a badge counts
+   the cards due) opens the tracker as a see-through popover over the slides: the class in the
+   room as tiles, the same marks the card shows (one set per class, today), End of class with the
+   reminder in the popover. Needs no card on the board. The slides get the keys back on close. */
+var CcardPop = (function(){
+  var blob = null, pop = null, open = false, period = null, tid = null;
+  function cur(){ var p = Rosters.autoPeriod(); if (p) return p; return cfg.rosters[0] && !(cfg.bell.groups && cfg.bell.groups.length) ? cfg.rosters[0].period : null; }
+  function paint(){
+    if (!pop) return;
+    period = cur();
+    var grid = pop.querySelector(".ccGrid"), empty = pop.querySelector(".ccEmpty"), sum = pop.querySelector(".ccSum");
+    pop.querySelector(".ccPopPer").textContent = period || "No class";
+    if (!period || !Rosters.namesFor(period).length){
+      grid.innerHTML = ""; sum.textContent = "";
+      empty.textContent = cfg.rosters.length ? "No roster for this period." : "Add class rosters in Settings.";
+    } else {
+      empty.textContent = "";
+      sum.innerHTML = ccardSummary(ccardTiles(grid, period, paint));
+    }
+    var due = period ? ccardDue(period).length : 0, badge = blob.querySelector(".ccBadge");
+    badge.textContent = String(due); badge.hidden = !due;
+  }
+  function note(msg){
+    var el = pop.querySelector(".ccNote"); el.textContent = msg; el.hidden = false;
+    clearTimeout(tid); tid = setTimeout(function(){ el.hidden = true; }, 7000);
+  }
+  function show(on){
+    open = !!on;
+    pop.hidden = !open;
+    blob.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open){ paint(); }
+    else { try { Canvas.refocusDeck(); } catch(e){} }
+  }
+  return {
+    init: function(){
+      blob = $("ccBlob"); pop = $("ccPop");
+      wireButton(blob, function(){ show(!open); });
+      wireButton(pop.querySelector(".ccPopX"), function(){ show(false); });
+      wireButton(pop.querySelector(".ccEnd"), function(){
+        var r = ccardRecord(period, false);
+        if (r.note) note(r.note);
+        paint();
+        if (r.cards.length){
+          var rem = $("ccRemFull"), names = rem.querySelector(".ccRemNames");
+          names.innerHTML = "";
+          r.cards.forEach(function(n){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = n; names.appendChild(d); });
+          rem.querySelector(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
+          show(false);
+          rem.hidden = false;                    // the reminder, over everything, until Done
+        }
+      });
+      wireButton($("ccRemFull").querySelector(".ccRemDone"), function(){ $("ccRemFull").hidden = true; try { Canvas.refocusDeck(); } catch(e){} });
+      pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); });   // taps stay in the popover
+      document.addEventListener("deckhand:ccard", function(){ if (open) paint(); else paintBadge(); });
+      document.addEventListener("deckhand:home", function(){ show(false); });
+      document.addEventListener("keydown", function(e){
+        if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " ")){ $("ccRemFull").hidden = true; e.stopPropagation(); e.preventDefault(); return; }
+        if (open && e.key === "Escape"){ show(false); e.stopPropagation(); }
+      }, true);
+      setInterval(function(){ if (open) { if (cur() !== period) paint(); } else paintBadge(); }, 5000);
+      paintBadge();
+    },
+    open: function(){ show(true); }, close: function(){ show(false); },
+    isOpen: function(){ return open; }
+  };
+  function paintBadge(){
+    var p = cur(), due = p ? ccardDue(p).length : 0, badge = blob.querySelector(".ccBadge");
+    badge.textContent = String(due); badge.hidden = !due;
+  }
 })();
 
 /* ================= v7.29 Lunch: the tray's taps ================= */
@@ -17063,7 +17199,7 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -17102,6 +17238,7 @@ window.Deckhand = {
   nowPlaying: NowPlaying,                       // v7.20: the pause that's always within reach (tests)
   passingMusic: PassingMusic,                   // v7.31: music between classes (tests)
   mathleWords: MATHLE_WORDS,                    // v7.33: the vocabulary (tests)
+  ccardPop: CcardPop,                           // v7.35: the quick-draw comment cards (tests)
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
   nature: Nature,                               // v7.24: the nature sounds (tests render them offline)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)

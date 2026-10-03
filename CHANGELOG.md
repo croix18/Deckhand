@@ -2,6 +2,18 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.35.0 — 2026-10-03
+
+**Comment cards, quick draw.** Croix: "Can you make it a quick draw like the pen. So I can pull it
+up quickly even if slides are on the screen." On a staged card (slides or anything else) a third
+blob sits under the pen and the magnifier. One tap opens the tracker as a see-through popover
+over the slides: the class in the room as tiles, the same warnings and cards the board's card
+shows (there's one set per class per day, whichever way you put them in). A badge on the blob
+counts the cards due. End of class in the popover records them and fills the whole screen with
+the reminder until Done (Escape, Enter or Space close it too). Nothing needs to be on the board
+for it; Exit isn't needed either. The pen closes it, and the slides get the keys back when it
+closes. One test; 274.
+
 ## 7.34.1 — 2026-10-03
 
 **Mathle, smoothed out.** Croix: "Mathle is kinda wonky. It works but it's not buttery smooth."

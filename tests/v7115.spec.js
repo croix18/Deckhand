@@ -1614,3 +1614,58 @@ test.describe("v7.33", () => {
     ok((await api(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "mathle").band)) === "6", "band not kept");
   });
 });
+
+/* v7.35 — the comment cards as a quick draw (Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly
+ * even if slides are on the screen"). Synthetic names only. */
+test.describe("v7.35", () => {
+  test("v7.35: on a staged deck a blob opens the comment-card popover; marks are the card's marks; End of class logs them and fills the screen with the reminder; the badge counts the cards due; the pen closes it", async ({ page, dh }) => {
+    const deck = path.join(dh.fixtureDir, "tmp_cc_deck.html");
+    fs.writeFileSync(deck, '<!DOCTYPE html><title>Deck</title><body><h1>Slide 1</h1>');
+    await dh.openAt("#t=2026-09-29T10:30");                           // Black Tuesday, 5th
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }]; });
+    await expect(page.locator("#ccBlob")).toBeHidden();               // only on the stage
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn"); inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets; w[w.length - 1].url = u; document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#ccBlob")).toBeVisible();
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await expect(page.locator("#ccPop .ccPopPer")).toHaveText("5th");
+    const tile = n => page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    await expect(page.locator("#ccPop .ccTile")).toHaveCount(4);
+    await tile("Ben").click(); await tile("Ben").click();             // card
+    await tile("Cal").click();                                        // warning
+    await expect(tile("Ben")).toHaveClass(/isCard/);
+    await expect(page.locator("#ccBlob .ccBadge")).toHaveText("1");
+    // the same marks the card on the board holds
+    await page.click("#ccPop .ccPopX");
+    await expect(page.locator("#ccPop")).toBeHidden();
+    await page.click("#unfocusBtn");
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    const cardTile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    await expect(cardTile("Ben")).toHaveClass(/isCard/);
+    await expect(cardTile("Cal")).toHaveClass(/isWarn/);
+    // back on the stage: End of class from the popover logs the card and fills the screen
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await page.click("#ccBlob");
+    await page.click("#ccPop .ccEnd");
+    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveCount(1);
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveText("Ben");
+    const logd = await page.evaluate(() => window.Deckhand.config.cards.log);
+    ok(logd.length === 1 && logd[0].names.join() === "Ben", "log: " + JSON.stringify(logd));
+    await page.click("#ccRemFull .ccRemDone");
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+    await expect(page.locator("#ccBlob .ccBadge")).toBeHidden();
+    // the pen closes the popover
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await page.click("#inkBlob");
+    await expect(page.locator("#ccPop")).toBeHidden();
+    await page.click("#inkDone");
+  });
+});
