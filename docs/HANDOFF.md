@@ -212,3 +212,25 @@ The current release is `Deckhand.html` (appVersion 7.38.0). What it is today, in
 - ~~Classroom-machine test of the published-deck `/embed` URL~~ **EFFECTIVELY PASSED (Sep 2)**: Croix framed a deck from the probe file on the Chromebox — he pasted the `/edit` link rather than a published one, and it STILL rendered fully interactive inside the iframe (filter allows docs.google.com; framing works from file://). **The Slides embed card is greenlit.** Remaining nicety: have him run Publish-to-web once and confirm the clean `/embed` player (no editor chrome). Probe file: `Deckhand_Embed_Probe.html` (auto-converts /pub→/embed).
 - Noise meter on the Chromebox: the mic is denied to file:// by policy, no prompt (tested live Sep 2). Since 7.13 the game plays BY HAND there (the streak runs, ✖ adds a strike); the mic path works only where Chrome grants it to local files.
 - Phase 4 green light + which widgets first (Slides embed card is the headliner; picker/group maker/scoreboard next; QR + sound meter LOW).
+
+## Windmill and the room (3 Oct 2026) — read before the next release
+
+Croix's tools now coordinate through **Windmill** (`croix18/Windmill`): the spine (the year's plan as one
+JSON — every school day, both courses, lesson, benchmarks, IXL due dates, the bell and week colour from
+Deckhand's own schedule), the **room** (one small object the tools exchange: `plan` · `tally` · `panel` ·
+`roster` · `log`, one owner per part, newest copy per part, data tiers so counts ride every road, first
+names ride Drive or encrypted, and grades never leave Tally), the reader every tool embeds, two room-code
+forms, and a conformance test each repo runs. The design — alternatives, the contract, three transports
+(room code · Drive file · Apps Script), per-tool changes, the spiral rule, the build order — is the
+*Room Coordination Plan*, a Claude doc of Croix's: https://claude.ai/code/artifact/9db84d04-9444-48c4-adad-9c68905eefd8 (open it with the docs tool). Croix's standing
+instruction: "Keep it over engineered. I want everything." Read Windmill's `README.md` and `HANDOFF.md`
+before building this tool's part.
+
+**Deckhand's part (plan phase 4; not started).** Deckhand runs the room and kicks off into the lesson.
+It gets: a room-code field, a Drive-folder pick and an Apps Script link under Settings; a **Geopardy
+card** beside the Cadence card (the review game, renamed from Boards Up on 3 Oct, `croix18/Geopardy`);
+the settle-in hands off to the unit console (`A7 <u>  Unit Slides.html` in the same Drive folder) with
+`#period=N`; it writes `panel.bell` and publishes the console's `panel` part (bookmarks, tallies) on the
+deck's behalf, since it holds the Drive file handle and the script key. Its own rule — a full suite,
+a screenshot review and an adversarial review per release — stays. The bell block baked in this file
+is what Windmill's spine reads (`spine.py bell_from_deckhand`): keep its JSON shape.
