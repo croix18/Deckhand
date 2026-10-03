@@ -1003,45 +1003,36 @@
   #lunchArt .lGhost.go{animation:lBoo 1.4s cubic-bezier(.3,.8,.4,1) !important;}
   @keyframes lBoo{0%{transform:translate(10px, 40px);} 25%{transform:translate(-34px, -42px) scale(1.12) rotate(-10deg);} 70%{transform:translate(-30px, -36px) rotate(-6deg);} 100%{transform:translate(10px, 40px);}}
 
-  /* v7.32 COMMENT CARDS (Croix: "Let me pull students up and put them on warning. Then I'll tag
-     them as comment card. And I'll hit it at the end of class."): the class as name chips — a tap
-     is a warning (yellow), the next the card (navy), the next clears it; End of class records the
-     day's cards for that period in the log and clears the board. The log lists recent days and
-     each student's total, and copies as text. */
-  .ccNames{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-content:flex-start; flex:1; min-height:0; overflow:auto; padding:2px;}
-  .ccName{
-    font-family:inherit; font-weight:700; font-size:clamp(11px, 2.5cqw, 17px); line-height:1.15;
-    background:var(--white); color:var(--navy); border:2px solid var(--grid); border-radius:999px;
-    padding:5px 12px; min-height:34px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  /* v7.32 COMMENT CARDS: the class as flat tiles in a grid — a left rail says the state (a tap is a
+     warning, the next the card, the next clears it); End of class takes the stage with the
+     reminder; the log lists recent days and each student's total. No pills, no coral. */
+  .ccGrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, clamp(112px, 26cqw, 168px)), 1fr)); gap:5px;
+    flex:1; min-height:0; overflow:auto; align-content:start; padding:1px; width:100%; align-self:stretch;}
+  .ccTile{
+    display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left; min-width:0; min-height:40px;
+    font-family:inherit; color:var(--navy); background:var(--white); border:1.5px solid var(--grid); border-left:6px solid var(--grid);
+    border-radius:8px; padding:5px 8px 5px 9px; cursor:pointer;
   }
-  .ccName.isWarn{background:#FFE45C; border-color:#E5C53A;}
-  .ccName.isWarn::before{content:"!"; font-weight:900; color:var(--navy);}
-  .ccName.isCard{background:var(--navy); color:var(--white); border-color:var(--navy);}
-  .ccName.isCard::before{content:""; width:.75em; height:.52em; border:2px solid currentColor; border-radius:2px; flex:none;}
-  .ccName.out{opacity:.4; text-decoration:line-through;}
-  .ccList{display:flex; flex-direction:column; gap:5px; flex:1; min-height:0; overflow:auto; padding:2px;}
-  .ccRow{display:flex; align-items:stretch; gap:4px;}
-  .ccWho{
-    flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:left;
-    font-family:inherit; font-weight:900; font-size:clamp(12px, 3cqw, 20px); color:var(--navy);
-    background:var(--cream); border:2px solid var(--grid); border-radius:12px; padding:6px 12px; min-height:40px; cursor:pointer;
-    overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
-  }
-  .ccTag{font-weight:900; font-size:clamp(10px, 2.2cqw, 13px); letter-spacing:.06em; text-transform:uppercase; border-radius:999px; padding:3px 10px; flex:none;}
-  .ccRow.isWarn .ccWho{background:#FFF4B8; border-color:#E5C53A;}
-  .ccRow.isWarn .ccTag{background:#FFE45C; color:var(--navy);}
-  .ccRow.isCard .ccWho{background:var(--navy); border-color:var(--navy); color:var(--white);}
-  .ccRow.isCard .ccTag{background:var(--white); color:var(--navy);}
-  .ccOff{flex:none; min-width:40px; border:2px solid var(--grid); border-radius:12px; background:var(--white); color:var(--navy); font:inherit; font-weight:900; cursor:pointer;}
-  .ccPick{position:absolute; inset:0; z-index:5; background:var(--white); display:flex; flex-direction:column; gap:8px; padding:10px 12px;}
-  .ccPick[hidden]{display:none;}
-  .ccPick .ccFind{flex:1; min-width:0; max-width:220px; font-size:clamp(12px, 2.6cqw, 16px); padding:6px 10px;}
-  .ccPick .ccNames{flex:1; min-height:0; overflow:auto; color:var(--teal); font-weight:700; font-size:clamp(11px, 2.5cqw, 15px);}
+  .ccTileName{font-weight:800; font-size:clamp(11px, 2.4cqw, 16px); line-height:1.15; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .ccTileTag{font-weight:900; font-size:clamp(9px, 1.8cqw, 11px); letter-spacing:.08em; text-transform:uppercase; line-height:1; min-height:1em; opacity:.85;}
+  .ccTile.isWarn{background:#FFF6CC; border-color:#E8C93C; border-left-color:#E8C93C;}
+  .ccTile.isWarn .ccTileTag{color:#8A6D00;}
+  .ccTile.isCard{background:var(--navy); color:var(--white); border-color:var(--navy); border-left-color:var(--turq);}
+  .ccTile.isCard .ccTileTag{color:var(--turq);}
+  .ccTile.out{opacity:.4; text-decoration:line-through;}
   .ccSum{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--teal);}
   .ccSum b{color:var(--navy);}
   .ccEnd{background:var(--navy); color:var(--white);}
   .ccNote{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--navy); text-align:center; background:var(--paleturq); border-radius:10px; padding:6px 12px;}
   .ccNote[hidden]{display:none;}
+  /* the reminder: over the whole card (staged by End of class), the names big */
+  .ccRemind{position:absolute; inset:0; z-index:6; background:var(--white); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2cqh; padding:3cqh 4cqw; text-align:center;}
+  .ccRemind[hidden]{display:none;}
+  .ccRemTop{font-weight:900; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); font-size:clamp(12px, 2.6cqw, 34px);}
+  .ccRemNames{display:flex; flex-wrap:wrap; justify-content:center; gap:1cqh 2.5cqw; max-width:94%;}
+  .ccRemName{font-weight:900; color:var(--white); background:var(--navy); border-radius:.3em; padding:.15em .6em; font-size:clamp(20px, 6.5cqw, 110px); line-height:1.15;}
+  .ccRemMsg{font-weight:900; color:var(--navy); font-size:clamp(14px, 3cqw, 44px); background:var(--sand); padding:.3em .9em; border-radius:999px; max-width:92%;}
+  .ccRemDone{background:var(--turq); color:var(--navy); font-size:clamp(14px, 2.6cqw, 28px);}
   .ccLog{position:absolute; inset:0; z-index:5; background:var(--white); display:flex; flex-direction:column; gap:8px; padding:10px 12px;}
   .ccLog[hidden]{display:none;}
   .ccLogHead{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
@@ -1056,6 +1047,10 @@
   .ccTotals span{background:var(--paleturq); border-radius:999px; padding:3px 10px; font-weight:700;}
   .ccTotals span b{color:var(--teal);}
   .w-ccard .wBody{position:relative;}
+  /* the wrap-up's comment-card line (v7.32) */
+  .wuCards{font-weight:900; color:var(--white); background:var(--navy); border-radius:.4em; padding:.3em .9em; font-size:clamp(14px, 3cqw, 44px); max-width:92%; overflow-wrap:anywhere;}
+  .wuCards[hidden]{display:none;}
+  .wuCards span{color:var(--turq); letter-spacing:.1em; text-transform:uppercase; font-size:.7em; margin-right:.6em;}
 
   /* container-query sizing inside widgets */
   /* sized to read from the BACK of the room (Croix, Sep 1);
@@ -3483,6 +3478,7 @@
         <div class="wuBig">3:00</div>
         <div class="wuPrompt" hidden></div>
         <ul class="wuList" aria-label="Before the bell"></ul>
+        <div class="wuCards" hidden></div>
         <div class="wuMsg"></div>
       </div>
     </div>
@@ -7090,33 +7086,39 @@ function makePicker(host, wcfg){
 
 
 /* v7.32 COMMENT CARDS — Croix: "A comment card tracker. Let me pull students up and put them on
-   warning. Then I'll tag them as comment card. And I'll hit it at the end of class." The roster
-   as chips: a tap puts a student on warning, the next tap makes it the card, a third clears it.
-   Marks are today's and that class's (DayStore "ccard:<period>"), so the card can switch classes
-   and scenes without losing them. END OF CLASS writes the cards to cfg.cards.log and clears the
-   marks; if the bell changes the class before the teacher gets to it, the cards are recorded then
-   (warnings are just warnings — only cards are logged). The log shows the last weeks and every
-   student's count; Copy puts it on the clipboard as text. A live teaching action: works locked. */
+   warning. Then I'll tag them as comment card. And I'll hit it at the end of class." Then: "So
+   like maybe a two fold thing. A tracker, a reminder at the end of class for whatever students
+   to bring me their comment cards. If I pull up the tool it would have the whole class. But I
+   need it to look better than that." So: the whole class as a tidy grid of flat tiles (a tap puts
+   a student on warning, the next makes it the card, a third clears it), and END OF CLASS records
+   the cards and takes the stage with the reminder — the names, big, "bring yours up before you
+   leave" — until Done. Three minutes out, the wrap-up lists them too. Marks are today's and that
+   class's (DayStore "ccard:<period>"); the log is cfg.cards.log. A live teaching action: works
+   locked. */
+function ccardDue(p){                            // the students whose card is due this class (the wrap-up asks)
+  var m = p ? DayStore.get("ccard:" + p) : null;
+  if (!m) return [];
+  return Rosters.namesFor(p).filter(function(n){ return m[n] === "card"; });
+}
 function makeCcard(host, wcfg){
   if (typeof wcfg.period !== "string") wcfg.period = "";
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
       '<div class="pkRow"><select class="pkSel" aria-label="Class period"></select>' +
         '<span class="ccSum"></span></div>' +
-      '<div class="ccList" role="list" aria-label="Students on warning or a card"></div>' +
+      '<div class="ccGrid" role="group" aria-label="The class"></div>' +
       '<div class="wEmpty ccEmpty"></div>' +
       '<div class="ccNote" hidden></div>' +
       '<div class="row">' +
-        '<button class="btn ccAdd" type="button" style="background:var(--turq); color:var(--navy)">+ Warning</button>' +
         '<button class="btn ccEnd" type="button">End of class</button>' +
         '<button class="btn btnSm ccLogBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy)">Log</button>' +
       '</div>' +
-      '<div class="tHint">Tap a name to make it the card; \u2715 takes it off</div>' +
-      '<div class="ccPick" role="group" aria-label="Pick a student" hidden>' +
-        '<div class="ccLogHead"><b>Who\u2019s on warning?</b>' +
-          '<input class="ccFind setInput" type="text" placeholder="Type to find" aria-label="Find a student" autocomplete="off" spellcheck="false">' +
-          '<button type="button" class="ccLogX ccPickX" aria-label="Close">\u2715</button></div>' +
-        '<div class="ccNames" role="group" aria-label="The class"></div>' +
+      '<div class="tHint">Tap a name: warning \u2192 card \u2192 clear</div>' +
+      '<div class="ccRemind" hidden>' +
+        '<div class="ccRemTop">Comment cards</div>' +
+        '<div class="ccRemNames"></div>' +
+        '<div class="ccRemMsg"></div>' +
+        '<button type="button" class="btn ccRemDone">Done</button>' +
       '</div>' +
       '<div class="ccLog" role="group" aria-label="Comment card log" hidden>' +
         '<div class="ccLogHead"><b>Comment cards</b>' +
@@ -7127,10 +7129,9 @@ function makeCcard(host, wcfg){
       '</div>' +
     '</div>');
   var q = function(s){ return host.querySelector(s); };
-  var sel = q(".pkSel"), namesEl = q(".ccNames"), listEl = q(".ccList"), sumEl = q(".ccSum"), emptyEl = q(".ccEmpty"), noteEl = q(".ccNote");
-  var pickEl = q(".ccPick"), findEl = q(".ccFind");
-  var logEl = q(".ccLog"), logBody = q(".ccLogBody");
-  var noteTid = null, refreshTid = null, destroyed = false, lastAuto = null;
+  var sel = q(".pkSel"), gridEl = q(".ccGrid"), sumEl = q(".ccSum"), emptyEl = q(".ccEmpty"), noteEl = q(".ccNote");
+  var logEl = q(".ccLog"), logBody = q(".ccLogBody"), remEl = q(".ccRemind");
+  var noteTid = null, refreshTid = null, destroyed = false, lastAuto = null, reminding = false;
   var period = buildPeriodSelect(sel, wcfg, function(){ paint(); });
   function marks(p){ var m = p ? DayStore.get("ccard:" + p) : null; if (!m && p){ m = Object.create(null); DayStore.set("ccard:" + p, m); } return m; }
   function log(){ if (!cfg.cards || !Array.isArray(cfg.cards.log)) cfg.cards = { log: [] }; return cfg.cards.log; }
@@ -7138,39 +7139,33 @@ function makeCcard(host, wcfg){
     noteEl.textContent = msg; noteEl.hidden = false;
     clearTimeout(noteTid); noteTid = setTimeout(function(){ noteEl.hidden = true; }, 7000);
   }
-  /* v7.32 (Croix, on the first cut: "I don't like the bubbles and the whole class up like
-     that"): the board shows only the students on the list. + Warning opens the class to pick
-     from (type a few letters to find one); a tap on a listed name makes it the card, another
-     puts it back to a warning, ✕ takes it off. */
   function paint(){
     var p = period.current();
     var names = p ? Rosters.namesFor(p) : [];
-    listEl.innerHTML = "";
+    gridEl.innerHTML = "";
     if (!names.length){
       emptyEl.textContent = cfg.rosters.length ? "No roster for this period \u2014 pick one above" : "Add class rosters in Settings";
-      sumEl.textContent = ""; q(".ccAdd").disabled = true; return;
+      sumEl.textContent = ""; return;
     }
-    q(".ccAdd").disabled = false;
+    emptyEl.textContent = "";
     var m = marks(p), warn = 0, card = 0;
-    var listed = names.filter(function(n){ return m[n]; });
-    listed.sort(function(x, y){ return (m[y] === "card") - (m[x] === "card") || names.indexOf(x) - names.indexOf(y); });   // cards first, then roster order
-    listed.forEach(function(n){
-      var st = m[n];
-      if (st === "warn") warn++; else card++;
-      var row = document.createElement("div"); row.className = "ccRow " + (st === "card" ? "isCard" : "isWarn"); row.setAttribute("role", "listitem");
-      var b = document.createElement("button"); b.type = "button"; b.className = "ccWho";
-      b.textContent = n;                        // user data: textContent only
-      b.setAttribute("aria-label", n + (st === "card" ? ", comment card \u2014 tap for a warning" : ", on warning \u2014 tap for the card"));
-      var tag = document.createElement("span"); tag.className = "ccTag"; tag.textContent = st === "card" ? "Comment card" : "Warning";
-      b.appendChild(tag);
-      wireButton(b, function(){ m[n] = m[n] === "warn" ? "card" : "warn"; paint(); });
-      var x = document.createElement("button"); x.type = "button"; x.className = "ccOff"; x.textContent = "\u2715";
-      x.setAttribute("aria-label", "Take " + n + " off the list");
-      wireButton(x, function(){ delete m[n]; paint(); });
-      row.appendChild(b); row.appendChild(x);
-      listEl.appendChild(row);
+    names.forEach(function(n){
+      var st = m[n] || "";
+      if (st === "warn") warn++; else if (st === "card") card++;
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "ccTile" + (st === "warn" ? " isWarn" : st === "card" ? " isCard" : "");
+      if (Absent.isOut(p, n)) b.classList.add("out");
+      var nm = document.createElement("span"); nm.className = "ccTileName"; nm.textContent = n;   // user data: textContent only
+      var tag = document.createElement("span"); tag.className = "ccTileTag"; tag.textContent = st === "warn" ? "Warning" : st === "card" ? "Comment card" : "";
+      b.appendChild(nm); b.appendChild(tag);
+      b.setAttribute("aria-label", n + (st === "warn" ? ", on warning" : st === "card" ? ", comment card" : ""));
+      wireButton(b, function(){
+        var cur = m[n] || "";
+        if (cur === "") m[n] = "warn"; else if (cur === "warn") m[n] = "card"; else delete m[n];
+        paint();
+      });
+      gridEl.appendChild(b);
     });
-    emptyEl.textContent = listed.length ? "" : "Nobody on warning.";
     sumEl.innerHTML = "";
     if (warn || card){
       var parts = [];
@@ -7179,38 +7174,10 @@ function makeCcard(host, wcfg){
       sumEl.innerHTML = parts.join(" \u00b7 ");
     }
   }
-  /* the picker: the class, minus the list, filtered by what's typed */
-  function paintPick(){
-    var p = period.current(), m = marks(p), f = findEl.value.trim().toLowerCase();
-    namesEl.innerHTML = "";
-    Rosters.namesFor(p).filter(function(n){ return !m[n] && (!f || n.toLowerCase().indexOf(f) >= 0); }).forEach(function(n){
-      var b = document.createElement("button"); b.type = "button"; b.className = "ccName";
-      b.textContent = n;
-      if (Absent.isOut(p, n)) b.classList.add("out");
-      wireButton(b, function(){ m[n] = "warn"; openPick(false); paint(); });
-      namesEl.appendChild(b);
-    });
-    if (!namesEl.children.length) namesEl.textContent = f ? "No one matches." : "Everyone is on the list.";
-  }
-  function openPick(open){
-    if (open && !period.current()) return;
-    pickEl.hidden = !open;
-    if (open){ findEl.value = ""; paintPick(); try { findEl.focus(); } catch(e){} }
-    else if (document.activeElement === findEl) findEl.blur();
-  }
-  wireButton(q(".ccAdd"), function(){ openPick(pickEl.hidden); });
-  wireButton(q(".ccPickX"), function(){ openPick(false); });
-  findEl.addEventListener("input", paintPick);
-  findEl.addEventListener("keydown", function(e){
-    e.stopPropagation();                        // typing a name must not fire board shortcuts
-    if (e.key === "Escape") openPick(false);
-    if (e.key === "Enter"){ var first = namesEl.querySelector(".ccName"); if (first) first.click(); }
-  });
-  function cardsFor(p){ var m = marks(p); return Rosters.namesFor(p).filter(function(n){ return m[n] === "card"; }); }
-  /* END OF CLASS: today's cards for this class go in the log; the board clears */
+  /* END OF CLASS: today's cards go in the log; the reminder takes the stage; the board clears */
   function record(p, auto){
     if (!p) return;
-    var cards = cardsFor(p), d = dateKey(now()), L = log();
+    var cards = ccardDue(p), d = dateKey(now()), L = log();
     var entry = null;
     for (var i = L.length - 1; i >= 0; i--){ if (L[i].d === d && L[i].p === p){ entry = L[i]; break; } }
     if (cards.length){
@@ -7223,12 +7190,31 @@ function makeCcard(host, wcfg){
     }
     DayStore.clear("ccard:" + p);
     paint();
+    return cards;
   }
-  wireButton(q(".ccEnd"), function(){ record(period.current(), false); });
+  function remind(cards){
+    q(".ccRemNames").innerHTML = "";
+    cards.forEach(function(n){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = n; q(".ccRemNames").appendChild(d); });
+    q(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
+    reminding = true; remEl.hidden = false; host.classList.add("ccReminding");
+    try { Canvas.stage(host); } catch(e){}
+  }
+  function unremind(){
+    if (!reminding) return;
+    reminding = false; remEl.hidden = true; host.classList.remove("ccReminding");
+    if (host.classList.contains("wFull")){ try { Canvas.unfocus(); } catch(e){} }
+  }
+  wireButton(q(".ccEnd"), function(){
+    var p = period.current(), cards = ccardDue(p);
+    if (!p) return;
+    record(p, false);
+    if (cards.length) remind(cards);
+  });
+  wireButton(q(".ccRemDone"), unremind);
   /* the bell: the class that just left had cards nobody recorded */
   function watchBell(){
     var auto = Rosters.autoPeriod();
-    if (lastAuto && auto !== lastAuto && cardsFor(lastAuto).length) record(lastAuto, true);
+    if (lastAuto && auto !== lastAuto && ccardDue(lastAuto).length) record(lastAuto, true);
     lastAuto = auto;
   }
   /* ---- the log ---- */
@@ -7238,8 +7224,7 @@ function makeCcard(host, wcfg){
   }
   function logText(){
     var L = log(), p = period.current(), lines = [];
-    var mine = L.filter(function(e){ return !p || e.p === p; });
-    mine.slice().reverse().forEach(function(e){ lines.push(fmtDay(e.d) + " \u00b7 " + e.p + ": " + e.names.join(", ")); });
+    L.filter(function(e){ return !p || e.p === p; }).slice().reverse().forEach(function(e){ lines.push(fmtDay(e.d) + " \u00b7 " + e.p + ": " + e.names.join(", ")); });
     return lines.join("\n");
   }
   function paintLog(){
@@ -7296,7 +7281,11 @@ function makeCcard(host, wcfg){
     btn.textContent = "Clear " + p + " today?"; btn.classList.add("armed");
     clearArmed = setTimeout(function(){ clearArmed = null; btn.textContent = "Clear today"; btn.classList.remove("armed"); }, 6000);
   });
-  refreshTid = setInterval(function(){ if (destroyed) return; period.fill(); watchBell(); paint(); }, 5000);   // follow the bells
+  refreshTid = setInterval(function(){
+    if (destroyed) return;
+    if (reminding && !host.classList.contains("wFull")) unremind();   // Exit on the stage bar ends the reminder too
+    period.fill(); watchBell(); paint();
+  }, 1000);
   lastAuto = Rosters.autoPeriod();
   paint();
   return {
@@ -7308,7 +7297,7 @@ function makeCcard(host, wcfg){
     rebuild: function(){ period.fill(); paint(); },
     resync: paint,
     marks: function(){ var p = period.current(); return p ? Object.assign({}, marks(p)) : {}; },   // test hook
-    record: function(){ record(period.current(), false); },                                         // test hook
+    reminding: function(){ return reminding; },                                                     // test hook
     _watchBell: watchBell,
     destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(noteTid); clearTimeout(clearArmed); }
   };
@@ -9174,6 +9163,12 @@ var Wrapup = (function(){
       list.appendChild(li);
     });
     msg.textContent = w.msg || WRAPUP_MSG;
+    /* v7.32: the students whose comment card is due this class */
+    var cardsEl = stage.querySelector(".wuCards"), due = [];
+    try { var lbl = currentPeriodLabel(); due = lbl ? ccardDue(lbl) : []; } catch(e){}
+    cardsEl.innerHTML = "";
+    if (due.length){ var sp = document.createElement("span"); sp.textContent = "Comment cards"; cardsEl.appendChild(sp); cardsEl.appendChild(document.createTextNode(due.join(" \u00b7 "))); }
+    cardsEl.hidden = !due.length;
   }
   list.addEventListener("click", function(e){
     var li = e.target.closest("li"); if (!li) return;
@@ -15220,6 +15215,7 @@ var Canvas = (function(){
       return any;
     },
     unfocus: function(){ setFocus(null); },
+    stage: function(el){ if (el && el._entry) setFocus(el._entry); },   // v7.32: a card takes the stage itself (the comment-card reminder)
     minimize: function(el){ if (el && el._entry) minimize(el._entry); },   // v7.18 (tests)
     zoom: function(){ return { s: zm.s, x: zm.x, y: zm.y, on: !!zm.en }; },   // v7.21 (tests)
     restore: function(el){ if (el && el._entry) restore(el._entry); },

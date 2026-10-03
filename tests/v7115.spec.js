@@ -1429,59 +1429,72 @@ test.describe("v7.31", () => {
 });
 
 /* v7.32 — Comment Cards (Croix: "A comment card tracker. Let me pull students up and put them on warning. Then
- * I'll tag them as comment card. And I'll hit it at the end of class."). Synthetic names only. */
+ * I'll tag them as comment card. And I'll hit it at the end of class." … "a reminder at the end of class for
+ * whatever students to bring me their comment cards"). Synthetic names only. */
 test.describe("v7.32", () => {
-  test("v7.32: + Warning picks from the class, a tap on the list makes the card, ✕ takes it off; End of class logs the cards and clears the board; the log totals, copies, and survives a reload; the bell records what was forgotten; works locked; never in the public file", async ({ page, dh }) => {
+  test("v7.32: the class as tiles — a tap is a warning, the next the card, the next clears; End of class logs the cards and stages the reminder until Done; the wrap-up lists them; the log totals and survives a reload; the bell records what was forgotten; works locked", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-29T10:30");                           // Black Tuesday, 5th period
     await dh.launch();
     await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }, { period: "HOWL Time", names: ["Eli","Fay"] }]; });
     await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
-    const api = () => page.evaluate(() => document.querySelector(".w-ccard")._entry.api);
     const marks = () => page.evaluate(() => document.querySelector(".w-ccard")._entry.api.marks());
-    const row = n => page.locator(".w-ccard .ccRow", { hasText: n });
-    const warn = async n => { await page.click(".w-ccard .ccAdd"); await page.fill(".w-ccard .ccFind", n.slice(0, 2)); await page.locator(".w-ccard .ccPick .ccName", { hasText: n }).click(); };
-    await expect(page.locator(".w-ccard .ccRow")).toHaveCount(0);     // the board shows only the list, never the class
-    await expect(page.locator(".w-ccard .ccEmpty")).toHaveText("Nobody on warning.");
-    await warn("Ben");
-    await expect(row("Ben")).toHaveClass(/isWarn/);
-    await expect(page.locator(".w-ccard .ccPick")).toBeHidden();
-    await row("Ben").locator(".ccWho").click();
-    await expect(row("Ben")).toHaveClass(/isCard/);
-    await warn("Dee"); await row("Dee").locator(".ccOff").click();    // off the list
-    await expect(row("Dee")).toHaveCount(0);
-    await warn("Cal");                                                // a warning stays a warning
+    const tile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    await expect(page.locator(".w-ccard .ccTile")).toHaveCount(4);
+    await expect(page.locator(".w-ccard .ccTile.isWarn, .w-ccard .ccTile.isCard")).toHaveCount(0);
+    await tile("Ben").click();
+    await expect(tile("Ben")).toHaveClass(/isWarn/);
+    await tile("Ben").click();
+    await expect(tile("Ben")).toHaveClass(/isCard/);
+    await tile("Dee").click(); await tile("Dee").click(); await tile("Dee").click();   // round trip: clear
+    await expect(tile("Dee")).not.toHaveClass(/isWarn|isCard/);
+    await tile("Cal").click();                                        // a warning stays a warning
     ok(JSON.stringify(await marks()) === JSON.stringify({ Ben: "card", Cal: "warn" }), "marks: " + JSON.stringify(await marks()));
     await expect(page.locator(".w-ccard .ccSum")).toContainText("1 on warning");
     await expect(page.locator(".w-ccard .ccSum")).toContainText("1 card");
     // locked: still a live action
     await page.click("#lockBtn");
-    await warn("Ava"); await row("Ava").locator(".ccWho").click();
-    await expect(row("Ava")).toHaveClass(/isCard/);
+    await tile("Ava").click(); await tile("Ava").click();
+    await expect(tile("Ava")).toHaveClass(/isCard/);
     await dh.unlock();
-    // End of class: the cards (not the warning) go to the log; the board clears
+    // the wrap-up, three minutes out, lists the cards due
+    await page.evaluate(() => { window.Deckhand.config.bell.wrapup.on = true; window.Deckhand.config.bell.wrapup.minutes = 3; });
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 170000); });   // 2:50 to the bell
+    await expect(page.locator("#clockWrap")).toBeVisible({ timeout: 4000 });
+    await expect(page.locator("#clockWrap .wuCards")).toContainText("Ava · Ben");
+    await page.keyboard.press("r");                                   // stand it down
+    await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the card back on top
+    // End of class: the cards (not the warning) go to the log; the reminder takes the stage; Done brings the board back
     await page.click(".w-ccard .ccEnd");
-    await expect(page.locator(".w-ccard .ccNote")).toContainText("Recorded 2 cards for 5th");
-    await expect(page.locator(".w-ccard .ccRow")).toHaveCount(0);
+    await expect(page.locator(".w-ccard")).toHaveClass(/wFull/);
+    await expect(page.locator(".w-ccard .ccRemind")).toBeVisible();
+    await expect(page.locator(".w-ccard .ccRemName")).toHaveCount(2);
+    await expect(page.locator(".w-ccard .ccRemMsg")).toContainText("Bring yours to Mr. Shaffer");
     let logd = await page.evaluate(() => window.Deckhand.config.cards.log);
     ok(logd.length === 1 && logd[0].p === "5th" && logd[0].d === "2026-09-29" && logd[0].names.join() === "Ava,Ben", "log: " + JSON.stringify(logd));
+    await page.click(".w-ccard .ccRemDone");
+    await expect(page.locator(".w-ccard")).not.toHaveClass(/wFull/);
+    await expect(page.locator(".w-ccard .ccRemind")).toBeHidden();
+    await expect(page.locator(".w-ccard .ccTile.isCard")).toHaveCount(0);
+    await expect(page.locator(".w-ccard .ccTile.isWarn")).toHaveCount(0);
+    // no cards: no stage
+    await page.click(".w-ccard .ccEnd");
+    await expect(page.locator(".w-ccard .ccNote")).toContainText("No cards today");
+    ok(!(await page.evaluate(() => document.querySelector(".w-ccard").classList.contains("wFull"))), "staged with nothing to say");
     // the log view: totals and the day
     await page.click(".w-ccard .ccLogBtn");
     await expect(page.locator(".w-ccard .ccTotals")).toContainText("Ava");
     await expect(page.locator(".w-ccard .ccLogBody li").first()).toContainText("Ava, Ben");
     await page.click(".w-ccard .ccLogClose");
     // the bell: a forgotten card is recorded when the class changes
-    await warn("Cal"); await row("Cal").locator(".ccWho").click();    // warn → card
-    await page.evaluate(() => window.Deckhand.shiftClock(45 * 60000));   // 11:15 — HOWL Time
+    await tile("Cal").click(); await tile("Cal").click();             // warn → card
+    await page.evaluate(() => window.Deckhand.shiftClock(5 * 60000));   // past the bell — HOWL Time
     await page.evaluate(() => document.querySelector(".w-ccard")._entry.api._watchBell());
     await page.waitForTimeout(200);
     logd = await page.evaluate(() => window.Deckhand.config.cards.log);
     ok(logd.length === 1 && logd[0].names.join() === "Ava,Ben,Cal", "the bell did not record Cal: " + JSON.stringify(logd));
     await expect(page.locator(".w-ccard .ccNote")).toContainText("At the bell");
-    await page.evaluate(() => window.Deckhand.settle.reset());      // the jump also rang HOWL's bell: stand the settle-in down
-    await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // a tap brings the card back over the clock
-    await page.click(".w-ccard .ccAdd");
-    await expect(page.locator(".w-ccard .ccPick .ccName")).toHaveCount(2);   // HOWL's roster now
-    await page.click(".w-ccard .ccPickX");
+    await page.evaluate(() => window.Deckhand.settle.reset());      // the jump also rang HOWL's bell
+    await expect(page.locator(".w-ccard .ccTile")).toHaveCount(2);    // HOWL's roster now
     // survives a reload
     await page.waitForTimeout(1200);
     await dh.reopen("#t=2026-09-29T10:30");
