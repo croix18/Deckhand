@@ -1510,3 +1510,89 @@ test.describe("v7.32", () => {
     ok(logd.length === 0, "Clear today did not clear: " + JSON.stringify(logd));
   });
 });
+
+/* v7.33 — Cadence on the board, and Mathle (Croix: "Add this as a tool. Also my kids go absolutely nuts over wordle. Can
+ * you make your own version with all of the big math vocabulary words. Cadence should have all of the words."). */
+test.describe("v7.33", () => {
+  test("v7.33: the Cadence card opens cadence.html from Deckhand's own folder with nothing set, takes a link from ✎, stages with Refresh, and is sanitized", async ({ page, dh }) => {
+    const stub = path.join(dh.fixtureDir, "tmp_cadence_stub.html");
+    fs.writeFileSync(stub, '<!DOCTYPE html><title>Cadence stub</title><body><h1 id="n">Cadence</h1>');
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await dh.addW("addCadenceBtn"); await page.keyboard.press("Escape");
+    const src = await page.evaluate(() => document.querySelector(".w-cadence .cdFrame").getAttribute("src"));
+    ok(/\/cadence\.html$/.test(src) && src.indexOf("file://") === 0, "no link set should mean the file beside Deckhand: " + src);
+    await page.click(".w-cadence .wEdit");
+    await page.fill(".w-cadence .cdIn", "file://" + stub);
+    await page.keyboard.press("Enter");
+    await expect(page.frameLocator(".w-cadence .cdFrame").locator("#n")).toHaveText("Cadence");
+    ok((await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "cadence").url)) === "file://" + stub, "the link was not kept");
+    await page.evaluate(() => document.querySelector(".w-cadence .wFocus").click());
+    await expect(page.locator("#reloadStageBtn")).toBeVisible();
+    await page.click("#unfocusBtn");
+    const bad = await page.evaluate(() => window.Deckhand.sanitize({ schemaVersion: 4, appVersion: "7.33.0", scenes: [{ name: "Daily Board", widgets: [{ type: "cadence", url: "javascript:alert(1)" }, { type: "cadence", url: "https://example.com/cadence.html" }] }] }).scenes[0].widgets.map(w => w.url));
+    ok(bad[0] === "" && bad[1] === "https://example.com/cadence.html", "sanitize: " + JSON.stringify(bad));
+  });
+
+  test("v7.33: Mathle — the word of the day is the same for every period, the keyboard types into the selected card (M no longer mutes), Wordle's colours with repeats, a hint, the reveal with the definition, New word, and the grade band", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-10-05T10:30");
+    await dh.launch();
+    await dh.addW("addMathleBtn"); await page.keyboard.press("Escape");
+    const api = fn => page.evaluate(fn);
+    const word = () => api(() => document.querySelector(".w-mathle")._entry.api.word());
+    const state = () => api(() => document.querySelector(".w-mathle")._entry.api.state());
+    const w1 = await word();
+    ok(/^[a-z]{4,13}$/.test(w1), "not a word: " + w1);
+    // the same word for every period that day
+    await page.evaluate(() => window.Deckhand.shiftClock(4 * 3600000));
+    await page.waitForTimeout(400);
+    await page.evaluate(() => { window.Deckhand.settle.reset(); window.Deckhand.canvas.unfocus(); });   // the jump rang a bell; stand it down
+    await page.evaluate(() => document.querySelector(".w-mathle")._entry.api.reset());
+    ok((await word()) === w1, "the word changed within the day");
+    // the keyboard goes to the game while it's selected: m types, it does not mute
+    await page.evaluate(() => document.querySelector(".w-mathle").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+    const soundBefore = await api(() => window.Deckhand.config.sound.enabled);
+    await page.keyboard.type("m");
+    ok((await api(() => window.Deckhand.config.sound.enabled)) === soundBefore, "M muted the board instead of typing");
+    ok((await state()).cur === "m", "the letter did not land: " + JSON.stringify(await state()));
+    await page.keyboard.press("Backspace");
+    ok((await state()).cur === "", "Backspace did not delete");
+    // a short guess shakes, not submits
+    await page.keyboard.type("ab"); await page.keyboard.press("Enter");
+    ok((await state()).guesses.length === 0, "a short guess was taken");
+    await expect(page.locator(".w-mathle .mlMsg")).toContainText("Not enough letters");
+    for (let i = 0; i < 2; i++) await page.keyboard.press("Backspace");
+    // Wordle's colouring with a repeated letter: play the word with its first two letters swapped (when they differ)
+    const wrong = w1[0] === w1[1] ? w1.slice(0, -1) + (w1[w1.length - 1] === "z" ? "a" : "z") : w1[1] + w1[0] + w1.slice(2);
+    await page.keyboard.type(wrong); await page.keyboard.press("Enter");
+    await page.waitForTimeout(300);
+    const tiles = await api(() => [...document.querySelectorAll(".w-mathle .mlRow")][0].children.length ? [...document.querySelectorAll(".w-mathle .mlRow")[0].children].map(t => (t.className.match(/\b(hit|near|miss)\b/) || [""])[0]) : []);
+    if (w1[0] !== w1[1]) ok(tiles[0] === "near" && tiles[1] === "near" && tiles.slice(2).every(c => c === "hit"), "swap colouring: " + tiles.join(","));
+    else ok(tiles[tiles.length - 1] === "miss" && tiles.slice(0, -1).every(c => c === "hit"), "colouring: " + tiles.join(","));
+    // the hint blanks the word
+    await page.click(".w-mathle .mlHint");
+    const hint = await page.locator(".w-mathle .mlMsg").textContent();
+    ok(hint.toLowerCase().indexOf(w1) < 0, "the hint gives the word away: " + hint);
+    // the solve: the reveal carries the definition
+    await page.evaluate(() => document.querySelector(".w-mathle").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+    await page.keyboard.type(w1); await page.keyboard.press("Enter");
+    await page.waitForTimeout(300);
+    const st = await state();
+    ok(st.done && st.won && st.guesses.length === 2, "not won: " + JSON.stringify(st));
+    await expect(page.locator(".w-mathle .mlMsg")).toContainText("Got it in 2!");
+    await expect(page.locator(".w-mathle .mlMsg .mlDef")).toBeVisible();
+    // done: the keys go back to the board (M mutes now)
+    await page.keyboard.type("m");
+    ok((await api(() => window.Deckhand.config.sound.enabled)) !== soundBefore, "after the game M should mute again");
+    await page.keyboard.type("m");
+    // New word deals another; the band changes the pool
+    await page.click(".w-mathle .mlNew");
+    const w2 = await word();
+    ok(w2 !== w1 && !(await state()).done, "New word did not deal: " + w2);
+    await page.selectOption(".w-mathle .mlBand", "6");
+    const w3 = await word();
+    const g = await page.evaluate(w => window.Deckhand.mathleWords.find(x => x.w === w).g, w3);
+    ok(!g.length || g.indexOf(6) >= 0, "a grade-6 band dealt " + w3 + " " + JSON.stringify(g));
+    ok((await api(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "mathle").band)) === "6", "band not kept");
+  });
+});

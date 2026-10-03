@@ -2,6 +2,29 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.33.0 — 2026-10-03
+
+**Cadence on the board, and Mathle.** Croix: "Add this as a tool. Also my kids go absolutely nuts
+over wordle. Can you make your own version with all of the big math vocabulary words. Cadence
+should have all of the words."
+
+- **Cadence** (+ Add → Media): the bellwork generator opens in a card, stage-able like Slides,
+  with Refresh on the stage bar. With nothing set it opens `cadence.html` from the same folder
+  Deckhand is in (the Drive folder on the panel, or the same web address), so there's nothing to
+  type. ✎ sets another link. The file itself stays out of this repo.
+- **Mathle** (+ Add → Math): a Wordle for the vocabulary. The 111 words are Cadence's — the
+  Florida B.E.S.T. glossary for grades 6–8 (single words from four to thirteen letters; the key
+  word of a longer term stands in for it). The word of the day is the same in every period, so
+  periods can compare; New word deals another. Six guesses, any length. Tiles and keys use the
+  game's own colours, the green, mustard and grey the kids know (Croix, on a first cut in the
+  board's palette: "its colors are not great"). Guesses aren't checked against a dictionary — any
+  letters go, so the class can test a hunch. Type on a keyboard while the
+  card is selected, or tap the keys on the card. Hint shows the definition with the word blanked;
+  the end reveals the word with its definition. A grade band (7, 7–8, 6–8, 6, 8) picks the pool.
+  The + Add menu is a column wider to hold it.
+
+Two tests; 273.
+
 ## 7.32.0 — 2026-10-03
 
 **Comment Cards.** Croix: "A comment card tracker. Let me pull students up and put them on

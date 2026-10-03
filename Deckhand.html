@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.32.0",
+  "appVersion": "7.33.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1052,6 +1052,53 @@
   .wuCards[hidden]{display:none;}
   .wuCards span{color:var(--turq); letter-spacing:.1em; text-transform:uppercase; font-size:.7em; margin-right:.6em;}
 
+  /* v7.33 CADENCE on the board: the generator in a frame, like the Slides card */
+  .cdRow{display:flex; gap:6px; align-items:center; padding:6px 8px; background:var(--cream); border-top:2px solid var(--grid);}
+  .cdRow[hidden]{display:none;}
+  .cdRow .embIn{flex:1; min-width:0;}
+  .cdEmpty b{font-size:clamp(14px, 3.4cqw, 26px);}
+  .cdEmpty code{font-family:"Courier New", monospace; font-weight:700; background:var(--paleturq); padding:2px 8px; border-radius:6px;}
+
+  /* v7.33 MATHLE — the vocabulary word game. Tiles: turquoise = right spot, yellow = in the word,
+     sand = not in it. Sized by the card (cq units) so it reads from the back on the stage. */
+  .mlTop{display:flex; gap:6px; align-items:center; justify-content:center; flex-wrap:wrap; padding-top:10px; flex:none;}   /* clear of the strip's 44px hit boxes */
+  .w-mathle .wBody{justify-content:flex-start; gap:6px; overflow:hidden; min-height:0;}
+  .mlBoard{display:flex; flex-direction:column; gap:var(--g, 4px); width:var(--bw, 100%); margin:0 auto; flex:none;}
+  .mlRow{display:grid; grid-template-columns:repeat(var(--n), 1fr); gap:var(--g, 4px);}
+  .mlTile{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center; text-transform:uppercase;
+    font-weight:900; font-size:calc(var(--t, 40px) * .58); line-height:1;
+    border:2px solid var(--grid); border-radius:10%; background:var(--white); color:var(--navy); min-width:0;
+  }
+  /* the colours are the game's own, not the board's (Croix: "I get it's our color scheme but
+     its colors are not great"): the green / mustard / grey the kids know, white letters on them */
+  .mlTile{border-color:#D3D6DA;}
+  .mlTile.typed{border-color:#878A8C;}
+  .mlTile.hit{background:#6AAA64; border-color:#6AAA64; color:#fff;}
+  .mlTile.near{background:#C9B458; border-color:#C9B458; color:#fff;}
+  .mlTile.miss{background:#787C7E; border-color:#787C7E; color:#fff;}
+  .mlRow.shake{animation:mlShake .35s ease-in-out;}
+  @keyframes mlShake{0%, 100%{transform:none;} 25%{transform:translateX(-5px);} 50%{transform:translateX(5px);} 75%{transform:translateX(-3px);}}
+  .mlTile.flip{animation:mlFlip .45s ease-in-out;}
+  @keyframes mlFlip{0%{transform:scaleY(1);} 50%{transform:scaleY(0);} 100%{transform:scaleY(1);}}
+  @media (prefers-reduced-motion: reduce){ .mlRow.shake, .mlTile.flip{animation:none;} }
+  .mlMsg{font-weight:800; color:var(--navy); font-size:clamp(12px, 2.8cqw, 26px); text-align:center; min-height:1.3em; line-height:1.25; max-width:94%; overflow-wrap:anywhere; flex:none;}
+  .mlMsg.win{color:#3E8A3A;}
+  .mlMsg .mlDef{display:block; font-weight:600; font-size:.82em; color:var(--teal); margin-top:.2em;}
+  .mlKeys{display:flex; flex-direction:column; gap:.5cqh; align-items:center; width:100%; flex:none; margin-top:auto;}
+  .mlKeyRow{display:flex; gap:.5cqw; justify-content:center; width:100%;}
+  .mlKey{
+    flex:1 1 0; max-width:5.4cqw; min-width:0; min-height:max(28px, 5cqh); border:0; border-radius:6px; cursor:pointer;
+    background:#D3D6DA; color:#1A1A1B; font:inherit; font-weight:900; font-size:clamp(9px, 2cqw, 18px); text-transform:uppercase;
+    display:inline-flex; align-items:center; justify-content:center; padding:0;
+  }
+  .mlKey.wide{max-width:9cqw; flex-basis:9cqw; font-size:clamp(8px, 1.6cqw, 14px);}
+  .mlKey.hit{background:#6AAA64; color:#fff;}
+  .mlKey.near{background:#C9B458; color:#fff;}
+  .mlKey.miss{background:#787C7E; color:#fff;}
+  .w-mathle.wFull .mlKey{min-height:6cqh;}
+  @container (max-height: 300px){ .w-mathle .mlKeys{display:none;} }
+
   /* container-query sizing inside widgets */
   /* sized to read from the BACK of the room (Croix, Sep 1);
      height-capped so a wide-but-short clock can't starve the lines below */
@@ -2070,7 +2117,7 @@
   /* v7.12 (audit): one row per group with the heading on the left — six rows, ~560 px, so the
      menu sits above the dock and below most of the clock's digits instead of covering them */
   #addMenu{
-    display:grid; grid-template-columns:72px repeat(6, 150px); gap:8px;   /* v7.14: Class holds six */
+    display:grid; grid-template-columns:72px repeat(7, 150px); gap:8px;   /* v7.33: Math holds seven */
     padding:12px; align-content:start; align-items:center;
   }
   #addMenu .menuLabel{grid-column:1; align-self:center; padding:0 4px;}
@@ -2106,7 +2153,7 @@
      768px one by a mile: go wider, not taller (the menu must never scroll
      mid-lesson) */
   @media (max-height: 820px){
-    #addMenu{grid-template-columns:72px repeat(6, 132px);}
+    #addMenu{grid-template-columns:72px repeat(7, 132px);}
     #addMenu .tile{min-height:70px;}
   }
   /* ⋯ scene manager: the current scene as the heading, one field, a list */
@@ -3220,6 +3267,8 @@
     <symbol id="i-sketch" viewBox="0 0 24 24"><path d="M4 20c4-1 5-2 6-4M6 14.5L16.5 4a2.1 2.1 0 0 1 3 3L9 17.5l-4 1z"/></symbol>
     <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 8.5h3.2a2 2 0 0 1 0 4H9.5zM9.5 12.5h3.8a2 2 0 0 1 0 4H9.5zM9.5 8.5v8"/></symbol>
     <symbol id="i-spin" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 5v8l5.7 5.6M12 13l-8-.5M12 13l6 5.3M12 2.5l-2 2.5h4z"/></symbol>
+    <symbol id="i-cadence" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M17 15l2 2 3-4"/></symbol>
+    <symbol id="i-mathle" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/></symbol>
     <symbol id="i-ccard" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 10h10M7 14h6"/></symbol>
     <symbol id="i-talk" viewBox="0 0 24 24"><path d="M3.5 5.5h10a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8l-3.5 3v-3h-1a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2z"/><path d="M17.5 9.5h2a2 2 0 0 1 2 2v3.5a2 2 0 0 1-2 2h-.5v2.5l-3-2.5h-3"/></symbol>
     <symbol id="i-stations" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4M17.5 10v4M14 17.5h-4M6.5 14v-4"/></symbol>
@@ -3575,6 +3624,7 @@
       <div class="menuLabel">Media</div>
       <button class="tile" id="addEmbedBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-slides"/></svg><span class="tName">Slides / Embed</span><span class="tDesc">Slides or a web page</span></button>
       <button class="tile" id="addYtBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-youtube"/></svg><span class="tName">YouTube</span><span class="tDesc">A video on the board</span></button>
+      <button class="tile" id="addCadenceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-cadence"/></svg><span class="tName">Cadence</span><span class="tDesc">The bellwork generator</span></button>
       <div class="menuLabel">Math</div>
       <button class="tile" id="addDrawBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-sketch"/></svg><span class="tName">Sketch Pad</span><span class="tDesc">Grid, number line, plane</span></button>
       <button class="tile" id="addDiceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-dice"/></svg><span class="tName">Dice</span><span class="tDesc">Roll 1&ndash;3, keep a tally</span></button>
@@ -3582,6 +3632,7 @@
       <button class="tile" id="addSpinBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-spin"/></svg><span class="tName">Spinner</span><span class="tDesc">2&ndash;8 equal sectors</span></button>
       <button class="tile" id="addCardsBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-cards"/></svg><span class="tName">Cards</span><span class="tDesc">Draw from a deck of 52</span></button>
       <button class="tile" id="addNumlineBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-numline"/></svg><span class="tName">Number Line</span><span class="tDesc">Points and jumps</span></button>
+      <button class="tile" id="addMathleBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-mathle"/></svg><span class="tName">Mathle</span><span class="tDesc">Guess the vocab word</span></button>
     </div>
   </div>
   <div id="shelf" aria-label="Minimized and stage-only cards"></div>
@@ -4463,7 +4514,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.32.0",
+  appVersion: "7.33.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4558,7 +4609,7 @@ function sanitize(c){
       if (!isObj(w)) return;
       var ty = (["timer","stopwatch","bell","clock","picker","groups",
                  "text","work","dice","coin","spin","cards","score","qr","meter","draw","embed",
-                 "event","tally","agenda","settle","music","yt","talk","stations","numline","ccard"].indexOf(w.type) !== -1) ? w.type : null;
+                 "event","tally","agenda","settle","music","yt","talk","stations","numline","ccard","cadence","mathle"].indexOf(w.type) !== -1) ? w.type : null;
       if (!ty) return;
       /* v7.7: the settle-in card is gone — its settings move to bell.settle
          (the first card's win); v7.8: the scene's clock grows into its row */
@@ -4706,6 +4757,12 @@ function sanitize(c){
         /* v7.13: count school days (weekends and the no-school weeks skipped) — the default for
            a card that has no event yet; a card already counting calendar days keeps counting them */
         wc.schoolDays = bool(w.schoolDays, !wc.when);
+      }
+      if (ty === "cadence"){                     // v7.33: Cadence on the board — "" means the file beside this one
+        wc.url = (typeof w.url === "string" && /^(https:\/\/|file:\/\/\/)[^\s"'<>]{1,500}$/.test(w.url)) ? w.url : "";
+      }
+      if (ty === "mathle"){                      // v7.33: the vocabulary word game
+        wc.band = ["6", "7", "8", "78", "678"].indexOf(w.band) !== -1 ? w.band : "78";
       }
       if (ty === "ccard"){                       // v7.32: the comment-card tracker (its log lives in cfg.cards)
         wc.period = str(w.period, "").slice(0, 20);
@@ -7300,6 +7357,243 @@ function makeCcard(host, wcfg){
     reminding: function(){ return reminding; },                                                     // test hook
     _watchBell: watchBell,
     destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(noteTid); clearTimeout(clearArmed); }
+  };
+}
+
+
+/* ================= v7.33 CADENCE on the board =================
+   Croix: "Add this as a tool." Cadence (his bellwork generator, a single file like this one)
+   opens in a frame, stage-able like the Slides card. With no link set it opens `cadence.html`
+   from the folder Deckhand itself is in — the Drive folder on the panel, or the web address —
+   so nothing has to be typed; ✎ sets another link (https or a file). The clicker keys reach it on
+   the stage like a deck. */
+function makeCadence(host, wcfg){
+  if (typeof wcfg.url !== "string") wcfg.url = "";
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody embBody">' +
+      '<div class="embEmpty cdEmpty" hidden><b>Cadence</b>' +
+        '<div class="embHint">Put <code>cadence.html</code> in the same folder as Deckhand (or at the same web address) and it opens here. Or set a link with \u270E.</div></div>' +
+      '<iframe class="embFrame cdFrame" title="Cadence" allow="fullscreen *; clipboard-write *" hidden></iframe>' +
+      '<div class="cdRow" hidden>' +
+        '<input class="embIn cdIn" type="url" maxlength="500" spellcheck="false" placeholder="Link to cadence.html (blank = the file beside Deckhand)">' +
+        '<button class="embGo cdGo" type="button" aria-label="Reload"><svg class="wIcon"><use href="#i-reload"/></svg></button>' +
+      '</div>' +
+    '</div>');
+  var q = function(s){ return host.querySelector(s); };
+  var frame = q(".cdFrame"), row = q(".cdRow"), input = q(".cdIn"), empty = q(".cdEmpty");
+  var rowOpen = false;
+  var pencil = document.createElement("button");
+  pencil.type = "button"; pencil.className = "wEdit"; pencil.setAttribute("aria-label", "Change the link");
+  pencil.innerHTML = '<svg class="wIcon"><use href="#i-pencil"/></svg>';
+  var stripEl = host.querySelector(".strip");
+  stripEl.insertBefore(pencil, stripEl.querySelector(".wFocus"));
+  wireButton(pencil, function(){ rowOpen = !rowOpen; row.hidden = !rowOpen; if (rowOpen){ input.value = wcfg.url; input.focus(); } });
+  function autoURL(){
+    try {
+      if (location.protocol === "https:" || location.protocol === "http:" || location.protocol === "file:") return new URL("cadence.html", location.href).href;
+    } catch(e){}
+    return "";
+  }
+  function target(){ return wcfg.url || autoURL(); }
+  function render(){
+    var u = target();
+    empty.hidden = !!u; frame.hidden = !u;
+    if (u && frame.getAttribute("src") !== u) frame.src = u;
+    if (!u) frame.removeAttribute("src");
+  }
+  function applyInput(){
+    var v = input.value.trim();
+    if (v && !/^(https:\/\/|file:\/\/\/)[^\s"'<>]{1,500}$/.test(v)) return;   // https or a file, nothing else
+    wcfg.url = v; render();
+  }
+  input.addEventListener("blur", applyInput);
+  input.addEventListener("keydown", function(e){ e.stopPropagation(); if (e.key === "Enter" || e.key === "Escape") input.blur(); });
+  wireButton(q(".cdGo"), function(){ applyInput(); var u = target(); if (u){ frame.src = "about:blank"; setTimeout(function(){ frame.src = u; }, 100); } });
+  function onHome(){ frame.removeAttribute("src"); }
+  function onBoard(){ if (!wcfg.min) render(); }
+  document.addEventListener("deckhand:home", onHome);
+  document.addEventListener("deckhand:board", onBoard);
+  render();
+  return {
+    kind: "cadence",
+    label: function(){ return wcfg.label || "Cadence"; },
+    startPause: function(){}, reset: function(){},
+    canEnter: function(){ return false; },
+    entryActive: function(){ return false; },
+    hide: onHome, show: render,
+    reload: function(){ var u = target(); if (u && !frame.hidden){ frame.src = "about:blank"; setTimeout(function(){ frame.src = u; }, 100); return true; } return false; },
+    rebuild: render, resync: function(){},
+    destroy: function(){
+      document.removeEventListener("deckhand:home", onHome);
+      document.removeEventListener("deckhand:board", onBoard);
+      frame.removeAttribute("src");
+    }
+  };
+}
+
+/* ================= v7.33 MATHLE =================
+   Croix: "my kids go absolutely nuts over wordle. Can you make your own version with all of the
+   big math vocabulary words. Cadence should have all of the words." The words are Cadence's —
+   the FLDOE B.E.S.T. glossary terms for grades 6–8 (single words, 4–13 letters; the key word of
+   a longer term stands in for it, with the term as the hint). The word of the day is the same in
+   every period (seeded by the date and the grade band); New word deals another. Six guesses, any
+   length; tiles and keys colour like the original (turquoise right, yellow in the word, sand not
+   in it). Type on a keyboard when the card is selected, or tap the keys. Hint shows the
+   definition with the word blanked. The word is revealed at the end, with its definition. */
+var MATHLE_WORDS = [{"w":"absolute","g":[6,7],"h":"________ value — A number's distance from zero (0) on a number line. Distance is expressed as a positive value."},{"w":"addition","g":[6],"h":"commutative property (of ________ or multiplication)"},{"w":"additive","g":[6],"h":"________ inverse property"},{"w":"algorithm","g":[6],"h":"A step-by-step way to solve a problem."},{"w":"analysis","g":[7],"h":"population (in data ________) — The entire set of cases or individuals under consideration in a statistical ________."},{"w":"angle","g":[8],"h":"_____ (∠) — _____ are formed wherever two lines, segments or rays intersect. _____ are measured in degrees."},{"w":"area","g":[6,7],"h":"The measure, in square units, of the inside region of a closed two-dimensional figure."},{"w":"array","g":[6],"h":"rectangular _____ — An arrangement of objects or symbols in rows and columns with equal numbers in each row and column."},{"w":"association","g":[8],"h":"A way to describe the form, direction or strength of the relationship between the two variables in a bivariate data set."},{"w":"associative","g":[6],"h":"___________ property"},{"w":"axes","g":[6],"h":"____ (of a graph) — The horizontal and vertical number lines used in a coordinate plane system."},{"w":"base","g":[6,7,8],"h":"____ (of an exponent) — The number used as a factor in exponential form."},{"w":"bivariate","g":[8],"h":"_________ data — Data that measures two characteristics of a population."},{"w":"capacity","g":[7],"h":"The amount of space that can be filled in a container."},{"w":"categorical","g":[7],"h":"___________ data — A type of data which is divided into groups. ___________ data are qualitative."},{"w":"center","g":[6,7],"h":"measures of ______ — A numerical value used to describe the overall clustering of data in a set."},{"w":"circle","g":[7],"h":"A perfectly round two-dimensional figure, where all points on the ______ are equidistant from the center."},{"w":"circumference","g":[7],"h":"The distance around a circle."},{"w":"cluster","g":[6],"h":"_______ (data) — Data that are in a close group on a scatter plot or univariate numerical data with similar values."},{"w":"coefficient","g":[6,7,8],"h":"The number or constant that multiplies a variable in an algebraic expression."},{"w":"commutative","g":[6],"h":"___________ property of multiplication"},{"w":"complementary","g":[8],"h":"_____________ angles — Two angles whose measures sum to 90°."},{"w":"composite","g":[6,7],"h":"_________ number — A whole number greater than 1 that has at least one whole-number factor other than one and itself."},{"w":"cone","g":[],"h":"A three-dimensional figure with a circular base and an apex connected to the base by line segments forming a curved surface."},{"w":"congruent","g":[8],"h":"Having exactly the same shape and size."},{"w":"constant","g":[7,8],"h":"________ of proportionality — The ________ value of the ratio of two proportional quantities."},{"w":"converse","g":[8],"h":"________ of Pythagorean Theorem — If lengths a, b and c of three sides of a triangle satisfy a² + b² = c², then the triangle is a right triangle."},{"w":"coordinate","g":[6,8],"h":"A number used to locate a point on a number line or in a __________ plane."},{"w":"cube","g":[6],"h":"A rectangular prism with six congruent square faces."},{"w":"cylinder","g":[7],"h":"________ (right circular) — A figure containing two congruent, parallel, circular bases whose edges are connected by a perpendicular curved surface."},{"w":"diameter","g":[7],"h":"A line segment from any point on the circle passing through the center to another point on the circle."},{"w":"dilation","g":[8],"h":"A proportional increase or decrease in size in all directions."},{"w":"distributive","g":[6],"h":"____________ property"},{"w":"dividend","g":[6],"h":"A quantity that is to be divided."},{"w":"division","g":[6],"h":"________ property of equality — If both sides of an equation are divided by the same nonzero number, the two sides remain equal."},{"w":"divisor","g":[6],"h":"The number by which another number is divided."},{"w":"domain","g":[8],"h":"The complete set of possible values of the input of a function or relation."},{"w":"equality","g":[6],"h":"addition property of ________"},{"w":"equation","g":[6,7,8],"h":"A mathematical relation statement where two equivalent expressions and values are separated by an equal sign."},{"w":"estimation","g":[],"h":"The use of methods to determine a reasonably accurate approximation, without calculating an exact answer."},{"w":"event","g":[7,8],"h":"A set of possible outcomes resulting from an experiment."},{"w":"experimental","g":[7],"h":"____________ probability — The ratio of the number of times an event occurs to the total number of trials or times the activity is performed."},{"w":"exponent","g":[6,7,8],"h":"base (of an ________) — The number used as a factor in exponential form."},{"w":"exponential","g":[6,7,8],"h":"exponent (___________ form) — The number of times the base occurs as a factor."},{"w":"expression","g":[6,7,8],"h":"A mathematical statement containing numerals, operators, grouping symbols and symbols or variables for unknown values."},{"w":"factor","g":[6,7,8],"h":"greatest common ______ (GCF) of two or more whole numbers — The largest whole number that evenly divides the given whole numbers."},{"w":"factorization","g":[6],"h":"prime _____________ — The expression of a number as the product of prime factors."},{"w":"function","g":[8],"h":"A mathematical relation for which each element of the domain corresponds to exactly one element of the range."},{"w":"histogram","g":[6,7],"h":"A visual display of numerical data using bars along a number line with no spaces between the bars."},{"w":"hypotenuse","g":[8],"h":"The longest side of a right triangle; the side opposite the right angle."},{"w":"identity","g":[6],"h":"________ property of addition"},{"w":"integers","g":[6,8],"h":"Whole numbers and their opposites."},{"w":"intercept","g":[8],"h":"The value of a variable when all other variables in the equation equal 0."},{"w":"interest","g":[7],"h":"simple ________ — A method of computing ________ from the original principal alone."},{"w":"interquartile","g":[6,7],"h":"_____________ range (IQR) — A measure of variation in a set of numerical data, the distance between the first and third quartiles."},{"w":"inverse","g":[6],"h":"additive _______ property"},{"w":"irrational","g":[8],"h":"__________ number — A real number that cannot be expressed as a ratio of two integers."},{"w":"linear","g":[7,8],"h":"______ expression (or ______ equation) — A polynomial expression or equation that contains a term of degree 1, but no term of higher degree."},{"w":"mean","g":[6,7],"h":"The arithmetic average of a set of numbers."},{"w":"median","g":[6,7],"h":"The middle of an ordered list of values."},{"w":"mode","g":[6],"h":"The value found most often in a set of numbers."},{"w":"monomial","g":[8],"h":"A polynomial with one term."},{"w":"multiple","g":[6],"h":"least common ________ (LCM) — The lowest number that is a ________ of two or more given numbers."},{"w":"notation","g":[8],"h":"scientific ________ — A method of writing very large or very small numbers using exponents."},{"w":"origin","g":[6,7],"h":"The point of intersection of the x- and y-axes in a rectangular coordinate system."},{"w":"outlier","g":[6,7,8],"h":"A value that is much higher or much lower than the other values in a set of data."},{"w":"parallelogram","g":[7],"h":"A quadrilateral containing two pairs of parallel sides."},{"w":"percent","g":[7],"h":"_______ of change — The difference between a final value and an initial value, expressed as a percentage."},{"w":"polygon","g":[7,8],"h":"A closed two-dimensional figure composed of at least three straight sides and three vertices."},{"w":"population","g":[7],"h":"__________ (in data analysis) — The entire set of cases or individuals under consideration in a statistical analysis."},{"w":"prime","g":[6],"h":"_____ factorization — The expression of a number as the product of _____ factors."},{"w":"prism","g":[6],"h":"rectangular _____ — A _____ with rectangular bases."},{"w":"probability","g":[7,8],"h":"theoretical ___________ — A number between 0 and 1 representing the likelihood of an event."},{"w":"proportional","g":[7,8],"h":"____________ relationships — A collection of pairs of numbers that are in equivalent ratios."},{"w":"pyramid","g":[6],"h":"rectangular _______ — A _______ with a rectangular base."},{"w":"pythagorean","g":[8],"h":"converse of ___________ Theorem — If lengths a, b and c of three sides of a triangle satisfy a² + b² = c², then the triangle is a right triangle."},{"w":"quadrant","g":[6],"h":"Any of the four regions separated by the axes in a coordinate plane."},{"w":"quadrilateral","g":[6,7],"h":"A polygon with exactly four sides and four vertices."},{"w":"quartiles","g":[6,7],"h":"For a data set with median M, the first quartile is the median of data values less than M."},{"w":"radical","g":[8],"h":"An expression using the _______ symbol to show a root of a number, such as a square root or cube root."},{"w":"radius","g":[],"h":"A line segment extending from the center of a circle or sphere to a point on the circle or sphere."},{"w":"random","g":[7],"h":"______ sampling — A smaller group chosen from a larger group by a process giving equal chance of selection."},{"w":"range","g":[6,7,8],"h":"_____ (of a data set) — The difference between the highest data value and the lowest data value."},{"w":"rate","g":[6,7],"h":"A ratio that compares two quantities of different units."},{"w":"rational","g":[6,7,8],"h":"________ number — A real number that can be expressed as the ratio of two integers."},{"w":"reciprocal","g":[6],"h":"multiplicative inverse (__________)"},{"w":"rectangle","g":[6,7],"h":"A quadrilateral containing four right angles."},{"w":"reflection","g":[8],"h":"A transformation that produces the mirror image of a geometric figure across a line of __________."},{"w":"rhombus","g":[7],"h":"A quadrilateral containing four equal-length sides."},{"w":"rotation","g":[8],"h":"A transformation of a figure by turning it about a center point or axis."},{"w":"sample","g":[7,8],"h":"______ space — In a probability model for a random process, a list of the individual outcomes."},{"w":"sampling","g":[7],"h":"random ________ — A smaller group chosen from a larger group by a process giving equal chance of selection."},{"w":"scale","g":[7,8],"h":"The numeric values, set at fixed intervals, assigned to the axes of a graph."},{"w":"scatter","g":[8],"h":"_______ plot — A graph in the coordinate plane representing bivariate numerical data."},{"w":"scientific","g":[8],"h":"__________ notation — A method of writing very large or very small numbers using exponents."},{"w":"similarity","g":[8],"h":"Having exactly the same shape but not necessarily the same size."},{"w":"simulation","g":[7],"h":"An approximate imitation of a statistical experiment, often done with a computer program."},{"w":"slope","g":[8],"h":"The ratio of change in the vertical direction to change in the horizontal direction."},{"w":"statistical","g":[6],"h":"___________ question — A question that can be answered by collecting data."},{"w":"substitution","g":[6],"h":"____________ property of equality — If two quantities are equal, one may replace the other in any expression or equation."},{"w":"supplementary","g":[8],"h":"_____________ angles — Two angles with measures the sum of which is exactly 180°."},{"w":"surface","g":[7],"h":"_______ area — The total area of all the faces or _______ of a three-dimensional figure."},{"w":"theorem","g":[8],"h":"converse of Pythagorean _______ — If lengths a, b and c of three sides of a triangle satisfy a² + b² = c², then the triangle is a right triangle."},{"w":"theoretical","g":[7,8],"h":"___________ probability — A number between 0 and 1 representing the likelihood of an event."},{"w":"translation","g":[8],"h":"A transformation in which every point in a figure is moved in the same direction and distance."},{"w":"transversal","g":[],"h":"A line that intersects two or more lines in the same plane at different points."},{"w":"trapezoid","g":[7],"h":"A quadrilateral with at least one pair of parallel sides."},{"w":"triangle","g":[6,7],"h":"A polygon with exactly three sides and three vertices."},{"w":"variability","g":[6,7],"h":"measures of ___________ — A numerical value that measures how much a data set varies from a central value."},{"w":"vertical","g":[8],"h":"________ angles — The opposite angles formed when two lines intersect."},{"w":"volume","g":[7],"h":"The amount of space a three-dimensional figure occupies, measured in cubic units."}];
+function makeMathle(host, wcfg){
+  if (["6", "7", "8", "78", "678"].indexOf(wcfg.band) === -1) wcfg.band = "78";
+  host.insertAdjacentHTML("beforeend",
+    '<div class="wBody">' +
+      '<div class="mlTop">' +
+        '<select class="pkSel mlBand" aria-label="Grade band">' +
+          '<option value="7">Grade 7</option><option value="78">Grades 7\u20138</option><option value="678">Grades 6\u20138</option>' +
+          '<option value="6">Grade 6</option><option value="8">Grade 8</option></select>' +
+        '<button type="button" class="chip chipSm mlHint" aria-pressed="false">Hint</button>' +
+        '<button type="button" class="chip chipSm mlNew">New word</button>' +
+      '</div>' +
+      '<div class="mlBoard" role="grid" aria-label="Guesses"></div>' +
+      '<div class="mlMsg" aria-live="polite"></div>' +
+      '<div class="mlKeys" role="group" aria-label="Keyboard"></div>' +
+    '</div>');
+  var q = function(s){ return host.querySelector(s); };
+  var bandEl = q(".mlBand"), board = q(".mlBoard"), msgEl = q(".mlMsg"), keysEl = q(".mlKeys"), hintBtn = q(".mlHint");
+  var ROWS = 6, destroyed = false;
+  function pool(){
+    var b = wcfg.band, want = b === "78" ? [7, 8] : b === "678" ? [6, 7, 8] : [+b];
+    var out = MATHLE_WORDS.filter(function(x){ return !x.g.length || x.g.some(function(g){ return want.indexOf(g) !== -1; }); });
+    return out.length ? out : MATHLE_WORDS;
+  }
+  function hash(str){ var h = 2166136261; for (var i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function daily(){ var p = pool(); return p[hash(dateKey(now()) + "|" + wcfg.band) % p.length]; }
+  /* the game lives in DayStore under this card's config, so a scene switch keeps it */
+  var st = DayStore.get(wcfg);
+  function fresh(entry, isDaily){
+    st = { w: entry.w, h: entry.h, guesses: [], cur: "", done: false, won: false, hint: false, daily: !!isDaily };
+    DayStore.set(wcfg, st);
+  }
+  if (!st || !st.w) fresh(daily(), true);
+  function N(){ return st.w.length; }
+  /* Wordle's colouring, repeats handled: exact matches first, then the rest from what's left */
+  function score(guess){
+    var w = st.w, res = [], left = {}, i;
+    for (i = 0; i < w.length; i++){ if (guess[i] === w[i]) res[i] = "hit"; else { left[w[i]] = (left[w[i]] || 0) + 1; res[i] = "miss"; } }
+    for (i = 0; i < w.length; i++){ if (res[i] !== "hit" && left[guess[i]]){ res[i] = "near"; left[guess[i]]--; } }
+    return res;
+  }
+  var keyState = {};
+  /* the tiles are as big as the card allows: the width split by the letters, or the height left
+     over after the top row, the message and the keyboard split by six rows — whichever is less */
+  function size(){
+    var body = host.querySelector(".wBody"), n = N();
+    var strip = host.querySelector(".strip");
+    var bw = body.clientWidth - 24, bh = host.clientHeight - (strip ? strip.offsetHeight : 30) - 16;   // the card's own height, never the body's overgrown one
+    var used = q(".mlTop").offsetHeight + Math.max(msgEl.offsetHeight, msgEl.scrollHeight) + keysEl.offsetHeight + 6 * 3 + 16;
+    var g = Math.max(3, Math.round(Math.min(bw, bh) * .012));
+    var t = Math.floor(Math.min((bw - g * (n - 1)) / n, (bh - used - g * (ROWS - 1)) / ROWS));
+    t = Math.max(14, Math.min(120, t));
+    board.style.setProperty("--t", t + "px"); board.style.setProperty("--g", g + "px");
+    board.style.setProperty("--bw", (t * n + g * (n - 1)) + "px");
+  }
+  var ro = null;
+  try { ro = new ResizeObserver(function(){ if (!destroyed) size(); }); ro.observe(host); ro.observe(msgEl); } catch(e){}
+  function paint(animRow){
+    board.style.setProperty("--n", N());
+    paintMsg(); size();                          // the message's height (a definition can take two lines) comes first
+    board.innerHTML = "";
+    keyState = {};
+    for (var r = 0; r < ROWS; r++){
+      var row = document.createElement("div"); row.className = "mlRow"; row.setAttribute("role", "row");
+      var g = st.guesses[r], sc = g ? score(g) : null;
+      var typing = !g && r === st.guesses.length && !st.done;
+      for (var i = 0; i < N(); i++){
+        var t = document.createElement("div"); t.className = "mlTile"; t.setAttribute("role", "gridcell");
+        var ch = g ? g[i] : (typing ? (st.cur[i] || "") : "");
+        t.textContent = ch;
+        if (g){ t.classList.add(sc[i]); if (animRow === r){ t.classList.add("flip"); t.style.animationDelay = (i * 70) + "ms"; } }
+        else if (ch) t.classList.add("typed");
+        row.appendChild(t);
+      }
+      if (g) sc.forEach(function(s, i){ var c = g[i], rank = { hit: 3, near: 2, miss: 1 }; if ((rank[s] || 0) > (rank[keyState[c]] || 0)) keyState[c] = s; });
+      board.appendChild(row);
+    }
+    keysEl.querySelectorAll(".mlKey[data-k]").forEach(function(k){
+      k.className = "mlKey" + (k.dataset.k.length > 1 ? " wide" : "") + (keyState[k.dataset.k] ? " " + keyState[k.dataset.k] : "");
+    });
+    hintBtn.setAttribute("aria-pressed", st.hint ? "true" : "false");
+  }
+  function paintMsg(){
+    msgEl.className = "mlMsg" + (st.won ? " win" : "");
+    msgEl.innerHTML = "";
+    if (st.done){
+      var n = st.guesses.length;
+      msgEl.appendChild(document.createTextNode(st.won ? (n === 1 ? "First try!" : "Got it in " + n + "!") : "The word was " + st.w.toUpperCase() + "."));
+      var d = document.createElement("span"); d.className = "mlDef"; d.textContent = st.h.replace(/_+/g, st.w); msgEl.appendChild(d);
+    } else if (st.hint){
+      msgEl.appendChild(document.createTextNode(st.h || "No hint for this one."));
+    } else {
+      msgEl.appendChild(document.createTextNode(N() + " letters \u00b7 " + (ROWS - st.guesses.length) + (ROWS - st.guesses.length === 1 ? " guess" : " guesses") + " left"));
+    }
+  }
+  var noteTid = null;
+  function flash(text){
+    clearTimeout(noteTid);
+    msgEl.textContent = text;
+    noteTid = setTimeout(paintMsg, 1400);
+  }
+  function submit(){
+    if (st.done) return;
+    if (st.cur.length < N()){
+      flash("Not enough letters");
+      var row = board.children[st.guesses.length]; if (row){ row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake"); }
+      return;
+    }
+    st.guesses.push(st.cur); var g = st.cur; st.cur = "";
+    if (g === st.w){ st.done = true; st.won = true; try { Sound.soft(); } catch(e){} }
+    else if (st.guesses.length >= ROWS){ st.done = true; st.won = false; }
+    paint(st.guesses.length - 1);
+  }
+  function typeKey(k){
+    if (st.done) return false;
+    if (k === "Backspace"){ st.cur = st.cur.slice(0, -1); paint(); return true; }
+    if (k === "Enter"){ submit(); return true; }
+    if (/^[a-zA-Z]$/.test(k)){ if (st.cur.length < N()) st.cur += k.toLowerCase(); paint(); return true; }
+    return false;
+  }
+  /* the on-screen keyboard */
+  ["qwertyuiop", "asdfghjkl", "Enter zxcvbnm Backspace"].forEach(function(rowStr){
+    var row = document.createElement("div"); row.className = "mlKeyRow";
+    rowStr.split(/(Enter|Backspace)| /).filter(Boolean).forEach(function(part){
+      (part === "Enter" || part === "Backspace" ? [part] : part.split("")).forEach(function(k){
+        var b = document.createElement("button"); b.type = "button"; b.className = "mlKey" + (k.length > 1 ? " wide" : ""); b.dataset.k = k;
+        b.textContent = k === "Backspace" ? "\u232B" : k === "Enter" ? "Enter" : k;
+        b.setAttribute("aria-label", k === "Backspace" ? "Delete" : k);
+        wireButton(b, function(){ typeKey(k); });
+        row.appendChild(b);
+      });
+    });
+    keysEl.appendChild(row);
+  });
+  bandEl.value = wcfg.band;
+  bandEl.addEventListener("change", function(){ wcfg.band = this.value; this.blur(); fresh(daily(), true); paint(); });
+  wireButton(hintBtn, function(){ st.hint = !st.hint; paint(); });
+  wireButton(q(".mlNew"), function(){
+    var p = pool().filter(function(x){ return x.w !== st.w; });
+    fresh(p[Math.floor(Math.random() * p.length)] || pool()[0], false); paint();
+  });
+  paint();
+  return {
+    kind: "mathle",
+    label: function(){ return wcfg.label || "Mathle"; },
+    startPause: function(){}, reset: function(){ fresh(daily(), true); paint(); },   // R: back to the word of the day
+    canEnter: function(){ return false; },
+    entryActive: function(){ return !st.done; },        // a live game owns the keyboard while the card is selected
+    typeKey: typeKey,
+    entryDigit: function(){}, entryBackspace: function(){ typeKey("Backspace"); }, entryCancel: function(){}, commitEntryAndStart: function(){},
+    rebuild: paint, resync: function(){},
+    word: function(){ return st.w; },                   // test hook
+    state: function(){ return JSON.parse(JSON.stringify(st)); },   // test hook
+    destroy: function(){ destroyed = true; clearTimeout(noteTid); try { if (ro) ro.disconnect(); } catch(e){} }
   };
 }
 
@@ -13924,7 +14218,8 @@ var WIDGET_NAMES = {
   event: "Countdown", tally: "Tally", agenda: "Agenda",
   music: "Music", yt: "YouTube",
   talk: "Talk Timer", stations: "Stations", numline: "Number Line",   // v7.14
-  ccard: "Comment Cards"                                              // v7.32
+  ccard: "Comment Cards",                                             // v7.32
+  cadence: "Cadence", mathle: "Mathle"                                // v7.33
 };
 /* boards saved before v7.12 carry the old default names as labels — those are not custom names */
 var LEGACY_NAMES = { picker: ["Picker"], groups: ["Groups"], text: ["Note"], draw: ["Sketch"] };
@@ -13943,7 +14238,8 @@ var WIDGET_MAKERS = {
   event: makeEvent, tally: makeTally, agenda: makeAgenda,
   music: makeMusic, yt: makeYT,
   talk: makeTalk, stations: makeStations, numline: makeNumline,  // v7.14
-  ccard: makeCcard                                               // v7.32
+  ccard: makeCcard,                                              // v7.32
+  cadence: makeCadence, mathle: makeMathle                       // v7.33
 };
 
 var Canvas = (function(){
@@ -14254,7 +14550,7 @@ var Canvas = (function(){
     refocusDeck();     // clicker keys belong to the deck from second one
     $("focusBar").hidden = !focusedEntry;        // the no-keyboard exit + ⏱
     $("minStageBtn").hidden = !focusedEntry || focusedEntry.type === "clock";   // v7.18: the clock is the board, not a card to put away
-    $("reloadStageBtn").hidden = !focusedEntry || focusedEntry.type !== "embed";   // v7.28: fresh slides without leaving the stage
+    $("reloadStageBtn").hidden = !focusedEntry || !(focusedEntry.type === "embed" || focusedEntry.type === "cadence");   // v7.28: fresh slides without leaving the stage (v7.33: Cadence too)
     /* STAGE MODE: header/waves fold away; the dock folds to its handle
        (it sat on the Slides ‹ › arrows); grid re-anchors */
     document.body.classList.toggle("focusMode", !!focusedEntry);
@@ -14270,7 +14566,7 @@ var Canvas = (function(){
      Never while a timer's digit entry is live — those keys are ours. */
   function refocusDeck(){
     if (!focusedEntry ||
-        (focusedEntry.type !== "embed" && focusedEntry.type !== "yt")) return;
+        (focusedEntry.type !== "embed" && focusedEntry.type !== "yt" && focusedEntry.type !== "cadence")) return;
     /* v7.15: while the pen is out the clicker must reach Deckhand (it ends the drawing) —
        a deck that took the keys mid-drawing would turn the slide under the ink */
     try { if (Ink.isArmed()) return; } catch(e){}
@@ -14853,7 +15149,7 @@ var Canvas = (function(){
      "addTextBtn","addWorkBtn","addDiceBtn","addCoinBtn","addSpinBtn","addCardsBtn","addScoreBtn",
      "addQrBtn","addMeterBtn","addDrawBtn","addEmbedBtn",
      "addEventBtn","addTallyBtn","addAgendaBtn",
-     "addMusicBtn","addYtBtn","addTalkBtn","addStationsBtn","addNumlineBtn","addCcardBtn"].forEach(function(id){
+     "addMusicBtn","addYtBtn","addTalkBtn","addStationsBtn","addNumlineBtn","addCcardBtn","addCadenceBtn","addMathleBtn"].forEach(function(id){
       $(id).disabled = locked || full;
     });
     var hasClock = activeSceneObj().widgets.some(function(w){ return w.type === "clock"; });
@@ -15103,7 +15399,7 @@ var Canvas = (function(){
        ["addTallyBtn","tally"], ["addAgendaBtn","agenda"],
        ["addMusicBtn","music"],
        ["addYtBtn","yt"],
-       ["addTalkBtn","talk"], ["addStationsBtn","stations"], ["addNumlineBtn","numline"], ["addCcardBtn","ccard"]].forEach(function(pair){
+       ["addTalkBtn","talk"], ["addStationsBtn","stations"], ["addNumlineBtn","numline"], ["addCcardBtn","ccard"], ["addCadenceBtn","cadence"], ["addMathleBtn","mathle"]].forEach(function(pair){
         wireButton($(pair[0]), function(){ addWidget(pair[1]); hideAddMenu(); });
       });
       wireButton($("moreBtn"), toggleMoreMenu);
@@ -16626,6 +16922,7 @@ var Keys = (function(){
 
     // 5. active digit entry (on the selected timer widget)
     if (sel && sel.entryActive()){
+      if (sel.typeKey && sel.typeKey(k)){ e.preventDefault(); return; }   // v7.33: Mathle takes letters, Backspace, Enter
       if (/^[0-9]$/.test(k)){ sel.entryDigit(k); e.preventDefault(); return; }
       if (k === "Backspace"){ sel.entryBackspace(); e.preventDefault(); return; }
       if (k === "Escape"){ sel.entryCancel(); e.preventDefault(); return; }
@@ -16723,6 +17020,7 @@ window.Deckhand = {
   flash: Flash,                                 // v7.18: the minutes-left flash (tests)
   nowPlaying: NowPlaying,                       // v7.20: the pause that's always within reach (tests)
   passingMusic: PassingMusic,                   // v7.31: music between classes (tests)
+  mathleWords: MATHLE_WORDS,                    // v7.33: the vocabulary (tests)
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
   nature: Nature,                               // v7.24: the nature sounds (tests render them offline)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)
