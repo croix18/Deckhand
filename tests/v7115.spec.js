@@ -1432,7 +1432,7 @@ test.describe("v7.31", () => {
  * I'll tag them as comment card. And I'll hit it at the end of class." … "a reminder at the end of class for
  * whatever students to bring me their comment cards"). Synthetic names only. */
 test.describe("v7.32", () => {
-  test("v7.32: the class as tiles — a tap is a warning, the next the card, the next clears; End of class logs the cards and stages the reminder until Done; the wrap-up lists them; the log totals and survives a reload; the bell records what was forgotten; works locked", async ({ page, dh }) => {
+  test("v7.32: the class as tiles — a tap is a warning, the next the card, the next another; three minutes out the reminder fills the screen on its own and the cards are logged; the wrap-up lists them; the log totals and survives a reload; the bell records what was forgotten; works locked", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-29T10:30");                           // Black Tuesday, 5th period
     await dh.launch();
     await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }, { period: "HOWL Time", names: ["Eli","Fay"] }]; });
@@ -1468,31 +1468,24 @@ test.describe("v7.32", () => {
     await expect(page.locator("#clockWrap")).toBeVisible({ timeout: 4000 });
     await expect(page.locator("#clockWrap .wuCards")).toContainText("Ava ×2 · Ben");
     await page.keyboard.press("r");                                   // stand it down
-    await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the card back on top
-    // End of class: the cards (not the warning) go to the log; the reminder takes the stage; Done brings the board back
-    await page.click(".w-ccard .ccEnd");
-    await expect(page.locator(".w-ccard")).toHaveClass(/wFull/);
-    await expect(page.locator(".w-ccard .ccRemind")).toBeVisible();
-    await expect(page.locator(".w-ccard .ccRemName")).toHaveCount(2);
-    await expect(page.locator(".w-ccard .ccRemName").first()).toHaveText("Ava ×2");
-    await expect(page.locator(".w-ccard .ccRemMsg")).toContainText("Bring yours to Mr. Shaffer");
+    // v7.37: three minutes out the reminder comes up on its own — the cards (not the warning) are recorded, the screen fills
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 4000 });
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveCount(2);
+    await expect(page.locator("#ccRemFull .ccRemName").first()).toHaveText("Ava ×2");
+    await expect(page.locator("#ccRemFull .ccRemMsg")).toContainText("Bring yours to Mr. Shaffer");
     let logd = await page.evaluate(() => window.Deckhand.config.cards.log);
     ok(logd.length === 1 && logd[0].p === "5th" && logd[0].d === "2026-09-29" && logd[0].names.join() === "Ava,Ava,Ben", "log: " + JSON.stringify(logd));
-    await page.click(".w-ccard .ccRemDone");
-    await expect(page.locator(".w-ccard")).not.toHaveClass(/wFull/);
-    await expect(page.locator(".w-ccard .ccRemind")).toBeHidden();
+    await page.click("#ccRemFull .ccRemDone");
+    await expect(page.locator("#ccRemFull")).toBeHidden();
     await expect(page.locator(".w-ccard .ccTile.isCard")).toHaveCount(0);
     await expect(page.locator(".w-ccard .ccTile.isWarn")).toHaveCount(0);
-    // no cards: no stage
-    await page.click(".w-ccard .ccEnd");
-    await expect(page.locator(".w-ccard .ccNote")).toContainText("No cards today");
-    ok(!(await page.evaluate(() => document.querySelector(".w-ccard").classList.contains("wFull"))), "staged with nothing to say");
+    await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the card back on top
     // the log view: totals and the day
     await page.click(".w-ccard .ccLogBtn");
     await expect(page.locator(".w-ccard .ccTotals")).toContainText("Ava ×2");
     await expect(page.locator(".w-ccard .ccLogBody li").first()).toContainText("Ava ×2, Ben");
     await page.click(".w-ccard .ccLogClose");
-    // the bell: a forgotten card is recorded when the class changes
+    // the bell: a card given after the reminder is recorded when the class changes (no second reminder)
     await tile("Cal").click(); await tile("Cal").click();             // warn → card
     await page.evaluate(() => window.Deckhand.shiftClock(5 * 60000));   // past the bell — HOWL Time
     await page.evaluate(() => document.querySelector(".w-ccard")._entry.api._watchBell());
@@ -1500,6 +1493,7 @@ test.describe("v7.32", () => {
     logd = await page.evaluate(() => window.Deckhand.config.cards.log);
     ok(logd.length === 1 && logd[0].names.join() === "Ava,Ava,Ben,Cal", "the bell did not record Cal: " + JSON.stringify(logd));
     await expect(page.locator(".w-ccard .ccNote")).toContainText("At the bell");
+    await expect(page.locator("#ccRemFull")).toBeHidden();
     await page.evaluate(() => window.Deckhand.settle.reset());      // the jump also rang HOWL's bell
     await expect(page.locator(".w-ccard .ccTile")).toHaveCount(2);    // HOWL's roster now
     // survives a reload
@@ -1625,7 +1619,7 @@ test.describe("v7.33", () => {
 /* v7.35 — the comment cards as a quick draw (Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly
  * even if slides are on the screen"). Synthetic names only. */
 test.describe("v7.35", () => {
-  test("v7.35: on a staged deck a blob opens the comment-card popover; marks are the card's marks; End of class logs them and fills the screen with the reminder; the badge counts the cards due; the pen closes it", async ({ page, dh }) => {
+  test("v7.35: on a staged deck a blob opens the comment-card popover; marks are the card's marks; three minutes out the reminder fills the screen over the slides and logs them; the badge counts the cards due; the pen closes it", async ({ page, dh }) => {
     const deck = path.join(dh.fixtureDir, "tmp_cc_deck.html");
     fs.writeFileSync(deck, '<!DOCTYPE html><title>Deck</title><body><h1>Slide 1</h1>');
     await dh.openAt("#t=2026-09-29T10:30");                           // Black Tuesday, 5th
@@ -1656,11 +1650,10 @@ test.describe("v7.35", () => {
     const cardTile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
     await expect(cardTile("Ben")).toHaveClass(/isCard/);
     await expect(cardTile("Cal")).toHaveClass(/isWarn/);
-    // back on the stage: End of class from the popover logs the card and fills the screen
+    // back on the stage: three minutes out the reminder fills the screen over the slides, and the card is logged
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
-    await page.click("#ccBlob");
-    await page.click("#ccPop .ccEnd");
-    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 170000); });
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 4000 });
     await expect(page.locator("#ccRemFull .ccRemName")).toHaveCount(1);
     await expect(page.locator("#ccRemFull .ccRemName")).toHaveText("Ben");
     const logd = await page.evaluate(() => window.Deckhand.config.cards.log);

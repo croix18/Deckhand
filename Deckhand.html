@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.36.0",
+  "appVersion": "7.37.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1022,7 +1022,6 @@
   .ccTile.out{opacity:.4; text-decoration:line-through;}
   .ccSum{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--teal);}
   .ccSum b{color:var(--navy);}
-  .ccEnd{background:var(--navy); color:var(--white);}
   .ccNote{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--navy); text-align:center; background:var(--paleturq); border-radius:10px; padding:6px 12px;}
   .ccNote[hidden]{display:none;}
   /* the reminder: over the whole card (staged by End of class), the names big */
@@ -2081,7 +2080,7 @@
   #ccPop .ccPopX{margin:-6px -8px -6px 0;}
   #ccPop .ccGrid{flex:1; min-height:0; overflow:auto; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr));}
   #ccPop .ccTileName{font-size:15px;} #ccPop .ccTileTag{font-size:10px;}
-  #ccPop .ccPopRow{display:flex; justify-content:flex-end; gap:8px;}
+  #ccPop .ccPopHint{font-size:12px; font-weight:700; color:var(--teal); text-align:center;}
   #ccRemFull{position:fixed; inset:0; z-index:900003; gap:3vh; padding:4vh 4vw; background:rgba(255,255,255,.96);}
   #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2.5vw;}
   #ccRemFull .ccRemName{font-size:clamp(28px, 7vw, 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
@@ -4477,7 +4476,7 @@
   <div class="ccGrid"></div>
   <div class="wEmpty ccEmpty"></div>
   <div class="ccNote" hidden></div>
-  <div class="ccPopRow"><button type="button" class="btn btnSm ccEnd">End of class</button></div>
+  <div class="ccPopHint">The reminder comes up on its own 3 minutes before the bell.</div>
 </div>
 <!-- the quick-draw's reminder fills the screen, over the slides -->
 <div id="ccRemFull" class="ccRemind" role="dialog" aria-label="Comment cards due" hidden>
@@ -4568,7 +4567,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.36.0",
+  appVersion: "7.37.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -7301,16 +7300,9 @@ function makeCcard(host, wcfg){
       '<div class="wEmpty ccEmpty"></div>' +
       '<div class="ccNote" hidden></div>' +
       '<div class="row">' +
-        '<button class="btn ccEnd" type="button">End of class</button>' +
         '<button class="btn btnSm ccLogBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy)">Log</button>' +
       '</div>' +
-      '<div class="tHint">Tap a name: warning \u2192 card \u2192 another card \u00b7 hold to take one back</div>' +
-      '<div class="ccRemind" hidden>' +
-        '<div class="ccRemTop">Comment cards</div>' +
-        '<div class="ccRemNames"></div>' +
-        '<div class="ccRemMsg"></div>' +
-        '<button type="button" class="btn ccRemDone">Done</button>' +
-      '</div>' +
+      '<div class="tHint">Tap a name: warning \u2192 card \u2192 another card \u00b7 hold to take one back \u00b7 the reminder comes up 3 min before the bell</div>' +
       '<div class="ccLog" role="group" aria-label="Comment card log" hidden>' +
         '<div class="ccLogHead"><b>Comment cards</b>' +
           '<button type="button" class="chip chipSm ccCopy">Copy</button>' +
@@ -7321,8 +7313,8 @@ function makeCcard(host, wcfg){
     '</div>');
   var q = function(s){ return host.querySelector(s); };
   var sel = q(".pkSel"), gridEl = q(".ccGrid"), sumEl = q(".ccSum"), emptyEl = q(".ccEmpty"), noteEl = q(".ccNote");
-  var logEl = q(".ccLog"), logBody = q(".ccLogBody"), remEl = q(".ccRemind");
-  var noteTid = null, refreshTid = null, destroyed = false, lastAuto = null, reminding = false;
+  var logEl = q(".ccLog"), logBody = q(".ccLogBody");
+  var noteTid = null, refreshTid = null, destroyed = false, lastAuto = null;
   var period = buildPeriodSelect(sel, wcfg, function(){ paint(); });
   var marks = ccardMarks, log = ccardLog;
   function note(msg){
@@ -7349,25 +7341,9 @@ function makeCcard(host, wcfg){
     paint();
     return r.cards;
   }
-  function remind(cards){
-    q(".ccRemNames").innerHTML = "";
-    ccardGroup(cards).forEach(function(g){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = g.n + (g.k > 1 ? " \u00d7" + g.k : ""); q(".ccRemNames").appendChild(d); });
-    q(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
-    reminding = true; remEl.hidden = false; host.classList.add("ccReminding");
-    try { Canvas.stage(host); } catch(e){}
-  }
-  function unremind(){
-    if (!reminding) return;
-    reminding = false; remEl.hidden = true; host.classList.remove("ccReminding");
-    if (host.classList.contains("wFull")){ try { Canvas.unfocus(); } catch(e){} }
-  }
-  wireButton(q(".ccEnd"), function(){
-    var p = period.current(), cards = ccardDue(p);
-    if (!p) return;
-    record(p, false);
-    if (cards.length) remind(cards);
-  });
-  wireButton(q(".ccRemDone"), unremind);
+  /* v7.37 (Croix: "Can it just automatic at 3 minutes left in class"): no End of class button —
+     CcardPop watches the bell and puts the reminder up three minutes out; the bell records
+     whatever is left */
   /* the bell: the class that just left had cards nobody recorded */
   function watchBell(){
     var auto = Rosters.autoPeriod();
@@ -7440,7 +7416,6 @@ function makeCcard(host, wcfg){
   });
   refreshTid = setInterval(function(){
     if (destroyed) return;
-    if (reminding && !host.classList.contains("wFull")) unremind();   // Exit on the stage bar ends the reminder too
     period.fill(); watchBell(); paint();
   }, 1000);
   lastAuto = Rosters.autoPeriod();
@@ -7454,7 +7429,6 @@ function makeCcard(host, wcfg){
     rebuild: function(){ period.fill(); paint(); },
     resync: paint,
     marks: function(){ var p = period.current(); return p ? Object.assign({}, marks(p)) : {}; },   // test hook
-    reminding: function(){ return reminding; },                                                     // test hook
     _watchBell: watchBell,
     destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(noteTid); clearTimeout(clearArmed); document.removeEventListener("deckhand:ccard", onCcard); }
   };
@@ -16942,6 +16916,48 @@ var CcardPop = (function(){
     var el = pop.querySelector(".ccNote"); el.textContent = msg; el.hidden = false;
     clearTimeout(tid); tid = setTimeout(function(){ el.hidden = true; }, 7000);
   }
+  /* v7.37 (Croix: "Can it just automatic at 3 minutes left in class if there have been students
+     who got comment cards it triggers a reminder"): the bell watch. REMIND_MIN minutes before a
+     class block ends (Lunch excepted), if cards are due, they are recorded and the reminder fills
+     the screen — once per block; Done, Escape, Enter or Space take it down, and so does the bell.
+     Cards added after that are recorded at the bell (the card's watch, or this one). */
+  var REMIND_MIN = 3, shownFor = null, lastIn = null;
+  function showReminder(cards){
+    var rem = $("ccRemFull"), names = rem.querySelector(".ccRemNames");
+    names.innerHTML = "";
+    ccardGroup(cards).forEach(function(g){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = g.n + (g.k > 1 ? " \u00d7" + g.k : ""); names.appendChild(d); });
+    rem.querySelector(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
+    show(false);
+    rem.hidden = false;
+    try { Sound.soft(); } catch(e){}
+  }
+  function hideReminder(){
+    var rem = $("ccRemFull");
+    if (rem.hidden) return;
+    rem.hidden = true;
+    try { Canvas.refocusDeck(); } catch(e){}
+  }
+  function bellWatch(){
+    var s = null; try { s = Bell.statusAt(now()); } catch(e){ return; }
+    var inClass = s && s.type === "in" && !/lunch/i.test(s.label || "");
+    var key = inClass ? dateKey(now()) + "|" + s.label + "|" + s.s : null;
+    if (lastIn && key !== lastIn){                 // the bell: the reminder comes down; anything left is recorded
+      hideReminder();
+      var prev = lastIn.split("|")[1];
+      if (ccardDue(prev).length) ccardRecord(prev, true);
+      paintBadge();
+    }
+    lastIn = key;
+    if (!inClass || shownFor === key) return;
+    if (s.remainMs <= REMIND_MIN * 60000 && s.remainMs > 0){
+      shownFor = key;
+      var cards = ccardDue(s.label);
+      if (!cards.length) return;
+      ccardRecord(s.label, false);
+      showReminder(cards);
+      if (open) paint(); else paintBadge();
+    }
+  }
   function show(on){
     open = !!on;
     pop.hidden = !open;
@@ -16954,32 +16970,22 @@ var CcardPop = (function(){
       blob = $("ccBlob"); pop = $("ccPop");
       wireButton(blob, function(){ show(!open); });
       wireButton(pop.querySelector(".ccPopX"), function(){ show(false); });
-      wireButton(pop.querySelector(".ccEnd"), function(){
-        var r = ccardRecord(period, false);
-        if (r.note) note(r.note);
-        paint();
-        if (r.cards.length){
-          var rem = $("ccRemFull"), names = rem.querySelector(".ccRemNames");
-          names.innerHTML = "";
-          ccardGroup(r.cards).forEach(function(g){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = g.n + (g.k > 1 ? " \u00d7" + g.k : ""); names.appendChild(d); });
-          rem.querySelector(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
-          show(false);
-          rem.hidden = false;                    // the reminder, over everything, until Done
-        }
-      });
-      wireButton($("ccRemFull").querySelector(".ccRemDone"), function(){ $("ccRemFull").hidden = true; try { Canvas.refocusDeck(); } catch(e){} });
+      wireButton($("ccRemFull").querySelector(".ccRemDone"), function(){ hideReminder(); });
+      setInterval(bellWatch, 1000);
       pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); });   // taps stay in the popover
       document.addEventListener("deckhand:ccard", function(){ if (open) paint(); else paintBadge(); });
       document.addEventListener("deckhand:home", function(){ show(false); });
       document.addEventListener("keydown", function(e){
-        if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " ")){ $("ccRemFull").hidden = true; e.stopPropagation(); e.preventDefault(); return; }
+        if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " ")){ hideReminder(); e.stopPropagation(); e.preventDefault(); return; }
         if (open && e.key === "Escape"){ show(false); e.stopPropagation(); }
       }, true);
       setInterval(function(){ if (open) { if (cur() !== period) paint(); } else paintBadge(); }, 5000);
       paintBadge();
     },
     open: function(){ show(true); }, close: function(){ show(false); },
-    isOpen: function(){ return open; }
+    isOpen: function(){ return open; },
+    _bellWatch: bellWatch,                        // test hook
+    reminding: function(){ return !$("ccRemFull").hidden; }
   };
   function paintBadge(){
     var p = cur(), due = p ? ccardDue(p).length : 0, badge = blob.querySelector(".ccBadge");

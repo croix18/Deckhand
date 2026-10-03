@@ -2,6 +2,15 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.37.0 — 2026-10-03
+
+**The reminder is automatic.** Croix: "Can it just automatic at 3 minutes left in class if there
+have been students who got comment cards it triggers a reminder." The End of class button is
+gone from the card and the quick draw. Three minutes before the bell, if anyone in the room has a
+comment card, the cards are recorded and the reminder fills the screen on its own (a soft note
+with it), over slides or anything else, until Done, Escape, Enter or Space, or the bell. Once per
+class. A card given in those last three minutes is recorded at the bell. Lunch never reminds.
+
 ## 7.36.0 — 2026-10-03
 
 **More than one card.** Croix: "what happens if the kid needs another tap. I want it to be able
