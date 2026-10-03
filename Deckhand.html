@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.35.0",
+  "appVersion": "7.36.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -4568,7 +4568,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.35.0",
+  appVersion: "7.36.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -7206,11 +7206,23 @@ function makePicker(host, wcfg){
    leave" — until Done. Three minutes out, the wrap-up lists them too. Marks are today's and that
    class's (DayStore "ccard:<period>"); the log is cfg.cards.log. A live teaching action: works
    locked. */
-function ccardDue(p){                            // the students whose card is due this class (the wrap-up asks)
+/* v7.36 (Croix: "what happens if the kid needs another tap. I want it to be able to add
+   additional comments within the same period"): a mark is "warn" or a NUMBER of cards (1, 2, 3…);
+   a tap adds one, a hold takes one back. The lists below repeat a name once per card
+   ("Ben","Ben"), so totals add up on their own; ccardGroup() folds them for display. */
+function ccardDue(p){                            // one entry per card due this class, in roster order (the wrap-up asks)
   var m = p ? DayStore.get("ccard:" + p) : null;
   if (!m) return [];
-  return Rosters.namesFor(p).filter(function(n){ return m[n] === "card"; });
+  var out = [];
+  Rosters.namesFor(p).forEach(function(n){ var k = typeof m[n] === "number" ? m[n] : (m[n] === "card" ? 1 : 0); for (var i = 0; i < k; i++) out.push(n); });
+  return out;
 }
+function ccardGroup(list){                       // ["Ben","Ben","Cal"] → [{n:"Ben",k:2},{n:"Cal",k:1}]
+  var out = [], seen = Object.create(null);
+  (list || []).forEach(function(n){ if (seen[n]) seen[n].k++; else { seen[n] = { n: n, k: 1 }; out.push(seen[n]); } });
+  return out;
+}
+function ccardText(list, sep){ return ccardGroup(list).map(function(g){ return g.n + (g.k > 1 ? " \u00d7" + g.k : ""); }).join(sep || ", "); }
 /* v7.35: the pieces the card and the quick-draw popover share */
 function ccardMarks(p){ var m = p ? DayStore.get("ccard:" + p) : null; if (!m && p){ m = Object.create(null); DayStore.set("ccard:" + p, m); } return m; }
 function ccardLog(){ if (!cfg.cards || !Array.isArray(cfg.cards.log)) cfg.cards = { log: [] }; return cfg.cards.log; }
@@ -7223,7 +7235,7 @@ function ccardRecord(p, auto){
     if (entry) cards.forEach(function(n){ if (entry.names.indexOf(n) < 0) entry.names.push(n); });
     else L.push({ d: d, p: p, names: cards });
     while (L.length > 600) L.shift();
-    note = (auto ? "At the bell \u2014 " : "") + "Recorded " + cards.length + (cards.length === 1 ? " card" : " cards") + " for " + p + ": " + cards.join(", ");
+    note = (auto ? "At the bell \u2014 " : "") + "Recorded " + cards.length + (cards.length === 1 ? " card" : " cards") + " for " + p + ": " + ccardText(cards);
   } else if (!auto) note = "No cards today for " + p + ".";
   DayStore.clear("ccard:" + p);
   try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){}   // every view repaints
@@ -7234,20 +7246,40 @@ function ccardTiles(gridEl, p, onChange){
   var names = p ? Rosters.namesFor(p) : [], m = ccardMarks(p), warn = 0, card = 0;
   gridEl.innerHTML = "";
   names.forEach(function(n){
-    var st = m[n] || "";
-    if (st === "warn") warn++; else if (st === "card") card++;
+    var st = m[n] || "", k = typeof st === "number" ? st : (st === "card" ? 1 : 0);
+    if (st === "warn") warn++; else card += k;
     var b = document.createElement("button");
-    b.type = "button"; b.className = "ccTile" + (st === "warn" ? " isWarn" : st === "card" ? " isCard" : "");
+    b.type = "button"; b.className = "ccTile" + (st === "warn" ? " isWarn" : k ? " isCard" : "");
     if (Absent.isOut(p, n)) b.classList.add("out");
     var nm = document.createElement("span"); nm.className = "ccTileName"; nm.textContent = n;   // user data: textContent only
-    var tag = document.createElement("span"); tag.className = "ccTileTag"; tag.textContent = st === "warn" ? "Warning" : st === "card" ? "Comment card" : "";
+    var tag = document.createElement("span"); tag.className = "ccTileTag";
+    tag.textContent = st === "warn" ? "Warning" : k > 1 ? "Comment cards \u00d7" + k : k ? "Comment card" : "";
     b.appendChild(nm); b.appendChild(tag);
-    b.setAttribute("aria-label", n + (st === "warn" ? ", on warning" : st === "card" ? ", comment card" : ""));
+    b.setAttribute("aria-label", n + (st === "warn" ? ", on warning" : k ? ", " + k + (k === 1 ? " comment card" : " comment cards") : "") + ". Tap to add, hold to take one back");
+    function changed(){ try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){} if (onChange) onChange(); }
+    /* a tap adds: nothing → warning → a card → another card…; a HOLD (half a second) takes one back */
+    var held = false, holdTid = null;
+    b.addEventListener("pointerdown", function(e){
+      held = false; clearTimeout(holdTid);
+      holdTid = setTimeout(function(){
+        held = true;
+        var cur = m[n] || "";
+        if (typeof cur === "number" && cur > 1) m[n] = cur - 1;
+        else if (typeof cur === "number" || cur === "card") m[n] = "warn";
+        else delete m[n];
+        try { if (navigator.vibrate) navigator.vibrate(12); } catch(_){}
+        changed();
+      }, 500);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function(ev){ b.addEventListener(ev, function(){ clearTimeout(holdTid); }); });
+    b.addEventListener("contextmenu", function(e){ e.preventDefault(); });   // a long press on the panel must not pop the menu
     wireButton(b, function(){
+      if (held){ held = false; return; }          // the hold already did its thing
       var cur = m[n] || "";
-      if (cur === "") m[n] = "warn"; else if (cur === "warn") m[n] = "card"; else delete m[n];
-      try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){}
-      if (onChange) onChange();
+      if (cur === "") m[n] = "warn";
+      else if (cur === "warn" || cur === "card") m[n] = cur === "card" ? 2 : 1;
+      else m[n] = Math.min(9, cur + 1);
+      changed();
     });
     gridEl.appendChild(b);
   });
@@ -7272,7 +7304,7 @@ function makeCcard(host, wcfg){
         '<button class="btn ccEnd" type="button">End of class</button>' +
         '<button class="btn btnSm ccLogBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy)">Log</button>' +
       '</div>' +
-      '<div class="tHint">Tap a name: warning \u2192 card \u2192 clear</div>' +
+      '<div class="tHint">Tap a name: warning \u2192 card \u2192 another card \u00b7 hold to take one back</div>' +
       '<div class="ccRemind" hidden>' +
         '<div class="ccRemTop">Comment cards</div>' +
         '<div class="ccRemNames"></div>' +
@@ -7319,7 +7351,7 @@ function makeCcard(host, wcfg){
   }
   function remind(cards){
     q(".ccRemNames").innerHTML = "";
-    cards.forEach(function(n){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = n; q(".ccRemNames").appendChild(d); });
+    ccardGroup(cards).forEach(function(g){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = g.n + (g.k > 1 ? " \u00d7" + g.k : ""); q(".ccRemNames").appendChild(d); });
     q(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
     reminding = true; remEl.hidden = false; host.classList.add("ccReminding");
     try { Canvas.stage(host); } catch(e){}
@@ -7349,7 +7381,7 @@ function makeCcard(host, wcfg){
   }
   function logText(){
     var L = log(), p = period.current(), lines = [];
-    L.filter(function(e){ return !p || e.p === p; }).slice().reverse().forEach(function(e){ lines.push(fmtDay(e.d) + " \u00b7 " + e.p + ": " + e.names.join(", ")); });
+    L.filter(function(e){ return !p || e.p === p; }).slice().reverse().forEach(function(e){ lines.push(fmtDay(e.d) + " \u00b7 " + e.p + ": " + ccardText(e.names)); });
     return lines.join("\n");
   }
   function paintLog(){
@@ -7370,7 +7402,7 @@ function makeCcard(host, wcfg){
       mine.slice().reverse().slice(0, 60).forEach(function(e){
         var li = document.createElement("li"), w = document.createElement("span"); w.className = "ccWhen";
         w.textContent = fmtDay(e.d) + (p ? "" : " \u00b7 " + e.p);
-        var t = document.createElement("span"); t.textContent = e.names.join(", ");
+        var t = document.createElement("span"); t.textContent = ccardText(e.names);
         li.appendChild(w); li.appendChild(t); ul.appendChild(li);
       });
       logBody.appendChild(ul);
@@ -9604,7 +9636,7 @@ var Wrapup = (function(){
     var cardsEl = stage.querySelector(".wuCards"), due = [];
     try { var lbl = currentPeriodLabel(); due = lbl ? ccardDue(lbl) : []; } catch(e){}
     cardsEl.innerHTML = "";
-    if (due.length){ var sp = document.createElement("span"); sp.textContent = "Comment cards"; cardsEl.appendChild(sp); cardsEl.appendChild(document.createTextNode(due.join(" \u00b7 "))); }
+    if (due.length){ var sp = document.createElement("span"); sp.textContent = "Comment cards"; cardsEl.appendChild(sp); cardsEl.appendChild(document.createTextNode(ccardText(due, " \u00b7 "))); }
     cardsEl.hidden = !due.length;
   }
   list.addEventListener("click", function(e){
@@ -16929,7 +16961,7 @@ var CcardPop = (function(){
         if (r.cards.length){
           var rem = $("ccRemFull"), names = rem.querySelector(".ccRemNames");
           names.innerHTML = "";
-          r.cards.forEach(function(n){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = n; names.appendChild(d); });
+          ccardGroup(r.cards).forEach(function(g){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = g.n + (g.k > 1 ? " \u00d7" + g.k : ""); names.appendChild(d); });
           rem.querySelector(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
           show(false);
           rem.hidden = false;                    // the reminder, over everything, until Done

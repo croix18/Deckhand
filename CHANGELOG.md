@@ -2,6 +2,15 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.36.0 — 2026-10-03
+
+**More than one card.** Croix: "what happens if the kid needs another tap. I want it to be able
+to add additional comments within the same period." Tapping a name keeps adding: warning, a
+card, a second card, a third ("Comment cards ×2"). Press and hold a tile for half a second to
+take one back. The count follows everywhere: the strip ("3 cards"), the End of class reminder
+("Ava ×2"), the wrap-up line, the log's totals and days, and Copy. This applies to the card on the
+board and the quick draw alike.
+
 ## 7.35.0 — 2026-10-03
 
 **Comment cards, quick draw.** Croix: "Can you make it a quick draw like the pen. So I can pull it

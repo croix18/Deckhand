@@ -1445,22 +1445,28 @@ test.describe("v7.32", () => {
     await expect(tile("Ben")).toHaveClass(/isWarn/);
     await tile("Ben").click();
     await expect(tile("Ben")).toHaveClass(/isCard/);
-    await tile("Dee").click(); await tile("Dee").click(); await tile("Dee").click();   // round trip: clear
+    await tile("Dee").click(); await tile("Dee").click(); await tile("Dee").click();   // v7.36: a third tap is a SECOND card
+    await expect(tile("Dee").locator(".ccTileTag")).toHaveText("Comment cards ×2");
+    const hold = async n => { const b = await tile(n).boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.waitForTimeout(700); await page.mouse.up(); };
+    await hold("Dee");                                                // a hold takes one back
+    await expect(tile("Dee").locator(".ccTileTag")).toHaveText("Comment card");
+    await hold("Dee"); await hold("Dee");                             // …to a warning, then off
     await expect(tile("Dee")).not.toHaveClass(/isWarn|isCard/);
     await tile("Cal").click();                                        // a warning stays a warning
-    ok(JSON.stringify(await marks()) === JSON.stringify({ Ben: "card", Cal: "warn" }), "marks: " + JSON.stringify(await marks()));
+    ok(JSON.stringify(await marks()) === JSON.stringify({ Ben: 1, Cal: "warn" }), "marks: " + JSON.stringify(await marks()));
     await expect(page.locator(".w-ccard .ccSum")).toContainText("1 on warning");
     await expect(page.locator(".w-ccard .ccSum")).toContainText("1 card");
     // locked: still a live action
     await page.click("#lockBtn");
-    await tile("Ava").click(); await tile("Ava").click();
-    await expect(tile("Ava")).toHaveClass(/isCard/);
+    await tile("Ava").click(); await tile("Ava").click(); await tile("Ava").click();   // two cards for Ava
+    await expect(tile("Ava").locator(".ccTileTag")).toHaveText("Comment cards ×2");
+    await expect(page.locator(".w-ccard .ccSum")).toContainText("3 cards");
     await dh.unlock();
     // the wrap-up, three minutes out, lists the cards due
     await page.evaluate(() => { window.Deckhand.config.bell.wrapup.on = true; window.Deckhand.config.bell.wrapup.minutes = 3; });
     await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 170000); });   // 2:50 to the bell
     await expect(page.locator("#clockWrap")).toBeVisible({ timeout: 4000 });
-    await expect(page.locator("#clockWrap .wuCards")).toContainText("Ava · Ben");
+    await expect(page.locator("#clockWrap .wuCards")).toContainText("Ava ×2 · Ben");
     await page.keyboard.press("r");                                   // stand it down
     await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the card back on top
     // End of class: the cards (not the warning) go to the log; the reminder takes the stage; Done brings the board back
@@ -1468,9 +1474,10 @@ test.describe("v7.32", () => {
     await expect(page.locator(".w-ccard")).toHaveClass(/wFull/);
     await expect(page.locator(".w-ccard .ccRemind")).toBeVisible();
     await expect(page.locator(".w-ccard .ccRemName")).toHaveCount(2);
+    await expect(page.locator(".w-ccard .ccRemName").first()).toHaveText("Ava ×2");
     await expect(page.locator(".w-ccard .ccRemMsg")).toContainText("Bring yours to Mr. Shaffer");
     let logd = await page.evaluate(() => window.Deckhand.config.cards.log);
-    ok(logd.length === 1 && logd[0].p === "5th" && logd[0].d === "2026-09-29" && logd[0].names.join() === "Ava,Ben", "log: " + JSON.stringify(logd));
+    ok(logd.length === 1 && logd[0].p === "5th" && logd[0].d === "2026-09-29" && logd[0].names.join() === "Ava,Ava,Ben", "log: " + JSON.stringify(logd));
     await page.click(".w-ccard .ccRemDone");
     await expect(page.locator(".w-ccard")).not.toHaveClass(/wFull/);
     await expect(page.locator(".w-ccard .ccRemind")).toBeHidden();
@@ -1482,8 +1489,8 @@ test.describe("v7.32", () => {
     ok(!(await page.evaluate(() => document.querySelector(".w-ccard").classList.contains("wFull"))), "staged with nothing to say");
     // the log view: totals and the day
     await page.click(".w-ccard .ccLogBtn");
-    await expect(page.locator(".w-ccard .ccTotals")).toContainText("Ava");
-    await expect(page.locator(".w-ccard .ccLogBody li").first()).toContainText("Ava, Ben");
+    await expect(page.locator(".w-ccard .ccTotals")).toContainText("Ava ×2");
+    await expect(page.locator(".w-ccard .ccLogBody li").first()).toContainText("Ava ×2, Ben");
     await page.click(".w-ccard .ccLogClose");
     // the bell: a forgotten card is recorded when the class changes
     await tile("Cal").click(); await tile("Cal").click();             // warn → card
@@ -1491,7 +1498,7 @@ test.describe("v7.32", () => {
     await page.evaluate(() => document.querySelector(".w-ccard")._entry.api._watchBell());
     await page.waitForTimeout(200);
     logd = await page.evaluate(() => window.Deckhand.config.cards.log);
-    ok(logd.length === 1 && logd[0].names.join() === "Ava,Ben,Cal", "the bell did not record Cal: " + JSON.stringify(logd));
+    ok(logd.length === 1 && logd[0].names.join() === "Ava,Ava,Ben,Cal", "the bell did not record Cal: " + JSON.stringify(logd));
     await expect(page.locator(".w-ccard .ccNote")).toContainText("At the bell");
     await page.evaluate(() => window.Deckhand.settle.reset());      // the jump also rang HOWL's bell
     await expect(page.locator(".w-ccard .ccTile")).toHaveCount(2);    // HOWL's roster now
@@ -1500,7 +1507,7 @@ test.describe("v7.32", () => {
     await dh.reopen("#t=2026-09-29T10:30");
     await dh.launch();
     logd = await page.evaluate(() => window.Deckhand.config.cards.log);
-    ok(logd.length === 1 && logd[0].names.length === 3, "lost on reload: " + JSON.stringify(logd));
+    ok(logd.length === 1 && logd[0].names.length === 4, "lost on reload: " + JSON.stringify(logd));
     // Clear today needs a second tap
     await page.click(".w-ccard .ccLogBtn");
     await page.click(".w-ccard .ccClear");
