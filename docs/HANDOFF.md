@@ -229,7 +229,10 @@ before building this tool's part.
 **Deckhand's part (plan phase 4; not started).** Deckhand runs the room and kicks off into the lesson.
 It gets: a room-code field, a Drive-folder pick and an Apps Script link under Settings; a **Geopardy
 card** beside the Cadence card (the review game, renamed from Boards Up on 3 Oct, `croix18/Geopardy`);
-the settle-in hands off to the unit console (`A7 <u>  Unit Slides.html` in the same Drive folder) with
+the settle-in hands off to the unit console (in the same Drive folder, `Windy Hill/Apps` on Croix's
+Drive; since the renaming of 4 Oct its file is `<COURSE> Unit <N> <Unit Title> - All Slides.html`, e.g.
+`A7 Unit 3 Exponents and Scientific Notation - All Slides.html` — find it by the course and unit number,
+not by a typed title) with
 `#period=N`; it writes `panel.bell` and publishes the console's `panel` part (bookmarks, tallies) on the
 deck's behalf, since it holds the Drive file handle and the script key. Its own rule — a full suite,
 a screenshot review and an adversarial review per release — stays. The bell block baked in this file
