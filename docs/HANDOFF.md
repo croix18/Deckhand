@@ -234,3 +234,25 @@ the settle-in hands off to the unit console (`A7 <u>  Unit Slides.html` in the s
 deck's behalf, since it holds the Drive file handle and the script key. Its own rule — a full suite,
 a screenshot review and an adversarial review per release — stays. The bell block baked in this file
 is what Windmill's spine reads (`spine.py bell_from_deckhand`): keep its JSON shape.
+
+**The plan moves now (4 Oct 2026) — what that changes in this tool's part.** Croix: *"I need the plan
+to be fluid and adjust on the fly."* The year's plan is no longer a table of dates: it is a sequence
+of lessons laid onto the school days that are left, by one engine (Windmill `kit/lib/flow.py` for the
+calendar tools, `kit/lib/flow.js` for a browser; the spine carries each course's sequence as `flow`).
+A lost day is one line in a course's as-run log and everything after it moves; his rule is push
+everything back, flex and spiral days absorbing first, then tests to the next allowed day. On the
+panel the unit console records what each period actually did (`panel.asRun` in the room) and offers
+the period's next lesson; on his phone a plan page (a claude.ai artifact, link in Windmill's
+`HANDOFF.md`) shows the laid year and takes a logged day. Windmill's `HANDOFF.md`, "The plan follows
+the class", is the whole of it; the *Room Coordination Plan* doc has a dated amendment.
+
+This tool does not read the plan yet, so nothing here changed. When its part is built:
+- the hand-off to the unit console needs only `#period=N` — the console knows that period's next
+  lesson, so Deckhand never names a lesson;
+- **when Deckhand publishes the `panel` part on the deck's behalf it carries `asRun` through
+  unchanged** (and `periods`, `tallies`, `pacing`): dropping it loses where every period is;
+- a day's plan entry may be of kind `extra` (a review or catch-up day) or `off` (no class): both
+  mean "no lesson today", and a reader that switches on `kind` must not fall through on them;
+- the bell block's JSON shape is unchanged. `spine.py` now keeps the bell already published when
+  this repository is not beside Windmill, so **a change to the bell here reaches the spine only
+  when the spine is regenerated with this checkout present** — say so in the release note.
