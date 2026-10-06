@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.38.0",
+  "appVersion": "7.39.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -622,6 +622,17 @@
     box-shadow:4px 6px 0 var(--shadow); display:flex; align-items:center; gap:14px; white-space:nowrap;
   }
   #undoToast[hidden]{display:none;}
+  /* v7.39: the class-lists notice — the Undo toast's look, two answers, and it waits */
+  #rosterNote{
+    position:fixed; bottom:96px; left:50%; transform:translateX(-50%); z-index:16; max-width:94vw;
+    background:var(--navy); color:var(--white); border-radius:999px;
+    padding:8px 8px 8px 22px; font-weight:700; font-size:clamp(14px, 1.2vw, 19px);
+    box-shadow:4px 6px 0 var(--shadow); display:flex; align-items:center; gap:10px; white-space:nowrap;
+  }
+  #rosterNote span{overflow:hidden; text-overflow:ellipsis; margin-right:4px;}
+  #rosterNote button{font:inherit; font-weight:900; background:var(--turq); color:var(--navy); border:none; border-radius:999px; padding:8px 18px; min-height:44px; cursor:pointer;}
+  #rosterNote button.quiet{background:transparent; color:var(--white); box-shadow:inset 0 0 0 2px rgba(255,255,255,.45);}
+  #rosterNote button:focus-visible{outline:3px solid var(--white); outline-offset:2px;}
   #undoToast button{font:inherit; font-weight:900; background:var(--turq); color:var(--navy); border:none; border-radius:999px; padding:8px 18px; min-height:44px; cursor:pointer;}
   .btn.ghost{background:var(--white); color:var(--navy); border:3px solid var(--navy);}
   body.waveMotion #greetToast{animation:toastIn .4s cubic-bezier(.2,.9,.3,1.2);}
@@ -4294,11 +4305,11 @@
             <div class="fHint">One box per period &mdash; first names separated by commas or new lines. The name picker and group maker follow the bell schedule; leave a box empty to skip that period. To move a student, cut the name from one box and paste it into another.</div>
             <div class="fGroup">
               <div class="row rowLeft" id="rosterImportRow">
-                <button class="btn btnSm" id="rosterImportBtn" type="button">Import from Seating Chart</button>
+                <button class="btn btnSm" id="rosterImportBtn" type="button">Import class lists from this browser</button>
                 <button class="btn btnSm" id="rosterImportFileBtn" type="button">Import a Seating Chart backup&hellip;</button>
                 <input type="file" id="rosterImportFile" accept=".json,application/json" hidden>
               </div>
-              <div class="fHint">Pulls first names from the Seating Chart tool by period number into the boxes below. Apply to keep them.</div>
+              <div class="fHint">Pulls first names by period number into the boxes below, from the Seating Chart&rsquo;s data or from the roster Cadence keeps &mdash; whichever this browser has. Apply to keep them. A board that has never had rosters looks by itself when it opens and says what it found.</div>
             </div>
             <div id="rosterGrid" class="fGrid c2"></div>
             <div class="fHint"><b>Privacy:</b> an exported copy carries student names inside it &mdash; keep exports in your own Drive and never upload one to the public website (GitHub).</div>
@@ -4574,7 +4585,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.38.0",
+  appVersion: "7.39.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -16234,6 +16245,7 @@ var Settings = (function(){
     var oldGroups = cfg.bell.groups;
     cfg.bell.groups = newGroups;
     cfg.rosters = gatherRosters();
+    if (cfg.rosters.length) autoMark("had");       // v7.39: these are hers now — an emptied box is never refilled by itself
     /* re-key the roster grid immediately: if this Apply renamed a period,
        the old-name roster shows as an orphaned (still editable) box
        instead of silently feeding the picker stale labels */
@@ -16379,38 +16391,116 @@ var Settings = (function(){
      store directly; anywhere else, the backup file works. Names land in
      the roster boxes by period NUMBER ("Period 3" -> "3rd"); Apply
      commits, so a bad import is one Close away from harmless. */
-  function seatingToRosters(S){
+  /* v7.39 (Croix: "The class lists were in the browser because cadence was able to pull them
+     up. Deckhand was not."). Cadence keeps ITS OWN copy of the roster ("bwg27roster", written
+     when a Seating Chart backup is loaded into it) and shows it by itself; Deckhand read only
+     the Seating Chart's store, and only from a button in Settings. On a machine where the
+     Seating Chart itself was never opened, Cadence's copy is the only one in the browser.
+     Now both stores are read, and a board that has never held a roster looks at boot:
+       - the Seating Chart's own data, cleanly matched  -> loaded, with a notice and Undo;
+       - Cadence's copy, or anything that needs a look  -> a notice with Review (the boxes fill,
+         Apply keeps them). Cadence's copy has roster first names only — a "goes by" name lives
+         in the Seating Chart — so it never goes onto a projected board without her eyes.
+     An adversarial review shaped the rest: nicknames are never re-cased, a period's number is
+     read carefully (two periods that read as one number are named, not merged), the once-only
+     mark is made only after the save worked, and nothing but those two stores is ever read. */
+  function tidyName(n){
+    n = String(n || "").replace(/\s+/g, " ").trim();
+    var letters = n.replace(/[^\p{L}]/gu, "");
+    if (letters.length >= 2 && n === n.toUpperCase() && n !== n.toLowerCase()){       // a Focus export SHOUTS: "JACOB" -> "Jacob"
+      /* two capitals that are initials stay initials: no vowel at all (TJ, JR, KC), or a J second (AJ, EJ) */
+      if (letters.length === 2 && (!/[AEIOUY]/.test(letters) || letters.charAt(1) === "J")) return n.slice(0, 40);
+      n = n.toLowerCase().replace(/(^|[\s\-'’.])(\p{L})/gu, function(m, p, c){ return p + c.toUpperCase(); });
+    }
+    return n.slice(0, 40);
+  }
+  /* the period a name means: a number, 0 (none), or -1 (more than one reading). "Period 4" and
+     "P4" first, then an ordinal ("4th"), then a bare number only when it is the only one —
+     "Sem 2 - Period 4" is 4, "2nd/3rd block" and a section code are nobody's. */
+  function periodNumberOf(name){
+    var str = String(name || ""), m, set = [];
+    function add(v){ v = +v; if (v >= 1 && v <= 20 && set.indexOf(v) === -1) set.push(v); }
+    var re = /\b(?:period|per|pd|p)\.?\s*#?\s*(\d{1,2})\b/gi;
+    while ((m = re.exec(str))) add(m[1]);
+    if (set.length) return set.length === 1 ? set[0] : -1;
+    re = /\b(\d{1,2})(?:st|nd|rd|th)\b/gi;
+    while ((m = re.exec(str))) add(m[1]);
+    if (set.length) return set.length === 1 ? set[0] : -1;
+    var nums = str.match(/\d+/g) || [];
+    if (nums.length === 1 && nums[0].length <= 2 && +nums[0] >= 1) return +nums[0];
+    return nums.length ? -1 : 0;
+  }
+  function seatingToRosters(S, labels){
     if (!isObj(S) || !Array.isArray(S.periods) || !Array.isArray(S.students)) return null;
-    var byId = Object.create(null);
-    S.periods.forEach(function(p){
-      if (!isObj(p) || typeof p.id !== "string") return;
-      var m = String(p.name || "").match(/(\d{1,2})/);
-      if (m) byId[p.id] = +m[1];
-    });
-    var labels = rosterLabels();
-    var labelFor = Object.create(null);
+    labels = labels || rosterLabels();
+    var labelFor = Object.create(null), anyLabel = false;
     labels.forEach(function(l){
-      var m = l.match(/^(\d{1,2})/);
-      if (m && !hasOwn(labelFor, +m[1])) labelFor[+m[1]] = l;
+      var n = periodNumberOf(l);
+      if (n > 0 && !hasOwn(labelFor, n)){ labelFor[n] = l; anyLabel = true; }
     });
-    var out = Object.create(null), n = 0;
+    /* each source period's number; two periods with one number are a clash (a new section code
+       beside last semester's), never one merged class */
+    var numOf = Object.create(null), nameOf = Object.create(null), byNum = Object.create(null), found = [], clash = [];
+    S.periods.forEach(function(p){
+      if (!isObj(p) || p.id === undefined || p.id === null) return;
+      var nm = String(p.name || "").slice(0, 40), n = periodNumberOf(nm), k = "k" + p.id;
+      found.push(nm); nameOf[k] = nm;
+      if (n === -1){ clash.push(nm); return; }
+      if (n > 0){ numOf[k] = n; (byNum[n] = byNum[n] || []).push(k); }
+    });
+    Object.keys(byNum).forEach(function(n){
+      if (byNum[n].length < 2) return;
+      byNum[n].forEach(function(k){ clash.push(nameOf[k]); delete numOf[k]; });
+    });
+    var out = Object.create(null), seen = 0;
     S.students.forEach(function(st){
       if (!isObj(st) || st.active === false) return;
-      var num = byId[st.periodId]; if (num === undefined) return;
+      seen++;
+      var pid = st.periodId !== undefined ? st.periodId : st.pid;   // the Seating Chart's field, or Cadence's
+      var num = numOf["k" + pid]; if (num === undefined) return;
       var label = labelFor[num]; if (!label) return;
-      var name = String(st.nick || st.first || "").trim();
+      /* what she typed in "Goes by" is used exactly as typed; only the export's own capitals are tidied.
+         First names only — no last name, no other field, ever reaches the board */
+      var nick = String(st.nick || "").replace(/\s+/g, " ").trim().slice(0, 40);
+      var name = nick || tidyName(st.first);
       if (!name) return;
-      (out[label] = out[label] || []).push(name.slice(0, 40));
-      n++;
+      (out[label] = out[label] || []).push(name);
     });
-    return { rosters: out, count: n };
+    var count = 0, k = 0;
+    Object.keys(out).forEach(function(l){ out[l] = out[l].slice(0, 80); count += out[l].length; k++; });   // count what is kept
+    return { rosters: out, count: count, periodsFilled: k, seen: seen, periods: found, clash: clash, noLabels: !anyLabel, labels: labels };
   }
-  function applySeatingImport(S, from){
+  /* the class lists this browser holds: the Seating Chart's own, then the copy Cadence keeps.
+     Those two and no others — a key that merely looks like a roster is somebody else's data. */
+  function classListsHere(){
+    var hits = [];
+    [["seatingchart.v1", "the Seating Chart"], ["bwg27roster", "Cadence’s roster"]].forEach(function(src){
+      var raw = null;
+      try { raw = localStorage.getItem(src[0]); } catch(e){}
+      if (!raw) return;
+      try {
+        var S = JSON.parse(raw);
+        if (isObj(S) && Array.isArray(S.periods) && Array.isArray(S.students) && S.students.length) hits.push({ S: S, from: src[1], key: src[0] });
+      } catch(e){}
+    });
+    return hits;
+  }
+  function quoteList(a){ return a.filter(Boolean).slice(0, 8).map(function(n){ return "“" + n + "”"; }).join(", "); }
+  function nStudents(n){ return n + " student" + (n === 1 ? "" : "s"); }
+  function whyNoMatch(r, from){
+    if (r && r.noLabels)
+      return "Found " + nStudents(r.seen) + (from ? " in " + from : "") + ", but the bell schedule here has no numbered periods to put them in (its blocks: " +
+        (quoteList(r.labels) || "none") + "). Name the class blocks 1st, 2nd… in Settings → Schedules, or type the names here.";
+    return "Found " + nStudents(r ? r.seen : 0) + (from ? " in " + from : "") + ", but none of its periods (" + (quoteList(r && r.periods || []) || "no names") +
+      ") reads as one period on the bell schedule. Name them “Period 3” there, or type the names here.";
+  }
+  function applySeatingImport(S, from, cadence){
     var r = seatingToRosters(S);
     if (!r || !r.count){
-      setMsg("No students found" + (from ? " in " + from : "") +
-        " — periods must be named with a number (\"Period 3\") to match the bell schedule.", false);
-      return;
+      setMsg(r && r.seen ? whyNoMatch(r, from)
+        : "No students found" + (from ? " in " + from : "") +
+          " — periods must be named with a number (\"Period 3\") to match the bell schedule.", false);
+      return false;
     }
     var filled = 0;
     $("rosterGrid").querySelectorAll("textarea").forEach(function(ta){
@@ -16418,23 +16508,102 @@ var Settings = (function(){
       if (names){
         /* same first name twice in one class: keep both, the teacher
            can add an initial by hand */
-        ta.value = names.slice(0, 80).join(", ");
+        ta.value = names.join(", ");
         filled++;
       }
     });
-    setMsg("Loaded " + r.count + " students into " + filled + " period" + (filled === 1 ? "" : "s") +
-      " from the Seating Chart. Check the boxes, then Apply.", true);
+    setMsg("Loaded " + nStudents(r.count) + " into " + filled + " period" + (filled === 1 ? "" : "s") +
+      " from " + (from || "the Seating Chart") + "." +
+      (r.clash.length ? " Not loaded: " + quoteList(r.clash) + " — two periods there read as the same period, or one name has two numbers; fix the names there or type those classes here." : "") +
+      (cadence ? " These are the first names on the roster; a “goes by” name lives in the Seating Chart." : "") +
+      " Check the boxes, then Apply.", true);
+    return true;
   }
   function importSeatingLocal(){
-    var raw = null;
-    try { raw = localStorage.getItem("seatingchart.v1"); } catch(e){}
-    if (!raw){
-      setMsg("No Seating Chart data on this device. Open the Seating Chart here first (same machine, " +
-        "same way — both as files or both on the web), or pick its backup file.", false);
+    var hits = classListsHere();
+    if (!hits.length){
+      setMsg("No class lists in this browser. Deckhand looks for the Seating Chart’s data and for the roster Cadence keeps; " +
+        "they are only visible when that tool was opened the same way as Deckhand (all as files, or all at the same web address). " +
+        "Or pick the Seating Chart’s backup file.", false);
       return;
     }
-    try { applySeatingImport(JSON.parse(raw), "this device\u2019s Seating Chart"); }
-    catch(e){ setMsg("Couldn\u2019t read the Seating Chart data on this device.", false); }
+    for (var i = 0; i < hits.length; i++){
+      var r = seatingToRosters(hits[i].S);
+      if (r && r.count){ applySeatingImport(hits[i].S, hits[i].from, hits[i].key === "bwg27roster"); return; }
+    }
+    applySeatingImport(hits[0].S, hits[0].from, hits[0].key === "bwg27roster");   // says why nothing matched
+  }
+  /* A board that has never held a roster looks once for the class lists this browser already
+     holds. `deckhand.rosters.auto` is the "once": set when the board is seen holding rosters,
+     when a load was SAVED, or when she answers the notice — so boxes she empties stay empty. */
+  var AUTO_KEY = "deckhand.rosters.auto";
+  function autoMark(v){ try { localStorage.setItem(AUTO_KEY, v); } catch(e){} }
+  function autoRosters(){
+    var mark = null;
+    try { mark = localStorage.getItem(AUTO_KEY); } catch(e){ return null; }
+    if (cfg.rosters && cfg.rosters.length){ if (!mark) autoMark("had"); return null; }
+    if (mark) return null;
+    /* only on a board that saves: a defaults board, or one standing aside for a newer or an
+       unreadable device copy, would load the names and lose them at the next reload */
+    try { if (cfgSource === "defaults" || storedNewer || storedUnreadable) return null; } catch(e){}
+    var hits = classListsHere();
+    for (var i = 0; i < hits.length; i++){
+      var r = seatingToRosters(hits[i].S);
+      if (!r || !r.count) continue;
+      if (hits[i].key === "seatingchart.v1" && !r.clash.length){
+        var list = [];
+        rosterLabels().forEach(function(label){
+          if (r.rosters[label] && r.rosters[label].length) list.push({ period: label, names: r.rosters[label] });
+        });
+        list = list.slice(0, 12);
+        if (!list.length) continue;
+        cfg.rosters = list;
+        try { Canvas.applyTimerSettings(); } catch(e){}             // any card already up re-reads its class
+        return { kind: "loaded", from: hits[i].from, n: list.reduce(function(a, x){ return a + x.names.length; }, 0), k: list.length };
+      }
+      return { kind: "found", from: hits[i].from, n: r.count, k: r.periodsFilled, hit: hits[i] };
+    }
+    return null;
+  }
+  /* the notice: on the board, when the tab is in front, until she answers (or a minute passes —
+     an unanswered "found" asks again next time; a "loaded" is already hers and has its Undo) */
+  function rostersNotice(a){
+    if (!a) return;
+    var el = document.createElement("div");
+    el.id = "rosterNote"; el.setAttribute("role", "status");
+    var tx = document.createElement("span");
+    var per = a.k + " period" + (a.k === 1 ? "" : "s");
+    tx.textContent = a.kind === "loaded"
+      ? "Class lists loaded from " + a.from + " — " + nStudents(a.n) + ", " + per
+      : "Class lists found in " + a.from + " — " + nStudents(a.n) + ", " + per;
+    el.appendChild(tx);
+    var tid = null;
+    function gone(){ clearTimeout(tid); el.remove(); }
+    function btn(label, cls, fn){
+      var b = document.createElement("button"); b.type = "button"; b.textContent = label; if (cls) b.className = cls;
+      wireButton(b, fn); el.appendChild(b);
+    }
+    if (a.kind === "loaded"){
+      btn("Undo", "", function(){ cfg.rosters = []; try { Canvas.applyTimerSettings(); } catch(e){} gone(); });
+      btn("OK", "quiet", gone);
+    } else {
+      btn("Review", "", function(){
+        open();
+        if (!isOpen()) return;                                      // locked: the lock nods, the notice waits
+        showTab("rosters");
+        applySeatingImport(a.hit.S, a.hit.from, a.hit.key === "bwg27roster");
+        autoMark("seen"); gone();
+      });
+      btn("Not now", "quiet", function(){ autoMark("seen"); gone(); });
+    }
+    function show(){
+      document.removeEventListener("visibilitychange", onVis);
+      document.body.appendChild(el);
+      tid = setTimeout(gone, 60000);
+    }
+    function onVis(){ if (document.visibilityState === "visible") show(); }
+    if (document.visibilityState === "visible") setTimeout(show, 1200);
+    else document.addEventListener("visibilitychange", onVis);
   }
   function importSeatingFile(file){
     if (!file) return;
@@ -16531,7 +16700,10 @@ var Settings = (function(){
       });
     },
     isOpen: isOpen, open: open, close: close, trapTab: trapTab,
-    showTab: showTab, currentTab: currentTab, textMode: textMode
+    showTab: showTab, currentTab: currentTab, textMode: textMode,
+    autoRosters: autoRosters, classListsHere: classListsHere,      // v7.39
+    rostersNotice: rostersNotice, rostersSaved: function(){ autoMark("auto"); },
+    periodNumberOf: periodNumberOf, tidyName: tidyName, seatingToRosters: seatingToRosters
   };
 })();
 
@@ -16669,6 +16841,7 @@ var SaveState = (function(){
       } catch(e){}
     },
     flush: flush,
+    touch: function(){ baseline = ""; return flush(); },          // v7.39: the board changed before the baseline was taken
     markSaved: function(){ baseline = snap(); paint(); },
     isDirty: isDirty,
     failed: function(){ return failed; },
@@ -17250,10 +17423,22 @@ var Keys = (function(){
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
    clock or timer down with it. */
+/* v7.39: a board with no rosters takes the class lists this browser already holds — before the
+   cards are built, so the picker and the comment cards open knowing their class */
+var rostersAuto = null;
+try { rostersAuto = Settings.autoRosters(); } catch(e){ try { console.error("Deckhand: class lists not read", e); } catch(_){} }
 [Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
+
+/* v7.39: the autosave took its baseline with the loaded rosters already in the board, so it
+   would never write them — tell it the board changed. The once-only mark is made only when that
+   write worked (a full store loads them again next time rather than losing them for good). */
+try {
+  if (rostersAuto && rostersAuto.kind === "loaded" && SaveState.touch()) Settings.rostersSaved();
+  Settings.rostersNotice(rostersAuto);
+} catch(e){}
 
 /* the ⋮ badge shows the real release, not a frozen "v6" */
 try { document.getElementById("brandVer").textContent = "v" + String(cfg.appVersion).split(".")[0]; } catch(e){}
@@ -17302,7 +17487,9 @@ window.Deckhand = {
   now: function(){ return now(); },             // v7.31 test hook: the board's clock
   qr: qrMatrix,                                 // test hook: decode-verified in CI
   settings: {                                   // v7.2: the settings tab rail
-    showTab: Settings.showTab, currentTab: Settings.currentTab, textMode: Settings.textMode
+    showTab: Settings.showTab, currentTab: Settings.currentTab, textMode: Settings.textMode,
+    autoRosters: Settings.autoRosters, classListsHere: Settings.classListsHere,       // v7.39 (tests)
+    periodNumberOf: Settings.periodNumberOf, tidyName: Settings.tidyName, seatingToRosters: Settings.seatingToRosters
   }
 };
 })();

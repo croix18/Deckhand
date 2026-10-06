@@ -2,6 +2,25 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.39.0 — 2026-10-06
+
+**Class lists found on their own.** Croix: "The class lists were in the browser because cadence
+was able to pull them up. Deckhand was not." Cadence keeps its own copy of the roster and shows it
+by itself; Deckhand only read the Seating Chart's store, and only from a button.
+
+- Deckhand now reads both: the Seating Chart's data, then the roster Cadence keeps.
+- A board that has never had rosters looks when it opens. The Seating Chart's own lists load, with
+  a notice and Undo. Cadence's copy (roster first names, no "goes by" names) is offered for Review
+  instead: the boxes fill and Apply keeps them.
+- Boxes she empties stay empty; a board that already has rosters is never touched.
+- A period's number is read more carefully ("Sem 2 - Period 4" is 4th), and two periods that read
+  as the same number are named in the message, not merged into one class.
+- A typed nickname is used exactly as typed; names that arrive in capitals are tidied.
+- The button is "Import class lists from this browser".
+
+The tools still have to be opened the same way (all as files, or all at one web address) to see
+each other's data. The bell block is unchanged.
+
 ## 7.38.0 — 2026-10-03
 
 **The reminder's timing is a setting.** Croix: "Yeah make it a setting." Settings → Bells →

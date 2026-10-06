@@ -250,7 +250,7 @@ test.describe("rosters from the Seating Chart", () => {
     await page.click("#setBtn");
     await dh.tab("rosters");
     await page.click("#rosterImportBtn");
-    await expect(page.locator("#setErrors")).toContainText("No Seating Chart data on this device");
+    await expect(page.locator("#setErrors")).toContainText("No class lists in this browser");
 
     const good = path.join(dh.fixtureDir, "seating-chart-backup-2026-09-21.json");
     fs.writeFileSync(good, JSON.stringify(SEATING));

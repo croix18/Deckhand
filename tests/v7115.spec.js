@@ -1447,7 +1447,7 @@ test.describe("v7.32", () => {
     await expect(tile("Ben")).toHaveClass(/isCard/);
     await tile("Dee").click(); await tile("Dee").click(); await tile("Dee").click();   // v7.36: a third tap is a SECOND card
     await expect(tile("Dee").locator(".ccTileTag")).toHaveText("Comment cards ×2");
-    const hold = async n => { const b = await tile(n).boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.waitForTimeout(700); await page.mouse.up(); };
+    const hold = async n => { await tile(n).waitFor({ state: "visible" }); const b = await tile(n).boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.waitForTimeout(700); await page.mouse.up(); };
     await hold("Dee");                                                // a hold takes one back
     await expect(tile("Dee").locator(".ccTileTag")).toHaveText("Comment card");
     await hold("Dee"); await hold("Dee");                             // …to a warning, then off
@@ -1705,5 +1705,169 @@ test.describe("v7.38", () => {
     await page.waitForTimeout(1500);
     const logd = await page.evaluate(() => window.Deckhand.config.cards.log.map(e => e.p + ":" + e.names.join()));
     ok(logd.join("|") === "5th:Ben|HOWL Time:Cal", "log: " + JSON.stringify(logd));
+  });
+});
+
+/* v7.39 — Croix: "The class lists were in the browser because cadence was able to pull them up.
+ * Deckhand was not." Cadence keeps its own copy of the roster and shows it by itself; Deckhand only
+ * read the Seating Chart's store, and only from a button. Now it reads both and looks at boot.
+ * The second half of these tests is the adversarial review's list. Synthetic names only. */
+test.describe("v7.39", () => {
+  const T = "#t=2026-09-21T10:30";                 // a Monday, 2nd period
+  /* what Cadence keeps: its field names (pid, no nick), names as it title-cased them */
+  const CADENCE = {
+    source: "file", savedAt: null, pinned: true,
+    periods: [{ id: "p2", name: "Period 2", course: "1205040-7T2", room: "" }, { id: "p5", name: "Period 5", course: "", room: "" }],
+    students: [
+      { id: "a", pid: "p2", first: "Ava", last: "Alder", active: true, seat: null },
+      { id: "b", pid: "p2", first: "Mary-Kate", last: "Bloom", active: true, seat: null },
+      { id: "c", pid: "p5", first: "Cai", last: "Cole", active: true, seat: null },
+      { id: "d", pid: "p5", first: "Gone", last: "Grad", active: false, seat: null }
+    ]
+  };
+  /* what the Seating Chart keeps: a Focus export's capitals, numeric ids here to prove they are read, a typed "goes by" */
+  const SC = {
+    v: 1, layout: {}, charts: {},
+    periods: [{ id: 1, sectionId: "s1", name: "Period 1" }, { id: 4, sectionId: "s4", name: "Period 4" }],
+    students: [
+      { id: "x", periodId: 1, raw: "ONEIL, DEWAYNE", first: "DEWAYNE", last: "ONEILXX", nick: "", active: true },
+      { id: "y", periodId: 1, raw: "NGXX, THOMAS", first: "THOMAS", last: "NGXX", nick: "TJ", active: true },
+      { id: "z", periodId: 4, raw: "ROYXX, ÉLISE", first: "ÉLISE", last: "ROYXX", nick: "", active: true }
+    ]
+  };
+  const seed = (page, items) => page.evaluate(items => { for (const k in items) localStorage.setItem(k, JSON.stringify(items[k])); }, items);
+  const mark = page => page.evaluate(() => localStorage.getItem("deckhand.rosters.auto"));
+  const rosters = page => page.evaluate(() => window.Deckhand.config.rosters);
+
+  test("v7.39: the Seating Chart's lists load by themselves on a board with no rosters — once, saved, with Undo; a typed nickname is kept as typed, capitals are tidied, last names never land; the cards open knowing their class", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await seed(page, { "seatingchart.v1": SC, bwg27roster: CADENCE });
+    await dh.launch();
+    await dh.addW("addPickerBtn");
+    await dh.flush();
+    await dh.reopen("#t=2026-09-21T09:30");        // 1st period
+    await dh.launch();
+    const r = await rosters(page);
+    ok(JSON.stringify(r) === JSON.stringify([{ period: "1st", names: ["Dewayne", "TJ"] }, { period: "4th", names: ["Élise"] }]), "rosters (the Seating Chart wins over Cadence's copy): " + JSON.stringify(r));
+    ok(!/XX|ONEIL/i.test(JSON.stringify(await page.evaluate(() => window.Deckhand.config))), "a last name reached the board");
+    await expect(page.locator("#rosterNote")).toBeVisible({ timeout: 4000 });
+    await expect(page.locator("#rosterNote span")).toHaveText("Class lists loaded from the Seating Chart — 3 students, 2 periods");
+    ok(!/No roster/i.test(await page.locator(".w-picker").textContent()), "the picker opened without its class");
+    ok((await mark(page)) === "auto", "the once-only mark: " + await mark(page));
+    ok((await dh.stored()).cfg.rosters.length === 2, "the loaded lists were not saved");
+    // the notice waits for an answer (the old five-second toast was gone before anyone read it)
+    await page.waitForTimeout(6000);
+    await expect(page.locator("#rosterNote")).toBeVisible();
+    // Undo empties them, and they do not come back on their own
+    await page.locator("#rosterNote button", { hasText: "Undo" }).click();
+    await expect(page.locator("#rosterNote")).toHaveCount(0);
+    ok((await rosters(page)).length === 0, "Undo left the rosters");
+    await dh.flush();
+    await dh.reopen(T);
+    await dh.launch();
+    await page.waitForTimeout(1800);
+    ok((await rosters(page)).length === 0 && (await page.locator("#rosterNote").count()) === 0, "the lists came back after an Undo");
+  });
+
+  test("v7.39: with only Cadence's copy in the browser the board says what it found and waits — Review fills the boxes for Apply (roster first names, so nothing is projected unseen); Not now is remembered; the button reads it too", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await seed(page, { bwg27roster: CADENCE });
+    await dh.reopen(T);
+    await dh.launch();
+    ok((await rosters(page)).length === 0, "Cadence's copy must not be committed unseen");
+    await expect(page.locator("#rosterNote span")).toHaveText("Class lists found in Cadence’s roster — 3 students, 2 periods", { timeout: 4000 });
+    ok((await mark(page)) === null, "no mark before she answers");
+    await page.locator("#rosterNote button", { hasText: "Review" }).click();
+    await expect(page.locator("#secRosters")).toBeVisible();
+    await expect(page.locator("#setErrors")).toContainText("Loaded 3 students into 2 periods from Cadence’s roster.");
+    await expect(page.locator("#setErrors")).toContainText("“goes by” name lives in the Seating Chart");
+    ok((await page.inputValue('#rosterGrid textarea[data-period="2nd"]')) === "Ava, Mary-Kate", "2nd box");
+    ok((await rosters(page)).length === 0, "Review committed before Apply");
+    await page.click("#applyBtn");
+    await expect(page.locator("#setErrors")).toHaveText("Applied.");
+    await page.click("#closeBtn");
+    ok(JSON.stringify(await rosters(page)) === JSON.stringify([{ period: "2nd", names: ["Ava", "Mary-Kate"] }, { period: "5th", names: ["Cai"] }]), "after Apply");
+    ok((await mark(page)) === "had", "mark after Apply: " + await mark(page));
+    // she empties every box: they stay empty, and nothing asks again
+    await page.click("#setBtn"); await dh.tab("rosters");
+    for (const ta of await page.locator("#rosterGrid textarea").all()) await ta.fill("");
+    await page.click("#applyBtn"); await page.click("#closeBtn");
+    await dh.flush();
+    await dh.reopen(T);
+    await dh.launch();
+    await page.waitForTimeout(1800);
+    ok((await rosters(page)).length === 0 && (await page.locator("#rosterNote").count()) === 0, "emptied boxes were refilled or asked about again");
+    // the button still reads Cadence's copy when she asks
+    await page.click("#setBtn"); await dh.tab("rosters");
+    await expect(page.locator("#rosterImportBtn")).toHaveText("Import class lists from this browser");
+    await page.click("#rosterImportBtn");
+    await expect(page.locator("#setErrors")).toContainText("from Cadence’s roster");
+    await page.click("#closeBtn");
+    // a fresh board: Not now is an answer too
+    await page.evaluate(() => { localStorage.removeItem("deckhand.rosters.auto"); });
+    await dh.reopen(T);
+    await dh.launch();
+    await page.locator("#rosterNote button", { hasText: "Not now" }).click({ timeout: 4000 });
+    ok((await mark(page)) === "seen", "Not now should be remembered");
+    await dh.reopen(T);
+    await dh.launch();
+    await page.waitForTimeout(1800);
+    ok((await page.locator("#rosterNote").count()) === 0, "asked again after Not now");
+  });
+
+  test("v7.39: a board that already has rosters is never touched; two periods that read as one number are named, not merged; renamed periods land where they say; nothing but the two known stores is read; a save that fails leaves no mark", async ({ page, dh }) => {
+    // her own rosters stay hers
+    await dh.openAt(T);
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "3rd", names: ["Kept"] }]; });
+    await seed(page, { "seatingchart.v1": SC });
+    await dh.flush();
+    await dh.reopen(T);
+    ok(JSON.stringify(await rosters(page)) === JSON.stringify([{ period: "3rd", names: ["Kept"] }]) && (await mark(page)) === "had", "existing rosters: " + JSON.stringify(await rosters(page)) + " / " + await mark(page));
+    // a clash is never auto-loaded: last semester's "Period 3" beside this one's
+    const CLASH = { periods: [{ id: "a", name: "Period 3" }, { id: "b", name: "Period 3" }, { id: "c", name: "Sem 2 - Period 4" }, { id: "d", name: "Grade 7 P6" }, { id: "e", name: "1205040-7T2" }, { id: "f", name: "2nd/3rd block" }],
+      students: [{ id: 1, periodId: "a", first: "OLDSEM", active: true }, { id: 2, periodId: "b", first: "NEWSEM", active: true }, { id: 3, periodId: "c", first: "FOUR", active: true },
+                 { id: 4, periodId: "d", first: "SIX", active: true }, { id: 5, periodId: "e", first: "CODE", active: true }, { id: 6, periodId: "f", first: "BLOCK", active: true }] };
+    await page.evaluate(() => { window.Deckhand.config.rosters = []; localStorage.removeItem("deckhand.rosters.auto"); });
+    await seed(page, { "seatingchart.v1": CLASH });
+    await dh.flush();
+    await dh.reopen(T);
+    await dh.launch();
+    ok((await rosters(page)).length === 0, "a source with a clash was loaded unseen: " + JSON.stringify(await rosters(page)));
+    await page.locator("#rosterNote button", { hasText: "Review" }).click({ timeout: 4000 });
+    await expect(page.locator("#setErrors")).toContainText("Loaded 2 students into 2 periods from the Seating Chart.");
+    await expect(page.locator("#setErrors")).toContainText("Not loaded: “1205040-7T2”, “2nd/3rd block”, “Period 3”, “Period 3”");
+    ok((await page.inputValue('#rosterGrid textarea[data-period="4th"]')) === "Four" && (await page.inputValue('#rosterGrid textarea[data-period="6th"]')) === "Six", "renamed periods");
+    ok((await page.inputValue('#rosterGrid textarea[data-period="3rd"]')) === "" && (await page.inputValue('#rosterGrid textarea[data-period="2nd"]')) === "", "a clashing or two-number period was filled");
+    await page.click("#closeBtn");
+    // the reader itself: bell labels need not start with a digit; one student is "1 student"
+    const viaLabels = await page.evaluate(() => { const r = window.Deckhand.settings.seatingToRosters({ periods: [{ id: "a", name: "Period 2" }], students: [{ id: 1, periodId: "a", first: "ANA", last: "ZZTOP", active: true }] }, ["Period 1", "Period 2"]); return JSON.stringify(r.rosters) + "|" + r.count; });
+    ok(viaLabels === '{"Period 2":["Ana"]}|1', "labels named Period N: " + viaLabels);
+    ok((await page.evaluate(() => ["TJ", "AJ", "JO", "KC", "D'ÁNGELO", "MARY-KATE", "McDonald"].map(window.Deckhand.settings.tidyName).join())) === "TJ,AJ,Jo,KC,D'Ángelo,Mary-Kate,McDonald", "tidyName");
+    // a key that merely looks like a roster is somebody else's data
+    await page.evaluate(() => { localStorage.removeItem("seatingchart.v1"); localStorage.removeItem("deckhand.rosters.auto");
+      localStorage.setItem("gradebook.rosterCache", JSON.stringify({ periods: [{ id: "a", name: "Period 2" }], students: [{ id: 1, periodId: "a", first: "Smith, John Q", active: true }] })); });
+    await dh.reopen(T);
+    await dh.launch();
+    await page.waitForTimeout(1800);
+    ok((await rosters(page)).length === 0 && (await page.locator("#rosterNote").count()) === 0 && (await page.evaluate(() => window.Deckhand.settings.classListsHere().length)) === 0, "an unrelated store was read");
+    await page.click("#setBtn"); await dh.tab("rosters");
+    await page.click("#rosterImportBtn");
+    await expect(page.locator("#setErrors")).toContainText("No class lists in this browser");
+    await page.click("#closeBtn");
+    // a full store: the lists load for this sitting, but the once-only mark is not made, so they are not lost for good
+    await seed(page, { "seatingchart.v1": SC });
+    await page.evaluate(() => { localStorage.removeItem("gradebook.rosterCache"); sessionStorage.setItem("blockSave", "1"); });
+    await page.addInitScript(() => {
+      const set = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(k, v){ if (k === "deckhand.config" && this === localStorage && sessionStorage.getItem("blockSave") === "1") throw new DOMException("full", "QuotaExceededError"); return set.call(this, k, v); };
+    });
+    dh.ignoreErrors(/QuotaExceeded|full/);
+    await dh.reopen("#t=2026-09-21T09:30");
+    ok((await rosters(page)).length === 2 && (await mark(page)) === null, "a failed save must leave no mark: " + await mark(page));
+    await page.evaluate(() => sessionStorage.removeItem("blockSave"));
+    await dh.reopen("#t=2026-09-21T09:30");
+    // (the unblocked page saved them on its way out, so this boot finds them already there: "had")
+    ok((await rosters(page)).length === 2 && /^(had|auto)$/.test(String(await mark(page))), "kept once the store took it: " + await mark(page));
+    ok((await dh.stored()).cfg.rosters.length === 2, "not in the saved board");
   });
 });
