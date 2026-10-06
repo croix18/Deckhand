@@ -265,6 +265,10 @@ test.describe("the Pledge", () => {
     const p = await page.evaluate(() => window.Deckhand.config.bell.settle.pledge);
     ok(p.on === false && p.minutes === 10, "pledge cfg: " + JSON.stringify(p));
     // sanitize bounds a file's minutes and keeps a retired settle CARD's settings (the v7.6 → 7.7 migration)
+    /* v7.40: the first page goes first. Left open it saved its board as it went to the background —
+       sometimes after the fixture's page had cleared the store and before it read it, so the fixture
+       booted on the first page's board (four runs in five on a slow day; the same on 7.39). */
+    await page.goto("about:blank");
     const pg = await dh.loadFixture("tmp_settle_mig.html", JSON.stringify({
       schemaVersion: 4, appVersion: "7.6.0", ownerName: "",
       scenes: [{ name: "Daily Board", widgets: [

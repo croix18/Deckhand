@@ -1432,34 +1432,48 @@ test.describe("v7.31", () => {
  * I'll tag them as comment card. And I'll hit it at the end of class." … "a reminder at the end of class for
  * whatever students to bring me their comment cards"). Synthetic names only. */
 test.describe("v7.32", () => {
-  test("v7.32: the class as tiles — a tap is a warning, the next the card, the next another; three minutes out the reminder fills the screen on its own and the cards are logged; the wrap-up lists them; the log totals and survives a reload; the bell records what was forgotten; works locked", async ({ page, dh }) => {
+  test("v7.32: the class as tiles — a tap is a warning, the next the card, the next another, the tile's − steps back; three minutes out the reminder fills the screen on its own; the cards are in the log as they are given; the wrap-up lists those still owed; marks and log survive a reload; works locked", async ({ page, dh }) => {
     await dh.openAt("#t=2026-09-29T10:30");                           // Black Tuesday, 5th period
     await dh.launch();
-    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }, { period: "HOWL Time", names: ["Eli","Fay"] }]; });
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Dee","Ava","Cal","Ben"] }, { period: "HOWL Time", names: ["Eli","Fay"] }]; });
     await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
     const marks = () => page.evaluate(() => document.querySelector(".w-ccard")._entry.api.marks());
+    const logd = () => page.evaluate(() => window.Deckhand.config.cards.log);
     const tile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    const tap = n => tile(n).locator(".ccTileMain").click();
+    const minus = n => tile(n).locator(".ccMinus");
     await expect(page.locator(".w-ccard .ccTile")).toHaveCount(4);
+    ok((await page.locator(".w-ccard .ccTileName").allTextContents()).join() === "Ava,Ben,Cal,Dee", "v7.40: the class is A to Z whatever the roster's order");
     await expect(page.locator(".w-ccard .ccTile.isWarn, .w-ccard .ccTile.isCard")).toHaveCount(0);
-    await tile("Ben").click();
+    await expect(minus("Ben")).toBeHidden();                          // nothing to take back yet
+    await tap("Ben");
     await expect(tile("Ben")).toHaveClass(/isWarn/);
-    await tile("Ben").click();
+    await expect(tile("Ben").locator(".ccTileTag")).toHaveText("Warning");
+    await tap("Ben");
     await expect(tile("Ben")).toHaveClass(/isCard/);
-    await tile("Dee").click(); await tile("Dee").click(); await tile("Dee").click();   // v7.36: a third tap is a SECOND card
-    await expect(tile("Dee").locator(".ccTileTag")).toHaveText("Comment cards ×2");
-    const hold = async n => { await tile(n).waitFor({ state: "visible" }); const b = await tile(n).boundingBox(); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.waitForTimeout(700); await page.mouse.up(); };
-    await hold("Dee");                                                // a hold takes one back
-    await expect(tile("Dee").locator(".ccTileTag")).toHaveText("Comment card");
-    await hold("Dee"); await hold("Dee");                             // …to a warning, then off
+    await expect(tile("Ben").locator(".ccTileTag")).toHaveText("Card");
+    await tap("Dee"); await tap("Dee"); await tap("Dee");             // v7.36: a third tap is a SECOND card
+    await expect(tile("Dee").locator(".ccTileTag")).toHaveText("2 cards");
+    await expect(minus("Dee")).toBeVisible();                         // v7.40: the way back is on the tile (no timed hold)
+    await page.waitForTimeout(700);                                   // (a tap there straight after a tap up is still a tap up)
+    await minus("Dee").click();
+    await expect(tile("Dee").locator(".ccTileTag")).toHaveText("Card");
+    await minus("Dee").click();
+    await expect(tile("Dee")).toHaveClass(/isWarn/);
+    await minus("Dee").click();
     await expect(tile("Dee")).not.toHaveClass(/isWarn|isCard/);
-    await tile("Cal").click();                                        // a warning stays a warning
+    await expect(minus("Dee")).toBeHidden();
+    await tap("Cal");                                                 // a warning stays a warning
     ok(JSON.stringify(await marks()) === JSON.stringify({ Ben: 1, Cal: "warn" }), "marks: " + JSON.stringify(await marks()));
     await expect(page.locator(".w-ccard .ccSum")).toContainText("1 on warning");
     await expect(page.locator(".w-ccard .ccSum")).toContainText("1 card");
+    // v7.40: the log holds the card the moment it is given — and only cards
+    let L = await logd();
+    ok(L.length === 1 && L[0].p === "5th" && L[0].d === "2026-09-29" && L[0].names.join() === "Ben" && Array.isArray(L[0].in) && !L[0].in.length, "log as given: " + JSON.stringify(L));
     // locked: still a live action
     await page.click("#lockBtn");
-    await tile("Ava").click(); await tile("Ava").click(); await tile("Ava").click();   // two cards for Ava
-    await expect(tile("Ava").locator(".ccTileTag")).toHaveText("Comment cards ×2");
+    await tap("Ava"); await tap("Ava"); await tap("Ava");             // two cards for Ava
+    await expect(tile("Ava").locator(".ccTileTag")).toHaveText("2 cards");
     await expect(page.locator(".w-ccard .ccSum")).toContainText("3 cards");
     await dh.unlock();
     // the wrap-up, three minutes out, lists the cards due
@@ -1468,47 +1482,64 @@ test.describe("v7.32", () => {
     await expect(page.locator("#clockWrap")).toBeVisible({ timeout: 4000 });
     await expect(page.locator("#clockWrap .wuCards")).toContainText("Ava ×2 · Ben");
     await page.keyboard.press("r");                                   // stand it down
-    // v7.37: three minutes out the reminder comes up on its own — the cards (not the warning) are recorded, the screen fills
-    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 4000 });
+    // v7.37: three minutes out the reminder comes up on its own — the cards (not the warning), the screen fills
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 10000 });
     await expect(page.locator("#ccRemFull .ccRemName")).toHaveCount(2);
     await expect(page.locator("#ccRemFull .ccRemName").first()).toHaveText("Ava ×2");
     await expect(page.locator("#ccRemFull .ccRemMsg")).toContainText("Bring yours to Mr. Shaffer");
-    let logd = await page.evaluate(() => window.Deckhand.config.cards.log);
-    ok(logd.length === 1 && logd[0].p === "5th" && logd[0].d === "2026-09-29" && logd[0].names.join() === "Ava,Ava,Ben", "log: " + JSON.stringify(logd));
+    L = await logd();
+    ok(L.length === 1 && L[0].names.join() === "Ava,Ava,Ben", "log: " + JSON.stringify(L));
+    // v7.40: a name is tapped when its card is handed in — both of Ava's
+    await page.waitForTimeout(800);
+    await page.locator("#ccRemFull .ccRemName", { hasText: "Ava" }).click();
+    await expect(page.locator("#ccRemFull .ccRemName", { hasText: "Ava" })).toHaveClass(/isIn/);
+    await expect(page.locator("#ccRemFull .ccRemTop")).toContainText("1 of 2 handed in");
+    L = await logd();
+    ok(L[0].in.join() === "Ava,Ava", "handed in: " + JSON.stringify(L));
     await page.click("#ccRemFull .ccRemDone");
     await expect(page.locator("#ccRemFull")).toBeHidden();
-    await expect(page.locator(".w-ccard .ccTile.isCard")).toHaveCount(0);
-    await expect(page.locator(".w-ccard .ccTile.isWarn")).toHaveCount(0);
+    await expect(page.locator(".w-ccard .ccTile.isCard")).toHaveCount(2);   // v7.40: the board still says what happened this class
+    await expect(page.locator(".w-ccard .ccTile.isWarn")).toHaveCount(1);
     await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));   // the card back on top
-    // the log view: totals and the day
+    // the log view: totals, the day (who is in, who owes), and the list of those still owed
     await page.click(".w-ccard .ccLogBtn");
     await expect(page.locator(".w-ccard .ccTotals")).toContainText("Ava ×2");
-    await expect(page.locator(".w-ccard .ccLogBody li").first()).toContainText("Ava ×2, Ben");
+    await expect(page.locator(".w-ccard .ccLogBody li").first()).toContainText("Ava ×2 ✓, Ben");
+    await expect(page.locator(".w-ccard .ccOwe")).toHaveCount(1);
+    await expect(page.locator(".w-ccard .ccOwe")).toContainText("Ben");
     await page.click(".w-ccard .ccLogClose");
-    // the bell: a card given after the reminder is recorded when the class changes (no second reminder)
-    await tile("Cal").click(); await tile("Cal").click();             // warn → card
+    // a card given after the reminder is in the log at once (no second reminder)
+    await tap("Cal");                                                 // warn → card
+    L = await logd();
+    ok(L.length === 1 && L[0].names.join() === "Ava,Ava,Ben,Cal" && L[0].in.join() === "Ava,Ava", "Cal's late card: " + JSON.stringify(L));
     await page.evaluate(() => window.Deckhand.shiftClock(5 * 60000));   // past the bell — HOWL Time
-    await page.evaluate(() => document.querySelector(".w-ccard")._entry.api._watchBell());
-    await page.waitForTimeout(200);
-    logd = await page.evaluate(() => window.Deckhand.config.cards.log);
-    ok(logd.length === 1 && logd[0].names.join() === "Ava,Ava,Ben,Cal", "the bell did not record Cal: " + JSON.stringify(logd));
-    await expect(page.locator(".w-ccard .ccNote")).toContainText("At the bell");
+    await page.evaluate(() => window.Deckhand.ccardPop._bellWatch());
     await expect(page.locator("#ccRemFull")).toBeHidden();
     await page.evaluate(() => window.Deckhand.settle.reset());      // the jump also rang HOWL's bell
     await expect(page.locator(".w-ccard .ccTile")).toHaveCount(2);    // HOWL's roster now
-    // survives a reload
+    // survives a reload: the log, AND (v7.40) the marks on the tiles
     await page.waitForTimeout(1200);
     await dh.reopen("#t=2026-09-29T10:30");
     await dh.launch();
-    logd = await page.evaluate(() => window.Deckhand.config.cards.log);
-    ok(logd.length === 1 && logd[0].names.length === 4, "lost on reload: " + JSON.stringify(logd));
-    // Clear today needs a second tap
+    L = await logd();
+    ok(L.length === 1 && L[0].names.length === 4 && L[0].in.length === 2, "lost on reload: " + JSON.stringify(L));
+    await expect(page.locator(".w-ccard .ccTile.isCard")).toHaveCount(3);
+    ok(JSON.stringify(await marks()) === JSON.stringify({ Ben: 1, Cal: 1, Ava: 2 }), "marks after the reload: " + JSON.stringify(await marks()));
+    // still owed: a tap when the card comes in the next morning, a second tap takes it back
     await page.click(".w-ccard .ccLogBtn");
+    await expect(page.locator(".w-ccard .ccOwe")).toHaveCount(2);
+    await page.locator(".w-ccard .ccOwe", { hasText: "Ben" }).click();
+    await expect(page.locator(".w-ccard .ccOwe", { hasText: "Ben" })).toHaveClass(/isIn/);
+    ok((await logd())[0].in.slice().sort().join() === "Ava,Ava,Ben", "Ben handed in from the log: " + JSON.stringify(await logd()));
+    await page.locator(".w-ccard .ccOwe", { hasText: "Ben" }).click();
+    await expect(page.locator(".w-ccard .ccOwe", { hasText: "Ben" })).not.toHaveClass(/isIn/);
+    ok((await logd())[0].in.join() === "Ava,Ava", "and taken back: " + JSON.stringify(await logd()));
+    // Clear today needs a second tap; it takes the marks with the entry
     await page.click(".w-ccard .ccClear");
     await expect(page.locator(".w-ccard .ccClear")).toHaveClass(/armed/);
     await page.click(".w-ccard .ccClear");
-    logd = await page.evaluate(() => window.Deckhand.config.cards.log);
-    ok(logd.length === 0, "Clear today did not clear: " + JSON.stringify(logd));
+    ok((await logd()).length === 0, "Clear today did not clear: " + JSON.stringify(await logd()));
+    await expect(page.locator(".w-ccard .ccTile.isCard, .w-ccard .ccTile.isWarn")).toHaveCount(0);
   });
 });
 
@@ -1619,7 +1650,7 @@ test.describe("v7.33", () => {
 /* v7.35 — the comment cards as a quick draw (Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly
  * even if slides are on the screen"). Synthetic names only. */
 test.describe("v7.35", () => {
-  test("v7.35: on a staged deck a blob opens the comment-card popover; marks are the card's marks; three minutes out the reminder fills the screen over the slides and logs them; the badge counts the cards due; the pen closes it", async ({ page, dh }) => {
+  test("v7.35: on a staged deck a blob opens the comment cards over the slides; marks are the card's marks; three minutes out the reminder fills the screen over the slides; the badge counts the cards still owed; the pen closes it", async ({ page, dh }) => {
     const deck = path.join(dh.fixtureDir, "tmp_cc_deck.html");
     fs.writeFileSync(deck, '<!DOCTYPE html><title>Deck</title><body><h1>Slide 1</h1>');
     await dh.openAt("#t=2026-09-29T10:30");                           // Black Tuesday, 5th
@@ -1635,33 +1666,49 @@ test.describe("v7.35", () => {
     await expect(page.locator("#ccBlob")).toBeVisible();
     await page.click("#ccBlob");
     await expect(page.locator("#ccPop")).toBeVisible();
+    await expect(page.locator("#ccScrim")).toBeVisible();
     await expect(page.locator("#ccPop .ccPopPer")).toHaveText("5th");
     const tile = n => page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    const tap = n => tile(n).locator(".ccTileMain").click();
     await expect(page.locator("#ccPop .ccTile")).toHaveCount(4);
-    await tile("Ben").click(); await tile("Ben").click();             // card
-    await tile("Cal").click();                                        // warning
+    await tap("Ben"); await tap("Ben");                               // card
+    await tap("Cal");                                                 // warning
     await expect(tile("Ben")).toHaveClass(/isCard/);
     await expect(page.locator("#ccBlob .ccBadge")).toHaveText("1");
     // the same marks the card on the board holds
     await page.click("#ccPop .ccPopX");
     await expect(page.locator("#ccPop")).toBeHidden();
+    await expect(page.locator("#ccScrim")).toBeHidden();
     await page.click("#unfocusBtn");
     await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
     const cardTile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
     await expect(cardTile("Ben")).toHaveClass(/isCard/);
     await expect(cardTile("Cal")).toHaveClass(/isWarn/);
-    // back on the stage: three minutes out the reminder fills the screen over the slides, and the card is logged
+    // back on the stage: three minutes out the reminder fills the screen over the slides; the card is in the log
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
     await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 170000); });
-    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 4000 });
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 10000 });
     await expect(page.locator("#ccRemFull .ccRemName")).toHaveCount(1);
     await expect(page.locator("#ccRemFull .ccRemName")).toHaveText("Ben");
     const logd = await page.evaluate(() => window.Deckhand.config.cards.log);
     ok(logd.length === 1 && logd[0].names.join() === "Ben", "log: " + JSON.stringify(logd));
+    await expect(page.locator("#ccBlob .ccBadge")).toHaveText("1");   // v7.40: owed until it is handed in
+    await page.waitForTimeout(800);                                   // (it came up by itself: a finger in flight is not a hand-in)
+    await page.click("#ccRemFull .ccRemName");                        // handed in
+    await expect(page.locator("#ccRemFull .ccRemMsg")).toContainText("All handed in");
     await page.click("#ccRemFull .ccRemDone");
     await expect(page.locator("#ccRemFull")).toBeHidden();
     await expect(page.locator("#ccBlob .ccBadge")).toBeHidden();
-    // the pen closes the popover
+    // the sheet's Reminder brings it back (a card handed in late), quietly
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await page.click("#ccPop .ccRemBtn");
+    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await expect(page.locator("#ccPop")).toBeHidden();
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveClass(/isIn/);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+    // the pen closes the sheet (the blobs stay above the scrim: one tap)
     await page.click("#ccBlob");
     await expect(page.locator("#ccPop")).toBeVisible();
     await page.click("#inkBlob");
@@ -1688,7 +1735,7 @@ test.describe("v7.38", () => {
     const tile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
     await tile("Ben").click(); await tile("Ben").click();
     await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 5.5 * 60000); });   // 5:30 out: inside six minutes
-    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 4000 });
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 10000 });
     await page.click("#ccRemFull .ccRemDone");
     // off: no reminder, the bell records
     await page.evaluate(() => { window.Deckhand.config.bell.ccard.on = false; });
@@ -1869,5 +1916,307 @@ test.describe("v7.39", () => {
     // (the unblocked page saved them on its way out, so this boot finds them already there: "had")
     ok((await rosters(page)).length === 2 && /^(had|auto)$/.test(String(await mark(page))), "kept once the store took it: " + await mark(page));
     ok((await dh.stored()).cfg.rosters.length === 2, "not in the saved board");
+  });
+});
+
+/* v7.40 — Croix: "Can you take a look at the comment card tool. It needs more development. It was
+ * awkward and wonky to use." What was off: "Finding the student" and "The pop-up over slides". His
+ * picks: big tiles A to Z, everyone at once; a tap steps up and a − steps down, with an Undo; a name
+ * tapped on the reminder when the card is handed in. Synthetic names only. */
+test.describe("v7.40", () => {
+  const T = "#t=2026-09-29T10:30";                 // Black Tuesday, 5th period
+  const CLASS = ["Wes","Kai","Aaliyah","Ximena","Ben","Olivia","Camila","Zeke","Dante","Tess","Eli","Rae","Fatima","Yara","Gus","Pip","Hana","Sam","Isaiah","Uma","Jo","Quinn","Leo","Val","Mia","Noah"];
+  const AZ = CLASS.slice().sort().join();
+  const shape = (page, root) => page.evaluate(root => {
+    const g = document.querySelector(root + " .ccGrid"), tiles = [...g.querySelectorAll(".ccTile")];
+    const r0 = tiles[0].getBoundingClientRect();
+    return {
+      order: tiles.map(t => t.querySelector(".ccTileName").textContent).join(),
+      cols: tiles.filter(t => Math.abs(t.getBoundingClientRect().top - r0.top) < 2).length,
+      scrolls: g.scrollHeight > g.clientHeight + 1 || g.scrollWidth > g.clientWidth + 1,
+      w: Math.round(r0.width), h: Math.round(r0.height), f: parseFloat(getComputedStyle(tiles[0]).fontSize),
+      clipped: tiles.filter(t => { const n = t.querySelector(".ccTileName"); return n.scrollWidth > n.clientWidth + 1; }).length
+    };
+  }, root);
+
+  test("v7.40: the whole class shows at once, A to Z, in the same shape in the card, on the stage and in the quick-draw — nothing scrolls, no name is cut, and a tile is never rebuilt under a finger", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(names => { window.Deckhand.config.rosters = [{ period: "5th", names }]; }, CLASS);
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    await expect(page.locator(".w-ccard .ccTile")).toHaveCount(26);
+    const card = await shape(page, ".w-ccard");
+    ok(card.order === AZ, "the card is not A to Z: " + card.order);
+    ok(card.cols === 4 && !card.scrolls && !card.clipped, "the card: " + JSON.stringify(card));
+    ok(card.h >= 44 && card.w >= 120 && card.f >= 18, "tiles a finger can find: " + JSON.stringify(card));
+    // nothing is rebuilt while the clock ticks
+    await page.evaluate(() => { window.__tile = document.querySelector(".w-ccard .ccTile"); });
+    await page.waitForTimeout(2300);
+    ok(await page.evaluate(() => window.__tile === document.querySelector(".w-ccard .ccTile") && window.__tile.isConnected), "the tiles were rebuilt on the clock");
+    // marked, a tile still shows the whole name beside its −
+    await page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: "Ximena" }) }).locator(".ccTileMain").click();
+    const mk = await page.evaluate(() => { const t = document.querySelector(".w-ccard .ccTile.isWarn"), n = t.querySelector(".ccTileName"), m = t.querySelector(".ccMinus").getBoundingClientRect(); return { cut: n.scrollWidth > n.clientWidth + 1, mw: Math.round(m.width), mh: Math.round(m.height) }; });
+    ok(!mk.cut && mk.mw >= 36 && mk.mh >= 44, "the marked tile: " + JSON.stringify(mk));
+    // on the stage: the same order and columns, far larger, and its own opener stands down
+    await page.evaluate(() => document.querySelector(".w-ccard .wFocus").click());
+    await expect.poll(async () => (await shape(page, ".w-ccard")).h, { timeout: 4000 }).toBeGreaterThan(90);
+    const stage = await shape(page, ".w-ccard");
+    ok(stage.order === AZ && stage.cols === 4 && !stage.scrolls && !stage.clipped && stage.f >= 40, "the stage: " + JSON.stringify(stage));
+    await expect(page.locator("#ccBlob")).toBeHidden();
+    await page.click("#unfocusBtn");
+    // the quick-draw over another staged card: the same again
+    await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => document.querySelector(".w-text .wFocus").click());
+    await expect(page.locator("#ccBlob")).toBeVisible();
+    const blob = await page.evaluate(() => { const b = document.getElementById("ccBlob"), r = b.getBoundingClientRect(); return { w: Math.round(r.width), op: +getComputedStyle(b).opacity }; });
+    ok(blob.w >= 52 && blob.op >= 0.7, "the opener is large and not faint: " + JSON.stringify(blob));
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop .ccTile")).toHaveCount(26);
+    const pop = await shape(page, "#ccPop");
+    ok(pop.order === AZ && pop.cols === 4 && !pop.scrolls && !pop.clipped, "the sheet: " + JSON.stringify(pop));
+    ok(pop.h >= 70 && pop.w >= 170 && pop.f >= 24, "the sheet's tiles: " + JSON.stringify(pop));
+    await expect(page.locator("#ccPop .ccTile.isWarn .ccTileName")).toHaveText("Ximena");   // the same marks
+  });
+
+  test("v7.40: the sheet gets out of the way — a tap outside closes it without reaching what is under it, it closes itself a few seconds after a mark and when left alone; every tap says what it did, and Undo puts it back", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }]; });
+    await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => document.querySelector(".w-text .wFocus").click());
+    const tile = n => page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    const marks = () => page.evaluate(() => JSON.stringify(window.Deckhand.ccToday.peek("5th") || {}));
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await expect(page.locator("#ccPop .ccStatTxt")).toHaveAttribute("data-hint", /Tap a name/);   // the hint is drawn, not spoken
+    await expect(page.locator("#ccPop .ccStatTxt")).toHaveText("");
+    await expect(page.locator("#ccPop .ccUndo")).toBeHidden();
+    // a tap: what it did, and an Undo
+    await tile("Ben").locator(".ccTileMain").click();
+    await expect(page.locator("#ccPop .ccStatTxt")).toHaveText("Ben — warning");
+    await expect(page.locator("#ccPop .ccUndo")).toBeVisible();
+    await tile("Ben").locator(".ccTileMain").click();
+    await expect(page.locator("#ccPop .ccStatTxt")).toHaveText("Ben — comment card");
+    await page.click("#ccPop .ccUndo");                               // back to the warning, not to nothing
+    await expect(tile("Ben")).toHaveClass(/isWarn/);
+    ok(await marks() === '{"Ben":"warn"}', "Undo: " + await marks());
+    await expect(page.locator("#ccPop .ccUndo")).toBeHidden();
+    // the − says what it did too, and can be undone
+    await page.waitForTimeout(700);
+    await tile("Ben").locator(".ccMinus").click();
+    await expect(page.locator("#ccPop .ccStatTxt")).toHaveText("Ben — cleared");
+    ok(await marks() === "{}", "the minus: " + await marks());
+    await page.click("#ccPop .ccUndo");
+    ok(await marks() === '{"Ben":"warn"}', "Undo of a minus: " + await marks());
+    // a tap outside: closed, and the tap did not land on the board's button under it
+    const exit = await page.locator("#unfocusBtn").boundingBox();
+    await page.mouse.click(exit.x + exit.width / 2, exit.y + exit.height / 2);
+    await expect(page.locator("#ccPop")).toBeHidden();
+    ok(await page.evaluate(() => document.body.classList.contains("focusMode")), "the outside tap reached Exit");
+    // it closes itself after a mark…
+    await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 700; window.Deckhand.ccardPop.times.idle = 60000; });
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await tile("Cal").locator(".ccTileMain").click();
+    await expect(page.locator("#ccPop")).toBeHidden({ timeout: 3000 });
+    ok(await marks() === '{"Ben":"warn","Cal":"warn"}', "the mark stayed: " + await marks());
+    // …and when nothing is tapped; a touch inside keeps it up
+    await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 60000; window.Deckhand.ccardPop.times.idle = 6000; });
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await page.waitForTimeout(2500);
+    await page.locator("#ccPop .ccPopPer").click();
+    await page.waitForTimeout(4200);                                  // well past six seconds since it opened, four since the touch
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await expect(page.locator("#ccPop")).toBeHidden({ timeout: 6000 });
+    // Escape closes it; the blob toggles it
+    await page.evaluate(() => { window.Deckhand.ccardPop.times.idle = 60000; });
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeHidden();
+    await page.click("#ccBlob");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#ccPop")).toBeHidden();
+    ok(await page.evaluate(() => document.body.classList.contains("focusMode")), "Escape closed the stage with the sheet");
+  });
+
+  test("v7.40: marks are today's — kept through a reload, gone the next day with the log intact; what the log already held for the class is kept; nine cards is the ceiling", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => {
+      window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal"] }];
+      window.Deckhand.config.cards.log = [{ d: "2026-09-28", p: "5th", names: ["Cal"] }, { d: "2026-09-29", p: "5th", names: ["Zed"] }];   // an older version's entries: no `in`
+    });
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    const tile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    const logd = () => page.evaluate(() => window.Deckhand.config.cards.log);
+    await tile("Ava").locator(".ccTileMain").click(); await tile("Ava").locator(".ccTileMain").click();
+    let L = await logd();
+    ok(L.length === 2 && L[1].names.join() === "Zed,Ava" && Array.isArray(L[1].in) && !("in" in L[0]), "today's earlier card is kept, yesterday is untouched: " + JSON.stringify(L));
+    await page.waitForTimeout(700);
+    await tile("Ava").locator(".ccMinus").click();                    // back to a warning: only Zed is left
+    L = await logd();
+    ok(L[1].names.join() === "Zed", "the minus reached the log: " + JSON.stringify(L));
+    for (let i = 0; i < 12; i++) await tile("Ben").locator(".ccTileMain").click();
+    await expect(tile("Ben").locator(".ccTileTag")).toHaveText("9 cards");
+    await expect(page.locator(".w-ccard .ccStatTxt")).toContainText("nine cards is the most");
+    // the log: yesterday's entry is not chased (untracked), today's is
+    await page.click(".w-ccard .ccLogBtn");
+    await expect(page.locator(".w-ccard .ccOwe")).toHaveCount(2);     // Zed and Ben, today
+    await expect(page.locator(".w-ccard .ccLogBody li").last()).toHaveText(/Cal$/);
+    await page.click(".w-ccard .ccLogClose");
+    // a reload mid-class
+    await dh.flush();
+    await dh.reopen(T);
+    await dh.launch();
+    await expect(tile("Ben")).toHaveClass(/isCard/);
+    await expect(tile("Ava")).toHaveClass(/isWarn/);
+    L = await logd();
+    ok(L.length === 2 && L[1].names.length === 10, "the log after the reload: " + JSON.stringify(L));
+    // the next day: clean tiles, the log as it was
+    await page.evaluate(() => window.Deckhand.shiftClock(24 * 3600000));
+    await expect(page.locator(".w-ccard .ccTile.isCard, .w-ccard .ccTile.isWarn")).toHaveCount(0, { timeout: 4000 });
+    L = await logd();
+    ok(L.length === 2 && L[1].d === "2026-09-29" && L[1].names.length === 10, "yesterday's cards are still in the log: " + JSON.stringify(L));
+    ok(await page.evaluate(() => JSON.parse(localStorage.getItem("deckhand.ccard.today")).d) === "2026-09-30", "the store is today's");
+  });
+
+  test("v7.40: the handed-in list is sanitized (never more than the cards given, strings only), an old entry stays untracked, and the reminder skips a class whose cards are all in", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    const out = await page.evaluate(() => window.Deckhand.sanitize({ cards: { log: [
+      { d: "2026-09-29", p: "5th", names: ["Ava", "Ava", "Ben"], in: ["Ava", "Ava", "Ava", "Zed", 7, " Ben "] },
+      { d: "2026-09-28", p: "5th", names: ["Cal"] },
+      { d: "2026-09-27", p: "5th", names: ["Dee"], in: "Dee" }
+    ] } }).cards.log);
+    ok(out[0].in.join() === "Ava,Ava,Ben" && !("in" in out[1]) && !("in" in out[2]), "sanitized: " + JSON.stringify(out));
+    // all in before the bell: no reminder
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben"] }]; });
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    const tile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    await tile("Ben").locator(".ccTileMain").click(); await tile("Ben").locator(".ccTileMain").click();
+    await expect(page.locator(".w-ccard .ccRemBtn")).toBeVisible();
+    await page.click(".w-ccard .ccRemBtn");                           // the card's own Reminder
+    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await page.keyboard.press("Tab");                                 // the keyboard on a name checks it off; it does not close the reminder
+    await page.locator("#ccRemFull .ccRemName").focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveClass(/isIn/);
+    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 170000); });
+    await page.waitForTimeout(2200);
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+  });
+
+  /* the adversarial review's list (20-odd findings; these pin the ones that mattered) */
+  test("v7.40 (review): a double tap on a tile's right side is a card, not a warning taken back; marks saved without their bank are not counted twice; Undo of a − keeps the hand-in; a stale Undo changes nothing; a marked student who left the roster keeps a tile; one long name does not shrink the class", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee","Christopher-James"] }]; });
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    const A = page.locator(".w-ccard").first();
+    const tile = (n, root) => (root || A).locator(".ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    const logd = () => page.evaluate(() => window.Deckhand.config.cards.log);
+    // one long name: its own tile is set smaller, the class is not
+    const f = await page.evaluate(() => [...document.querySelectorAll(".w-ccard .ccTile")].map(t => ({ n: t.querySelector(".ccTileName").textContent, f: parseFloat(getComputedStyle(t).fontSize), cut: t.querySelector(".ccTileName").scrollWidth > t.querySelector(".ccTileName").clientWidth + 1 })));
+    const long = f.find(x => x.n === "Christopher-James"), short = f.find(x => x.n === "Ava");
+    ok(short.f >= 26 && long.f < short.f && !long.cut && f.filter(x => x.f === short.f).length === 4, "type sizes: " + JSON.stringify(f));
+    // the double tap, on the right side where the − arrives
+    const bx = await tile("Ava").boundingBox(), X = bx.x + bx.width * 0.92, Y = bx.y + bx.height / 2;
+    await page.mouse.click(X, Y, { clickCount: 2 });                  // the second lands on the − that has just arrived: still a step up
+    await expect(tile("Ava")).toHaveClass(/isCard/);
+    await page.waitForTimeout(750);
+    await page.mouse.click(X, Y);                                     // once it has settled, the − is the way back
+    await expect(tile("Ava")).toHaveClass(/isWarn/);
+    await page.mouse.click(X, Y);
+    await expect(tile("Ava")).not.toHaveClass(/isWarn|isCard/);
+    // Undo of a − keeps the hand-in
+    await tile("Ben").locator(".ccTileMain").click(); await tile("Ben").locator(".ccTileMain").click();
+    await A.locator(".ccRemBtn").click();
+    await page.locator("#ccRemFull .ccRemName").click();
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveClass(/isIn/);
+    await page.keyboard.press("Escape");
+    ok((await logd())[0].in.join() === "Ben", "handed in: " + JSON.stringify(await logd()));
+    await page.waitForTimeout(700);
+    await tile("Ben").locator(".ccMinus").click();
+    ok((await logd()).length === 0, "the card came off the log: " + JSON.stringify(await logd()));
+    await A.locator(".ccUndo").click();
+    let L = await logd();
+    ok(L.length === 1 && L[0].names.join() === "Ben" && L[0].in.join() === "Ben", "Undo put the card back, still handed in: " + JSON.stringify(L));
+    // a second comment card: an Undo left standing in the first changes nothing once the mark has moved
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    const B = page.locator(".w-ccard").last();
+    await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+    await tile("Cal").locator(".ccTileMain").click();                 // A: Cal on warning (Undo offered)
+    await expect(A.locator(".ccUndo")).toBeVisible();
+    await page.evaluate(() => { const m = window.Deckhand.ccToday.marks("5th"); m.Cal = 2; window.Deckhand.ccToday.save(); document.dispatchEvent(new CustomEvent("deckhand:ccard")); });   // …and two cards given elsewhere
+    await expect(tile("Cal", B).locator(".ccTileTag")).toHaveText("2 cards");
+    await A.locator(".ccUndo").click();
+    await expect(A.locator(".ccStatTxt")).toContainText("nothing undone");
+    await expect(tile("Cal").locator(".ccTileTag")).toHaveText("2 cards");
+    // a marked student taken off the roster keeps a tile after the class, and can be stepped back
+    await page.evaluate(() => { window.Deckhand.config.rosters[0].names = ["Ava","Ben","Dee"]; });
+    await expect(A.locator(".ccTile")).toHaveCount(4, { timeout: 4000 });
+    ok((await A.locator(".ccTileName").allTextContents()).join() === "Ava,Ben,Dee,Cal", "the tile kept for a mark goes last");
+    // marks in the store without their bank (what an early save looked like): the log's own copy is not read as older cards
+    await page.evaluate(() => { const m = window.Deckhand.ccToday.marks("5th"); delete m.Cal; window.Deckhand.ccToday.save(); });
+    await dh.flush();
+    await page.evaluate(() => { const k = "deckhand.ccard.today", s = JSON.parse(localStorage.getItem(k)); delete s.bank; localStorage.setItem(k, JSON.stringify(s)); });
+    await dh.reopen(T);
+    await dh.launch();
+    L = await logd();
+    ok(L.length === 1 && L[0].names.join() === "Ben", "counted twice after the reload: " + JSON.stringify(L));
+  });
+
+  test("v7.40 (review): a card given after the reminder brings it back once the taps stop; the reminder is not shown twice for nothing; a ringing timer has the screen; the sheet goes with its stage and leaves a moment's cover when it closes itself", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal"] }]; window.Deckhand.ccardPop.times.quiet = 1500; });
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    const tile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
+    // nobody owes a card when the minutes arrive: no reminder — and the block is not spent
+    await page.evaluate(() => { const st = window.Deckhand.bell.statusAt(window.Deckhand.now()); window.Deckhand.shiftClock(st.remainMs - 170000); });
+    await page.waitForTimeout(1800);
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+    await page.evaluate(() => document.querySelector(".w-ccard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+    await tile("Ben").locator(".ccTileMain").click(); await tile("Ben").locator(".ccTileMain").click();   // a card while they pack up
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(2500);
+    await expect(page.locator("#ccRemFull")).toBeHidden();              // down, and it stays down
+    await tile("Cal").locator(".ccTileMain").click(); await tile("Cal").locator(".ccTileMain").click();   // another late one
+    await page.waitForTimeout(700);
+    await expect(page.locator("#ccRemFull")).toBeHidden();              // not while the taps (and the Undo) are fresh
+    await expect(page.locator("#ccRemFull")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("#ccRemFull .ccRemName")).toHaveCount(2);
+    // a ringing timer has the screen and the keys; the reminder is there again when it is answered
+    await page.evaluate(() => document.getElementById("alarm").classList.add("on"));
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => document.getElementById("alarm").classList.remove("on"));
+    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#ccRemFull")).toBeHidden();
+    // the sheet: closing itself leaves the scrim (unseen) for a moment, so a late tap lands on nothing
+    await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => document.querySelector(".w-text .wFocus").click());
+    await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 600; });
+    await page.click("#ccBlob");
+    await page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: "Ava" }) }).locator(".ccTileMain").click();
+    await expect(page.locator("#ccPop")).toBeHidden({ timeout: 3000 });
+    ok(await page.evaluate(() => { const s = document.getElementById("ccScrim"); return !s.hidden && s.classList.contains("ghost"); }), "no cover behind the sheet that closed itself");
+    await expect(page.locator("#ccScrim")).toBeHidden({ timeout: 3000 });
+    // …and it does not outlive its stage
+    await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 60000; });
+    await page.click("#ccBlob");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await page.evaluate(() => document.getElementById("unfocusBtn").click());
+    await expect(page.locator("#ccPop")).toBeHidden();
+    await expect(page.locator("#ccScrim")).toBeHidden();
+    ok(await page.evaluate(() => !window.Deckhand.ccardPop.isOpen()), "the sheet thinks it is still open");
   });
 });

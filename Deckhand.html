@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.39.0",
+  "appVersion": "7.40.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1014,49 +1014,108 @@
   #lunchArt .lGhost.go{animation:lBoo 1.4s cubic-bezier(.3,.8,.4,1) !important;}
   @keyframes lBoo{0%{transform:translate(10px, 40px);} 25%{transform:translate(-34px, -42px) scale(1.12) rotate(-10deg);} 70%{transform:translate(-30px, -36px) rotate(-6deg);} 100%{transform:translate(10px, 40px);}}
 
-  /* v7.32 COMMENT CARDS: the class as flat tiles in a grid — a left rail says the state (a tap is a
-     warning, the next the card, the next clears it); End of class takes the stage with the
-     reminder; the log lists recent days and each student's total. No pills, no coral. */
-  .ccGrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, clamp(112px, 26cqw, 168px)), 1fr)); gap:5px;
-    flex:1; min-height:0; overflow:auto; align-content:start; padding:1px; width:100%; align-self:stretch;}
+  /* v7.32 COMMENT CARDS: the class as flat tiles in a grid — a left rail and the fill say the state.
+     No pills, no coral.
+     v7.40: ONE panel everywhere. The columns go with the class size (--ccC, --ccR), the row height
+     and the type with the box (--ccTH, --ccF, set by ccardPanel's fit): everyone shows at once, as
+     large as the box allows; it scrolls only when a card is dragged too small to hold the class. */
+  .ccGrid{display:grid; grid-template-columns:repeat(var(--ccC, 4), minmax(0, 1fr)); grid-template-rows:repeat(var(--ccR, 1), var(--ccTH, minmax(34px, 1fr)));
+    gap:clamp(4px, 1cqw, 10px); flex:1; min-height:0; overflow:auto; align-content:safe center; padding:1px; width:100%; align-self:stretch;}
+  .ccGrid[hidden]{display:none;}
   .ccTile{
-    display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left; min-width:0; min-height:40px;
-    font-family:inherit; color:var(--navy); background:var(--white); border:1.5px solid var(--grid); border-left:6px solid var(--grid);
-    border-radius:8px; padding:5px 8px 5px 9px; cursor:pointer;
+    display:flex; align-items:stretch; min-width:0; min-height:0; overflow:hidden; font-size:var(--ccF, 15px);
+    color:var(--navy); background:var(--white); border:1.5px solid var(--grid); border-left:6px solid var(--grid);
+    border-radius:10px; touch-action:manipulation;
   }
-  .ccTileName{font-weight:800; font-size:clamp(11px, 2.4cqw, 16px); line-height:1.15; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .ccTileTag{font-weight:900; font-size:clamp(9px, 1.8cqw, 11px); letter-spacing:.08em; text-transform:uppercase; line-height:1; min-height:1em; opacity:.85;}
+  .ccTileMain{flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:.1em; text-align:left;
+    font:inherit; color:inherit; background:none; border:0; padding:0 .4em; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .ccTileName{font-weight:800; line-height:1.1; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .ccTileTag{font-weight:900; font-size:max(10px, .42em); letter-spacing:.08em; text-transform:uppercase; line-height:1; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:.9;}
+  .ccTileTag:empty{display:none;}
+  .ccProbe{position:absolute; left:-9999px; top:0; visibility:hidden; white-space:nowrap; font-weight:800; pointer-events:none;}
+  /* the way back down: a marked tile carries its own − (no timed hold) */
+  .ccMinus{flex:none; width:clamp(36px, 18%, 64px); display:flex; align-items:center; justify-content:center; padding:0;
+    font:inherit; font-weight:900; font-size:1.2em; line-height:1; color:inherit; background:rgba(27,46,69,.08);
+    border:0; border-left:1.5px solid rgba(27,46,69,.14); cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .ccMinus[hidden]{display:none;}
+  /* it arrives under the finger that just tapped: it fades in over the moment in which a tap
+     there still counts as a step up (CCARD_GUARD_MS) */
+  .ccMinus{animation:ccMinusIn .6s ease-out;}
+  @keyframes ccMinusIn{from{opacity:0;} 60%{opacity:.35;} to{opacity:1;}}
+  .ccTileMain:active, .ccMinus:active{filter:brightness(.94); background-color:rgba(27,46,69,.1);}
+  .ccTileMain:focus-visible, .ccMinus:focus-visible{outline:3px solid var(--turq); outline-offset:-3px;}
   .ccTile.isWarn{background:#FFF6CC; border-color:#E8C93C; border-left-color:#E8C93C;}
   .ccTile.isWarn .ccTileTag{color:#8A6D00;}
+  .ccTile.isWarn .ccMinus{background:rgba(232,201,60,.38); border-left-color:#E8C93C;}
   .ccTile.isCard{background:var(--navy); color:var(--white); border-color:var(--navy); border-left-color:var(--turq);}
   .ccTile.isCard .ccTileTag{color:var(--turq);}
-  .ccTile.out{opacity:.4; text-decoration:line-through;}
-  .ccSum{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--teal);}
+  .ccTile.isCard .ccMinus{background:rgba(255,255,255,.16); border-left-color:rgba(255,255,255,.28);}
+  .ccTile.out .ccTileName{opacity:.45; text-decoration:line-through;}
+  .ccTile.bump{animation:ccBump .22s ease-out;}
+  @keyframes ccBump{0%{transform:scale(.95);} 60%{transform:scale(1.02);} 100%{transform:none;}}
+  .ccSum{font-weight:700; font-size:clamp(11px, 2.4cqw, 20px); color:var(--teal);}
   .ccSum b{color:var(--navy);}
-  .ccNote{font-weight:700; font-size:clamp(11px, 2.4cqw, 15px); color:var(--navy); text-align:center; background:var(--paleturq); border-radius:10px; padding:6px 12px;}
-  .ccNote[hidden]{display:none;}
-  /* the reminder: over the whole card (staged by End of class), the names big */
+  /* what the last tap did, beside an Undo, for five seconds (the bar runs down); a hint otherwise */
+  .ccFoot{display:flex; align-items:center; gap:8px; min-width:0; width:100%; align-self:stretch;}
+  .ccStat{position:relative; flex:1; min-width:0; min-height:44px; display:flex; align-items:center; gap:10px; overflow:hidden;
+    border-radius:10px; padding:0 4px 0 12px; font-weight:700; font-size:clamp(11px, 2.4cqw, 20px); color:var(--teal);}
+  .ccStat.live{background:var(--paleturq); color:var(--navy); font-weight:800;}
+  .ccStatTxt{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .ccStatTxt:empty::before{content:attr(data-hint);}
+  .ccUndo{flex:none; font:inherit; font-weight:900; color:var(--white); background:var(--navy); border:0; border-radius:999px;
+    padding:0 18px; min-height:36px; min-width:72px; cursor:pointer;}
+  .ccUndo[hidden]{display:none;}
+  .ccStat.live::after{content:""; position:absolute; left:0; bottom:0; height:3px; width:100%; background:var(--turq); transform-origin:0 50%;
+    animation:ccDrain var(--ccMs, 5s) linear forwards;}
+  @keyframes ccDrain{to{transform:scaleX(0);}}
+  @media (prefers-reduced-motion: reduce){ .ccStat.live::after, .ccTile.bump, .ccMinus{animation:none;} }
+  .widget .ccFoot .chip.chipSm{flex:none; min-height:40px; font-size:clamp(13px, 2cqw, 18px);}
+  .ccRemBtn[hidden]{display:none;}
+  /* the reminder: the names big; each is a button — a tap when the card is handed in (v7.40) */
   .ccRemind{position:absolute; inset:0; z-index:6; background:var(--white); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2cqh; padding:3cqh 4cqw; text-align:center;}
   .ccRemind[hidden]{display:none;}
   .ccRemTop{font-weight:900; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); font-size:clamp(12px, 2.6cqw, 34px);}
-  .ccRemNames{display:flex; flex-wrap:wrap; justify-content:center; gap:1cqh 2.5cqw; max-width:94%;}
-  .ccRemName{font-weight:900; color:var(--white); background:var(--navy); border-radius:.3em; padding:.15em .6em; font-size:clamp(20px, 6.5cqw, 110px); line-height:1.15;}
+  .ccRemNames{display:flex; flex-wrap:wrap; justify-content:center; gap:1cqh 2.5cqw; max-width:94%; min-height:0; overflow:auto;}
+  .ccRemName{font:inherit; font-weight:900; color:var(--white); background:var(--navy); border:.07em solid var(--navy); border-radius:.3em; padding:.15em .6em;
+    font-size:clamp(20px, 6.5cqw, 110px); line-height:1.15; cursor:pointer; touch-action:manipulation;}
+  .ccRemName.isIn{background:var(--white); color:var(--teal); border-color:var(--turq);}
+  .ccRemName.isIn::before{content:"\2713\00a0";}
+  .ccRemName:focus-visible{outline:4px solid var(--turq); outline-offset:3px;}
   .ccRemMsg{font-weight:900; color:var(--navy); font-size:clamp(14px, 3cqw, 44px); background:var(--sand); padding:.3em .9em; border-radius:999px; max-width:92%;}
+  .ccRemHint{font-weight:700; color:var(--teal); font-size:clamp(12px, 1.3vw, 18px);}
   .ccRemDone{background:var(--turq); color:var(--navy); font-size:clamp(14px, 2.6cqw, 28px);}
   .ccLog{position:absolute; inset:0; z-index:5; background:var(--white); display:flex; flex-direction:column; gap:8px; padding:10px 12px;}
   .ccLog[hidden]{display:none;}
   .ccLogHead{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
-  .ccLogHead b{font-weight:900; color:var(--navy); margin-right:auto; font-size:clamp(13px, 4cqw, 18px);}
+  .ccLogHead b{font-weight:900; color:var(--navy); margin-right:auto; font-size:clamp(13px, 4cqw, 24px);}
   .ccLogX{background:none; border:0; font:inherit; font-weight:900; font-size:18px; color:var(--navy); min-width:44px; min-height:44px; cursor:pointer;}
-  .ccLogBody{flex:1; min-height:0; overflow:auto; font-size:clamp(11px, 2.6cqw, 15px); color:var(--navy); display:flex; flex-direction:column; gap:10px;}
-  .ccLogBody h4{margin:0; font-size:clamp(11px, 2.4cqw, 13px); letter-spacing:.08em; text-transform:uppercase; color:var(--teal);}
+  .ccLogBody{flex:1; min-height:0; overflow:auto; font-size:clamp(11px, 2.6cqw, 21px); color:var(--navy); display:flex; flex-direction:column; gap:10px;}
+  .ccLogBody h4{margin:0; font-size:clamp(11px, 2.4cqw, 16px); letter-spacing:.08em; text-transform:uppercase; color:var(--teal);}
   .ccLogBody ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:3px;}
   .ccLogBody li{display:flex; gap:10px; align-items:baseline;}
   .ccLogBody li .ccWhen{color:var(--teal); font-weight:700; white-space:nowrap; min-width:7.5em;}
+  .ccLogBody li .ccOwes{font-weight:800;}
+  .ccLogBody li .ccIn{color:var(--teal);}
   .ccTotals{display:flex; flex-wrap:wrap; gap:6px;}
   .ccTotals span{background:var(--paleturq); border-radius:999px; padding:3px 10px; font-weight:700;}
   .ccTotals span b{color:var(--teal);}
-  .w-ccard .wBody{position:relative;}
+  /* still owed: a chip a student; a tap when the card comes in, a second tap takes it back */
+  .ccOwed{display:flex; flex-wrap:wrap; gap:6px;}
+  .ccOwe{display:inline-flex; align-items:baseline; gap:7px; font:inherit; font-weight:800; color:var(--white); background:var(--navy);
+    border:2px solid var(--navy); border-radius:999px; padding:6px 14px; min-height:40px; cursor:pointer; touch-action:manipulation;}
+  .ccOwe small{font-weight:700; font-size:.85em; opacity:.75;}
+  .ccOwe.isIn{background:var(--white); color:var(--teal); border-color:var(--turq);}
+  .ccOwe.isIn::before{content:"\2713";}
+  .w-ccard .wBody{position:relative; gap:clamp(6px, 1.4cqh, 12px); justify-content:flex-start;}
+  /* on the stage the pen, the magnifier and the dock's handle sit over the card's left edge (or
+     its bottom-right corner): the class keeps clear of them, and the quick-draw's own opener
+     stands down — the class is already up */
+  body.focusMode:not(.landing) .w-ccard.wFull .wBody{padding-left:76px;}
+  body.focusMode:not(.landing):not(.inkLeft) .w-ccard.wFull .wBody{padding-bottom:74px;}
+  body.focusMode:not(.landing):has(.w-ccard.wFull) #ccBlob{display:none !important;}
+  /* the log on the stage: its Copy and Clear today keep clear of the stage's own Minimize and Exit */
+  body.focusMode:not(.landing) .w-ccard.wFull .ccLog{padding:64px 28px 18px 76px;}
+  body.focusMode:not(.landing):not(.inkLeft) .w-ccard.wFull .ccLog{padding-bottom:76px;}
   /* the wrap-up's comment-card line (v7.32) */
   .wuCards{font-weight:900; color:var(--white); background:var(--navy); border-radius:.4em; padding:.3em .9em; font-size:clamp(14px, 3cqw, 44px); max-width:92%; overflow-wrap:anywhere;}
   .wuCards[hidden]{display:none;}
@@ -2056,7 +2115,7 @@
     transition:opacity .15s;
   }
   #fsBtn{top:6px; right:6px; width:38px; height:38px;}
-  #fsBtn svg, #inkBlob svg, #zoomBlob svg, #ccBlob svg{width:20px; height:20px;}
+  #fsBtn svg, #inkBlob svg, #zoomBlob svg{width:20px; height:20px;}
   #fsBtn .fsOut{display:none;}
   #fsBtn[aria-pressed="true"] .fsIn{display:none;}
   #fsBtn[aria-pressed="true"] .fsOut{display:block;}
@@ -2067,37 +2126,50 @@
   #inkBlob{right:24px; bottom:16px; display:none;}
   /* v7.21 zoom: the magnifier sits left of the pen; zoomed, the bar takes its place */
   #zoomBlob{right:80px; bottom:16px; display:none;}
-  /* v7.35 the comment-card blob, third in the row; a badge counts the cards due */
-  #ccBlob{right:136px; bottom:16px; display:none;}
+  /* v7.35 the comment-card blob, third in the row; a badge counts the cards still owed.
+     v7.40: larger than its neighbours and not faint — it is the one that gets reached for mid-sentence */
+  #ccBlob{right:132px; bottom:12px; width:52px; height:52px; opacity:.78; display:none;}
+  #ccBlob svg{width:24px; height:24px;}
   body.focusMode:not(.landing):not(.inking):not(.zooming) #ccBlob{display:inline-flex;}
+  #ccBlob.has{opacity:1;}
   #ccBlob[aria-expanded="true"]{opacity:1; background:var(--teal);}
   @media (hover:hover){ #ccBlob:hover{opacity:1;} }
   #ccBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
-  .ccBadge{position:absolute; top:-5px; right:-5px; min-width:20px; height:20px; border-radius:999px; background:#FFE45C; color:var(--navy);
-    font-size:12px; font-weight:900; line-height:20px; text-align:center; padding:0 5px; box-shadow:0 0 0 2px var(--white);}
+  .ccBadge{position:absolute; top:-5px; right:-5px; min-width:22px; height:22px; border-radius:999px; background:#FFE45C; color:var(--navy);
+    font-size:13px; font-weight:900; line-height:22px; text-align:center; padding:0 5px; box-shadow:0 0 0 2px var(--white);}
   .ccBadge[hidden]{display:none;}
-  #ccPop{position:fixed; z-index:900002; width:min(560px, 92vw); max-height:min(72vh, 640px); right:136px; bottom:70px;
-    background:rgba(255,255,255,.94); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); border:2px solid rgba(227,212,180,.8); border-radius:18px;
-    box-shadow:4px 6px 0 var(--shadow); padding:12px 14px; display:flex; flex-direction:column; gap:8px; container-type:inline-size;
+  /* v7.40 the sheet: big enough to find a name from across the room, on the pen's side, as tall
+     as the class needs (--ccR rows); the scrim under it takes the tap that puts it away */
+  #ccScrim{position:fixed; inset:0; z-index:900000; background:rgba(27,46,69,.2);}
+  #ccScrim[hidden]{display:none;}
+  #ccScrim.ghost{background:transparent;}
+  /* a ringing timer has the screen: the sheet and the reminder stand aside until it is answered */
+  body:has(#alarm.on:not(.calm)) #ccRemFull, body:has(#alarm.on:not(.calm)) #ccPop, body:has(#alarm.on:not(.calm)) #ccScrim{visibility:hidden;}
+  #ccPop{position:fixed; z-index:900002; width:clamp(520px, 60vw, 1180px); height:min(calc(100vh - 108px), calc(140px + var(--ccR, 6) * 104px)); right:16px; bottom:82px;
+    background:var(--white); border:2px solid rgba(227,212,180,.9); border-radius:20px;
+    box-shadow:4px 6px 0 var(--shadow); padding:14px 16px; display:flex; flex-direction:column; gap:10px; container-type:inline-size;
     transform-origin:100% 100%; animation:inkPop .16s ease-out;}
   #ccPop[hidden]{display:none;}
-  body.inkLeft #ccPop{right:auto; left:66px; bottom:auto; top:50%; transform:translateY(-50%); transform-origin:0 50%; animation:ccPopL .16s ease-out;}
+  body.inkLeft #ccPop{right:auto; left:76px; bottom:auto; top:50%; height:min(92vh, calc(140px + var(--ccR, 6) * 104px)); transform:translateY(-50%); transform-origin:0 50%; animation:ccPopL .16s ease-out;}
   @keyframes ccPopL{from{opacity:0; transform:translateY(-50%) scale(.6);} to{opacity:1; transform:translateY(-50%);}}
-  @media (prefers-reduced-motion: reduce){ #ccPop{animation:none;} }
-  #ccPop .ccPopHead{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-  #ccPop .ccPopHead b{font-weight:900; color:var(--navy); font-size:17px;}
-  #ccPop .ccPopPer{font-weight:900; color:var(--teal); background:var(--paleturq); border-radius:999px; padding:3px 12px; font-size:13px;}
-  #ccPop .ccSum{margin-left:auto; font-size:13px;}
-  #ccPop .ccPopX{margin:-6px -8px -6px 0;}
-  #ccPop .ccGrid{flex:1; min-height:0; overflow:auto; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr));}
-  #ccPop .ccTileName{font-size:15px;} #ccPop .ccTileTag{font-size:10px;}
-  #ccPop .ccPopHint{font-size:12px; font-weight:700; color:var(--teal); text-align:center;}
-  #ccRemFull{position:fixed; inset:0; z-index:900003; gap:3vh; padding:4vh 4vw; background:rgba(255,255,255,.96);}
-  #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2.5vw;}
-  #ccRemFull .ccRemName{font-size:clamp(28px, 7vw, 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
-  #ccPop .ccNote, #ccPop .ccEmpty{font-size:13px;}
-  body.inkLeft #ccBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 62px);}
-  @media (max-width: 780px), (max-height: 540px){ #ccBlob, #ccPop{display:none !important;} }
+  @media (prefers-reduced-motion: reduce){ #ccPop, body.inkLeft #ccPop{animation:none;} }   /* v7.40: the left-hand rule outranked the plain one and kept moving */
+  #ccPop .ccPopHead{display:flex; align-items:center; gap:10px; min-height:44px;}
+  #ccPop .ccPopHead b{font-weight:900; color:var(--navy); font-size:20px; white-space:nowrap;}
+  #ccPop .ccPopPer{font-weight:900; color:var(--teal); background:var(--paleturq); border-radius:999px; padding:4px 14px; font-size:15px; white-space:nowrap;}
+  #ccPop .ccSum{margin-left:auto; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+  #ccPop .ccRemBtn{flex:none; font-size:14px; padding:6px 14px; min-height:40px;}
+  #ccPop .ccPopX{margin:-6px -8px -6px 0; flex:none;}
+  #ccPop .ccGrid{gap:8px;}
+  #ccPop .ccStat{flex:none; min-height:52px; font-size:16px;}
+  #ccPop .ccUndo{min-height:44px; min-width:88px;}
+  #ccPop .ccEmpty{font-size:15px;}
+  #ccPop .ccEmpty:empty{display:none;}
+  #ccRemFull:focus, #ccPop:focus{outline:none;}
+  #ccRemFull{position:fixed; inset:0; z-index:900003; gap:2.6vh; padding:4vh 4vw; background:rgba(255,255,255,.97);}
+  #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2vw;}
+  #ccRemFull .ccRemName{font-size:clamp(24px, var(--ccRemF, 7vw), 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
+  body.inkLeft #ccBlob{right:auto; bottom:auto; left:8px; top:calc(50% + 60px);}
+  @media (max-width: 780px), (max-height: 540px){ #ccBlob, #ccPop, #ccScrim{display:none !important;} }
   body.focusMode:not(.landing):not(.inking):not(.zooming) #zoomBlob{display:inline-flex;}
   @media (hover:hover){ #zoomBlob:hover{opacity:1;} }
   #zoomBar{position:fixed; right:80px; bottom:14px; z-index:900001; display:flex; align-items:center; gap:6px;
@@ -4160,7 +4232,7 @@
                   <input class="setInput" type="number" id="sCcMin" step="1" min="1" max="15">
                 </div>
               </div>
-              <div class="fHint">Nudge shifts only the bell math, never the clock. The warning turns the countdown coral and pulses the bar; 0 turns it off. The comment-card reminder fills the screen with the names of anyone who got a card this class and records them; off, the cards are still recorded at the bell.</div>
+              <div class="fHint">Nudge shifts only the bell math, never the clock. The warning turns the countdown coral and pulses the bar; 0 turns it off. The comment-card reminder fills the screen with the names of anyone who still owes a card from this class &mdash; tap a name when it is handed in; off, the cards are still in the log.</div>
             </div>
             <div class="fGroup">
               <div class="fSection">Week rotation</div>
@@ -4489,18 +4561,22 @@
 <!-- v7.35 (Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly even if
      slides are on the screen"): the comment-card tracker as a popover from a blob beside the pen -->
 <button id="ccBlob" type="button" aria-label="Comment cards" aria-expanded="false"><svg class="wIcon"><use href="#i-ccard"/></svg><span class="ccBadge" hidden></span></button>
-<div id="ccPop" role="dialog" aria-label="Comment cards" hidden>
-  <div class="ccPopHead"><b>Comment cards</b><span class="ccPopPer"></span><span class="ccSum"></span><button type="button" class="ccLogX ccPopX" aria-label="Close">&#x2715;</button></div>
-  <div class="ccGrid"></div>
+<!-- v7.40: the class as a sheet on the pen's side; a tap outside it (the scrim) puts it away -->
+<div id="ccScrim" hidden></div>
+<div id="ccPop" role="dialog" aria-modal="true" aria-label="Comment cards" tabindex="-1" hidden>
+  <div class="ccPopHead"><b>Comment cards</b><span class="ccPopPer"></span><span class="ccSum"></span>
+    <button type="button" class="chip chipSm ccRemBtn" hidden>Reminder</button>
+    <button type="button" class="ccLogX ccPopX" aria-label="Close">&#x2715;</button></div>
+  <div class="ccGrid" role="group" aria-label="The class"></div>
   <div class="wEmpty ccEmpty"></div>
-  <div class="ccNote" hidden></div>
-  <div class="ccPopHint">The reminder comes up on its own before the bell (Settings &rarr; Bells sets when).</div>
+  <div class="ccStat"><span class="ccStatTxt" role="status"></span><button type="button" class="ccUndo" hidden>Undo</button></div>
 </div>
-<!-- the quick-draw's reminder fills the screen, over the slides -->
-<div id="ccRemFull" class="ccRemind" role="dialog" aria-label="Comment cards due" hidden>
+<!-- the reminder fills the screen, over the slides; each name is a button (v7.40: a tap when the card is handed in) -->
+<div id="ccRemFull" class="ccRemind" role="dialog" aria-modal="true" aria-label="Comment cards due" tabindex="-1" hidden>
   <div class="ccRemTop">Comment cards</div>
-  <div class="ccRemNames"></div>
+  <div class="ccRemNames" role="group" aria-label="Tap a name when the card is handed in"></div>
   <div class="ccRemMsg"></div>
+  <div class="ccRemHint">Tap a name when the card is handed in.</div>
   <button type="button" class="btn ccRemDone">Done</button>
 </div>
 <div id="zoomBar" role="group" aria-label="Zoom" hidden>
@@ -4585,7 +4661,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.39.0",
+  appVersion: "7.40.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5015,7 +5091,17 @@ function sanitize(c){
         var d = str(e.d, ""), p = str(e.p, "").trim().slice(0, 20);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !p || p === "__proto__") return null;
         var names = (Array.isArray(e.names) ? e.names : []).filter(function(n){ return typeof n === "string" && n.trim(); }).map(function(n){ return n.trim().slice(0, 40); }).slice(0, 60);
-        return { d: d, p: p, names: names };
+        /* v7.40: `in` — the cards handed in (a name once per card, never more than `names`
+           holds). An entry from before v7.40 has none and stays untracked. */
+        if (!names.length) return null;                        // v7.40: an entry with no cards is not an entry
+        var out = { d: d, p: p, names: names };
+        if (Array.isArray(e["in"])){
+          var left = Object.create(null);
+          names.forEach(function(n){ left[n] = (left[n] || 0) + 1; });
+          out["in"] = e["in"].filter(function(n){ if (typeof n !== "string") return false; n = n.trim().slice(0, 40); if (left[n] > 0){ left[n]--; return true; } return false; })
+            .map(function(n){ return n.trim().slice(0, 40); });
+        }
+        return out;
       }).filter(Boolean);
     })() },
     sound: { enabled: bool(s.enabled, true),
@@ -7219,21 +7305,96 @@ function makePicker(host, wcfg){
    warning. Then I'll tag them as comment card. And I'll hit it at the end of class." Then: "So
    like maybe a two fold thing. A tracker, a reminder at the end of class for whatever students
    to bring me their comment cards. If I pull up the tool it would have the whole class. But I
-   need it to look better than that." So: the whole class as a tidy grid of flat tiles (a tap puts
-   a student on warning, the next makes it the card, a third clears it), and END OF CLASS records
-   the cards and takes the stage with the reminder — the names, big, "bring yours up before you
-   leave" — until Done. Three minutes out, the wrap-up lists them too. Marks are today's and that
-   class's (DayStore "ccard:<period>"); the log is cfg.cards.log. A live teaching action: works
-   locked. */
+   need it to look better than that." A live teaching action: works locked. */
 /* v7.36 (Croix: "what happens if the kid needs another tap. I want it to be able to add
-   additional comments within the same period"): a mark is "warn" or a NUMBER of cards (1, 2, 3…);
-   a tap adds one, a hold takes one back. The lists below repeat a name once per card
-   ("Ben","Ben"), so totals add up on their own; ccardGroup() folds them for display. */
-function ccardDue(p){                            // one entry per card due this class, in roster order (the wrap-up asks)
-  var m = p ? DayStore.get("ccard:" + p) : null;
-  if (!m) return [];
-  var out = [];
-  Rosters.namesFor(p).forEach(function(n){ var k = typeof m[n] === "number" ? m[n] : (m[n] === "card" ? 1 : 0); for (var i = 0; i < k; i++) out.push(n); });
+   additional comments within the same period"): a mark is "warn" or a NUMBER of cards (1, 2, 3…).
+   The lists below repeat a name once per card ("Ben","Ben"), so totals add up on their own;
+   ccardGroup() folds them for display. */
+/* v7.40 (Croix: "It needs more development. It was awkward and wonky to use" — what was off:
+   "Finding the student" and "The pop-up over slides"). The class is ONE panel, the same in the
+   card, on the stage and in the quick-draw: everyone at once with no scrolling, A to Z by the name
+   on the tile, the column count set by the class size so a student sits in the same place
+   wherever the panel is opened, the names as large as the tiles allow. A tap steps up (warning →
+   card → another card); a marked tile carries a − that steps back down; every tap says what it did
+   beside an Undo for five seconds. No timed hold. Marks are today's and that class's, kept in
+   device storage so a reload mid-class loses nothing (CcToday), and the log entry for the day
+   (cfg.cards.log) mirrors the cards as they stand: there is no moment of "recording". The
+   reminder's names are buttons — a tap when the card is handed in — and the entry's `in` list
+   says who has and who still owes one. */
+var CcToday = (function(){
+  var KEY = "deckhand.ccard.today", st = null;
+  function blank(d){ return { d: d, m: Object.create(null), bank: Object.create(null) }; }
+  function okP(p){ return typeof p === "string" && p && p.length <= 20 && p !== "__proto__"; }
+  function okN(n){ return typeof n === "string" && n && n.length <= 40 && n !== "__proto__"; }
+  function load(){
+    var o = blank(dateKey(now())), raw = null;
+    try { raw = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e){}
+    if (!isObj(raw) || raw.d !== o.d) return o;             // another day's marks are not today's
+    if (isObj(raw.m)) Object.keys(raw.m).slice(0, 40).forEach(function(p){
+      if (!okP(p) || !isObj(raw.m[p])) return;
+      var m = o.m[p] = Object.create(null);
+      Object.keys(raw.m[p]).slice(0, 200).forEach(function(n){
+        var v = raw.m[p][n];
+        if (!okN(n)) return;
+        if (v === "warn") m[n] = "warn";
+        else if (typeof v === "number" && v >= 1 && v <= 9 && v === Math.floor(v)) m[n] = v;
+      });
+    });
+    if (isObj(raw.bank)) Object.keys(raw.bank).slice(0, 40).forEach(function(p){
+      if (okP(p) && Array.isArray(raw.bank[p])) o.bank[p] = raw.bank[p].filter(okN).slice(0, 60);
+    });
+    /* marks are only ever saved after the log took them (ccardSet), so a class with marks and
+       no bank had nothing in the log before them — never read the log's own copy of today's
+       cards as "older" and count them twice */
+    Object.keys(o.m).forEach(function(p){ if (!o.bank[p]) o.bank[p] = []; });
+    return o;
+  }
+  function save(){
+    try { if (SaveState.suspended()) return; } catch(e){}      // a window that must not save the board does not save its marks over the other's
+    try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){}
+  }
+  /* another window marked a student: this one reads today again rather than writing its own older copy back */
+  try { window.addEventListener("storage", function(e){ if (e.key === KEY){ st = null; ccardFire(); } }); } catch(e){}
+  function cur(){
+    var k = dateKey(now());
+    if (!st) st = load();
+    if (st.d !== k){ st = blank(k); save(); }               // midnight: yesterday's marks are over
+    return st;
+  }
+  return {
+    peek: function(p){ return (p && cur().m[p]) || null; },
+    marks: function(p){ var s = cur(); return s.m[p] || (s.m[p] = Object.create(null)); },
+    /* what the log already held for this class before today's marks began (an entry made by an
+       older version, or a restored file): kept, with today's cards after it */
+    bank: function(p, entry){
+      var s = cur();
+      if (!s.bank[p]) s.bank[p] = entry && Array.isArray(entry.names) ? entry.names.slice(0, 60) : [];
+      return s.bank[p];
+    },
+    periods: function(){ return Object.keys(cur().m); },
+    clear: function(p){ var s = cur(); delete s.m[p]; delete s.bank[p]; save(); },
+    save: save,
+    wipe: function(){ st = null; try { localStorage.removeItem(KEY); } catch(e){} },
+    key: KEY
+  };
+})();
+var ccardColl = null;
+function ccardCmp(a, b){
+  if (!ccardColl){
+    try { ccardColl = new Intl.Collator(undefined, { sensitivity: "base", numeric: true }); }
+    catch(e){ ccardColl = { compare: function(x, y){ return x.localeCompare(y); } }; }
+  }
+  return ccardColl.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
+}
+function ccardNames(p){                          // the class A to Z by the name on the tile
+  var seen = Object.create(null);
+  return Rosters.namesFor(p).filter(function(n){ if (seen[n]) return false; seen[n] = true; return true; }).sort(ccardCmp);
+}
+function ccardCols(n){ return n <= 8 ? 2 : n <= 18 ? 3 : n <= 32 ? 4 : n <= 45 ? 5 : 6; }   // the shape goes with the class size, not the box
+function ccardDue(p){                            // one entry per card given this class today, A to Z
+  var m = CcToday.peek(p), out = [];
+  if (!m) return out;
+  Object.keys(m).sort(ccardCmp).forEach(function(n){ var k = typeof m[n] === "number" ? m[n] : 0; for (var i = 0; i < k; i++) out.push(n); });
   return out;
 }
 function ccardGroup(list){                       // ["Ben","Ben","Cal"] → [{n:"Ben",k:2},{n:"Cal",k:1}]
@@ -7241,74 +7402,238 @@ function ccardGroup(list){                       // ["Ben","Ben","Cal"] → [{n:
   (list || []).forEach(function(n){ if (seen[n]) seen[n].k++; else { seen[n] = { n: n, k: 1 }; out.push(seen[n]); } });
   return out;
 }
-function ccardText(list, sep){ return ccardGroup(list).map(function(g){ return g.n + (g.k > 1 ? " \u00d7" + g.k : ""); }).join(sep || ", "); }
-/* v7.35: the pieces the card and the quick-draw popover share */
-function ccardMarks(p){ var m = p ? DayStore.get("ccard:" + p) : null; if (!m && p){ m = Object.create(null); DayStore.set("ccard:" + p, m); } return m; }
+function ccardGText(groups, sep){ return groups.map(function(g){ return g.n + (g.k > 1 ? " ×" + g.k : ""); }).join(sep || ", "); }
+function ccardText(list, sep){ return ccardGText(ccardGroup(list), sep); }
 function ccardLog(){ if (!cfg.cards || !Array.isArray(cfg.cards.log)) cfg.cards = { log: [] }; return cfg.cards.log; }
-/* today's cards for a class go in the log; the marks clear. Returns the names, and a note to show. */
-function ccardRecord(p, auto){
-  if (!p) return { cards: [], note: "" };
-  var cards = ccardDue(p), d = dateKey(now()), L = ccardLog(), entry = null, note = "";
-  for (var i = L.length - 1; i >= 0; i--){ if (L[i].d === d && L[i].p === p){ entry = L[i]; break; } }
-  if (cards.length){
-    if (entry) cards.forEach(function(n){ if (entry.names.indexOf(n) < 0) entry.names.push(n); });
-    else L.push({ d: d, p: p, names: cards });
-    while (L.length > 600) L.shift();
-    note = (auto ? "At the bell \u2014 " : "") + "Recorded " + cards.length + (cards.length === 1 ? " card" : " cards") + " for " + p + ": " + ccardText(cards);
-  } else if (!auto) note = "No cards today for " + p + ".";
-  DayStore.clear("ccard:" + p);
-  try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){}   // every view repaints
-  return { cards: cards, note: note };
+function ccardEntry(p, d){                       // the log's entry for a class on a day (today)
+  if (!p) return null;
+  var L = ccardLog(); d = d || dateKey(now());
+  for (var i = L.length - 1; i >= 0; i--){ if (L[i].d === d && L[i].p === p) return L[i]; }
+  return null;
 }
-/* the class as tiles into `gridEl`; a tap cycles ""→warn→card→"" and calls onChange. Returns {warn, card}. */
-function ccardTiles(gridEl, p, onChange){
-  var names = p ? Rosters.namesFor(p) : [], m = ccardMarks(p), warn = 0, card = 0;
-  gridEl.innerHTML = "";
-  names.forEach(function(n){
-    var st = m[n] || "", k = typeof st === "number" ? st : (st === "card" ? 1 : 0);
-    if (st === "warn") warn++; else card += k;
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "ccTile" + (st === "warn" ? " isWarn" : k ? " isCard" : "");
-    if (Absent.isOut(p, n)) b.classList.add("out");
-    var nm = document.createElement("span"); nm.className = "ccTileName"; nm.textContent = n;   // user data: textContent only
-    var tag = document.createElement("span"); tag.className = "ccTileTag";
-    tag.textContent = st === "warn" ? "Warning" : k > 1 ? "Comment cards \u00d7" + k : k ? "Comment card" : "";
-    b.appendChild(nm); b.appendChild(tag);
-    b.setAttribute("aria-label", n + (st === "warn" ? ", on warning" : k ? ", " + k + (k === 1 ? " comment card" : " comment cards") : "") + ". Tap to add, hold to take one back");
-    function changed(){ try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){} if (onChange) onChange(); }
-    /* a tap adds: nothing → warning → a card → another card…; a HOLD (half a second) takes one back */
-    var held = false, holdTid = null;
-    b.addEventListener("pointerdown", function(e){
-      held = false; clearTimeout(holdTid);
-      holdTid = setTimeout(function(){
-        held = true;
-        var cur = m[n] || "";
-        if (typeof cur === "number" && cur > 1) m[n] = cur - 1;
-        else if (typeof cur === "number" || cur === "card") m[n] = "warn";
-        else delete m[n];
-        try { if (navigator.vibrate) navigator.vibrate(12); } catch(_){}
-        changed();
-      }, 500);
-    });
-    ["pointerup", "pointercancel", "pointerleave"].forEach(function(ev){ b.addEventListener(ev, function(){ clearTimeout(holdTid); }); });
-    b.addEventListener("contextmenu", function(e){ e.preventDefault(); });   // a long press on the panel must not pop the menu
-    wireButton(b, function(){
-      if (held){ held = false; return; }          // the hold already did its thing
-      var cur = m[n] || "";
-      if (cur === "") m[n] = "warn";
-      else if (cur === "warn" || cur === "card") m[n] = cur === "card" ? 2 : 1;
-      else m[n] = Math.min(9, cur + 1);
-      changed();
-    });
-    gridEl.appendChild(b);
-  });
-  return { warn: warn, card: card, names: names.length };
+function ccardHas(p){ var e = ccardEntry(p); return !!(e && e.names.length); }   // a card was given this class today
+function ccardInFit(inn, names){                 // nobody has handed in more cards than they were given
+  var left = Object.create(null), out = [];
+  names.forEach(function(n){ left[n] = (left[n] || 0) + 1; });
+  (Array.isArray(inn) ? inn : []).forEach(function(n){ if (left[n] > 0){ left[n]--; out.push(n); } });
+  return out;
 }
+/* the log entry for today mirrors the cards as they stand; with none, there is no entry */
+function ccardSync(p){
+  if (!p) return null;
+  var L = ccardLog(), e = ccardEntry(p);
+  var names = CcToday.bank(p, e).concat(ccardDue(p)).slice(0, 60);
+  if (!names.length){ if (e) L.splice(L.indexOf(e), 1); return null; }
+  if (!e){ e = { d: dateKey(now()), p: p, names: names, "in": [] }; L.push(e); while (L.length > 600) L.shift(); }
+  else { e.names = names; e["in"] = ccardInFit(e["in"], names); }
+  return e;
+}
+function ccardFire(){ try { document.dispatchEvent(new CustomEvent("deckhand:ccard")); } catch(e){} }   // every view repaints
+function ccardSet(p, n, v){
+  var m = CcToday.marks(p);
+  if (v) m[n] = v; else delete m[n];
+  ccardSync(p); CcToday.save(); ccardFire();        // the log first: the marks are never saved ahead of it
+}
+/* one step up (nothing → warning → a card → another card, nine at most) or one step back down */
+function ccardStep(p, n, dir){
+  var m = CcToday.peek(p), cur = hasOwn(m, n) ? m[n] : "", next;
+  if (dir > 0) next = cur === "" ? "warn" : cur === "warn" ? 1 : Math.min(9, cur + 1);
+  else next = cur === "" || cur === "warn" ? "" : cur > 1 ? cur - 1 : "warn";
+  if (next === cur) return null;
+  ccardSet(p, n, next);
+  return { n: n, prev: cur, next: next };
+}
+function ccardSay(v){ return v === "warn" ? "warning" : v > 1 ? v + " comment cards" : v ? "comment card" : "cleared"; }
+/* who still owes a card from an entry: [{n, k}] A to Z. An entry from before v7.40 has no `in`
+   list and is not tracked (nobody is chased for September). */
+function ccardTracked(e){ return !!e && Array.isArray(e["in"]); }
+function ccardOwed(e){
+  if (!ccardTracked(e)) return [];
+  var got = Object.create(null);
+  e["in"].forEach(function(n){ got[n] = (got[n] || 0) + 1; });
+  return ccardGroup(e.names).map(function(g){ return { n: g.n, k: g.k - (got[g.n] || 0) }; }).filter(function(g){ return g.k > 0; })
+    .sort(function(a, b){ return ccardCmp(a.n, b.n); });
+}
+function ccardHandIn(e, n, on){                  // every card of this student's in the entry: handed in, or not
+  if (!e) return;
+  e["in"] = (Array.isArray(e["in"]) ? e["in"] : []).filter(function(x){ return x !== n; });
+  if (on) e.names.forEach(function(x){ if (x === n) e["in"].push(n); });
+  ccardFire();
+}
+function ccardOwedCount(e){ var k = 0; (ccardTracked(e) ? ccardOwed(e) : ccardGroup(e ? e.names : [])).forEach(function(g){ k += g.k; }); return k; }
 function ccardSummary(c){
   var parts = [];
   if (c.warn) parts.push("<b>" + c.warn + "</b> on warning");
   if (c.card) parts.push("<b>" + c.card + "</b> " + (c.card === 1 ? "card" : "cards"));
-  return parts.join(" \u00b7 ");
+  return parts.join(" · ");
+}
+var CCARD_STAT = '<div class="ccStat"><span class="ccStatTxt" role="status"></span><button type="button" class="ccUndo" hidden>Undo</button></div>';
+/* THE PANEL: `root` holds a .ccGrid and a .ccStat. paint(period) lays the class out and returns
+   the counts; nothing is rebuilt unless the class changes, so a tile never moves or loses a press
+   under a finger. opts.onAct(step) hears each tap that changed something; opts.hold() is how long
+   the line beside Undo stays (the sheet keeps it as long as it keeps itself). */
+function ccardPanel(root, opts){
+  opts = opts || {};
+  var grid = root.querySelector(".ccGrid"), stat = root.querySelector(".ccStat");
+  var txt = stat.querySelector(".ccStatTxt"), undoBtn = stat.querySelector(".ccUndo");
+  var sig = null, list = [], P = null, cols = 1, rows = 1, wBase = 0, statTid = null, undoFn = null, ro = null, dead = false;
+  /* the hint is drawn by CSS from this attribute: the line itself is empty until a tap has
+     something to say, so a screen reader hears the taps and not the hint coming back */
+  txt.setAttribute("data-hint", "Tap a name: a warning, then a card. − takes one back.");
+  function hold(){ var h = typeof opts.hold === "function" ? opts.hold() : 0; return h > 0 ? h : 5000; }
+  function idle(){
+    clearTimeout(statTid); statTid = null; undoFn = null;
+    undoBtn.hidden = true; stat.classList.remove("live"); txt.textContent = "";
+  }
+  function say(msg, undo, ms){
+    clearTimeout(statTid);
+    txt.textContent = msg; undoFn = undo || null; undoBtn.hidden = !undo;
+    stat.style.setProperty("--ccMs", (ms || 5000) + "ms");
+    stat.classList.remove("live"); void stat.offsetWidth; stat.classList.add("live");   // the bar starts over
+    statTid = setTimeout(idle, ms || 5000);
+  }
+  wireButton(undoBtn, function(){ var f = undoFn; idle(); if (f) f(); });
+  function mark(p, n){ var m = CcToday.peek(p); return hasOwn(m, n) ? m[n] : ""; }
+  function act(n, dir){
+    var p = P; if (!p) return;
+    var e0 = ccardEntry(p), d0 = dateKey(now());
+    var in0 = ccardTracked(e0) ? e0["in"].filter(function(x){ return x === n; }).length : 0;
+    var r = ccardStep(p, n, dir);
+    if (!r){ if (dir > 0) say(n + " — nine cards is the most.", null, 3000); return; }
+    say(n + " — " + ccardSay(r.next), function(){
+      /* Undo takes back THIS tap: if the mark has moved since (another card on the board, Clear
+         today, midnight) there is nothing of this tap's left to take back */
+      if (dateKey(now()) !== d0 || mark(p, n) !== r.next){ say("That has changed since — nothing undone.", null, 3000); return; }
+      ccardSet(p, n, r.prev);
+      var e1 = ccardEntry(p);
+      if (e1 && in0){                                           // a card that was handed in is handed in again
+        var keep = (Array.isArray(e1["in"]) ? e1["in"] : []).filter(function(x){ return x !== n; });
+        for (var i = 0; i < in0; i++) keep.push(n);
+        e1["in"] = ccardInFit(keep, e1.names);
+        ccardFire();
+      }
+      if (opts.onUndo) opts.onUndo();
+    }, hold());
+    if (opts.onAct) opts.onAct(r);
+  }
+  function tile(n){
+    var el = document.createElement("div"), main = document.createElement("button"), minus = document.createElement("button");
+    var nm = document.createElement("span"), tag = document.createElement("span");
+    el.className = "ccTile";
+    main.type = "button"; main.className = "ccTileMain";
+    nm.className = "ccTileName"; nm.textContent = n;            // user data: textContent only
+    tag.className = "ccTileTag";
+    main.appendChild(nm); main.appendChild(tag);
+    minus.type = "button"; minus.className = "ccMinus"; minus.textContent = "−"; minus.hidden = true;
+    minus.setAttribute("aria-label", "Take one back from " + n);
+    el.appendChild(main); el.appendChild(minus);
+    var t = { n: n, el: el, main: main, tag: tag, minus: minus, key: null, w: 0, pf: 0, pw: 0, upAt: 0 };
+    wireButton(main, function(){ t.upAt = Date.now(); act(n, 1); });
+    /* the − arrives under a finger that tapped the tile's right side: for a moment after a tap
+       UP, a tap there is the second half of a double tap — another step up, not the way back */
+    wireButton(minus, function(){
+      if (Date.now() - t.upAt < CCARD_GUARD_MS){ t.upAt = Date.now(); act(n, 1); }
+      else act(n, -1);
+    });
+    el.addEventListener("contextmenu", function(e){ e.preventDefault(); });   // a long press on the panel must not pop the menu
+    return t;
+  }
+  /* the tiles fill the box: the row height from the space there is; the type from the tile and
+     the class's names — sized so four names in five fit beside a − at full size, and only the
+     long ones are set smaller (one "Christopher" does not shrink the class) */
+  var cv = null;
+  function measure(fam){
+    try {
+      cv = cv || document.createElement("canvas");
+      var cx = cv.getContext("2d"); cx.font = "800 32px " + fam;   // near the size they are set at (the face's optical size widens small type)
+      list.forEach(function(t){ t.w = cx.measureText(t.n).width / 32; });
+    } catch(e){ list.forEach(function(t){ t.w = t.n.length * 0.6; }); }
+    var ws = list.map(function(t){ return t.w; }).sort(function(a, b){ return a - b; });
+    wBase = Math.max(2, Math.min(5.5, ws[Math.floor((ws.length - 1) * 0.8)] || 2));
+  }
+  function fit(){
+    if (dead || !list.length) return;
+    var cw = grid.clientWidth, ch = grid.clientHeight;
+    if (!cw || !ch) return;
+    var cs = getComputedStyle(grid), gap = parseFloat(cs.columnGap) || 0, pad = (parseFloat(cs.paddingTop) || 0) * 2;
+    var tw = (cw - pad - gap * (cols - 1)) / cols;
+    var th = Math.max(34, Math.min(168, Math.floor((ch - pad - gap * (rows - 1)) / rows)));
+    if (!wBase) measure(cs.fontFamily);
+    var room = tw - 11 - Math.max(36, Math.min(64, tw * 0.18)); // beside the rail, the borders and the −
+    var f = +Math.max(11, Math.min(64, th * 0.46, room / (wBase + 0.8) * 0.97)).toFixed(1);
+    grid.style.setProperty("--ccTH", th + "px");
+    grid.style.setProperty("--ccF", f + "px");
+    /* each name is then measured as it will be set: one that would not fit beside its − is set
+       smaller by just that much */
+    list.forEach(function(t){
+      if (t.pf !== f){ t.pf = f; t.pw = widthAt(t.n, f); }
+      var need = t.pw + 0.8 * f;
+      if (need > room) t.el.style.setProperty("--ccF", Math.max(10, f * room / need * 0.97).toFixed(1) + "px");
+      else t.el.style.removeProperty("--ccF");
+    });
+  }
+  var probe = null;
+  function widthAt(name, f){
+    try {
+      if (!probe){ probe = document.createElement("span"); probe.className = "ccProbe"; probe.setAttribute("aria-hidden", "true"); }
+      if (probe.parentNode !== root) root.appendChild(probe);
+      probe.style.fontSize = f + "px"; probe.textContent = name;
+      return probe.offsetWidth + 1;                             // the laid-out width: the sheet may still be growing into place
+    } catch(e){ return name.length * 0.6 * f; }
+  }
+  try { ro = new ResizeObserver(function(){ fit(); }); ro.observe(grid); } catch(e){ ro = null; }
+  /* the names are measured in the board's own type: measure again when it arrives (the web font
+     loads after the first paint; offline it never does and the fallback's widths stand) */
+  var onFonts = function(){ wBase = 0; list.forEach(function(t){ t.pf = 0; }); fit(); };
+  try { if (document.fonts){ document.fonts.ready.then(onFonts); document.fonts.addEventListener("loadingdone", onFonts); } } catch(e){}
+  function paint(p){
+    P = p || null;
+    var m = P ? CcToday.peek(P) : null, names = P ? ccardNames(P) : [], roster = names.length;
+    /* a student marked today and since taken off (or renamed in) the roster keeps a tile, after
+       the class, so the mark can still be seen and stepped back */
+    if (m){
+      var extra = Object.keys(m).filter(function(n){ return names.indexOf(n) === -1; }).sort(ccardCmp);
+      if (extra.length) names = names.concat(extra);
+    }
+    var s = (P || "") + "\u0001" + names.join("\u0001");
+    if (s !== sig){
+      sig = s; grid.textContent = "";
+      list = names.map(tile);
+      list.forEach(function(t){ grid.appendChild(t.el); });
+      cols = ccardCols(roster || names.length); rows = Math.max(1, Math.ceil(names.length / cols));   // the shape is the class's; a tile kept for a mark goes after it
+      grid.style.setProperty("--ccC", cols); grid.style.setProperty("--ccR", rows);
+      wBase = 0; idle(); fit();
+    }
+    var warn = 0, card = 0;
+    list.forEach(function(t){
+      var st = hasOwn(m, t.n) ? m[t.n] : "", k = typeof st === "number" ? st : 0, out = Absent.isOut(P, t.n);
+      if (st === "warn") warn++; else card += k;
+      var key = st + "|" + (out ? 1 : 0);
+      if (key === t.key) return;
+      var first = t.key === null; t.key = key;
+      t.el.className = "ccTile" + (st === "warn" ? " isWarn" : k ? " isCard" : "") + (out ? " out" : "");
+      t.tag.textContent = st === "warn" ? "Warning" : k > 1 ? k + " cards" : k ? "Card" : "";
+      t.minus.hidden = !st;
+      t.main.setAttribute("aria-label", t.n + (st === "warn" ? ", on warning" : k ? ", " + k + (k === 1 ? " comment card" : " comment cards") : "") +
+        (out ? ", absent" : "") + ". Tap to add one");
+      if (!first){ t.el.classList.remove("bump"); void t.el.offsetWidth; t.el.classList.add("bump"); }
+    });
+    return { warn: warn, card: card, names: names.length, cols: cols, rows: rows };
+  }
+  idle();
+  return {
+    paint: paint, say: say, idle: idle, fit: fit,
+    destroy: function(){
+      dead = true; clearTimeout(statTid);
+      try { if (ro) ro.disconnect(); } catch(e){}
+      try { document.fonts.removeEventListener("loadingdone", onFonts); } catch(e){}
+    }
+  };
+}
+var CCARD_GUARD_MS = 600;
+function ccardDay(d){
+  var p = d.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]);
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()] + " " + (+p[1]) + "/" + (+p[2]);
 }
 function makeCcard(host, wcfg){
   if (typeof wcfg.period !== "string") wcfg.period = "";
@@ -7318,98 +7643,121 @@ function makeCcard(host, wcfg){
         '<span class="ccSum"></span></div>' +
       '<div class="ccGrid" role="group" aria-label="The class"></div>' +
       '<div class="wEmpty ccEmpty"></div>' +
-      '<div class="ccNote" hidden></div>' +
-      '<div class="row">' +
-        '<button class="btn btnSm ccLogBtn" type="button" style="background:var(--white); color:var(--navy); border:3px solid var(--navy)">Log</button>' +
+      '<div class="ccFoot">' + CCARD_STAT +
+        '<button type="button" class="chip chipSm ccRemBtn" hidden>Reminder</button>' +
+        '<button type="button" class="chip chipSm ccLogBtn">Log</button>' +
       '</div>' +
-      '<div class="tHint">Tap a name: warning \u2192 card \u2192 another card \u00b7 hold to take one back \u00b7 the reminder comes up before the bell (Settings \u2192 Bells)</div>' +
       '<div class="ccLog" role="group" aria-label="Comment card log" hidden>' +
         '<div class="ccLogHead"><b>Comment cards</b>' +
           '<button type="button" class="chip chipSm ccCopy">Copy</button>' +
           '<button type="button" class="chip chipSm ccClear">Clear today</button>' +
-          '<button type="button" class="ccLogX ccLogClose" aria-label="Close">\u2715</button></div>' +
+          '<button type="button" class="ccLogX ccLogClose" aria-label="Close">✕</button></div>' +
         '<div class="ccLogBody"></div>' +
       '</div>' +
     '</div>');
   var q = function(s){ return host.querySelector(s); };
-  var sel = q(".pkSel"), gridEl = q(".ccGrid"), sumEl = q(".ccSum"), emptyEl = q(".ccEmpty"), noteEl = q(".ccNote");
+  var sel = q(".pkSel"), gridEl = q(".ccGrid"), sumEl = q(".ccSum"), emptyEl = q(".ccEmpty"), remBtn = q(".ccRemBtn");
   var logEl = q(".ccLog"), logBody = q(".ccLogBody");
-  var noteTid = null, refreshTid = null, destroyed = false, lastAuto = null;
+  var refreshTid = null, destroyed = false, lastSum = null;
   var period = buildPeriodSelect(sel, wcfg, function(){ paint(); });
-  var marks = ccardMarks, log = ccardLog;
-  function note(msg){
-    noteEl.textContent = msg; noteEl.hidden = false;
-    clearTimeout(noteTid); noteTid = setTimeout(function(){ noteEl.hidden = true; }, 7000);
-  }
+  var panel = ccardPanel(q(".wBody"));
   function paint(){
-    var p = period.current();
-    if (!p || !Rosters.namesFor(p).length){
-      gridEl.innerHTML = "";
-      emptyEl.textContent = cfg.rosters.length ? "No roster for this period \u2014 pick one above" : "Add class rosters in Settings";
-      sumEl.textContent = ""; return;
-    }
-    emptyEl.textContent = "";
-    sumEl.innerHTML = ccardSummary(ccardTiles(gridEl, p, paint));
+    var p = period.current(), has = !!(p && Rosters.namesFor(p).length);
+    gridEl.hidden = !has;
+    var empty = has ? "" : (cfg.rosters.length ? "No roster for this period — pick one above" : "Add class rosters in Settings");
+    if (emptyEl.textContent !== empty) emptyEl.textContent = empty;
+    var sum = has ? ccardSummary(panel.paint(p)) : (panel.paint(null), "");
+    if (sum !== lastSum){ lastSum = sum; sumEl.innerHTML = sum; }
+    remBtn.hidden = !(has && ccardHas(p));
   }
-  function onCcard(){ if (!destroyed) paint(); }                   // v7.35: the quick-draw popover changed a mark
+  function onCcard(){ if (!destroyed){ paint(); if (!logEl.hidden) paintLog(true); } }   // a mark changed somewhere (the quick-draw, the reminder)
   document.addEventListener("deckhand:ccard", onCcard);
-  /* END OF CLASS: today's cards go in the log; the reminder takes the stage; the board clears */
-  function record(p, auto){
-    if (!p) return;
-    var r = ccardRecord(p, auto);
-    if (r.note) note(r.note);
-    paint();
-    return r.cards;
-  }
-  /* v7.37 (Croix: "Can it just automatic at 3 minutes left in class"): no End of class button —
-     CcardPop watches the bell and puts the reminder up three minutes out; the bell records
-     whatever is left */
-  /* the bell: the class that just left had cards nobody recorded */
-  function watchBell(){
-    var auto = Rosters.autoPeriod();
-    if (lastAuto && auto !== lastAuto && ccardDue(lastAuto).length) record(lastAuto, true);
-    lastAuto = auto;
-  }
+  /* v7.37 (Croix: "Can it just automatic at 3 minutes left in class"): CcardPop watches the bell
+     and puts the reminder up before it; Reminder here brings it back (a card handed in late) */
+  wireButton(remBtn, function(){ var p = period.current(); if (p) CcardPop.remind(p); });
   /* ---- the log ---- */
-  function fmtDay(d){
-    var p = d.split("-"), dt = new Date(+p[0], +p[1] - 1, +p[2]);
-    return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dt.getDay()] + " " + (+p[1]) + "/" + (+p[2]);
+  function mine(){ var p = period.current(); return ccardLog().filter(function(e){ return !p || e.p === p; }); }
+  function entryText(e){
+    if (!ccardTracked(e)) return ccardText(e.names);
+    var owes = Object.create(null);
+    ccardOwed(e).forEach(function(g){ owes[g.n] = g.k; });
+    return ccardGroup(e.names).map(function(g){ return g.n + (g.k > 1 ? " ×" + g.k : "") + (owes[g.n] ? " (owes)" : " (in)"); }).join(", ");
   }
   function logText(){
-    var L = log(), p = period.current(), lines = [];
-    L.filter(function(e){ return !p || e.p === p; }).slice().reverse().forEach(function(e){ lines.push(fmtDay(e.d) + " \u00b7 " + e.p + ": " + ccardText(e.names)); });
-    return lines.join("\n");
+    return mine().slice().reverse().map(function(e){ return ccardDay(e.d) + " · " + e.p + ": " + entryText(e); }).join("\n");
   }
-  function paintLog(){
-    var L = log(), p = period.current();
+  /* `keep`: a repaint while the log is open leaves the Still-owed chips where they are (a chip
+     that was just tapped stays, checked, so a second tap takes it back) */
+  var owedRows = null;
+  function paintLog(keep){
+    var p = period.current(), L = mine();
     logBody.innerHTML = "";
-    var mine = L.filter(function(e){ return !p || e.p === p; });
-    var h4 = document.createElement("h4"); h4.textContent = p ? p + " \u2014 totals" : "Totals"; logBody.appendChild(h4);
+    function h(t){ var el = document.createElement("h4"); el.textContent = t; logBody.appendChild(el); }
+    /* still owed: the last two weeks, newest first */
+    var since = dateKey(new Date(now().getTime() - 14 * 86400000));
+    if (!keep || !owedRows){
+      owedRows = [];
+      L.slice().reverse().forEach(function(e){
+        if (e.d < since) return;
+        ccardOwed(e).forEach(function(g){ owedRows.push({ e: e, n: g.n }); });
+      });
+      owedRows = owedRows.slice(0, 60);
+    }
+    owedRows = owedRows.filter(function(r){ return ccardLog().indexOf(r.e) !== -1 && r.e.names.indexOf(r.n) !== -1; });
+    if (owedRows.length){
+      h("Still owed — tap a name when the card is handed in");
+      var ow = document.createElement("div"); ow.className = "ccOwed";
+      owedRows.forEach(function(r){
+        var k = r.e.names.filter(function(x){ return x === r.n; }).length;
+        var isIn = !ccardOwed(r.e).some(function(g){ return g.n === r.n; });
+        var b = document.createElement("button"); b.type = "button"; b.className = "ccOwe" + (isIn ? " isIn" : "");
+        b.setAttribute("aria-pressed", isIn ? "true" : "false");
+        var s = document.createElement("span"); s.textContent = r.n + (k > 1 ? " ×" + k : "");
+        var w = document.createElement("small"); w.textContent = ccardDay(r.e.d) + (p ? "" : " · " + r.e.p);
+        b.appendChild(s); b.appendChild(w);
+        wireButton(b, function(){ ccardHandIn(r.e, r.n, !isIn); });      // the event repaints, keeping the chips
+        ow.appendChild(b);
+      });
+      logBody.appendChild(ow);
+    }
+    h(p ? p + " — totals" : "Totals");
     var tot = Object.create(null);
-    mine.forEach(function(e){ e.names.forEach(function(n){ tot[n] = (tot[n] || 0) + 1; }); });
-    var keys = Object.keys(tot).sort(function(a, b){ return tot[b] - tot[a] || a.localeCompare(b); });
+    L.forEach(function(e){ e.names.forEach(function(n){ tot[n] = (tot[n] || 0) + 1; }); });
+    var keys = Object.keys(tot).sort(function(a, b){ return tot[b] - tot[a] || ccardCmp(a, b); });
     var tEl = document.createElement("div"); tEl.className = "ccTotals";
-    if (!keys.length){ tEl.textContent = "No cards recorded yet" + (p ? " for " + p : "") + "."; }
-    keys.forEach(function(n){ var s = document.createElement("span"); s.textContent = n + " "; var b = document.createElement("b"); b.textContent = "\u00d7" + tot[n]; s.appendChild(b); tEl.appendChild(s); });
+    if (!keys.length){ tEl.textContent = "No cards yet" + (p ? " for " + p : "") + "."; }
+    keys.forEach(function(n){ var s = document.createElement("span"); s.textContent = n + " "; var b = document.createElement("b"); b.textContent = "×" + tot[n]; s.appendChild(b); tEl.appendChild(s); });
     logBody.appendChild(tEl);
-    if (mine.length){
-      var h42 = document.createElement("h4"); h42.textContent = "By day"; logBody.appendChild(h42);
+    if (L.length){
+      h("By day");
       var ul = document.createElement("ul");
-      mine.slice().reverse().slice(0, 60).forEach(function(e){
+      L.slice().reverse().slice(0, 60).forEach(function(e){
         var li = document.createElement("li"), w = document.createElement("span"); w.className = "ccWhen";
-        w.textContent = fmtDay(e.d) + (p ? "" : " \u00b7 " + e.p);
-        var t = document.createElement("span"); t.textContent = ccardText(e.names);
+        w.textContent = ccardDay(e.d) + (p ? "" : " · " + e.p);
+        var t = document.createElement("span"); t.className = "ccWho";
+        if (!ccardTracked(e)) t.textContent = ccardText(e.names);
+        else {
+          var owes = Object.create(null);
+          ccardOwed(e).forEach(function(g){ owes[g.n] = g.k; });
+          ccardGroup(e.names).forEach(function(g, i){
+            if (i) t.appendChild(document.createTextNode(", "));
+            var s = document.createElement("span"); s.className = owes[g.n] ? "ccOwes" : "ccIn";
+            s.textContent = g.n + (g.k > 1 ? " ×" + g.k : "") + (owes[g.n] ? "" : " ✓");
+            s.title = owes[g.n] ? "Still owed" : "Handed in";
+            t.appendChild(s);
+          });
+        }
         li.appendChild(w); li.appendChild(t); ul.appendChild(li);
       });
       logBody.appendChild(ul);
     }
   }
-  function openLog(open){ logEl.hidden = !open; if (open) paintLog(); }
+  function openLog(open){ logEl.hidden = !open; owedRows = null; if (open) paintLog(); }
   wireButton(q(".ccLogBtn"), function(){ openLog(logEl.hidden); });
   wireButton(q(".ccLogClose"), function(){ openLog(false); });
   wireButton(q(".ccCopy"), function(){
-    var txt = logText() || "No cards recorded.";
-    var done = function(){ note("Copied the log."); openLog(false); };
+    var txt = logText() || "No cards in the log.";
+    var done = function(){ openLog(false); panel.say("Copied the log.", null, 4000); };
     try { navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt); done(); }); } catch(e){ fallbackCopy(txt); done(); }
   });
   function fallbackCopy(txt){
@@ -7418,7 +7766,7 @@ function makeCcard(host, wcfg){
     try { document.execCommand("copy"); } catch(e){}
     document.body.removeChild(ta);
   }
-  /* Clear today: an armed tap — the first asks, the second (within 6 s) removes today's entry for this class */
+  /* Clear today: an armed tap — the first asks, the second (within 6 s) removes today's marks and entry for this class */
   var clearArmed = null;
   wireButton(q(".ccClear"), function(){
     var p = period.current(), d = dateKey(now()), btn = q(".ccClear");
@@ -7426,9 +7774,10 @@ function makeCcard(host, wcfg){
     if (clearArmed){
       clearTimeout(clearArmed); clearArmed = null;
       btn.textContent = "Clear today"; btn.classList.remove("armed");
-      cfg.cards.log = log().filter(function(e){ return !(e.d === d && e.p === p); });
-      DayStore.clear("ccard:" + p);
-      paint(); paintLog(); note("Cleared today\u2019s cards for " + p + ".");
+      cfg.cards.log = ccardLog().filter(function(e){ return !(e.d === d && e.p === p); });
+      CcToday.clear(p);
+      openLog(false); ccardFire();
+      panel.say("Cleared today’s marks and cards for " + p + ".", null, 5000);
       return;
     }
     btn.textContent = "Clear " + p + " today?"; btn.classList.add("armed");
@@ -7436,9 +7785,8 @@ function makeCcard(host, wcfg){
   });
   refreshTid = setInterval(function(){
     if (destroyed) return;
-    period.fill(); watchBell(); paint();
+    period.fill(); paint();                                   // the class in the room, and who is absent
   }, 1000);
-  lastAuto = Rosters.autoPeriod();
   paint();
   return {
     kind: "ccard",
@@ -7447,10 +7795,9 @@ function makeCcard(host, wcfg){
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: function(){ period.fill(); paint(); },
-    resync: paint,
-    marks: function(){ var p = period.current(); return p ? Object.assign({}, marks(p)) : {}; },   // test hook
-    _watchBell: watchBell,
-    destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(noteTid); clearTimeout(clearArmed); document.removeEventListener("deckhand:ccard", onCcard); }
+    resync: function(){ paint(); panel.fit(); },
+    marks: function(){ var p = period.current(); return p ? Object.assign({}, CcToday.peek(p) || {}) : {}; },   // test hook
+    destroy: function(){ destroyed = true; clearInterval(refreshTid); clearTimeout(clearArmed); panel.destroy(); document.removeEventListener("deckhand:ccard", onCcard); }
   };
 }
 
@@ -9626,13 +9973,17 @@ var Wrapup = (function(){
       list.appendChild(li);
     });
     msg.textContent = w.msg || WRAPUP_MSG;
-    /* v7.32: the students whose comment card is due this class */
+    paintCards();
+  }
+  /* v7.32: the students whose comment card is due this class (v7.40: those still owed, kept current) */
+  function paintCards(){
     var cardsEl = stage.querySelector(".wuCards"), due = [];
-    try { var lbl = currentPeriodLabel(); due = lbl ? ccardDue(lbl) : []; } catch(e){}
+    try { var lbl = currentPeriodLabel(), ce = lbl ? ccardEntry(lbl) : null; due = !ce ? [] : ccardTracked(ce) ? ccardOwed(ce) : ccardGroup(ce.names); } catch(e){}   // v7.40: those still owed
     cardsEl.innerHTML = "";
-    if (due.length){ var sp = document.createElement("span"); sp.textContent = "Comment cards"; cardsEl.appendChild(sp); cardsEl.appendChild(document.createTextNode(ccardText(due, " \u00b7 "))); }
+    if (due.length){ var sp = document.createElement("span"); sp.textContent = "Comment cards"; cardsEl.appendChild(sp); cardsEl.appendChild(document.createTextNode(ccardGText(due, " \u00b7 "))); }
     cardsEl.hidden = !due.length;
   }
+  document.addEventListener("deckhand:ccard", function(){ try { if (live) paintCards(); } catch(e){} });
   list.addEventListener("click", function(e){
     var li = e.target.closest("li"); if (!li) return;
     li.classList.toggle("done");
@@ -15175,6 +15526,7 @@ var Canvas = (function(){
     /* v7.15 (Croix: "It should open, full size, towards the bottom of the screen"): the number
        line is a strip — the whole width, the bottom of the board (on a staged deck too) */
     if (type === "numline" && !spot){ ww = 96; wh = 42; spot = { x: 2, y: 56 }; }
+    if (type === "ccard" && !(spot && spot.w)){ ww = 38; wh = 72; }   // v7.40: a whole class of tiles a finger can find
     if (staged && !spot){
       /* over the deck: the sketch pad gets a tall LEFT half-panel
          ("demonstrate something next to the slides") — left, so it never
@@ -16325,6 +16677,7 @@ var Settings = (function(){
     }
     disarmReset();
     Store.clear();
+    CcToday.wipe();                             // v7.40: today's comment-card marks go with it
     SaveState.suspend();                        // never re-save the old cfg on the way out
     location.reload();
   }
@@ -16846,6 +17199,7 @@ var SaveState = (function(){
     isDirty: isDirty,
     failed: function(){ return failed; },
     suspend: function(){ suspended = true; },
+    suspended: function(){ return suspended; },   // v7.40: today's comment-card marks follow the same rule
     lastSavedAt: function(){ return lastSaved ? fmtWhen(lastSaved) : null; }
   };
 })();
@@ -17076,107 +17430,196 @@ var Ink = (function(){
 /* ================= v7.35 Comment cards, quick-draw =================
    Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly even if slides
    are on the screen." A blob beside the pen and the magnifier on a staged card (a badge counts
-   the cards due) opens the tracker as a see-through popover over the slides: the class in the
-   room as tiles, the same marks the card shows (one set per class, today), End of class with the
-   reminder in the popover. Needs no card on the board. The slides get the keys back on close. */
+   the cards still owed) opens the class over the slides. Needs no card on the board. The slides
+   get the keys back on close. */
+/* v7.40 (Croix, on what was off: "The pop-up over slides"): the opener is larger and no longer
+   faint; the class comes up as a big sheet on the pen's side — the same panel as the card, the
+   same places — and gets out of the way by itself: eight seconds after a tap (the bar under the
+   Undo runs down), half a minute if nothing is tapped, at once on a tap anywhere outside it. */
 var CcardPop = (function(){
-  var blob = null, pop = null, open = false, period = null, tid = null;
+  var blob = null, pop = null, scrim = null, panel = null, open = false, period = null, idleTid = null, ghostTid = null;
+  /* how long the sheet waits, and how long after the last mark a late reminder holds off (tests shorten these) */
+  var T = { idle: 30000, after: 8000, quiet: 6000, grace: 700 };
+  var bootSynced = false, small = null, lastSum = null;
   function cur(){ var p = Rosters.autoPeriod(); if (p) return p; return cfg.rosters[0] && !(cfg.bell.groups && cfg.bell.groups.length) ? cfg.rosters[0].period : null; }
+  function arm(ms){ clearTimeout(idleTid); idleTid = open ? setTimeout(function(){ show(false, false, true); }, ms) : null; }
+  /* the sheet belongs to a staged card: no stage (or the pen, the magnifier, a screen too small
+     for it) and it has no opener, so it must not be up either */
+  function fits(){
+    var c = document.body.classList;
+    return c.contains("focusMode") && !c.contains("landing") && !c.contains("inking") && !c.contains("zooming") && !(small && small.matches);
+  }
+  function typing(el){ return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName || "")); }
+  function paintBadge(){
+    var p = cur(), e = p ? ccardEntry(p) : null, k = e ? ccardOwedCount(e) : 0, badge = blob.querySelector(".ccBadge");
+    badge.textContent = String(k); badge.hidden = !k;
+    blob.classList.toggle("has", !!k);
+    blob.setAttribute("aria-label", "Comment cards" + (k ? ", " + k + " still owed" : ""));
+  }
   function paint(){
     if (!pop) return;
     period = cur();
-    var grid = pop.querySelector(".ccGrid"), empty = pop.querySelector(".ccEmpty"), sum = pop.querySelector(".ccSum");
+    var has = !!(period && Rosters.namesFor(period).length);
     pop.querySelector(".ccPopPer").textContent = period || "No class";
-    if (!period || !Rosters.namesFor(period).length){
-      grid.innerHTML = ""; sum.textContent = "";
-      empty.textContent = cfg.rosters.length ? "No roster for this period." : "Add class rosters in Settings.";
-    } else {
-      empty.textContent = "";
-      sum.innerHTML = ccardSummary(ccardTiles(grid, period, paint));
-    }
-    var due = period ? ccardDue(period).length : 0, badge = blob.querySelector(".ccBadge");
-    badge.textContent = String(due); badge.hidden = !due;
-  }
-  function note(msg){
-    var el = pop.querySelector(".ccNote"); el.textContent = msg; el.hidden = false;
-    clearTimeout(tid); tid = setTimeout(function(){ el.hidden = true; }, 7000);
+    pop.querySelector(".ccGrid").hidden = !has;
+    pop.querySelector(".ccEmpty").textContent = has ? "" : (cfg.rosters.length ? "No roster for this period." : "Add class rosters in Settings.");
+    var c = panel.paint(has ? period : null), sum = has ? ccardSummary(c) : "";
+    if (sum !== lastSum){ lastSum = sum; pop.querySelector(".ccSum").innerHTML = sum; }
+    pop.style.setProperty("--ccR", has ? c.rows : 2);
+    pop.querySelector(".ccRemBtn").hidden = !(has && ccardHas(period));
+    paintBadge();
   }
   /* v7.37 (Croix: "Can it just automatic at 3 minutes left in class if there have been students
-     who got comment cards it triggers a reminder"): the bell watch. REMIND_MIN minutes before a
-     class block ends (Lunch excepted), if cards are due, they are recorded and the reminder fills
-     the screen — once per block; Done, Escape, Enter or Space take it down, and so does the bell.
-     Cards added after that are recorded at the bell (the card's watch, or this one). */
-  var shownFor = null, lastIn = null;
+     who got comment cards it triggers a reminder"): the bell watch. Some minutes before a class
+     block ends (Settings → Bells; Lunch excepted), if a card is still owed, the reminder fills
+     the screen; Done, Escape, Enter or Space take it down, and so does the bell.
+     v7.40 (Croix: "Yes, tap a name when it's handed in"): each name is a button. A card given
+     AFTER it has been up brings it back (packing up is when the late ones happen) — once the
+     taps have stopped, and never while the sheet is open under a finger. */
+  var shownFor = null, shownN = 0, lastIn = null, remP = null, remSig = null, remAt = 0, changedAt = 0;
   function CC(){ return (cfg.bell && isObj(cfg.bell.ccard)) ? cfg.bell.ccard : { on: true, minutes: 3 }; }   // v7.38: Settings → Bells
-  function showReminder(cards){
-    var rem = $("ccRemFull"), names = rem.querySelector(".ccRemNames");
-    names.innerHTML = "";
-    ccardGroup(cards).forEach(function(g){ var d = document.createElement("div"); d.className = "ccRemName"; d.textContent = g.n + (g.k > 1 ? " \u00d7" + g.k : ""); names.appendChild(d); });
-    rem.querySelector(".ccRemMsg").textContent = "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
-    show(false);
+  function paintReminder(){
+    var rem = $("ccRemFull"), box = rem.querySelector(".ccRemNames"), e = remP ? ccardEntry(remP) : null;
+    if (rem.hidden) return;
+    if (!e || !e.names.length){ hideReminder(); return; }       // the cards were cleared under it
+    var groups = ccardGroup(e.names).sort(function(a, b){ return ccardCmp(a.n, b.n); });
+    var owes = Object.create(null), inN = 0, n = groups.length;
+    ccardOwed(e).forEach(function(g){ owes[g.n] = g.k; });
+    var sig = groups.map(function(g){ return g.n + "\u0001" + g.k; }).join("\u0002");
+    if (sig !== remSig){                                        // built once: a tap changes a name's look, never the button under the finger (or the keyboard)
+      remSig = sig; box.textContent = "";
+      groups.forEach(function(g){
+        var b = document.createElement("button"); b.type = "button"; b.className = "ccRemName";
+        b.textContent = g.n + (g.k > 1 ? " ×" + g.k : "");  // user data: textContent only
+        wireButton(b, function(){
+          if (Date.now() - remAt < T.grace) return;             // it came up under a finger already on its way to something else
+          var en = remP ? ccardEntry(remP) : null;
+          if (en) ccardHandIn(en, g.n, !b.classList.contains("isIn"));   // the event repaints this
+        });
+        box.appendChild(b);
+      });
+      rem.style.setProperty("--ccRemF", n <= 4 ? "7vw" : n <= 8 ? "5.4vw" : n <= 14 ? "4.2vw" : "3.2vw");
+    }
+    groups.forEach(function(g, i){
+      var b = box.children[i], isIn = ccardTracked(e) && !owes[g.n];
+      if (isIn) inN++;
+      b.classList.toggle("isIn", isIn);
+      b.setAttribute("aria-pressed", isIn ? "true" : "false");
+      b.setAttribute("aria-label", g.n + (g.k > 1 ? ", " + g.k + " cards" : "") + (isIn ? ", handed in" : ", still owed"));
+    });
+    rem.querySelector(".ccRemTop").textContent = "Comment cards" + (inN ? " · " + inN + " of " + n + " handed in" : "");
+    rem.querySelector(".ccRemMsg").textContent = inN === n ? "All handed in. Thank you." :
+      "Bring yours to " + ((cfg.ownerName || "").trim() || "Mr. Shaffer") + " before you leave.";
+  }
+  function showReminder(p, byHand){
+    if (!ccardHas(p)) return false;
+    var rem = $("ccRemFull");
+    remP = p; remSig = null; remAt = byHand ? 0 : Date.now();
+    show(false, true);
     rem.hidden = false;
-    try { Sound.soft(); } catch(e){}
+    paintReminder();
+    /* the keyboard comes to the reminder: with the slides holding it the clicker would turn pages
+       behind this and Escape would never get here. Someone typing keeps their place. */
+    if (!typing(document.activeElement)){ try { rem.focus({ preventScroll: true }); } catch(e){} }
+    if (!byHand){ try { Sound.soft(); } catch(e){} }
+    return true;
   }
   function hideReminder(){
     var rem = $("ccRemFull");
     if (rem.hidden) return;
-    rem.hidden = true;
+    rem.hidden = true; remP = null; remSig = null;
+    try { if (rem.contains(document.activeElement)) document.activeElement.blur(); } catch(e){}
     try { Canvas.refocusDeck(); } catch(e){}
   }
   function bellWatch(){
     var s = null; try { s = Bell.statusAt(now()); } catch(e){ return; }
     var inClass = s && s.type === "in" && !/lunch/i.test(s.label || "");
     var key = inClass ? dateKey(now()) + "|" + s.label + "|" + s.s : null;
-    if (lastIn && key !== lastIn){                 // the bell: the reminder comes down; anything left is recorded
-      hideReminder();
-      var prev = lastIn.split("|")[1];
-      if (ccardDue(prev).length) ccardRecord(prev, true);
-      paintBadge();
-    }
+    if (lastIn && key !== lastIn){ hideReminder(); paintBadge(); }   // the bell: the reminder comes down
     lastIn = key;
-    if (!inClass || shownFor === key || !CC().on) return;
-    if (s.remainMs <= CC().minutes * 60000 && s.remainMs > 0){
-      shownFor = key;
-      var cards = ccardDue(s.label);
-      if (!cards.length) return;
-      ccardRecord(s.label, false);
-      showReminder(cards);
-      if (open) paint(); else paintBadge();
-    }
+    if (!inClass || !CC().on) return;
+    /* a breath after the minute itself: the minutes-left flash shares the default and would
+       print its number across the names */
+    if (s.remainMs > CC().minutes * 60000 - 4000 || s.remainMs <= 0) return;
+    var e = ccardEntry(s.label), n = e ? e.names.length : 0, again = shownFor === key;
+    if (again && n <= shownN) return;                            // it has been up this block, and no card has been given since
+    if (!e || !ccardOwedCount(e)) return;                        // nobody owes one (or they are all in already)
+    if (open || !$("ccRemFull").hidden) return;                  // not over the sheet while a name is being found
+    if (Date.now() - changedAt < T.quiet) return;                // a card just given: wait for the taps (and the Undo) to finish
+    shownFor = key; shownN = n;
+    showReminder(s.label);
   }
-  function show(on){
-    open = !!on;
-    pop.hidden = !open;
+  function show(on, keepFocus, auto){
+    on = !!on;
+    if (on && !fits()) return;
+    if (on === open){ if (open) arm(T.idle); return; }
+    open = on;
+    clearTimeout(ghostTid); ghostTid = null; scrim.classList.remove("ghost");
+    pop.hidden = !open; scrim.hidden = !open;
     blob.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open){ paint(); }
-    else { try { Canvas.refocusDeck(); } catch(e){} }
+    if (open){
+      paint(); panel.fit(); arm(T.idle);
+      try { pop.focus({ preventScroll: true }); } catch(e){}    // the keys leave the slides: Escape closes this, the clicker turns no page behind it
+      return;
+    }
+    clearTimeout(idleTid); idleTid = null; panel.idle();
+    if (auto){
+      /* it put itself away: a finger already on its way to a tile must land on nothing, not on
+         the slide — the scrim stays, unseen, for a moment */
+      scrim.hidden = false; scrim.classList.add("ghost");
+      ghostTid = setTimeout(function(){ ghostTid = null; scrim.classList.remove("ghost"); if (!open) scrim.hidden = true; }, 900);
+    }
+    if (!keepFocus){ try { Canvas.refocusDeck(); } catch(e){} }
   }
   return {
     init: function(){
-      blob = $("ccBlob"); pop = $("ccPop");
+      blob = $("ccBlob"); pop = $("ccPop"); scrim = $("ccScrim");
+      try { small = window.matchMedia("(max-width: 780px), (max-height: 540px)"); } catch(e){ small = null; }
+      panel = ccardPanel(pop, { onAct: function(){ arm(T.after); }, onUndo: function(){ arm(T.idle); }, hold: function(){ return T.after; } });
       wireButton(blob, function(){ show(!open); });
       wireButton(pop.querySelector(".ccPopX"), function(){ show(false); });
+      wireButton(pop.querySelector(".ccRemBtn"), function(){ if (period) showReminder(period, true); });
       wireButton($("ccRemFull").querySelector(".ccRemDone"), function(){ hideReminder(); });
       setInterval(bellWatch, 1000);
-      pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); });   // taps stay in the popover
-      document.addEventListener("deckhand:ccard", function(){ if (open) paint(); else paintBadge(); });
+      pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); arm(T.idle); });   // taps stay in the sheet, and keep it up
+      /* a tap anywhere else puts it away — on the CLICK, so the scrim is still there when the
+         finger lifts and the tap cannot land on the slide or a button underneath */
+      scrim.addEventListener("click", function(e){
+        e.stopPropagation();
+        if (open) show(false); else { clearTimeout(ghostTid); ghostTid = null; scrim.classList.remove("ghost"); scrim.hidden = true; }
+      });
+      document.addEventListener("deckhand:ccard", function(){ changedAt = Date.now(); if (open) paint(); else paintBadge(); paintReminder(); });
       document.addEventListener("deckhand:home", function(){ show(false); });
+      /* the stage ended, the pen or the magnifier came out, the window shrank: the sheet goes with its opener */
+      var gone = function(){ if (open && !fits()) show(false); };
+      try { new MutationObserver(gone).observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch(e){}
+      window.addEventListener("resize", gone);
       document.addEventListener("keydown", function(e){
-        if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " ")){ hideReminder(); e.stopPropagation(); e.preventDefault(); return; }
+        if (Alarm.isOn()) return;                               // a ringing timer has the screen and the keys
+        if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " ")){
+          if (e.key !== "Escape" && e.target && e.target.closest && e.target.closest(".ccRemName")) return;   // the keyboard on a name checks it off
+          if (e.key !== "Escape" && typing(e.target)) return;   // someone is typing: only Escape is the reminder's
+          hideReminder(); e.stopPropagation(); e.preventDefault(); return;
+        }
         if (open && e.key === "Escape"){ show(false); e.stopPropagation(); }
       }, true);
-      setInterval(function(){ if (open) { if (cur() !== period) paint(); } else paintBadge(); }, 5000);
+      setInterval(function(){
+        if (open && !Alarm.isOn()) paint(); else { if (open) show(false); paintBadge(); }   // the class in the room, who is absent; an alarm takes the screen
+      }, 2000);
+      /* marks kept through a reload: the log agrees with them (SaveState is told after boot) */
+      var before = JSON.stringify(ccardLog());
+      CcToday.periods().forEach(function(p){ ccardSync(p); });
+      bootSynced = JSON.stringify(ccardLog()) !== before;
       paintBadge();
     },
     open: function(){ show(true); }, close: function(){ show(false); },
     isOpen: function(){ return open; },
+    remind: function(p){ return showReminder(p, true); },     // the card's Reminder button
+    times: T,                                     // test hook
+    bootSynced: function(){ return bootSynced; },
     _bellWatch: bellWatch,                        // test hook
     reminding: function(){ return !$("ccRemFull").hidden; }
   };
-  function paintBadge(){
-    var p = cur(), due = p ? ccardDue(p).length : 0, badge = blob.querySelector(".ccBadge");
-    badge.textContent = String(due); badge.hidden = !due;
-  }
 })();
 
 /* ================= v7.29 Lunch: the tray's taps ================= */
@@ -17439,6 +17882,7 @@ try {
   if (rostersAuto && rostersAuto.kind === "loaded" && SaveState.touch()) Settings.rostersSaved();
   Settings.rostersNotice(rostersAuto);
 } catch(e){}
+try { if (CcardPop.bootSynced()) SaveState.touch(); } catch(e){}   // v7.40
 
 /* the ⋮ badge shows the real release, not a frozen "v6" */
 try { document.getElementById("brandVer").textContent = "v" + String(cfg.appVersion).split(".")[0]; } catch(e){}
@@ -17475,6 +17919,7 @@ window.Deckhand = {
   passingMusic: PassingMusic,                   // v7.31: music between classes (tests)
   mathleWords: MATHLE_WORDS,                    // v7.33: the vocabulary (tests)
   ccardPop: CcardPop,                           // v7.35: the quick-draw comment cards (tests)
+  ccToday: CcToday,                             // v7.40: today's marks (tests)
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
   nature: Nature,                               // v7.24: the nature sounds (tests render them offline)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)

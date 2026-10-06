@@ -47,7 +47,7 @@ try {
 } catch (e) { seed = null; }
 function checkConfig(f, c) {
   const names = (c.rosters || []).flatMap(r => (r && r.names) || [])
-    .concat((c.cards && c.cards.log || []).flatMap(e => (e && e.names) || []));   // v7.32: the comment-card log
+    .concat((c.cards && c.cards.log || []).flatMap(e => ((e && e.names) || []).concat((e && Array.isArray(e.in) && e.in) || [])));   // v7.32: the comment-card log (v7.40: and who handed theirs in)
   const urls = [];
   (c.scenes || []).forEach(s => (s.widgets || []).forEach(w => {
     if (!w) return;

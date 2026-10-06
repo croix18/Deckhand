@@ -2,6 +2,40 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.40.0 — 2026-10-06
+
+**The comment cards, rebuilt for the hand.** Croix: "It needs more development. It was awkward and
+wonky to use." What was off: "Finding the student" and "The pop-up over slides".
+
+- **One panel everywhere.** The whole class shows at once with no scrolling, A to Z by the name on
+  the tile, as large as the box allows. The column count goes with the class size, so a student is
+  in the same place in the card, on the stage and in the quick-draw. A long name is set smaller on
+  its own tile; it does not shrink the class.
+- **A tap steps up, a − steps down.** Warning, card, another card. A marked tile carries its own −;
+  the timed hold is gone. Every tap says what it did ("Dante — warning") beside an Undo. A quick
+  double tap is always two steps up, even where the − has just appeared under the finger.
+- **The quick-draw over slides is a sheet.** The opener is larger and no longer faint. The class
+  comes up big on the pen's side, and gets out of the way by itself: eight seconds after a tap
+  (a bar runs down beside the Undo), half a minute if nothing is tapped, at once on a tap anywhere
+  outside it. No tap reaches the slide underneath, including one that arrives just after the
+  sheet has closed itself. Escape closes it too.
+- **Handed in.** The reminder's names are buttons: tap one when the card is handed in. The log
+  shows who is in and who still owes one, and "Still owed" lists the last two weeks to tap off
+  later. The opener's badge and the wrap-up count the cards still owed. Reminder (card and sheet)
+  brings the reminder back.
+- **A late card gets its reminder.** A card given after the reminder has been up brings it back,
+  a few seconds after the last tap. The reminder comes up a moment after the minutes-left number
+  instead of under it.
+- **Marks survive a reload.** Today's marks are kept on the device and cleared at midnight. The
+  log holds each card the moment it is given, so nothing waits on the bell. The tiles keep the
+  class's marks until the day ends.
+- The reminder and the sheet take the keyboard while they are up, so the clicker turns no slide
+  behind them. A ringing timer takes the screen from both.
+
+Six new tests, two rewritten; 284. The bell block is unchanged. Log entries gain `in` (who handed
+theirs in); entries from before 7.40 have none and are not chased. Not changed: a class picked by
+hand in the card (not the bell's class) gets no automatic reminder and no badge.
+
 ## 7.39.0 — 2026-10-06
 
 **Class lists found on their own.** Croix: "The class lists were in the browser because cadence
