@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.40.0",
+  "appVersion": "7.41.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -765,6 +765,17 @@
     display:inline-flex; align-items:center; gap:7px;
   }
   @media (hover:hover){ #focusBar button:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
+  /* v7.41 the stage bar's tabs: sand when the card is put away, turquoise while it is up */
+  #focusBar{max-width:calc(100vw - 72px);}
+  #stageShelf{display:flex; gap:8px; align-items:center; justify-content:flex-end; min-width:0; flex:0 1 auto;}
+  #stageShelf:empty{display:none;}
+  #focusBar > button, #focusTimerWrap{flex:none;}   /* the stage's own buttons never shrink; the tabs do */
+  #focusBar button.stTab{background:var(--sand); color:var(--navy); border-color:var(--sand); max-width:160px; min-width:0; flex:0 1 auto; opacity:.92;}
+  @media (max-width: 1280px){ #focusBar button.stTab span{display:none;} #focusBar button.stTab{padding:9px 14px; flex:none;} }   /* a small screen: the tool's icon alone */
+  #focusBar button.stTab span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
+  #focusBar button.stTab svg{flex:none;}
+  #focusBar button.stTab[aria-pressed="true"]{background:var(--turq); border-color:var(--turq); opacity:1;}
+  #focusBar button.stTab:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
 
   /* ===== v6.14 STAGE MODE: direct instruction gets the WHOLE screen =====
      (Croix, field: "look at all the space the date and top bar are
@@ -2108,7 +2119,7 @@
      auto-collapses it */
   /* v7.15: the corner blobs — fullscreen top-right, the pen bottom-right on a staged deck;
      navy like the dock, half there until a finger or a pointer comes near */
-  #fsBtn, #inkBlob, #zoomBlob, #ccBlob{
+  #fsBtn, #inkBlob, #zoomBlob, #ccBlob, #pkBlob{
     position:fixed; z-index:900001; width:44px; height:44px; border-radius:999px; border:0; padding:0;
     background:var(--navy); color:var(--white); box-shadow:3px 4px 0 var(--shadow);
     display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:.45;
@@ -2140,6 +2151,65 @@
   .ccBadge[hidden]{display:none;}
   /* v7.40 the sheet: big enough to find a name from across the room, on the pen's side, as tall
      as the class needs (--ccR rows); the scrim under it takes the tap that puts it away */
+  /* v7.41 the name picker's blob, next after the comment cards'; one tap and a name is up */
+  #pkBlob{right:194px; bottom:12px; width:52px; height:52px; opacity:.78; display:none;}
+  #pkBlob svg{width:24px; height:24px;}
+  body.focusMode:not(.landing):not(.inking):not(.zooming) #pkBlob{display:inline-flex;}
+  #pkBlob[aria-expanded="true"]{opacity:1; background:var(--teal);}
+  @media (hover:hover){ #pkBlob:hover{opacity:1;} }
+  #pkBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
+  body.inkLeft #pkBlob{right:auto; bottom:auto; left:8px; top:calc(50% + 122px);}
+  body.focusMode:not(.landing):has(.w-picker.wFull) #pkBlob{display:none !important;}   /* the picker itself is on the stage */
+  /* the quick tools say what they are: for a few seconds when a card takes the stage (BlobTips),
+     and under a pointer. To the side of the left-hand stack; above the right-hand row. */
+  /* a label is part of its button: a tap on it is a tap on the button (it took no taps at
+     first, and one aimed at "Pick a name" turned the slide). Hidden, it is not there at all. */
+  .blobTip{position:absolute; left:calc(100% + 10px); top:50%; transform:translateY(-50%); white-space:nowrap;
+    background:var(--navy); color:var(--white); font-size:14px; font-weight:800; letter-spacing:.02em; padding:7px 13px; border-radius:999px;
+    box-shadow:2px 3px 0 var(--shadow); opacity:0; visibility:hidden; transition:opacity .25s, visibility 0s .25s;}
+  body.blobTips .blobTip{opacity:1; visibility:visible; transition:opacity .25s;}
+  body.blobTips #ccBlob, body.blobTips #pkBlob{opacity:1;}
+  @media (hover:hover){ #ccBlob:hover .blobTip, #pkBlob:hover .blobTip{opacity:1; visibility:visible; transition:opacity .25s;} }
+  #ccBlob[aria-expanded="true"] .blobTip, #pkBlob[aria-expanded="true"] .blobTip{opacity:0; visibility:hidden;}
+  /* the right-hand row: each label points at its own button — the comment cards' above it, the
+     picker's (the row's last) out to its left */
+  body:not(.inkLeft) #ccBlob .blobTip{left:50%; top:auto; bottom:calc(100% + 10px); transform:translateX(-50%);}
+  body:not(.inkLeft) #pkBlob .blobTip{left:auto; right:calc(100% + 10px);}
+  @media (prefers-reduced-motion: reduce){ .blobTip, body.blobTips .blobTip{transition:none;} }
+  /* a ringing timer has the screen: nothing of the corner tools sits on "Tap anywhere to dismiss" */
+  body:has(#alarm.on:not(.calm)) #ccBlob, body:has(#alarm.on:not(.calm)) #pkBlob, body:has(#alarm.on:not(.calm)) #inkBlob, body:has(#alarm.on:not(.calm)) #zoomBlob{visibility:hidden;}
+  .quickNote{display:none; font-weight:700; font-size:14px; color:var(--teal); text-align:center;}
+  .fromMenu .quickNote{display:block;}
+  #ccBlob.pulse, #pkBlob.pulse{opacity:1; animation:blobPulse 1.3s ease-out 4;}
+  @keyframes blobPulse{0%{box-shadow:3px 4px 0 var(--shadow), 0 0 0 0 rgba(64,224,208,.9);} 100%{box-shadow:3px 4px 0 var(--shadow), 0 0 0 22px rgba(64,224,208,0);}}
+  @media (prefers-reduced-motion: reduce){ #ccBlob.pulse, #pkBlob.pulse{animation:none; outline:4px solid var(--turq); outline-offset:3px;} }
+  /* the name, over the slides: a card on the pen's side; its scrim is clear (it only takes the tap that puts it away) */
+  #pkScrim{position:fixed; inset:0; z-index:900000; background:transparent;}
+  #pkScrim[hidden]{display:none;}
+  #pkPop{position:fixed; z-index:900002; width:clamp(420px, 44vw, 860px); right:16px; bottom:82px; overflow:hidden;
+    background:var(--white); border:2px solid rgba(227,212,180,.9); border-radius:20px; box-shadow:4px 6px 0 var(--shadow);
+    padding:14px 18px 22px; display:flex; flex-direction:column; align-items:center; gap:6px;
+    transform-origin:100% 100%; animation:inkPop .16s ease-out;}
+  #pkPop[hidden]{display:none;}
+  body.inkLeft #pkPop{right:auto; left:76px; bottom:auto; top:50%; transform:translateY(-50%); transform-origin:0 50%; animation:ccPopL .16s ease-out;}
+  @media (prefers-reduced-motion: reduce){ #pkPop, body.inkLeft #pkPop{animation:none;} }
+  .pkPopHead{display:flex; align-items:center; gap:10px; width:100%; min-height:44px;}
+  .pkPopHead b{font-weight:900; color:var(--navy); font-size:18px; white-space:nowrap;}
+  .pkPopPer{font-weight:900; color:var(--teal); background:var(--paleturq); border-radius:999px; padding:4px 14px; font-size:15px; white-space:nowrap;}
+  .pkPopLeft{margin-left:auto; font-weight:700; font-size:15px; color:var(--teal); white-space:nowrap;}
+  .pkPopX{flex:none; margin:-6px -10px -6px 0;}
+  .pkPopName{font-weight:900; color:var(--navy); line-height:1.1; font-size:110px; white-space:nowrap; min-height:1.1em; padding:.1em 0 .18em; max-width:100%; overflow:hidden; text-overflow:ellipsis;}
+  .pkPopName.spin{color:var(--teal);}
+  .pkPopName:empty{display:none;}
+  #pkPop .pkPopEmpty{font-size:18px; padding:28px 0;}
+  #pkPop .pkPopEmpty:empty{display:none;}
+  .pkPopGo{background:var(--turq); color:var(--navy); font-size:20px; min-height:56px; padding:0 34px;}
+  .pkPopGo[hidden]{display:none;}
+  .pkProbe{position:absolute; left:-9999px; top:0; visibility:hidden; white-space:nowrap; font-weight:900; font-size:100px; line-height:1; pointer-events:none;}
+  #pkPop.live::after{content:""; position:absolute; left:0; bottom:0; height:5px; width:100%; background:var(--turq); transform-origin:0 50%;
+    animation:ccDrain var(--pkMs, 8s) linear forwards;}
+  @media (prefers-reduced-motion: reduce){ #pkPop.live::after{animation:none;} }
+  body:has(#alarm.on:not(.calm)) #pkPop, body:has(#alarm.on:not(.calm)) #pkScrim{visibility:hidden;}
   #ccScrim{position:fixed; inset:0; z-index:900000; background:rgba(27,46,69,.2);}
   #ccScrim[hidden]{display:none;}
   #ccScrim.ghost{background:transparent;}
@@ -2169,7 +2239,7 @@
   #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2vw;}
   #ccRemFull .ccRemName{font-size:clamp(24px, var(--ccRemF, 7vw), 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
   body.inkLeft #ccBlob{right:auto; bottom:auto; left:8px; top:calc(50% + 60px);}
-  @media (max-width: 780px), (max-height: 540px){ #ccBlob, #ccPop, #ccScrim{display:none !important;} }
+  @media (max-width: 780px), (max-height: 540px){ #ccBlob, #ccPop, #ccScrim, #pkBlob, #pkPop, #pkScrim{display:none !important;} }
   body.focusMode:not(.landing):not(.inking):not(.zooming) #zoomBlob{display:inline-flex;}
   @media (hover:hover){ #zoomBlob:hover{opacity:1;} }
   #zoomBar{position:fixed; right:80px; bottom:14px; z-index:900001; display:flex; align-items:center; gap:6px;
@@ -3522,6 +3592,8 @@
 
 <main id="canvas">
   <div id="focusBar" hidden>
+    <!-- v7.41: tabs for the cards that are put away (or riding over the stage): a tap brings one up over the slides, a tap tucks it away -->
+    <div id="stageShelf" role="group" aria-label="Cards over the slides"></div>
     <div id="focusTimerWrap">
       <button id="focusTimerBtn" type="button" aria-label="Timer over the board"
               aria-haspopup="true" aria-expanded="false"><svg class="wIcon"><use href="#i-timer"/></svg> Timer</button>
@@ -4560,7 +4632,18 @@
 <button id="zoomBlob" type="button" aria-label="Zoom in on the slide"><svg class="wIcon"><use href="#i-zoom"/></svg></button>
 <!-- v7.35 (Croix: "Can you make it a quick draw like the pen. So I can pull it up quickly even if
      slides are on the screen"): the comment-card tracker as a popover from a blob beside the pen -->
-<button id="ccBlob" type="button" aria-label="Comment cards" aria-expanded="false"><svg class="wIcon"><use href="#i-ccard"/></svg><span class="ccBadge" hidden></span></button>
+<button id="ccBlob" type="button" aria-label="Comment cards" aria-expanded="false"><svg class="wIcon"><use href="#i-ccard"/></svg><span class="ccBadge" hidden></span><span class="blobTip" aria-hidden="true">Comment cards</span></button>
+<!-- v7.41 (Croix: "Button by the pen"): the name picker's quick-draw — one tap, a name over the slides -->
+<button id="pkBlob" type="button" aria-label="Pick a name" aria-expanded="false"><svg class="wIcon"><use href="#i-picker"/></svg><span class="blobTip" aria-hidden="true">Pick a name</span></button>
+<div id="pkScrim" hidden></div>
+<div id="pkPop" role="dialog" aria-label="Name picker" hidden>
+  <div class="pkPopHead"><b>Name picker</b><span class="pkPopPer"></span><span class="pkPopLeft"></span><button type="button" class="ccLogX pkPopX" aria-label="Close">&#x2715;</button></div>
+  <div class="pkPopName" role="status"></div>
+  <div class="wEmpty pkPopEmpty"></div>
+  <button type="button" class="btn pkPopGo">Pick another</button>
+  <div class="quickNote">One tap from the slides: the button beside the pen.</div>
+  <span class="pkProbe" aria-hidden="true"></span>
+</div>
 <!-- v7.40: the class as a sheet on the pen's side; a tap outside it (the scrim) puts it away -->
 <div id="ccScrim" hidden></div>
 <div id="ccPop" role="dialog" aria-modal="true" aria-label="Comment cards" tabindex="-1" hidden>
@@ -4570,6 +4653,7 @@
   <div class="ccGrid" role="group" aria-label="The class"></div>
   <div class="wEmpty ccEmpty"></div>
   <div class="ccStat"><span class="ccStatTxt" role="status"></span><button type="button" class="ccUndo" hidden>Undo</button></div>
+  <div class="quickNote">One tap from the slides: the button beside the pen.</div>
 </div>
 <!-- the reminder fills the screen, over the slides; each name is a button (v7.40: a tap when the card is handed in) -->
 <div id="ccRemFull" class="ccRemind" role="dialog" aria-modal="true" aria-label="Comment cards due" tabindex="-1" hidden>
@@ -4661,7 +4745,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.40.0",
+  appVersion: "7.41.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -7179,6 +7263,43 @@ function buildPeriodSelect(sel, wcfg, onChange){
 
 /* Random student picker: knows which class is in the room, never
    repeats until everyone has had a turn, R starts the round over. */
+/* v7.41: the draw itself, shared by the Name Picker card and the quick-draw by the pen. The round
+   lives in DayStore by class ("picker:5th": {pool, last}) — one round per class per day. */
+function pickerRound(p){ return p ? DayStore.get("picker:" + p) : null; }
+function pickerDraw(p){                          // the next name of the class's round (a fresh shuffle when everyone has been), or null
+  var names = p ? Absent.presentFor(p) : [];     // never call on the kid at home
+  if (!names.length) return null;
+  var r = pickerRound(p) || { pool: [], last: "" };
+  /* someone marked absent MID-ROUND is skipped — but stays in the pool, so un-marking
+     them puts them back in this round (v7.11.5: the filter used to be permanent) */
+  var eligible = r.pool.filter(function(n){ return names.indexOf(n) >= 0; });
+  if (!eligible.length){                         // fresh round
+    r.pool = shuffleNames(names.slice());
+    eligible = r.pool.slice();
+  }
+  DayStore.set("picker:" + p, r);
+  var target = eligible[eligible.length - 1];
+  r.pool.splice(r.pool.lastIndexOf(target), 1);
+  return { name: target, names: names };
+}
+function pickerCommit(p, name){                  // the name was shown: it is the round's last, and every picker hears
+  var r = pickerRound(p); if (r) r.last = name;
+  try { document.dispatchEvent(new CustomEvent("deckhand:picker")); } catch(e){}
+}
+function pickerUndraw(p, name){                  // drawn but never shown (put away mid-shuffle): back in the round
+  var r = pickerRound(p);
+  if (r) r.pool.push(name);                      // exactly the one that was drawn — two students may share a first name
+}
+function pickerLeft(p){
+  var present = Absent.presentFor(p), r = pickerRound(p);
+  return { left: r ? r.pool.filter(function(n){ return present.indexOf(n) >= 0; }).length : present.length,
+           of: present.length, out: Absent.countOut(p) };
+}
+/* the class the quick tools work on: the one the bell says is in the room (a board with no bells: the first roster) */
+function quickPeriod(){
+  var p = Rosters.autoPeriod(); if (p) return p;
+  return cfg.rosters[0] && !(cfg.bell.groups && cfg.bell.groups.length) ? cfg.rosters[0].period : null;
+}
 function makePicker(host, wcfg){
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody">' +
@@ -7242,26 +7363,19 @@ function makePicker(host, wcfg){
   function commit(name, p){
     nameEl.classList.remove("spin");
     nameEl.textContent = name;
-    var r = round(p); if (r) r.last = name;
+    pickerCommit(p, name);
     paint();
   }
+  /* v7.41: the quick-draw by the pen picked from this class's round */
+  function onPick(){ if (!destroyed && !spinTid){ showLast(); paint(); } }
+  document.addEventListener("deckhand:picker", onPick);
   function pick(){
     if (spinTid) return;                        // one spin at a time
     var p = period.current();
     if (!p) { paint(); return; }
-    var names = Absent.presentFor(p);           // never call on the kid at home
-    if (!names.length){ paint(); return; }
-    var r = round(p) || { pool: [], last: "" };
-    /* someone marked absent MID-ROUND is skipped — but stays in the pool, so un-marking
-       them puts them back in this round (v7.11.5: the filter used to be permanent) */
-    var eligible = r.pool.filter(function(n){ return names.indexOf(n) >= 0; });
-    if (!eligible.length){                      // fresh round
-      r.pool = shuffleNames(names.slice());
-      eligible = r.pool.slice();
-    }
-    DayStore.set("picker:" + p, r);
-    var target = eligible[eligible.length - 1];
-    r.pool.splice(r.pool.lastIndexOf(target), 1);
+    var d = pickerDraw(p);                      // v7.41: the draw is shared with the quick-draw
+    if (!d){ paint(); return; }
+    var target = d.name, names = d.names;
     if (REDUCED){ commit(target, p); return; }
     var t0 = Date.now();
     nameEl.classList.add("spin");
@@ -7296,6 +7410,7 @@ function makePicker(host, wcfg){
       destroyed = true;
       clearInterval(refreshTid);
       if (spinTid) clearInterval(spinTid);
+      document.removeEventListener("deckhand:picker", onPick);
     }
   };
 }
@@ -14806,11 +14921,48 @@ var Canvas = (function(){
       select(next[next.length - 1] || null);
     }
   }
-  function restore(en){
+  function restore(en, plain){
     if (!en || !(en.cfg && en.cfg.min)) return;
     delete en.cfg.min;
+    if (plain){ syncShelf(en); bringToFront(en); select(en); return; }   // the settle-in's own hand-off: it stages the deck itself
+    /* a "Stage only" deck has no place on the board: un-minimized it only turned back into its
+       ▶ pill, a second tab that looked like nothing had happened. Its tab stages it. */
+    if (en.cfg.stageOnly && (en.type === "embed" || en.type === "yt")){ syncShelf(en); select(en); setFocus(en); return; }
+    /* v7.41 (Croix: "sometimes when I click on a minimized tab it just deleted instead of
+       popping up"): with a card on the stage the tab's card came back in its ordinary layer —
+       UNDER the slides — so the tab was gone and nothing appeared. It rides above the stage for
+       as long as the stage lasts, like a card added there (en.float); fromTab keeps its tab in
+       the stage bar so the same tap puts it away again. */
+    if (focusedEntry && en !== focusedEntry){
+      en.float = true; en.fromTab = true; en.ghostHold = Date.now();
+      /* a card whose home is the top edge would come up with its strip under the stage bar:
+         it sits just below the bar for the length of the stage (a stage box — inline only,
+         home again on exit; a drag adopts it, as with the summoned timer) */
+      if (en.cfg.y < 7 && !en.cfg.pin && !en.stageBox){
+        en.stageBox = true;
+        en.el.style.top = Math.max(0, Math.min(7, 100 - en.cfg.h)) + "%";
+      }
+    }
     syncShelf(en);
     bringToFront(en); select(en);
+  }
+  /* v7.41 (Croix: "expand the bottom menu, add, find it, then I can use it, then I've got to
+     minimize it to get back to the slides. There wasn't much flow"): while a card is staged, the
+     cards that are put away — and the ones riding over the stage — have a TAB in the stage bar.
+     One tap brings a card up over the slides, the same tap tucks it away: no bottom menu.
+     Timers keep their own road (the ⏱ summon and its ghost) unless one came up from a tab. */
+  var TYPE_ICON = {};                            // type → its + Add tile's icon (filled when the tiles are wired)
+  function stageTabbed(e2){
+    if (!focusedEntry || e2 === focusedEntry || e2.type === "clock") return false;
+    if (e2.cfg && e2.cfg.min) return true;
+    if (e2.fromTab) return true;                 // whatever a tab brought up, a tab puts away (a pinned card too)
+    return !!e2.float && !(e2.cfg && e2.cfg.pin) && e2.api.kind !== "timer";
+  }
+  function toggleStageTab(e2){
+    if (Date.now() - (e2.tabAt || 0) < 500) return;   // a double tap is one tap: up, not up-and-away
+    e2.tabAt = Date.now();
+    if (e2.cfg && e2.cfg.min) restore(e2); else minimize(e2);
+    refocusDeck();                               // the clicker's keys go back to the slides
   }
   function refreshShelf(){
     var host = $("shelf");
@@ -14835,6 +14987,37 @@ var Canvas = (function(){
       wireButton(b, function(){ if (focusedEntry !== e2) setFocus(e2); });
       host.appendChild(b);
     });
+    /* v7.41: the stage bar's tabs */
+    var st = $("stageShelf");
+    if (!st) return;
+    st.innerHTML = "";
+    var MAX = 5, tabs = entries.filter(stageTabbed), shown = tabs;
+    /* the tabs keep their places (a tab must not move under the finger that tapped it). With more
+       than five, the cards that are UP keep theirs and the put-away ones give way from the end:
+       a card over the slides never lacks its tab. */
+    if (tabs.length > MAX){
+      var room = MAX - tabs.filter(function(e2){ return !(e2.cfg && e2.cfg.min); }).length;
+      shown = tabs.filter(function(e2){ return !(e2.cfg && e2.cfg.min) || room-- > 0; });
+    }
+    shown.forEach(function(e2){
+      var up = !(e2.cfg && e2.cfg.min), nm = e2.cfg.label || WIDGET_NAMES[e2.type] || "Card";
+      var tb = document.createElement("button");
+      tb.type = "button"; tb.className = "stTab";
+      tb.setAttribute("aria-pressed", up ? "true" : "false");
+      tb.setAttribute("aria-label", (up ? "Put away " : "Bring up ") + nm);
+      tb.innerHTML = '<svg class="wIcon"><use href="' + (/^#i-[a-z]+$/.test(TYPE_ICON[e2.type] || "") ? TYPE_ICON[e2.type] : "#i-min") + '"/></svg>';
+      var sp = document.createElement("span"); sp.textContent = nm;   // user data: textContent only
+      tb.appendChild(sp);
+      wireButton(tb, function(){ toggleStageTab(e2); });
+      st.appendChild(tb);
+    });
+    if (tabs.length > shown.length){             // the rest are in the dock
+      var more = document.createElement("button");
+      more.type = "button"; more.className = "stTab stMore"; more.textContent = "+" + (tabs.length - shown.length);
+      more.setAttribute("aria-label", (tabs.length - shown.length) + " more in the dock");
+      wireButton(more, function(){ setDockMin(false); });
+      st.appendChild(more);
+    }
   }
   function applyBox(en){
     en.el.style.left = en.cfg.x + "%";
@@ -15042,6 +15225,13 @@ var Canvas = (function(){
          needs via summon or + Add. */
       entries.forEach(function(e2){
         e2.el.classList.remove("wGhost");
+        /* v7.41: what came up from a tab goes back to its tab when the stage ends or changes —
+           left up, it was an ordinary card again: under the next slides, with no tab (review).
+           (Not the card that is taking the stage itself.) */
+        if (e2.fromTab){
+          e2.fromTab = false;
+          if (e2 !== en && e2.type !== "clock" && !(e2.cfg && e2.cfg.min)) minimize(e2);
+        }
         if (e2.float){
           e2.float = false;
           bringToFront(e2);   // z-index is a snapshot — drop it NOW, or the
@@ -15076,6 +15266,8 @@ var Canvas = (function(){
     document.body.classList.toggle("focusMode", !!focusedEntry);
     setDockMin(!!focusedEntry);
     alignGrid();
+    refreshShelf();                              // v7.41: the stage bar's tabs come and go with the stage
+    try { document.dispatchEvent(new CustomEvent("deckhand:stage", { detail: { type: focusedEntry ? focusedEntry.type : null } })); } catch(e){}
   }
   /* v6.22 (Croix, field: "Embed didn't work with my USB clicker so I
      couldn't use embed"): a clicker speaks arrow/page KEYS, and Google
@@ -15123,7 +15315,7 @@ var Canvas = (function(){
     } else if (d.phase === "end"){
       if (focusedEntry !== en) return;           // the teacher intervened
       var emb = entries.filter(function(e2){ return e2.type === "embed"; })[0];
-      if (emb && emb.cfg && emb.cfg.min) restore(emb);   // v7.18: the next class's slides come back by themselves
+      if (emb && emb.cfg && emb.cfg.min) restore(emb, true);   // v7.18: the next class's slides come back by themselves
       /* a ghost timer summoned OVER the count must ride onto the slides
          too — the generic exit pass expires floats, which buried a
          still-running timer under the deck (adversarial find) */
@@ -15362,6 +15554,7 @@ var Canvas = (function(){
       var w = elx._entry;
       w.cfg.pin = !w.cfg.pin;
       syncPin(w);
+      refreshShelf();              // v7.41: a pinned card rides the stage on its own terms — its tab follows
     });
   }
   function mountClock(wcfg){
@@ -15585,6 +15778,7 @@ var Canvas = (function(){
     var en = buildDynamic(wcfg, type === "timer" && !document.getElementById("timer"));
     if (staged) en.float = true;                 // ride above the focused deck
     select(en); bringToFront(en);
+    if (staged) refreshShelf();                  // v7.41: and it has a tab to put it away
     if (!REDUCED){                               // arrival, not apparition
       en.el.classList.add("spawn");
       setTimeout(function(){ en.el.classList.remove("spawn"); }, 240);
@@ -15606,6 +15800,7 @@ var Canvas = (function(){
       });
       if (!en) return null;                      // locked or at the cap
     }
+    if (en.cfg && en.cfg.min) restore(en);       // v7.41: a minimized timer summoned from the stage bar counted down unseen
     /* Over a focused deck, a board-sized timer would blanket the slides:
        give it a compact STAGE BOX — inline styles only, restored on exit.
        A PINNED timer keeps its box (the teacher curated that spot), and
@@ -15921,7 +16116,30 @@ var Canvas = (function(){
        ["addMusicBtn","music"],
        ["addYtBtn","yt"],
        ["addTalkBtn","talk"], ["addStationsBtn","stations"], ["addNumlineBtn","numline"], ["addCcardBtn","ccard"], ["addCadenceBtn","cadence"], ["addMathleBtn","mathle"]].forEach(function(pair){
-        wireButton($(pair[0]), function(){ addWidget(pair[1]); hideAddMenu(); });
+        try { TYPE_ICON[pair[1]] = $(pair[0]).querySelector("use").getAttribute("href"); } catch(e){}
+        wireButton($(pair[0]), function(){
+          /* v7.41 (Croix added Comment Cards from this menu over his slides: "I forgot about the
+             one by the pen"): with a card on the stage, the comment cards and the name picker
+             open as their quick tools — nothing to place, find or minimize — and the button
+             they live under says its name. Off the stage they are cards, as before. */
+          if (focusedEntry && focusedEntry.type !== pair[1] && (pair[1] === "ccard" || pair[1] === "picker")){
+            /* …when the tool can come up and knows its class. Otherwise (the pen is out, the
+               slide is zoomed, the window is small, the class in the room has no roster) the
+               card is added as before — it has the period menu the quick tool does not. */
+            var tool = pair[1] === "ccard" ? CcardPop : PickPop, qp = null, opened = false;
+            try { qp = quickPeriod(); opened = tool.canOpen() && !!qp && Rosters.namesFor(qp).length > 0; } catch(e){ opened = false; }
+            if (opened){
+              hideAddMenu();
+              try { tool.open(); opened = tool.isOpen(); } catch(e){ opened = false; }
+              if (opened){
+                setDockMin(true);
+                BlobTips.point($(pair[1] === "ccard" ? "ccBlob" : "pkBlob"), $(pair[1] === "ccard" ? "ccPop" : "pkPop"));
+                return;
+              }
+            }
+          }
+          addWidget(pair[1]); hideAddMenu();
+        });
       });
       wireButton($("moreBtn"), toggleMoreMenu);
       ["homeBtn", "soundBtn"].forEach(function(id){   // a pick closes ⋮
@@ -17330,7 +17548,7 @@ var Ink = (function(){
   function side(){ document.body.classList.toggle("inkLeft", !cfg.ui || cfg.ui.inkSide !== "right"); }   // v7.28
   function arm(on){
     armed = !!on;
-    if (armed){ try { CcardPop.close(); } catch(e){} }   // v7.35: the pen and the cards don't share the corner
+    if (armed){ try { CcardPop.close(); PickPop.close(); } catch(e){} }   // v7.35: the pen and the cards don't share the corner (v7.41: nor the picker)
     document.body.classList.toggle("inking", armed);
     bar.hidden = !armed;
     ["inkBtn", "inkBlob"].forEach(function(id){
@@ -17439,15 +17657,15 @@ var Ink = (function(){
 var CcardPop = (function(){
   var blob = null, pop = null, scrim = null, panel = null, open = false, period = null, idleTid = null, ghostTid = null;
   /* how long the sheet waits, and how long after the last mark a late reminder holds off (tests shorten these) */
-  var T = { idle: 30000, after: 8000, quiet: 6000, grace: 700 };
+  var T = { idle: 30000, after: 8000, quiet: 6000, grace: 700, ghost: 900 };
   var bootSynced = false, small = null, lastSum = null;
-  function cur(){ var p = Rosters.autoPeriod(); if (p) return p; return cfg.rosters[0] && !(cfg.bell.groups && cfg.bell.groups.length) ? cfg.rosters[0].period : null; }
+  function cur(){ return quickPeriod(); }
   function arm(ms){ clearTimeout(idleTid); idleTid = open ? setTimeout(function(){ show(false, false, true); }, ms) : null; }
   /* the sheet belongs to a staged card: no stage (or the pen, the magnifier, a screen too small
      for it) and it has no opener, so it must not be up either */
   function fits(){
     var c = document.body.classList;
-    return c.contains("focusMode") && !c.contains("landing") && !c.contains("inking") && !c.contains("zooming") && !(small && small.matches);
+    return c.contains("focusMode") && !c.contains("landing") && !c.contains("inking") && !c.contains("zooming") && !(small && small.matches) && !Alarm.isOn();
   }
   function typing(el){ return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName || "")); }
   function paintBadge(){
@@ -17516,6 +17734,7 @@ var CcardPop = (function(){
     var rem = $("ccRemFull");
     remP = p; remSig = null; remAt = byHand ? 0 : Date.now();
     show(false, true);
+    try { PickPop.close(true); } catch(e){}                       // v7.41: a name that was up goes too — and does not give the slides the keys
     rem.hidden = false;
     paintReminder();
     /* the keyboard comes to the reminder: with the slides holding it the clicker would turn pages
@@ -17558,16 +17777,18 @@ var CcardPop = (function(){
     pop.hidden = !open; scrim.hidden = !open;
     blob.setAttribute("aria-expanded", open ? "true" : "false");
     if (open){
+      pop.classList.remove("fromMenu");                         // (the + Add road puts it back, after this)
+      try { PickPop.close(); BlobTips.hide(); } catch(e){}      // v7.41: one quick tool at a time
       paint(); panel.fit(); arm(T.idle);
       try { pop.focus({ preventScroll: true }); } catch(e){}    // the keys leave the slides: Escape closes this, the clicker turns no page behind it
       return;
     }
-    clearTimeout(idleTid); idleTid = null; panel.idle();
+    clearTimeout(idleTid); idleTid = null; panel.idle(); pop.classList.remove("fromMenu");
     if (auto){
       /* it put itself away: a finger already on its way to a tile must land on nothing, not on
          the slide — the scrim stays, unseen, for a moment */
       scrim.hidden = false; scrim.classList.add("ghost");
-      ghostTid = setTimeout(function(){ ghostTid = null; scrim.classList.remove("ghost"); if (!open) scrim.hidden = true; }, 900);
+      ghostTid = setTimeout(function(){ ghostTid = null; scrim.classList.remove("ghost"); if (!open) scrim.hidden = true; }, T.ghost);
     }
     if (!keepFocus){ try { Canvas.refocusDeck(); } catch(e){} }
   }
@@ -17586,7 +17807,7 @@ var CcardPop = (function(){
          finger lifts and the tap cannot land on the slide or a button underneath */
       scrim.addEventListener("click", function(e){
         e.stopPropagation();
-        if (open) show(false); else { clearTimeout(ghostTid); ghostTid = null; scrim.classList.remove("ghost"); scrim.hidden = true; }
+        if (open) show(false);                                  // (while the cover lingers after it closed itself, every tap is swallowed)
       });
       document.addEventListener("deckhand:ccard", function(){ changedAt = Date.now(); if (open) paint(); else paintBadge(); paintReminder(); });
       document.addEventListener("deckhand:home", function(){ show(false); });
@@ -17614,11 +17835,212 @@ var CcardPop = (function(){
     },
     open: function(){ show(true); }, close: function(){ show(false); },
     isOpen: function(){ return open; },
+    canOpen: fits,                                // v7.41: the + Add road asks first
     remind: function(p){ return showReminder(p, true); },     // the card's Reminder button
     times: T,                                     // test hook
     bootSynced: function(){ return bootSynced; },
     _bellWatch: bellWatch,                        // test hook
     reminding: function(){ return !$("ccRemFull").hidden; }
+  };
+})();
+
+/* ================= v7.41 The name picker, quick-draw =================
+   Croix: "The comment cards and name generator are a little awkward because the flow is expand the
+   bottom menu, add, find it, then I can use it, then I've got to minimize it to get back to the
+   slides. There wasn't much flow." Asked what one tap should do: "Button by the pen."
+   A blob under the comment cards' on a staged card: ONE tap picks a name and shows it, big, over
+   the slides; a tap on "Pick another" (or the blob again) picks the next; it puts itself away
+   eight seconds after the last pick, or at once on a tap anywhere else. No card to add, find or
+   minimize. The round is the class's round (DayStore "picker:<period>"), shared with any Name
+   Picker card: nobody is called twice until everyone has been, and absent students are skipped.
+   It never takes the keyboard from the slides — the clicker keeps turning pages while a name is up. */
+var PickPop = (function(){
+  var blob = null, pop = null, scrim = null, nameEl = null, open = false;
+  var closeTid = null, spinTid = null, ghostTid = null, small = null, period = null, fitFor = null, pending = null;
+  var T = { after: 8000, spin: 900, ghost: 900 }; // how long a name stays, the shuffle runs, the cover lingers (tests change these)
+  /* it belongs to a staged card, and it stands down for the pen, the magnifier, a ringing timer
+     and the comment-card reminder (a tap on its button under any of those must not spend a
+     student's turn on a name nobody sees) */
+  function fits(){
+    var c = document.body.classList;
+    if (!(c.contains("focusMode") && !c.contains("landing") && !c.contains("inking") && !c.contains("zooming") && !(small && small.matches))) return false;
+    try { if (Alarm.isOn() || CcardPop.reminding()) return false; } catch(e){}
+    return true;
+  }
+  function arm(){
+    clearTimeout(closeTid);
+    pop.classList.remove("live"); void pop.offsetWidth;
+    if (!open) return;
+    pop.style.setProperty("--pkMs", T.after + "ms");
+    pop.classList.add("live");                    // the bar under the name runs down
+    closeTid = setTimeout(function(){ show(false, true); }, T.after);
+  }
+  function stopSpin(){ if (spinTid){ clearInterval(spinTid); spinTid = null; } nameEl.classList.remove("spin"); nameEl.removeAttribute("aria-busy"); }
+  /* one type size for the class (nine names in ten fit at it), so the name does not jump about
+     while it shuffles; a name longer than that is set smaller by itself, never cut */
+  var widths = Object.create(null), fClass = 110;
+  function fit(names){
+    var key = names.join("\u0001") + "|" + pop.clientWidth;
+    if (key === fitFor) return;
+    fitFor = key; widths = Object.create(null);
+    var pr = pop.querySelector(".pkProbe"), ws = [];
+    names.forEach(function(n){ pr.textContent = n; widths[n] = Math.max(1, pr.offsetWidth); ws.push(widths[n]); });   // measured at 100px
+    pr.textContent = "";
+    ws.sort(function(a, b){ return a - b; });
+    fClass = Math.max(40, Math.min(150, (pop.clientWidth - 72) / (ws[Math.floor((ws.length - 1) * 0.9)] / 100)));
+  }
+  function setName(n){
+    nameEl.textContent = n;                       // user data: textContent only
+    var w = widths[n];
+    nameEl.style.fontSize = Math.max(22, Math.min(fClass, w ? (pop.clientWidth - 72) / (w / 100) : fClass)).toFixed(0) + "px";
+  }
+  function say(msg){
+    stopSpin();
+    nameEl.textContent = "";
+    pop.querySelector(".pkPopEmpty").textContent = msg;
+    pop.querySelector(".pkPopLeft").textContent = "";
+    pop.querySelector(".pkPopGo").hidden = true;
+  }
+  function paintLeft(){
+    var c = period ? pickerLeft(period) : null;
+    pop.querySelector(".pkPopLeft").textContent = c ? c.left + " of " + c.of + " left" + (c.out ? " · " + c.out + " out" : "") : "";
+  }
+  function pick(){
+    if (!open || spinTid) return;                 // one shuffle at a time
+    period = quickPeriod();
+    pop.querySelector(".pkPopPer").textContent = period || "No class";
+    if (!period || !Rosters.namesFor(period).length){
+      say(cfg.rosters.length ? "No roster for this period." : "Add class rosters in Settings.");
+      arm(); return;
+    }
+    var d = pickerDraw(period);
+    if (!d){ say("Everyone is marked absent."); arm(); return; }
+    pop.querySelector(".pkPopEmpty").textContent = "";
+    pop.querySelector(".pkPopGo").hidden = false;
+    fit(d.names);
+    clearTimeout(closeTid); pop.classList.remove("live");
+    var p = period, done = function(){
+      pending = null;
+      stopSpin();
+      setName(d.name);
+      pickerCommit(p, d.name);
+      paintLeft();
+      arm();
+    };
+    if ((REDUCED && !T.force) || T.spin <= 0){ done(); return; }   // (T.force: the tests run the shuffle under reduced motion)
+    var t0 = Date.now();
+    pending = { p: p, name: d.name };
+    nameEl.classList.add("spin"); nameEl.setAttribute("aria-busy", "true");
+    spinTid = setInterval(function(){
+      if (Date.now() - t0 > T.spin) done();
+      else setName(d.names[Math.floor(Math.random() * d.names.length)]);
+    }, 70);
+  }
+  function show(on, auto, keepFocus){
+    on = !!on;
+    if (on && !fits()) return;
+    if (on === open) return;
+    open = on;
+    clearTimeout(ghostTid); ghostTid = null; scrim.classList.remove("ghost");
+    pop.hidden = !open; scrim.hidden = !open;
+    blob.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open){
+      pop.classList.remove("fromMenu");           // (the + Add road puts it back, after this)
+      try { CcardPop.close(); BlobTips.hide(); } catch(e){}   // one quick tool at a time
+      fitFor = null;
+      return;
+    }
+    clearTimeout(closeTid); closeTid = null; pop.classList.remove("live"); pop.classList.remove("fromMenu");
+    stopSpin();
+    if (pending){ pickerUndraw(pending.p, pending.name); pending = null; }   // put away mid-shuffle: nobody saw the name, so nobody loses a turn
+    if (auto){
+      /* it put itself away: a finger already on its way to "Pick another" lands on nothing, not on the slide */
+      scrim.hidden = false; scrim.classList.add("ghost");
+      ghostTid = setTimeout(function(){ ghostTid = null; scrim.classList.remove("ghost"); if (!open) scrim.hidden = true; }, T.ghost);
+    }
+    if (!keepFocus){ try { if (!CcardPop.reminding()) Canvas.refocusDeck(); } catch(e){} }   // never hand the slides the keys from under the reminder
+  }
+  function go(){                                  // the blob, "Pick another", Space
+    if (!open) show(true);
+    if (!open) return;
+    pick();
+    try { Canvas.refocusDeck(); } catch(e){}      // the tap took the keys: the clicker gets them straight back
+  }
+  return {
+    init: function(){
+      blob = $("pkBlob"); pop = $("pkPop"); scrim = $("pkScrim"); nameEl = pop.querySelector(".pkPopName");
+      try { small = window.matchMedia("(max-width: 780px), (max-height: 540px)"); } catch(e){ small = null; }
+      wireButton(blob, go);
+      wireButton(pop.querySelector(".pkPopGo"), go);
+      wireButton(pop.querySelector(".pkPopX"), function(){ show(false); });
+      pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
+      /* a tap anywhere else puts the name away — on the click, so it cannot reach the slide. A tap
+         that was aimed at one of the board's own buttons (a tab, the Timer, a tally's +1) still
+         does what it says: the name is no reason to tap twice. While the cover lingers after it
+         closed itself, every tap is swallowed. */
+      scrim.addEventListener("click", function(e){
+        e.stopPropagation();
+        if (!open) return;
+        show(false);
+        try {
+          var under = document.elementFromPoint(e.clientX, e.clientY);
+          var btn = under && under.closest ? under.closest("button, [role=button], [role=checkbox]") : null;
+          if (btn && !btn.disabled && btn !== blob && btn.closest("#focusBar, #dock, .widget, #fsBtn, #inkBlob, #zoomBlob, #ccBlob")) btn.click();
+        } catch(_){}
+      });
+      document.addEventListener("deckhand:home", function(){ show(false); });
+      document.addEventListener("deckhand:picker", function(){ if (open && !spinTid) paintLeft(); });
+      var gone = function(){ if (open && !fits()) show(false); };
+      try { new MutationObserver(gone).observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch(e){}
+      window.addEventListener("resize", function(){ gone(); fitFor = null; });
+      document.addEventListener("keydown", function(e){     // only when the board (not a deck) has the keys
+        if (!open) return;
+        try { if (Alarm.isOn() || CcardPop.reminding()) return; } catch(_){}
+        if (e.key === "Escape"){ show(false); e.stopPropagation(); return; }
+        /* Space picks the next (as on the card) — one press, one name; Enter stays the timer's */
+        if (e.key === " " && !(e.target && e.target.closest && e.target.closest("button, input, textarea, select, [contenteditable]"))){
+          e.stopPropagation(); e.preventDefault();
+          if (!e.repeat) go();
+        }
+      }, true);
+      setInterval(function(){ if (open && !fits()) show(false); }, 1000);   // a ringing timer (or the reminder) takes the screen
+    },
+    open: function(){ go(); }, close: function(keepFocus){ show(false, false, !!keepFocus); },
+    isOpen: function(){ return open; },
+    canOpen: fits,
+    times: T                                      // test hook
+  };
+})();
+
+/* v7.41 (Croix, asked whether he used the comment cards' button by the pen: "From the menu. I
+   forgot about the one by the pen."): the quick tools say what they are. Their labels show for a
+   few seconds each time a card takes the stage, when one is opened from the + Add menu, and under
+   a pointer; the rest of the time the buttons are just their icons. */
+var BlobTips = (function(){
+  var tid = null, wasStage = null;
+  function show(ms){
+    document.body.classList.add("blobTips");
+    clearTimeout(tid); tid = setTimeout(function(){ document.body.classList.remove("blobTips"); }, ms || 6000);
+  }
+  return {
+    init: function(){
+      /* each time a card takes the stage — not the clock (the settle-in's count is not a lesson) */
+      document.addEventListener("deckhand:stage", function(e){
+        var ty = e.detail && e.detail.type;
+        if (ty && ty !== "clock" && ty !== wasStage) show(6000);
+        if (!ty || ty === "clock"){ clearTimeout(tid); document.body.classList.remove("blobTips"); }
+        wasStage = ty || null;
+      });
+    },
+    show: show,
+    hide: function(){ clearTimeout(tid); document.body.classList.remove("blobTips"); },
+    /* opened from the + Add menu: the tool's own button draws the eye, and the tool says where it lives */
+    point: function(blobEl, popEl){
+      try {
+        blobEl.classList.add("pulse"); popEl.classList.add("fromMenu");
+        setTimeout(function(){ blobEl.classList.remove("pulse"); }, 5200);
+      } catch(e){}
+    }
   };
 })();
 
@@ -17870,7 +18292,7 @@ var Keys = (function(){
    cards are built, so the picker and the comment cards open knowing their class */
 var rostersAuto = null;
 try { rostersAuto = Settings.autoRosters(); } catch(e){ try { console.error("Deckhand: class lists not read", e); } catch(_){} }
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, PickPop, BlobTips, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -17920,6 +18342,8 @@ window.Deckhand = {
   mathleWords: MATHLE_WORDS,                    // v7.33: the vocabulary (tests)
   ccardPop: CcardPop,                           // v7.35: the quick-draw comment cards (tests)
   ccToday: CcToday,                             // v7.40: today's marks (tests)
+  pickPop: PickPop,                             // v7.41: the quick-draw name picker (tests)
+  blobTips: BlobTips,
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
   nature: Nature,                               // v7.24: the nature sounds (tests render them offline)
   landing: Landing,                             // v7.7: needsPick()/show() (tests)

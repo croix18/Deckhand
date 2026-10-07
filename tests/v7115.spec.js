@@ -2204,12 +2204,12 @@ test.describe("v7.40", () => {
     // the sheet: closing itself leaves the scrim (unseen) for a moment, so a late tap lands on nothing
     await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
     await page.evaluate(() => document.querySelector(".w-text .wFocus").click());
-    await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 600; });
+    await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 600; window.Deckhand.ccardPop.times.ghost = 4000; });
     await page.click("#ccBlob");
     await page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: "Ava" }) }).locator(".ccTileMain").click();
     await expect(page.locator("#ccPop")).toBeHidden({ timeout: 3000 });
     ok(await page.evaluate(() => { const s = document.getElementById("ccScrim"); return !s.hidden && s.classList.contains("ghost"); }), "no cover behind the sheet that closed itself");
-    await expect(page.locator("#ccScrim")).toBeHidden({ timeout: 3000 });
+    await expect(page.locator("#ccScrim")).toBeHidden({ timeout: 8000 });
     // …and it does not outlive its stage
     await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 60000; });
     await page.click("#ccBlob");
@@ -2218,5 +2218,274 @@ test.describe("v7.40", () => {
     await expect(page.locator("#ccPop")).toBeHidden();
     await expect(page.locator("#ccScrim")).toBeHidden();
     ok(await page.evaluate(() => !window.Deckhand.ccardPop.isOpen()), "the sheet thinks it is still open");
+  });
+});
+
+/* v7.41 — Croix: "The minimize works, but sometimes when I click on a minimized tab it just deleted
+ * instead of popping up. The comment cards and name generator are a little awkward because the flow
+ * is expand the bottom menu, add, find it, then I can use it, then I've got to minimize it to get
+ * back to the slides. There wasn't much flow." His picks: the picker as a button by the pen; tabs on
+ * the stage; and on the comment cards' own button: "I forgot about the one by the pen."
+ * Synthetic names only. */
+test.describe("v7.41", () => {
+  const T = "#t=2026-09-29T10:30";                 // Black Tuesday, 5th period
+  const stageDeck = async (page, dh) => {
+    const deck = path.join(dh.fixtureDir, "tmp_flow_deck.html");
+    fs.writeFileSync(deck, '<!DOCTYPE html><title>Deck</title><body><h1>Slide 1</h1><script>window.clicks = 0; addEventListener("click", () => { window.clicks++; });</scr' + 'ipt>');
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn"); inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets; w[w.length - 1].url = u; document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#focusBar")).toBeVisible();
+  };
+  const onTop = (page, sel) => page.evaluate(sel => {
+    const w = document.querySelector(sel), r = w.getBoundingClientRect();
+    if (getComputedStyle(w).display === "none") return false;
+    const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return !!(e && e.closest(sel));
+  }, sel);
+  const deckHasKeys = page => page.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("embFrame"));
+
+  test("v7.41: a minimized card's tab brings it up OVER staged slides (it came back underneath, so the tab just vanished); on the stage the tabs are in the stage bar — a tap up, a tap away, no bottom menu; they go when the stage ends", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }]; });
+    await dh.addW("addPickerBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(w => w.type === "picker"); w.x = 60; w.y = 0; document.querySelector(".w-picker")._entry.api.resync(); document.querySelector(".w-picker").style.left = "60%"; document.querySelector(".w-picker").style.top = "0%"; });   // its home is the top edge
+    await page.click(".w-picker .wMin");
+    await expect(page.locator("#shelf .minChip")).toHaveCount(1);
+    await stageDeck(page, dh);
+    // the road he took: open the bottom menu, tap the tab
+    await page.click("#dockTog");
+    await page.click("#shelf .minChip");
+    await expect(page.locator("#shelf .minChip")).toHaveCount(0);
+    ok(await onTop(page, ".w-picker"), "the card came back under the slides");
+    const top = await page.evaluate(() => document.querySelector(".w-picker").getBoundingClientRect().top);
+    ok(top >= 60, "the card's strip is under the stage bar: top " + top);
+    // the stage bar holds its tab while it is up: the same tap puts it away
+    const tab = page.locator("#stageShelf .stTab", { hasText: "Name Picker" });
+    await expect(tab).toHaveAttribute("aria-pressed", "true");
+    const tap = async () => { await page.waitForTimeout(550); await tab.click(); };   // (two taps inside half a second are one)
+    await tap();
+    await expect(page.locator(".w-picker")).toBeHidden();
+    await expect(tab).toHaveAttribute("aria-pressed", "false");
+    ok(await deckHasKeys(page), "the clicker's keys did not go back to the slides");
+    await tap();                                                      // …and up again, with the bottom menu shut
+    ok(await onTop(page, ".w-picker"), "the stage tab did not bring the card up over the slides");
+    await expect(tab).toHaveAttribute("aria-pressed", "true");
+    // locked: tabs are a live action
+    await page.evaluate(() => { window.Deckhand.config.ui.locked = true; document.body.classList.add("locked"); });
+    await tap();
+    await expect(page.locator(".w-picker")).toBeHidden();
+    await tap();
+    ok(await onTop(page, ".w-picker"), "locked: the tab did not bring the card up");
+    await page.evaluate(() => { window.Deckhand.config.ui.locked = false; document.body.classList.remove("locked"); });
+    // a card added over the slides has a tab too; the summoned timer keeps its own road
+    if (await page.evaluate(() => document.body.classList.contains("dockMin"))) await page.click("#dockTog");
+    await dh.addW("addTallyBtn");
+    await expect(page.locator("#stageShelf .stTab")).toHaveCount(2);
+    await expect(page.locator("#stageShelf .stTab", { hasText: "Tally" })).toHaveAttribute("aria-pressed", "true");
+    // the stage ends: no tabs. What a tab brought up goes back to its tab (left up, it was under
+    // the next slides with no tab); a card added over the slides stays on the board
+    await page.click("#unfocusBtn");
+    await expect(page.locator("#stageShelf .stTab")).toHaveCount(0);
+    await expect(page.locator(".w-picker")).toBeHidden();
+    await expect(page.locator("#shelf .minChip")).toHaveCount(1);
+    await expect(page.locator(".w-tally")).toBeVisible();
+    // …so on the next stage its tab is there again, one tap from the slides
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#stageShelf .stTab", { hasText: "Name Picker" })).toHaveAttribute("aria-pressed", "false");
+    await page.waitForTimeout(550);
+    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).click();
+    ok(await onTop(page, ".w-picker"), "second stage: the tab did not bring the card up");
+    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).dblclick();   // a double tap is one tap
+    ok(await onTop(page, ".w-picker"), "a double tap put the card straight back");
+    await page.click("#unfocusBtn");
+    // off the stage its chip brings it home: an ordinary card, in its own layer and place
+    await page.click("#shelf .minChip");
+    await expect(page.locator(".w-picker")).toBeVisible();
+    const home = await page.evaluate(() => { const w = document.querySelector(".w-picker"); return { z: +w.style.zIndex, top: w.style.top }; });
+    ok(home.z < 250000 && home.top === "0%", "the card did not go home: " + JSON.stringify(home));
+  });
+
+  test("v7.41: the name picker by the pen — one tap and a name is over the slides, another tap another name; the class's round is shared with the picker card; absent students are skipped; the slides keep the keys; it puts itself away", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    const NAMES = ["Ava","Ben","Cal","Dee"];
+    await page.evaluate(names => { window.Deckhand.config.rosters = [{ period: "5th", names }]; }, NAMES);
+    await expect(page.locator("#pkBlob")).toBeHidden();               // only on the stage
+    await stageDeck(page, dh);
+    await expect(page.locator("#pkBlob")).toBeVisible();
+    // the buttons say what they are when a card takes the stage
+    ok(await page.evaluate(() => document.body.classList.contains("blobTips")), "no labels when the stage came up");
+    await expect(page.locator("#pkBlob .blobTip")).toHaveText("Pick a name");
+    await expect(page.locator("#ccBlob .blobTip")).toHaveText("Comment cards");
+    const name = () => page.locator("#pkPop .pkPopName").textContent();
+    await page.click("#pkBlob");
+    await expect(page.locator("#pkPop")).toBeVisible();
+    ok(!(await page.evaluate(() => document.body.classList.contains("blobTips"))), "the labels stayed over the open tool");
+    await expect(page.locator("#pkPop .pkPopPer")).toHaveText("5th");
+    const seen = [await name()];
+    ok(NAMES.includes(seen[0]), "one tap did not pick: " + seen[0]);
+    await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("3 of 4 left");
+    ok(await deckHasKeys(page), "the picker took the keys from the slides");
+    for (let i = 0; i < 3; i++){ await page.click("#pkPop .pkPopGo"); seen.push(await name()); }
+    ok(seen.slice().sort().join() === NAMES.join(), "a name came twice before everyone had been: " + seen.join());
+    await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("0 of 4 left");
+    await page.click("#pkBlob");                                      // the button itself picks the next: a fresh round
+    ok(NAMES.includes(await name()), "no fresh round");
+    await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("3 of 4 left");
+    const last = await name();
+    // a tap on the slide puts it away, and does not reach the slide
+    const slideClicks = () => page.frames().find(f => /tmp_flow_deck/.test(f.url())).evaluate(() => window.clicks);
+    await page.mouse.click(1500, 620);
+    await expect(page.locator("#pkPop")).toBeHidden();
+    ok((await slideClicks()) === 0, "the outside tap turned the slide");
+    // …but a tap aimed at one of the board's own buttons still does what it says
+    await page.click("#pkBlob");
+    await expect(page.locator("#pkPop")).toBeVisible();
+    const tb = await page.locator("#focusTimerBtn").boundingBox();
+    await page.mouse.click(tb.x + tb.width / 2, tb.y + tb.height / 2);
+    await expect(page.locator("#pkPop")).toBeHidden();
+    await expect(page.locator("#focusTimerMenu")).toBeVisible();
+    await page.click("#focusTimerBtn");
+    await expect(page.locator("#focusTimerMenu")).toBeHidden();
+    // absent students are never called
+    await page.evaluate(() => { window.Deckhand.absent.toggle("5th", "Ava"); window.Deckhand.absent.toggle("5th", "Ben"); });
+    const got = [];
+    for (let i = 0; i < 6; i++){ await page.click("#pkBlob"); got.push(await name()); }
+    ok(got.every(n => n === "Cal" || n === "Dee"), "an absent student was called: " + got.join());
+    await page.evaluate(() => { window.Deckhand.absent.toggle("5th", "Ava"); window.Deckhand.absent.toggle("5th", "Ben"); });
+    // it puts itself away, leaving a moment's cover so a late tap does not land on the slide
+    await page.evaluate(() => { window.Deckhand.pickPop.times.after = 700; window.Deckhand.pickPop.times.ghost = 4000; });   // (a long cover: the check below must not race it)
+    await page.click("#pkPop .pkPopGo");
+    const shown = await name();
+    await expect(page.locator("#pkPop")).toBeHidden({ timeout: 4000 });
+    ok(await page.evaluate(() => { const s = document.getElementById("pkScrim"); return !s.hidden && s.classList.contains("ghost"); }), "no cover behind the picker that closed itself");
+    await page.mouse.click(1500, 620); await page.mouse.click(1500, 620);   // two late taps: both land on the cover
+    await expect(page.locator("#pkScrim")).toBeHidden({ timeout: 8000 });
+    ok((await slideClicks()) === 0, "a tap reached the slide");
+    await page.evaluate(() => { window.Deckhand.pickPop.times.ghost = 900; });
+    // the pen and the comment cards do not share the corner with it
+    await page.evaluate(() => { window.Deckhand.pickPop.times.after = 60000; });
+    await page.click("#pkBlob");
+    await page.click("#ccBlob");
+    await expect(page.locator("#pkPop")).toBeHidden();
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await page.click("#pkBlob");
+    await expect(page.locator("#ccPop")).toBeHidden();
+    await expect(page.locator("#pkPop")).toBeVisible();
+    const before = await name();
+    await page.click("#inkBlob");
+    await expect(page.locator("#pkPop")).toBeHidden();
+    await page.click("#inkDone");
+    // the same round as the picker card: it opens on the last name, with the same count
+    await page.click("#unfocusBtn");
+    await dh.addW("addPickerBtn"); await page.keyboard.press("Escape");
+    await expect(page.locator(".w-picker .pkName")).toHaveText(before);
+    const left = await page.locator(".w-picker .pkLeft").textContent();
+    await page.click(".w-picker .pkGo");                              // the card picks: one fewer for both
+    await expect(page.locator(".w-picker .pkLeft")).not.toHaveText(left);
+    // with the picker card itself on the stage its quick button stands down
+    await page.evaluate(() => document.querySelector(".w-picker .wFocus").click());
+    await expect(page.locator("#pkBlob")).toBeHidden();
+    await expect(page.locator("#ccBlob")).toBeVisible();
+    ok(shown && last, "names");
+  });
+
+  test("v7.41: over staged slides, + Add → Comment Cards or Name Picker opens the quick tool (no card to place or minimize) and its button by the pen draws the eye; off the stage they are cards as before", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }]; });
+    await stageDeck(page, dh);
+    await page.click("#dockTog");
+    await dh.addW("addCcardBtn");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await expect(page.locator(".w-ccard")).toHaveCount(0);
+    await expect(page.locator("#ccPop .quickNote")).toBeVisible();
+    await expect(page.locator("#ccBlob")).toHaveClass(/pulse/);
+    ok(await page.evaluate(() => document.body.classList.contains("dockMin")), "the bottom menu stayed open over the slides");
+    await page.click("#ccPop .ccPopX");
+    await page.click("#ccBlob");                                      // opened from its own button: no note
+    await expect(page.locator("#ccPop .quickNote")).toBeHidden();
+    await page.click("#ccPop .ccPopX");
+    await page.click("#dockTog");
+    await dh.addW("addPickerBtn");
+    await expect(page.locator("#pkPop")).toBeVisible();
+    await expect(page.locator(".w-picker")).toHaveCount(0);
+    await expect(page.locator("#pkPop .quickNote")).toBeVisible();
+    ok(["Ava","Ben","Cal","Dee"].includes(await page.locator("#pkPop .pkPopName").textContent()), "the menu's picker did not pick");
+    await page.click("#pkPop .pkPopX");
+    // off the stage: cards
+    await page.click("#unfocusBtn");
+    await dh.addW("addPickerBtn"); await page.keyboard.press("Escape");
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
+    await expect(page.locator(".w-picker")).toHaveCount(1);
+    await expect(page.locator(".w-ccard")).toHaveCount(1);
+    await expect(page.locator("#pkPop")).toBeHidden();
+  });
+
+  /* the adversarial review's list (15 findings; these pin the ones that mattered) */
+  test("v7.41 (review): a Stage-only deck's tab stages it in one tap; + Add falls back to the card when the quick tool cannot open; a ringing timer stands the picker down; a name put away mid-shuffle keeps its turn (two students, one first name); the reminder takes a name that was up; a minimized timer summoned from the stage bar is seen", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Sam","Sam","Lee"] }]; });
+    await dh.addW("addTimerBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-timer .wMin");
+    await stageDeck(page, dh);
+    // the minimized timer, summoned: it used to count down unseen
+    await page.click("#focusTimerBtn");
+    await page.click("#focusTimerMenu [data-min]");
+    ok(await page.evaluate(() => { const w = document.querySelector(".w-timer"); return !w.classList.contains("wMinned") && getComputedStyle(w).display !== "none"; }), "the summoned timer stayed in its tab");
+    // a ringing timer: nothing of the picker sits on "tap anywhere", and its button spends nobody's turn
+    await page.evaluate(() => document.getElementById("alarm").classList.add("on"));
+    await expect(page.locator("#pkBlob")).toBeHidden();
+    await page.evaluate(() => window.Deckhand.pickPop.open());
+    ok(!(await page.evaluate(() => window.Deckhand.pickPop.isOpen())), "the picker opened under the alarm");
+    await page.evaluate(() => document.getElementById("alarm").classList.remove("on"));
+    // put away mid-shuffle (twice): nobody loses a turn, and neither Sam is lost
+    await page.evaluate(() => { const t = window.Deckhand.pickPop.times; t.force = true; t.spin = 6000; t.after = 60000; });
+    for (let i = 0; i < 2; i++){
+      await page.click("#pkBlob");
+      await expect(page.locator("#pkPop .pkPopName")).toHaveClass(/spin/);
+      await page.click("#pkPop .pkPopX");
+      await expect(page.locator("#pkPop")).toBeHidden();
+    }
+    await page.evaluate(() => { window.Deckhand.pickPop.times.force = false; });
+    const got = [];
+    for (let i = 0; i < 3; i++){ await page.click("#pkBlob"); got.push(await page.locator("#pkPop .pkPopName").textContent()); }
+    ok(got.slice().sort().join() === "Lee,Sam,Sam", "the round after two shuffles put away: " + got.join());
+    await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("0 of 3 left");
+    // the reminder comes up over a name: the name goes, and the slides do not get the keys back
+    await page.evaluate(() => { const m = window.Deckhand.ccToday.marks("5th"); m.Lee = 1; window.Deckhand.ccToday.save(); });
+    await page.click("#ccBlob"); await page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: "Lee" }) }).locator(".ccTileMain").click();   // a second card: the log has it
+    await page.click("#ccPop .ccPopX");
+    await page.click("#pkBlob");
+    await expect(page.locator("#pkPop")).toBeVisible();
+    await page.evaluate(() => window.Deckhand.ccardPop.remind("5th"));
+    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await expect(page.locator("#pkPop")).toBeHidden();
+    ok(!(await deckHasKeys(page)), "the slides took the keys from under the reminder");
+    await page.evaluate(() => window.Deckhand.pickPop.open());
+    ok(!(await page.evaluate(() => window.Deckhand.pickPop.isOpen())), "the picker opened under the reminder");
+    await page.click("#ccRemFull .ccRemDone");
+    // + Add with the slide zoomed: the quick tool cannot come up, so the card is added (not nothing)
+    await page.click("#zoomBlob");
+    ok(await page.evaluate(() => document.body.classList.contains("zooming")), "not zoomed");
+    await page.click("#dockTog");
+    await dh.addW("addPickerBtn");
+    await expect(page.locator(".w-picker")).toHaveCount(1);
+    await expect(page.locator("#pkPop")).toBeHidden();
+    await expect(page.locator("#pkPop .quickNote")).toBeHidden();
+    await page.locator("#zoomBar .zmDone").click();
+    // a Stage-only deck: minimized from the stage, its tab stages it again in one tap
+    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(w => w.type === "embed"); w.stageOnly = true; window.Deckhand.canvas.syncShelf(document.querySelector(".w-embed")._entry); });
+    await page.click("#minStageBtn");
+    ok(!(await page.evaluate(() => document.body.classList.contains("focusMode"))), "Minimize did not leave the stage");
+    await page.locator("#shelf .minChip", { hasText: "Slides" }).click();
+    await expect(page.locator(".w-embed")).toHaveClass(/wFull/);
+    ok(await page.evaluate(() => document.body.classList.contains("focusMode")), "the Stage-only deck's tab did not stage it");
   });
 });

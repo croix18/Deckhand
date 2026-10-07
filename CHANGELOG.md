@@ -2,6 +2,32 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.41.0 — 2026-10-07
+
+**Tools over the slides in one tap.** Croix: "sometimes when I click on a minimized tab it just
+deleted instead of popping up… the flow is expand the bottom menu, add, find it, then I can use
+it, then I've got to minimize it to get back to the slides. There wasn't much flow."
+
+- **The vanishing tab.** With slides on the stage, a minimized card came back underneath them:
+  its tab was gone and nothing appeared. It now comes up over the slides. A "Stage only" deck's
+  tab stages it in one tap (it used to turn into a second tab).
+- **Tabs on the stage.** While a card is staged, the cards you have put away have a tab in the
+  stage bar (top right). A tap brings one up over the slides, the same tap tucks it away — no
+  bottom menu, locked or not. A card that came up from a tab goes back to it when the stage ends,
+  so its tab is there for the next class's slides.
+- **The name picker is a button by the pen.** One tap picks a name and shows it big over the
+  slides; "Pick another" (or the button again) picks the next; it puts itself away after eight
+  seconds or on a tap anywhere else. Nobody is called twice until everyone has been, absent
+  students are skipped, and the round is shared with the Name Picker card. The clicker keeps
+  turning slides while a name is up.
+- **The buttons by the pen say what they are.** "Comment cards" and "Pick a name" show for a
+  few seconds each time a card takes the stage. Over staged slides, + Add → Comment Cards or
+  Name Picker opens the quick tool and points at its button, instead of adding a card.
+- A minimized timer summoned from the stage bar comes out of its tab (it used to count down
+  unseen). A ringing timer stands the quick tools and their buttons down.
+
+Four new tests; 288. The bell block is unchanged.
+
 ## 7.40.0 — 2026-10-06
 
 **The comment cards, rebuilt for the hand.** Croix: "It needs more development. It was awkward and
