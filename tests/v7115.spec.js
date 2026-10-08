@@ -2644,6 +2644,27 @@ test.describe("v7.42", () => {
     await turns(page, "the alarm was answered with the clicker");
   });
 
+  test("v7.43: a note being written over the staged slides stays open while the teacher thinks — the keeper no longer shuts it after twenty seconds; the clicker's page key still closes it and turns on", async ({ page, dh }) => {
+    test.setTimeout(90000);
+    await dh.openAt(T);
+    await dh.launch();
+    await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-text .wMin");
+    await stageDeck(page, dh);
+    await turns(page, "the slides took the stage");
+    await page.locator("#stageShelf .stTab", { hasText: "Text" }).click();
+    await page.locator(".w-text .txBody").click();
+    await page.keyboard.type("Exit ticket:");
+    await page.waitForTimeout(23000);                                  // past the old twenty seconds, no key pressed
+    await expect(page.locator(".w-text")).toHaveClass(/txEditing/);
+    ok(!(await deckHasKeys(page)), "the slides took the keys from a note still being written");
+    await page.keyboard.type(" #4");
+    await page.locator(".w-text .txBtn").click();
+    await expect(page.locator(".w-text")).not.toHaveClass(/txEditing/);
+    await expect(page.locator(".w-text .txInner")).toHaveText("Exit ticket: #4");
+    await turns(page, "Done on a note over the slides");
+  });
+
   test("v7.42: on the stage the folded menu handle leaves the bottom-left corner (the Slides player's page number is there) and sits with the other tools; unfolded it opens along the bottom; off the stage it is home", async ({ page, dh }) => {
     await dh.openAt(T);
     await dh.launch();
@@ -2674,3 +2695,67 @@ test.describe("v7.42", () => {
   });
 });
 
+test.describe("v7.43", () => {
+  /* Croix: "The text box tool was super weird. The title wouldn't go away when I clicked done. Then it
+     worked. Then it didn't. Then I held down done and it worked. I want to be able to just tap done."
+     Done shut the editor on the finger's DOWN; the tap's click then landed on the note that slid up
+     under the finger and opened it again. Only a finger shows it — a mouse click never did. */
+  const editing = page => page.evaluate(() => document.querySelector(".w-text").classList.contains("txEditing"));
+  const tapOn = async (page, sel) => { const b = await page.locator(sel).first().boundingBox(); await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); };
+  for (const staged of [false, true]){
+    test("@touch v7.43: one tap on Done closes the note" + (staged ? " (on the stage)" : "") + " — every time; a double tap does not open it again; held or slid, it closes; a tap elsewhere on the note opens it straight away", async ({ page, dh }) => {
+      await dh.openAt("#t=2026-10-06T10:30:00");
+      await dh.launch();
+      await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
+      if (staged){ await page.evaluate(() => document.querySelector(".w-text .wFocus").click()); await page.waitForTimeout(400); }
+      for (let i = 0; i < 5; i++){
+        await tapOn(page, ".w-text .txDisplay");
+        await expect.poll(() => editing(page), { message: "a tap on the note did not open it (round " + (i + 1) + ")" }).toBe(true);
+        await page.keyboard.type(i ? " " + i : "Quiz Friday");
+        if (staged && !i){                      // on the stage the bar (Timer · Minimize · Exit) covered the top of Done
+          const d = await page.locator(".w-text .txBtn").boundingBox(), f = await page.locator("#focusBar").boundingBox();
+          ok(d.y >= f.y + f.height + 4 || d.x >= f.x + f.width || d.x + d.width <= f.x, "the stage bar covers Done");
+        }
+        await tapOn(page, ".w-text .txBtn");
+        await page.waitForTimeout(300);
+        ok(!(await editing(page)), "one tap on Done left the editor open (round " + (i + 1) + ")");
+        await page.waitForTimeout(150);
+      }
+      await expect(page.locator(".w-text .txInner")).toHaveText("Quiz Friday 1 2 3 4");
+      ok((await page.evaluate(() => document.querySelector(".w-text")._entry.cfg.html)).includes("Quiz Friday 1 2 3 4"), "the note was not saved");
+      // a double tap on Done: the second tap lands on the note — it must not open it again
+      await tapOn(page, ".w-text .txDisplay");
+      await expect.poll(() => editing(page)).toBe(true);
+      const b = await page.locator(".w-text .txBtn").boundingBox();
+      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+      await page.waitForTimeout(90);
+      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+      await page.waitForTimeout(300);
+      ok(!(await editing(page)), "a double tap on Done opened the note again");
+      await expect(page.locator(".w-text .txBar")).toBeHidden();
+      // a press held on Done (what worked for him before), and a tap whose finger slid: both close it
+      const cdp = await page.context().newCDPSession(page);
+      const touchAt = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y }] });
+      for (const [hold, slide] of [[900, 0], [60, 18]]){
+        await page.waitForTimeout(600);
+        await tapOn(page, ".w-text .txDisplay");
+        await expect.poll(() => editing(page)).toBe(true);
+        const d = await page.locator(".w-text .txBtn").boundingBox(), x = d.x + d.width / 2, y = d.y + d.height / 2;
+        await touchAt("touchStart", x, y); await page.waitForTimeout(hold);
+        if (slide) await touchAt("touchMove", x + slide * 0.6, y + slide * 0.8);
+        await touchAt("touchEnd"); await page.waitForTimeout(300);
+        ok(!(await editing(page)), slide ? "a tap on Done that slid " + slide + "px left the editor open" : "a press held on Done left the editor open");
+      }
+      await cdp.detach();
+      // the half-second guard is only where Done was: a tap elsewhere on the note right away opens it
+      await tapOn(page, ".w-text .txDisplay");
+      await expect.poll(() => editing(page)).toBe(true);
+      await tapOn(page, ".w-text .txBtn");
+      const n = await page.locator(".w-text .txDisplay").boundingBox();
+      await page.touchscreen.tap(n.x + n.width / 2, n.y + n.height * 0.75);
+      await expect.poll(() => editing(page), { message: "a tap on the note away from Done, just after Done, did not open it" }).toBe(true);
+      await tapOn(page, ".w-text .txBtn");
+      await expect(page.locator(".w-text .txInner")).toHaveText("Quiz Friday 1 2 3 4");
+    });
+  }
+});

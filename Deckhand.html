@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.42.0",
+  "appVersion": "7.43.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1327,7 +1327,10 @@
   .txSerif{font-family:Georgia, serif;}
   .txMono{font-family:"Courier New", monospace;}
   .txHand{font-family:"Comic Sans MS", "Segoe Print", cursive;}
-  .txBar .txBtn{margin-left:auto; padding:9px 18px; font-size:15px;}
+  .txBar .txBtn{margin-left:auto; touch-action:none; padding:9px 18px; font-size:15px;}
+  /* v7.43: a note on the stage — its strip is folded, so the edit bar rose to the top and the stage bar
+     (Timer · Minimize · Exit, above everything) covered the top of Done: a tap there hit Timer or Exit */
+  body.focusMode:not(.landing) .w-text.wFull.txEditing .txBody{padding-top:42px;}
   @container (max-width: 520px){
     .txTool{min-width:34px; min-height:34px; font-size:13px; padding:3px 6px;}
     .txBar .txBtn{padding:7px 14px; font-size:13px;}
@@ -4756,7 +4759,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.42.0",
+  appVersion: "7.43.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -8697,6 +8700,7 @@ function makeText(host, wcfg){
   }
   function startEdit(){
     if (cfg.ui.locked) return;                   // a locked board is read-only
+    doneAt = null;
     editing = true;
     host.classList.add("txEditing");
     if (!wcfg.html){ inner.classList.remove("txEmpty"); inner.innerHTML = ""; }
@@ -8723,6 +8727,7 @@ function makeText(host, wcfg){
     var probe = document.createElement("div"); probe.innerHTML = html;
     wcfg.html = probe.textContent.trim() ? html : "";
     bar.hidden = true;
+    committedAt = Date.now();
     paint();
   }
   /* ---- toolbar: pointerdown is prevented so the selection in the
@@ -8769,10 +8774,28 @@ function makeText(host, wcfg){
     if (cmd === "smaller"){ sizeEm(-1); return; }
     document.execCommand(cmd, false, null);
   });
-  /* Done: the editor's blur already committed by the time the click
-     lands — the flag stops the click from reopening it */
-  var blurCommitted = false;
-  btn.addEventListener("pointerdown", function(e){ e.preventDefault(); if (editing) commit(); });
+  /* v7.43 Done (Croix: "The title wouldn't go away when I clicked done. Then it worked. Then it
+     didn't. Then I held down done and it worked. I want to be able to just tap done."): it used to
+     close the editor on the finger's DOWN, so the bar was gone before the finger lifted — and the
+     tap's click landed on the note that slid up under it, which opened the editor again. A long
+     press makes no click: that is why holding Done worked. Now the down only keeps the caret (no
+     blur) and the editor closes when the finger LIFTS on Done — a tap, a press held, a tap that
+     slid a little (Done takes no pan, so a sloppy finger is not cancelled) — or on a keyboard's
+     click. For half a second after, a tap on the note where Done was does not reopen it (the
+     click on its way, or the second tap of a double tap); a tap anywhere else on the note does. */
+  var committedAt = 0, doneAt = null, REOPEN_GUARD_MS = 500;
+  function doneTap(x, y){ doneAt = { x: x, y: y }; if (editing) commit(); }
+  var doneDown = false;                          // the press began on Done (a mouse selecting text and let go over Done does not count)
+  btn.addEventListener("pointerdown", function(e){ e.preventDefault(); doneDown = true; });
+  btn.addEventListener("pointercancel", function(){ doneDown = false; });
+  btn.addEventListener("pointerup", function(e){
+    var mine = doneDown; doneDown = false;
+    if (!mine || !editing || e.button > 0) return;
+    var r = btn.getBoundingClientRect(), m = 12;   // lifted on Done (or just off its edge)
+    if (e.clientX >= r.left - m && e.clientX <= r.right + m && e.clientY >= r.top - m && e.clientY <= r.bottom + m) doneTap(e.clientX, e.clientY);
+  });
+  btn.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  wireButton(btn, function(e){ if (editing) doneTap(e.clientX, e.clientY); });
   /* pencil tapped WHILE editing: commit, don't reopen */
   var pencilSkip = false;
   pencil.addEventListener("pointerdown", function(){ if (editing) pencilSkip = true; });
@@ -8782,7 +8805,11 @@ function makeText(host, wcfg){
     if (pencilSkip){ pencilSkip = false; return; }
     if (editing) commit(); else startEdit();
   });
-  disp.addEventListener("click", function(){ if (!editing) startEdit(); });
+  disp.addEventListener("click", function(e){
+    if (editing) return;
+    if (doneAt && Date.now() - committedAt < REOPEN_GUARD_MS && Math.abs(e.clientX - doneAt.x) < 60 && Math.abs(e.clientY - doneAt.y) < 60) return;
+    startEdit();
+  });
   inner.addEventListener("blur", function(){
     /* a toolbar tap keeps focus (pointerdown prevented); any other
        blur is a tap-away = save */
@@ -8801,7 +8828,6 @@ function makeText(host, wcfg){
     e.stopPropagation();                         // Space/R/digits are TEXT here
     if (e.key === "Escape"){ commit(); }
   });
-  void blurCommitted;
   paint();
   return {
     kind: "text",
@@ -15346,7 +15372,11 @@ var Canvas = (function(){
     var a = document.activeElement;
     if (!winFocused && !touched) return null;                        // a frame has the keys: the deck — or another card's own frame, by a tap the board cannot see
     if (a && a !== fr && a !== document.body && a !== document.documentElement && a.tagName !== "IFRAME"){
-      if (typingField(a) && nowT - fieldAt < 20000) return null;     // someone is typing (a caret left for twenty seconds is not)
+      /* someone is writing: a note or a list being written keeps the keys for a minute and a half
+         without a key (v7.43 — twenty seconds of thinking used to shut the note); a caret left in a
+         one-line box, twenty seconds. A clicker's page keys take them back from either at once; a
+         clicker that sends the arrows waits this out (the arrows are the caret's in a field). */
+      if (typingField(a) && nowT - fieldAt < (a.isContentEditable || a.tagName === "TEXTAREA" ? 90000 : 20000)) return null;
       if (a.tagName === "SELECT" && nowT - fieldAt < 6000) return null;   // a list just opened
       try { if (a.matches(":focus-visible") && a.matches("button, a[href], [role=button], [role=checkbox], summary")) return null; } catch(e){}   // a keyboard user is on a button
     }
@@ -16235,7 +16265,7 @@ var Canvas = (function(){
           keysHold = 0; ptrDownAt = 0;               // the clicker is in hand: nobody is at the keyboard, and a touch whose end was never heard is over
           if (!e.repeat) clickerDownAt = Date.now();
           /* a note someone walked away from must not hold the clicker: its page keys go back to
-             the slides (the arrows stay the caret's; twenty idle seconds free those too) */
+             the slides (the arrows stay the caret's; idle time frees those — twenty seconds, ninety in a note) */
           if ((e.key === "PageDown" || e.key === "PageUp") && deckFrame() && typingField(document.activeElement) && !keysTaken()){
             e.preventDefault(); giveOnKeyUp = true;
           }

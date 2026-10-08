@@ -2,6 +2,27 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.43.0 — 2026-10-08
+
+**Done on a note, in one tap.** Croix: "The text box tool was super weird. The title wouldn't go
+away when I clicked done. Then it worked. Then it didn't. Then I held down done and it worked. I
+want to be able to just tap done."
+
+- **One tap on Done closes the note, every time.** Done used to close the editor the moment a
+  finger touched it, so the toolbar was gone before the finger lifted — and the tap then landed on
+  the note that slid up under it, which opened the editor again. (A mouse never showed it; a
+  finger did, every time. A long press makes no tap, which is why holding Done worked.) Now the
+  note closes when the finger lifts on Done — a quick tap, a press held, or a tap whose finger
+  slid a little.
+- **On the stage, Done is clear of the Timer · Minimize · Exit bar.** With a note on the stage,
+  that bar covered the top of Done, so a tap there could hit Timer or Exit instead.
+- **A double tap on Done doesn't reopen it**: for half a second, a tap on the note where Done was
+  is ignored. A tap anywhere else on the note opens it straight away.
+- **A note being written over the slides stays open while you think.** The board used to hand the
+  keyboard back to the slides after twenty seconds without a key, which closed the note. A note
+  (or an agenda) now keeps it for a minute and a half without a key. The clicker's page key still
+  closes the note at once and the next press turns the slide.
+
 ## 7.42.0 — 2026-10-08
 
 **The clicker.** Croix: "Will it dismiss the stuff if I click my clicker? I also had a ton of

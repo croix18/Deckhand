@@ -664,6 +664,7 @@ test.describe("embeds", () => {
       !document.querySelector(".ytFrame")), "frame survived close");
     // sanitize agrees with the runtime rule: non-YouTube stations DIE,
     // youtube watch links normalize, on RELOAD of a hand-edited config
+    await page.goto("about:blank");                // (v7.43) the first page, left open, could save its board over the fixture's as it went to the background — the v7.1 Pledge race
     const pg2 = await dh.loadFixture("tmp_yt_hostile.html", JSON.stringify({
       schemaVersion: 4, appVersion: "6.26.0",
       scenes: [{ name: "S", widgets: [
