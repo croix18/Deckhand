@@ -2,6 +2,34 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.42.0 — 2026-10-08
+
+**The clicker.** Croix: "Will it dismiss the stuff if I click my clicker? I also had a ton of
+issues with it losing that. Sometimes when I'd draw it wouldn't work until I physically clicked
+the slides. Sometimes when I used the tools it was the same thing."
+
+- **It no longer goes dead.** The slides got the keys back only at particular moments, so a touch
+  on any card over the slides (a tally's +1, the sketch pad, a drag) or on the fullscreen corner
+  left the clicker dead until the slide was tapped. Now the slides get the keys back a moment
+  after every touch on the board.
+- **Refresh, and the slides coming back at the bell, no longer kill it.** Google Slides runs in a
+  separate browser process; when its frame reloaded, the keys fell back to the board while the
+  frame still looked focused, and nothing noticed. That is now detected and repaired. (This one
+  was also there before 7.42.)
+- **If a press ever does land on the board, that press sends the keys back** and the next one
+  turns the slide. An unfinished timer or Mathle entry, a list that was opened and left, a ticked
+  box, or a note left with the caret in it can no longer hold the clicker.
+- **A click puts away what is up**: a name, the comment cards, the reminder, a ringing timer (and
+  the pen, as before). The slide does not turn on that click; the next click turns it.
+- **The menu handle is out of the Slides corner.** On the stage the folded handle sits under the
+  other tools on the left edge (or first in the row with the right-hand pen), so the player's
+  arrows and page-number list are clear. Unfolded, the bar still opens along the bottom.
+
+Not changed: a tap inside another card's own frame (a video over the slides) keeps the keys there
+until the board is next touched. With a keyboard at the board, shortcuts typed after touching a
+card now go to the slides (+ Add → Timer → digits, and "Type a time…", still work for a few
+seconds). Three new tests on a deck served from another origin, as Slides is; 291.
+
 ## 7.41.0 — 2026-10-07
 
 **Tools over the slides in one tap.** Croix: "sometimes when I click on a minimized tab it just

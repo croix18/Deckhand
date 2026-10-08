@@ -2330,7 +2330,7 @@ test.describe("v7.41", () => {
     const seen = [await name()];
     ok(NAMES.includes(seen[0]), "one tap did not pick: " + seen[0]);
     await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("3 of 4 left");
-    ok(await deckHasKeys(page), "the picker took the keys from the slides");
+    ok(!(await deckHasKeys(page)), "v7.42: the name holds the keys while it is up (the clicker puts it away)");
     for (let i = 0; i < 3; i++){ await page.click("#pkPop .pkPopGo"); seen.push(await name()); }
     ok(seen.slice().sort().join() === NAMES.join(), "a name came twice before everyone had been: " + seen.join());
     await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("0 of 4 left");
@@ -2489,3 +2489,188 @@ test.describe("v7.41", () => {
     ok(await page.evaluate(() => document.body.classList.contains("focusMode")), "the Stage-only deck's tab did not stage it");
   });
 });
+
+/* v7.42 — Croix: "Will it dismiss the stuff if I click my clicker? I also had a ton of issues with
+ * it losing that. Sometimes when I'd draw it wouldn't work until I physically clicked the slides.
+ * Sometimes when I used the tools it was the same thing." Asked what a click should do with a name,
+ * the comment cards or the reminder up: "Put it away." And: "the tools menu is exactly where the
+ * slides number is, so it's tough when I have to navigate to later units." Synthetic names only. */
+test.describe("v7.42", () => {
+  const T = "#t=2026-09-29T10:30";                 // Black Tuesday, 5th period
+  /* A deck that counts the clicker: PageDown / ArrowRight turn its page. It is served from
+     http://127.0.0.1 so that, like Google Slides in a file:// Deckhand, its frame lives in ANOTHER
+     PROCESS — a file:// deck shares the board's process and cannot show the real fault (the frame
+     navigates, the keyboard falls back to the board's window, and document.activeElement still
+     names the frame). The adversarial review found this; every focus test here uses it. */
+  const http = require("http");
+  let srv = null, DECK = "";
+  test.beforeAll(async () => {
+    const html = '<!DOCTYPE html><title>Deck</title><body><h1 id="n">Slide 1</h1><script>window.slide = 1; addEventListener("keydown", e => { if (e.key === "PageDown" || e.key === "ArrowRight") window.slide++; if (e.key === "PageUp" || e.key === "ArrowLeft") window.slide--; });</scr' + 'ipt>';
+    srv = http.createServer((q, r) => { r.writeHead(200, { "content-type": "text/html" }); r.end(html); });
+    await new Promise(r => srv.listen(0, "127.0.0.1", r));
+    DECK = "http://127.0.0.1:" + srv.address().port + "/keys_deck.html";
+  });
+  test.afterAll(async () => { if (srv) await new Promise(r => srv.close(r)); });
+  const stageDeck = async (page, dh) => {
+    dh.ignoreErrors && dh.ignoreErrors(/127\.0\.0\.1/);
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn"); inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets; w[w.length - 1].url = u; document.querySelector(".w-embed .embFrame").src = u;
+    }, DECK);
+    await expect.poll(() => !!page.frames().find(f => /keys_deck/.test(f.url()))).toBe(true);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#focusBar")).toBeVisible();
+    /* the test is only worth anything if the deck really is out of process */
+    const cdp = await page.context().browser().newBrowserCDPSession();
+    const oop = (await cdp.send("Target.getTargets")).targetInfos.some(x => x.type === "iframe" && /keys_deck/.test(x.url));
+    await cdp.detach();
+    ok(oop, "the fixture deck is not an out-of-process frame — these tests would prove nothing");
+  };
+  const slide = async page => { const f = page.frames().find(f => /keys_deck/.test(f.url())); try { return f ? await f.evaluate(() => window.slide) : 0; } catch (e) { return 0; } };   // (0 while the frame is between documents)
+  /* the frame is the active element AND the board's window has heard its own blur: the keys really are in the frame
+     (activeElement alone names a frame that has since dropped them — that was the fault) */
+  const deckHasKeys = page => page.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("embFrame") && !window.Deckhand.canvas.keys().winFocused);
+  /* one press of the clicker must turn the page — the keys are back with the slides within a moment of any touch */
+  const turns = async (page, what) => {
+    await expect.poll(() => deckHasKeys(page), { timeout: 4000, message: "the keys never went back to the slides after: " + what }).toBe(true);
+    const was = await slide(page);
+    await page.keyboard.press("PageDown");
+    await expect.poll(() => slide(page), { timeout: 2000, message: "the clicker was dead after: " + what }).toBe(was + 1);
+  };
+
+  test("v7.42: the clicker is never dead on staged slides — after a card over them is tapped, dragged or typed in, the keys go back to the slides by themselves; someone typing keeps them; a press that lands on the board is the last one lost", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await dh.addW("addTallyBtn"); await page.keyboard.press("Escape");
+    await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
+    await page.click(".w-tally .wMin"); await page.click(".w-text .wMin");
+    await stageDeck(page, dh);
+    await turns(page, "the slides took the stage");
+    // Refresh: the frame navigates, and in another process that dropped the keys while it still LOOKED focused
+    await page.click("#reloadStageBtn");
+    await expect.poll(() => slide(page), { timeout: 6000 }).toBe(1);
+    await turns(page, "Refresh");
+    // the deck put away and brought back (what the bell does with the next class's slides)
+    await page.click("#minStageBtn");
+    await page.locator("#shelf .minChip", { hasText: "Slides" }).click();
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect.poll(() => slide(page), { timeout: 6000 }).toBe(1);
+    await turns(page, "the deck minimized, brought back and staged");
+    // a card up from its tab, and its button tapped: this left the clicker dead until the slide was tapped
+    await page.locator("#stageShelf .stTab", { hasText: "Tally" }).click();
+    await turns(page, "a card came up from its tab");
+    await page.locator(".w-tally button", { hasText: "+1" }).first().click();
+    await turns(page, "a button on the card over the slides");
+    const body = await page.locator(".w-tally .wBody").boundingBox();
+    await page.mouse.click(body.x + 14, body.y + 14);
+    await turns(page, "a tap on the card itself");
+    const strip = await page.locator(".w-tally .strip").boundingBox();
+    await page.mouse.move(strip.x + 40, strip.y + strip.height / 2); await page.mouse.down();
+    await page.mouse.move(strip.x - 160, strip.y + 120, { steps: 5 }); await page.mouse.up();
+    await turns(page, "a drag of the card");
+    // someone typing in a note over the slides keeps the keys; the clicker gets them when they tap away
+    await page.waitForTimeout(550);
+    await page.locator("#stageShelf .stTab", { hasText: "Text" }).click();
+    await page.locator(".w-text .txBody").click();                     // a tap starts the note
+    const before = await slide(page);
+    await page.keyboard.type("Quiz Friday");
+    await page.waitForTimeout(900);                                   // (two looks of the keeper)
+    ok(!(await deckHasKeys(page)), "the slides took the keys from someone typing");
+    await expect(page.locator(".w-text")).toContainText("Quiz Friday");
+    ok((await slide(page)) === before, "typing turned the slide");
+    // a note someone walked away from: the clicker's page key takes the keys back (that press is spent)
+    await page.keyboard.type("!");
+    const s1 = await slide(page);
+    await page.keyboard.press("PageDown");
+    ok((await slide(page)) === s1, "(the press that left the note cannot also turn the page)");
+    await turns(page, "the clicker pressed with the caret still in a note");
+    // the safety net: with the keys on the board (a keyboard user's key held them there), the press
+    // that lands on the board sends them back — the next turns the page
+    await page.evaluate(() => { window.Deckhand.canvas.holdKeys(5000); const f = document.activeElement; if (f && f.blur) f.blur(); window.focus(); });
+    ok(!(await deckHasKeys(page)), "(the keys are on the board for this step)");
+    const s0 = await slide(page);
+    await page.keyboard.press("PageDown");
+    ok((await slide(page)) === s0, "(that press cannot be passed into the frame)");
+    await turns(page, "a clicker press that landed on the board");
+    // a list left open and closed is not the clicker's to work: the scene list would change the scene
+    await page.click("#dockTog");
+    await page.locator("#sceneSel").focus();
+    const scene = await page.evaluate(() => window.Deckhand.config.activeScene);
+    await page.keyboard.press("PageDown");
+    ok((await page.evaluate(() => window.Deckhand.config.activeScene)) === scene && await page.evaluate(() => document.body.classList.contains("focusMode")), "the clicker worked the scene list");
+    await turns(page, "the clicker pressed on a list");
+    // an unfinished entry on a timer under the stage held the keys for good
+    await page.click("#focusTimerBtn"); await page.click("#focusTimerMenu [data-custom]");
+    await page.keyboard.press("5"); await page.keyboard.press("0");
+    await page.mouse.click(4, 300);                                   // (the board's edge — clear of the stage bar)
+    await turns(page, "digits typed on a timer and never started");
+  });
+
+  test("v7.42: the clicker puts away what is up — a name, the comment cards, the reminder (the pen already) — and the next press turns the slide", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }]; });
+    await stageDeck(page, dh);
+    const away = async (what, isUp) => {
+      const was = await slide(page);
+      ok(await isUp(), what + " is not up");
+      await page.keyboard.press("PageDown");
+      await expect.poll(isUp, { timeout: 2000, message: "the clicker did not put away " + what }).toBe(false);
+      ok((await slide(page)) === was, what + ": the press that put it away also turned the slide");
+      await turns(page, what + " was put away by the clicker");
+    };
+    await page.click("#pkBlob");
+    await expect(page.locator("#pkPop")).toBeVisible();
+    await away("the name", () => page.evaluate(() => window.Deckhand.pickPop.isOpen()));
+    await page.click("#pkBlob"); await page.click("#pkPop .pkPopGo");  // after "Pick another" too (the tap left the keys on the board)
+    await away("the second name", () => page.evaluate(() => window.Deckhand.pickPop.isOpen()));
+    await page.click("#ccBlob");
+    await page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: "Ben" }) }).locator(".ccTileMain").click();
+    await page.locator("#ccPop .ccTile", { has: page.locator(".ccTileName", { hasText: "Ben" }) }).locator(".ccTileMain").click();
+    await away("the comment cards", () => page.evaluate(() => window.Deckhand.ccardPop.isOpen()));
+    await page.evaluate(() => window.Deckhand.ccardPop.remind("5th"));
+    await expect(page.locator("#ccRemFull")).toBeVisible();
+    await away("the reminder", () => page.evaluate(() => window.Deckhand.ccardPop.reminding()));
+    await page.click("#inkBlob");
+    await away("the pen", () => page.evaluate(() => document.body.classList.contains("inking")));
+    // a ringing timer: the clicker answers it
+    await dh.summonCard();
+    await page.keyboard.press("1");
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#alarm")).toHaveClass(/on/, { timeout: 6000 });
+    await page.keyboard.press("PageDown");
+    await expect(page.locator("#alarm")).not.toHaveClass(/on/);
+    await turns(page, "the alarm was answered with the clicker");
+  });
+
+  test("v7.42: on the stage the folded menu handle leaves the bottom-left corner (the Slides player's page number is there) and sits with the other tools; unfolded it opens along the bottom; off the stage it is home", async ({ page, dh }) => {
+    await dh.openAt(T);
+    await dh.launch();
+    const box = () => page.evaluate(() => { const r = document.getElementById("dock").getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), r: Math.round(r.right), b: Math.round(r.bottom) }; });
+    const inCorner = b => b.x < 320 && b.b > 1080 - 110;             // where the player keeps ‹ › and its page list
+    await stageDeck(page, dh);
+    let b = await box();
+    ok(!inCorner(b), "the folded handle is on the Slides player's corner: " + JSON.stringify(b));
+    const pk = await page.locator("#pkBlob").boundingBox();
+    ok(b.x < 80 && b.y >= pk.y + pk.height, "left-hand pen: the handle is not under the tools: " + JSON.stringify(b));
+    await page.evaluate(() => document.body.classList.remove("inkLeft"));   // the pen on the right: first in the bottom-right row
+    b = await box();
+    const pk2 = await page.locator("#pkBlob").boundingBox();
+    ok(!inCorner(b) && b.r <= pk2.x + 4 && b.b > 1000, "right-hand pen: the handle is not in the row: " + JSON.stringify(b));
+    await page.evaluate(() => document.body.classList.add("inkLeft"));
+    await page.click("#dockTog");                                     // it still opens the bar, along the bottom
+    await expect(page.locator("#addBtn")).toBeVisible();
+    b = await box();
+    ok(b.b > 1000 && b.x < 80, "the unfolded bar is not along the bottom: " + JSON.stringify(b));
+    await page.click("#dockTog");
+    await page.click("#inkBlob");                                     // the pen out: its own bar has Done
+    await expect(page.locator("#dock")).toBeHidden();
+    await page.click("#inkDone");
+    await expect(page.locator("#dock")).toBeVisible();
+    await page.click("#unfocusBtn");
+    b = await box();
+    ok(inCorner(b), "off the stage the bar is not home: " + JSON.stringify(b));
+  });
+});
+

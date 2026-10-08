@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.41.0",
+  "appVersion": "7.42.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2171,10 +2171,10 @@
   body.blobTips #ccBlob, body.blobTips #pkBlob{opacity:1;}
   @media (hover:hover){ #ccBlob:hover .blobTip, #pkBlob:hover .blobTip{opacity:1; visibility:visible; transition:opacity .25s;} }
   #ccBlob[aria-expanded="true"] .blobTip, #pkBlob[aria-expanded="true"] .blobTip{opacity:0; visibility:hidden;}
-  /* the right-hand row: each label points at its own button — the comment cards' above it, the
-     picker's (the row's last) out to its left */
-  body:not(.inkLeft) #ccBlob .blobTip{left:50%; top:auto; bottom:calc(100% + 10px); transform:translateX(-50%);}
-  body:not(.inkLeft) #pkBlob .blobTip{left:auto; right:calc(100% + 10px);}
+  /* the right-hand row: each label stands over its own button, the comment cards' a row higher
+     (v7.42: the picker's used to reach out to the left, over the menu handle that now sits there) */
+  body:not(.inkLeft) #ccBlob .blobTip{left:50%; top:auto; bottom:calc(100% + 50px); transform:translateX(-50%);}
+  body:not(.inkLeft) #pkBlob .blobTip{left:50%; top:auto; bottom:calc(100% + 10px); transform:translateX(-50%);}
   @media (prefers-reduced-motion: reduce){ .blobTip, body.blobTips .blobTip{transition:none;} }
   /* a ringing timer has the screen: nothing of the corner tools sits on "Tap anywhere to dismiss" */
   body:has(#alarm.on:not(.calm)) #ccBlob, body:has(#alarm.on:not(.calm)) #pkBlob, body:has(#alarm.on:not(.calm)) #inkBlob, body:has(#alarm.on:not(.calm)) #zoomBlob{visibility:hidden;}
@@ -2234,7 +2234,7 @@
   #ccPop .ccUndo{min-height:44px; min-width:88px;}
   #ccPop .ccEmpty{font-size:15px;}
   #ccPop .ccEmpty:empty{display:none;}
-  #ccRemFull:focus, #ccPop:focus{outline:none;}
+  #ccRemFull:focus, #ccPop:focus, #pkPop:focus{outline:none;}
   #ccRemFull{position:fixed; inset:0; z-index:900003; gap:2.6vh; padding:4vh 4vw; background:rgba(255,255,255,.97);}
   #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2vw;}
   #ccRemFull .ccRemName{font-size:clamp(24px, var(--ccRemF, 7vw), 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
@@ -2263,6 +2263,17 @@
   body.dockMin #dock{padding:6px 8px; opacity:.5; gap:0;}
   body.dockMin #dock:hover{opacity:1;}
   body.dockMin #dockTog svg{transform:scaleX(-1);}
+  /* v7.42 (Croix: "the tools menu is exactly where the slides number is, so it's tough when I
+     have to navigate to later units"): on the stage the folded handle leaves the bottom-left
+     corner — the Slides player keeps its arrows and its page-number list there — and joins the
+     other tools: under them on the left edge, or first in the right-hand row. (Unfolded, the
+     bar opens along the bottom as before.) The pen's and the magnifier's own bars have Done. */
+  #tapGuard{position:fixed; inset:0; z-index:900006; background:transparent;}
+  #tapGuard[hidden]{display:none;}
+  body.focusMode.dockMin:not(.landing) #dock{left:4px; bottom:auto; top:calc(50% + 184px);}
+  body.focusMode.dockMin:not(.landing):not(.inkLeft) #dock{left:auto; top:auto; right:256px; bottom:8px;}
+  body.focusMode.dockMin.inking:not(.landing) #dock, body.focusMode.dockMin.zooming:not(.landing):not(.inkLeft) #dock{display:none;}   /* (their bars stand where it would) */
+  @media (max-height: 560px){ body.focusMode.dockMin:not(.landing) #dock{left:4px; right:auto; bottom:auto; top:8px;} }   /* no room under the tools: the top corner */
   #dock select{
     font:inherit; font-weight:700; font-size:13px; color:var(--navy);
     background:var(--paleturq); border:none; border-radius:999px; padding:6px 12px;
@@ -4636,7 +4647,7 @@
 <!-- v7.41 (Croix: "Button by the pen"): the name picker's quick-draw — one tap, a name over the slides -->
 <button id="pkBlob" type="button" aria-label="Pick a name" aria-expanded="false"><svg class="wIcon"><use href="#i-picker"/></svg><span class="blobTip" aria-hidden="true">Pick a name</span></button>
 <div id="pkScrim" hidden></div>
-<div id="pkPop" role="dialog" aria-label="Name picker" hidden>
+<div id="pkPop" role="dialog" aria-label="Name picker" tabindex="-1" hidden>
   <div class="pkPopHead"><b>Name picker</b><span class="pkPopPer"></span><span class="pkPopLeft"></span><button type="button" class="ccLogX pkPopX" aria-label="Close">&#x2715;</button></div>
   <div class="pkPopName" role="status"></div>
   <div class="wEmpty pkPopEmpty"></div>
@@ -4745,7 +4756,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.41.0",
+  appVersion: "7.42.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5675,6 +5686,8 @@ var Undo = (function(){
   }
   return { show: show, hide: hide };
 })();
+/* v7.42: what a presenter clicker sends (forward / back; some send the arrows) */
+function isClickerKey(k){ return k === "PageDown" || k === "PageUp" || k === "ArrowRight" || k === "ArrowLeft" || k === "ArrowDown" || k === "ArrowUp"; }
 function wireButton(btn, fn){
   btn.addEventListener("click", function(e){
     fn(e);
@@ -14301,6 +14314,9 @@ var Alarm = (function(){
   function setCalm(v){
     calm = v;
     el.alarm.classList.toggle("calm", v);
+    /* v7.42: an alarm nobody answered shrinks to its badge — and lets go of the keyboard it
+       took when it rang, so the clicker's next press turns the slide */
+    if (v){ try { if (document.activeElement === el.alarm) el.alarm.blur(); Canvas.refocusDeck(); } catch(e){} }
   }
   function ring(api){
     /* v7.5.1: a deck or video fullscreened INSIDE its iframe sits above every z-index —
@@ -15276,15 +15292,106 @@ var Canvas = (function(){
      Stage mode now HANDS the deck the keys, and hands them back after
      every Deckhand interruption (summon, dock fold, alarm dismiss).
      Never while a timer's digit entry is live — those keys are ours. */
-  function refocusDeck(){
+  /* v7.42 THE KEYS BELONG TO THE SLIDES. Croix: "I also had a ton of issues with it losing
+     that. Sometimes when I'd draw it wouldn't work until I physically clicked the slides.
+     Sometimes when I used the tools it was the same thing." Two causes.
+     (1) The deck got the keys back only where someone had remembered to call refocusDeck(): a
+     touch on ANY card over the slides (a tally's +1, the sketch pad, a drag), or on the
+     fullscreen corner, left them with the board until the slide itself was tapped.
+     (2) Google Slides is another site, so its frame lives in another PROCESS. When that frame
+     navigates (Refresh; a minimized deck coming back at the bell; Home and back) the keyboard
+     falls back to the board's own window while document.activeElement still names the frame —
+     and frame.focus() on the "active" element does nothing. It looked focused and was not.
+     So it is a rule, not a list, and it does not trust activeElement: winFocused follows the
+     board window's own focus and blur events (blur = some frame has the keys). While a deck is
+     staged and nothing of Deckhand's needs the keyboard, the deck's frame gets it — blurred
+     first if it only looked focused — a moment after every touch on the board, twice a second
+     while the board's window holds the keys, and on any clicker press that lands on the board.
+     What does need the keyboard: the pen, the quick tools and the reminder (the clicker puts
+     those away), an alarm, Settings, an open menu, a text field in use, a button a keyboard
+     user has tabbed to, and the few seconds after a key that is not the clicker's.
+     NOT a reason any more: a timer's or Mathle's unfinished entry (it killed the clicker from
+     under the slides); a caret left in a note for twenty seconds; a list that was opened and
+     left; a ticked box. A tap inside ANOTHER card's own frame (a video over the slides) keeps
+     the keys there until the board is next touched — the board cannot see that tap. */
+  var keysHold = 0, ptrDownAt = 0, keepTid = null, winFocused = true, fieldAt = 0, clickerDownAt = 0, giveOnKeyUp = false;
+  function deckFrame(){
     if (!focusedEntry ||
-        (focusedEntry.type !== "embed" && focusedEntry.type !== "yt" && focusedEntry.type !== "cadence")) return;
-    /* v7.15: while the pen is out the clicker must reach Deckhand (it ends the drawing) —
-       a deck that took the keys mid-drawing would turn the slide under the ink */
-    try { if (Ink.isArmed()) return; } catch(e){}
-    if (selected && selected.api.entryActive && selected.api.entryActive()) return;
+        (focusedEntry.type !== "embed" && focusedEntry.type !== "yt" && focusedEntry.type !== "cadence")) return null;
     var fr = focusedEntry.el.querySelector(".embFrame");
-    if (fr && !fr.hidden){ try { fr.focus(); } catch(e){} }
+    return fr && !fr.hidden ? fr : null;
+  }
+  function typingField(a){                         // a field that takes typed text (not a box to tick, a slider, a list)
+    if (!a) return false;
+    if (a.isContentEditable || a.tagName === "TEXTAREA") return true;
+    return a.tagName === "INPUT" && !/^(checkbox|radio|range|button|submit|reset|color|file|image)$/i.test(a.type || "");
+  }
+  /* is something of Deckhand's holding the keyboard on purpose? (shared by the keeper and refocusDeck) */
+  function keysTaken(){
+    try {
+      if (Ink.isArmed() || Alarm.isOn() || Settings.isOpen() || DayEditor.isOpen() || Landing.isShowing()) return true;
+      if (CcardPop.isOpen() || CcardPop.reminding() || PickPop.isOpen()) return true;
+    } catch(e){ return true; }
+    return !$("addMenu").hidden || !$("sceneMenu").hidden || !$("moreMenu").hidden || !$("focusTimerMenu").hidden;
+  }
+  /* `touched`: a touch on the board has just ended — the deck gets the keys even if a frame seems to have them */
+  function keysWanted(touched){
+    var fr = deckFrame();
+    if (!fr) return null;
+    var nowT = Date.now();
+    if (dragging || nowT - ptrDownAt < 12000) return null;           // a finger is down (the stamp is cleared when it lifts)
+    if (nowT < keysHold) return null;
+    if (clickerDownAt && nowT - clickerDownAt < 900) return null;     // the press that put something away is still down: its repeats must not turn slides
+    if (keysTaken()) return null;
+    var a = document.activeElement;
+    if (!winFocused && !touched) return null;                        // a frame has the keys: the deck — or another card's own frame, by a tap the board cannot see
+    if (a && a !== fr && a !== document.body && a !== document.documentElement && a.tagName !== "IFRAME"){
+      if (typingField(a) && nowT - fieldAt < 20000) return null;     // someone is typing (a caret left for twenty seconds is not)
+      if (a.tagName === "SELECT" && nowT - fieldAt < 6000) return null;   // a list just opened
+      try { if (a.matches(":focus-visible") && a.matches("button, a[href], [role=button], [role=checkbox], summary")) return null; } catch(e){}   // a keyboard user is on a button
+    }
+    return fr;
+  }
+  function giveKeys(fr, force){
+    try {
+      /* "active" and yet the board's window has the keys: the frame navigated and dropped them.
+         focus() on the active element is a no-op — let go of it first. (After a touch on the
+         board it is let go of regardless: another card's frame may be the one that has them.) */
+      if (document.activeElement === fr && (winFocused || force)) fr.blur();
+      fr.focus();
+      /* winFocused is NOT cleared here: only the window's own blur event says the frame took
+         the keys. A frame that is still loading takes nothing and raises no event, and the next
+         look (half a second on) must try again. Once it has them the blur has come, and the
+         deck is never blurred and refocused again — a list open inside the slides (their
+         page-number list) is not shut by this. */
+    } catch(e){}
+  }
+  /* the clicker has spoken: once its key is up the deck gets the keys past a tabbed-to button
+     or a caret left in a note (not past the pen, a quick tool, an alarm, Settings, a menu) */
+  function giveForClicker(){
+    giveOnKeyUp = false;
+    var fr = deckFrame();
+    if (!fr || keysTaken()) return;
+    try { var a = document.activeElement; if (a && a !== fr && a !== document.body && a.blur) a.blur(); } catch(e){}
+    giveKeys(fr, true);
+  }
+  function keepKeys(touched){
+    if (giveOnKeyUp && !(clickerDownAt && Date.now() - clickerDownAt < 900)){ giveForClicker(); return; }   // (its keyup was never heard)
+    var fr = keysWanted(touched === true);
+    if (fr) giveKeys(fr, touched === true);
+  }
+  function refocusDeck(byClicker){
+    var fr = deckFrame();
+    if (!fr) return;
+    /* v7.15: while the pen is out the clicker must reach Deckhand (it ends the drawing); v7.42:
+       the same for a name, the comment cards, the reminder, an alarm, Settings and an open menu
+       (a slow Refresh used to hand the deck the keys from under one of them) */
+    if (keysTaken()) return;
+    /* a clicker key is down (it has just put something away, or landed on the board): the deck
+       gets the keys when it LIFTS, so a held key's repeats cannot turn slides */
+    if (clickerDownAt && Date.now() - clickerDownAt < 900){ giveOnKeyUp = true; return; }
+    if (byClicker === true){ giveForClicker(); return; }
+    giveKeys(fr, false);                                             // (a deliberate hand-back: keysHold only stays the keeper's own hand)
   }
   /* v6.24: the settle-in ROUTINE. On a bell-started run the settle
      widget takes the stage; when its consequence spell ends, the stage
@@ -15779,6 +15886,7 @@ var Canvas = (function(){
     if (staged) en.float = true;                 // ride above the focused deck
     select(en); bringToFront(en);
     if (staged) refreshShelf();                  // v7.41: and it has a tab to put it away
+    if (staged && type === "timer") keysHold = Math.max(keysHold, Date.now() + 8000);   // v7.42: a timer added over the slides waits a moment for typed digits (+ Add → type → Enter)
     if (!REDUCED){                               // arrival, not apparition
       en.el.classList.add("spawn");
       setTimeout(function(){ en.el.classList.remove("spawn"); }, 240);
@@ -15829,6 +15937,7 @@ var Canvas = (function(){
     if (en.api.running && en.api.running() && en.api.startPause){
       en.api.startPause();
     }
+    keysHold = Math.max(keysHold, Date.now() + 8000);   // v7.42: "Type a time…" — the digits are on their way
   }
   /* v6.17, Croix: "I didn't want longer time with the window, I wanted
      the window to go away completely… it kicks out just the timer, not
@@ -15843,6 +15952,7 @@ var Canvas = (function(){
       en.ghostHold = Date.now() - GHOST_FUSE - 1;  // born idle…
       en.el.classList.add("wGhost");               // …and born ghosted
     }
+    keysHold = 0;    // (v7.42: a timer it had to add first asked for the keyboard; a preset has no digits to type)
     refocusDeck();   // the ghost needs no keys — the clicker does
   }
   function refreshDock(){
@@ -15914,6 +16024,18 @@ var Canvas = (function(){
   }
   setInterval(ghostSync, 700);
   /* collapse the dock to its handle (session-only; stage auto-collapses) */
+  var guardEl = null, guardTid = null;
+  function guardTaps(ms){                          // an unseen cover that takes every tap for a moment
+    try {
+      if (!guardEl){
+        guardEl = document.createElement("div"); guardEl.id = "tapGuard"; guardEl.hidden = true;
+        guardEl.addEventListener("click", function(e){ e.stopPropagation(); });
+        document.body.appendChild(guardEl);
+      }
+      guardEl.hidden = false;
+      clearTimeout(guardTid); guardTid = setTimeout(function(){ guardEl.hidden = true; }, ms || 400);
+    } catch(e){}
+  }
   function setDockMin(v){
     document.body.classList.toggle("dockMin", v);
     $("dockTog").setAttribute("aria-expanded", v ? "false" : "true");
@@ -16092,6 +16214,42 @@ var Canvas = (function(){
         this.blur();
         loadScene();
       });
+      /* v7.42: the keys go back to the slides after every touch, and stay there (see keysWanted) */
+      try { winFocused = !(document.activeElement && document.activeElement.tagName === "IFRAME"); } catch(e){}
+      window.addEventListener("focus", function(){ winFocused = true; setTimeout(keepKeys, 80); });
+      window.addEventListener("blur", function(){ winFocused = false; });
+      document.addEventListener("pointerdown", function(){ ptrDownAt = Date.now(); }, true);
+      ["pointerup", "pointercancel"].forEach(function(ev){
+        document.addEventListener(ev, function(){
+          ptrDownAt = 0;
+          keysHold = 0;                              // a touch: nobody is waiting on the keyboard (a "Type a time…" tap sets its hold after this)
+          clearTimeout(keepTid); keepTid = setTimeout(function(){ keepKeys(true); }, 80);
+        }, true);
+      });
+      setInterval(keepKeys, 500);
+      document.addEventListener("fullscreenchange", function(){ setTimeout(function(){ keepKeys(true); }, 150); });
+      document.addEventListener("focusin", function(e){ var a = e.target; if (a && (typingField(a) || a.tagName === "SELECT")) fieldAt = Date.now(); }, true);
+      document.addEventListener("keydown", function(e){
+        winFocused = true;                           // a key reached the board: the board's window has the keys, whatever activeElement says
+        if (isClickerKey(e.key)){
+          keysHold = 0; ptrDownAt = 0;               // the clicker is in hand: nobody is at the keyboard, and a touch whose end was never heard is over
+          if (!e.repeat) clickerDownAt = Date.now();
+          /* a note someone walked away from must not hold the clicker: its page keys go back to
+             the slides (the arrows stay the caret's; twenty idle seconds free those too) */
+          if ((e.key === "PageDown" || e.key === "PageUp") && deckFrame() && typingField(document.activeElement) && !keysTaken()){
+            e.preventDefault(); giveOnKeyUp = true;
+          }
+          return;
+        }
+        /* a key that is not the clicker's means someone is at the keyboard: the board keeps the keys a few seconds more */
+        if (deckFrame()) keysHold = Math.max(keysHold, Date.now() + 4000);
+        if (typingField(document.activeElement)) fieldAt = Date.now();
+      }, true);
+      document.addEventListener("keyup", function(e){
+        if (!isClickerKey(e.key)) return;
+        clickerDownAt = 0;
+        if (giveOnKeyUp) giveForClicker(); else keepKeys();
+      }, true);
       wireButton($("addBtn"), toggleAddMenu);
       wireButton($("unfocusBtn"), function(){ setFocus(null); });
       wireButton($("minStageBtn"), function(){ minimize(focusedEntry); });   // v7.18
@@ -16103,6 +16261,9 @@ var Canvas = (function(){
       window.addEventListener("resize", function(){ if (zm.en) zApply(false); });
       wireButton($("focusTimerBtn"), toggleTimerMenu);
       wireButton($("dockTog"), function(){
+        /* v7.42: on the stage the handle and the bar's fold button are in different places, so the
+           second half of a double tap would land on the slide (or the player's corner): cover it */
+        if (focusedEntry) guardTaps(350);
         setDockMin(!document.body.classList.contains("dockMin"));
       });
       window.addEventListener("resize", alignGrid);
@@ -16255,6 +16416,11 @@ var Canvas = (function(){
     zoom: function(){ return { s: zm.s, x: zm.x, y: zm.y, on: !!zm.en }; },   // v7.21 (tests)
     restore: function(el){ if (el && el._entry) restore(el._entry); },
     refocusDeck: refocusDeck,          // alarm dismiss hands keys back
+    deckStaged: function(){ return !!deckFrame(); },   // v7.42: the clicker's road
+    holdKeys: function(ms){ keysHold = Math.max(keysHold, Date.now() + (ms || 0)); },
+    keepKeys: keepKeys,
+    keys: function(){ return { winFocused: winFocused, hold: Math.max(0, keysHold - Date.now()) }; },   // test hook
+    guardTaps: guardTaps,
     dockMin: function(v){ setDockMin(!!v); },   // v7.15: the pen folds the dock back on a staged deck
     /* v7.5: the sea's director asks — a running timer or settle-in means
        a working room, so only the quiet visitors play */
@@ -17817,12 +17983,12 @@ var CcardPop = (function(){
       window.addEventListener("resize", gone);
       document.addEventListener("keydown", function(e){
         if (Alarm.isOn()) return;                               // a ringing timer has the screen and the keys
-        if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " ")){
+        if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " " || isClickerKey(e.key))){   // v7.42: the clicker too
           if (e.key !== "Escape" && e.target && e.target.closest && e.target.closest(".ccRemName")) return;   // the keyboard on a name checks it off
           if (e.key !== "Escape" && typing(e.target)) return;   // someone is typing: only Escape is the reminder's
           hideReminder(); e.stopPropagation(); e.preventDefault(); return;
         }
-        if (open && e.key === "Escape"){ show(false); e.stopPropagation(); }
+        if (open && (e.key === "Escape" || (isClickerKey(e.key) && !typing(e.target)))){ show(false); e.stopPropagation(); e.preventDefault(); }   // v7.42: the clicker puts the sheet away
       }, true);
       setInterval(function(){
         if (open && !Alarm.isOn()) paint(); else { if (open) show(false); paintBadge(); }   // the class in the room, who is absent; an alarm takes the screen
@@ -17853,7 +18019,8 @@ var CcardPop = (function(){
    eight seconds after the last pick, or at once on a tap anywhere else. No card to add, find or
    minimize. The round is the class's round (DayStore "picker:<period>"), shared with any Name
    Picker card: nobody is called twice until everyone has been, and absent students are skipped.
-   It never takes the keyboard from the slides — the clicker keeps turning pages while a name is up. */
+   v7.42: while a name is up it holds the keys, so the clicker's press puts it away (the next one
+   turns the slide). */
 var PickPop = (function(){
   var blob = null, pop = null, scrim = null, nameEl = null, open = false;
   var closeTid = null, spinTid = null, ghostTid = null, small = null, period = null, fitFor = null, pending = null;
@@ -17948,6 +18115,10 @@ var PickPop = (function(){
       pop.classList.remove("fromMenu");           // (the + Add road puts it back, after this)
       try { CcardPop.close(); BlobTips.hide(); } catch(e){}   // one quick tool at a time
       fitFor = null;
+      /* v7.42 (Croix: "Will it dismiss the stuff if I click my clicker?" → "Put it away"): the
+         name holds the keys while it is up, so the clicker's press puts it away (the next turns
+         the slide) — as it already ends the pen */
+      try { pop.focus({ preventScroll: true }); } catch(e){}
       return;
     }
     clearTimeout(closeTid); closeTid = null; pop.classList.remove("live"); pop.classList.remove("fromMenu");
@@ -17964,7 +18135,6 @@ var PickPop = (function(){
     if (!open) show(true);
     if (!open) return;
     pick();
-    try { Canvas.refocusDeck(); } catch(e){}      // the tap took the keys: the clicker gets them straight back
   }
   return {
     init: function(){
@@ -17996,7 +18166,7 @@ var PickPop = (function(){
       document.addEventListener("keydown", function(e){     // only when the board (not a deck) has the keys
         if (!open) return;
         try { if (Alarm.isOn() || CcardPop.reminding()) return; } catch(_){}
-        if (e.key === "Escape"){ show(false); e.stopPropagation(); return; }
+        if (e.key === "Escape" || isClickerKey(e.key)){ show(false); e.stopPropagation(); e.preventDefault(); return; }   // v7.42: the clicker puts the name away
         /* Space picks the next (as on the card) — one press, one name; Enter stays the timer's */
         if (e.key === " " && !(e.target && e.target.closest && e.target.closest("button, input, textarea, select, [contenteditable]"))){
           e.stopPropagation(); e.preventDefault();
@@ -18182,7 +18352,7 @@ var Keys = (function(){
     // 1. alarm overlay: Space/Esc/Enter dismiss; everything else —
     // including key auto-repeats — is swallowed so nothing behind fires
     if (Alarm.isOn()){
-      if (!e.repeat && (k === " " || k === "Escape" || k === "Enter")) Alarm.dismiss();
+      if (!e.repeat && (k === " " || k === "Escape" || k === "Enter" || isClickerKey(k))) Alarm.dismiss();   // v7.42: the clicker answers it too
       e.preventDefault();
       return;
     }
@@ -18199,6 +18369,16 @@ var Keys = (function(){
     // dropdown would leave Space/R/digits dead (advertised on the widget).
     if (isField){
       if (k === "Escape" && Settings.isOpen()){ Settings.close(true); e.preventDefault(); return; }
+      /* v7.42: on staged slides the clicker must not work a list it was left on (PageDown on the
+         scene list changed the scene and took the slides off the stage), nor page a note someone
+         walked away from: the press goes back to the slides. The arrows stay a text field's. */
+      if (!Settings.isOpen() && isClickerKey(k) && Canvas.deckStaged() &&
+          (tag === "SELECT" || k === "PageDown" || k === "PageUp" || (tag === "INPUT" && /^(checkbox|radio|range|button)$/i.test(e.target.type || "")))){
+        e.preventDefault();
+        try { e.target.blur(); } catch(_){}
+        Canvas.refocusDeck(true);
+        return;
+      }
       if (tag === "SELECT" && !Settings.isOpen() && /^[ rsfmh0-9]$/i.test(k)){
         e.target.blur();
       } else {
@@ -18226,6 +18406,14 @@ var Keys = (function(){
 
     var sel = Canvas.selApi();
 
+    /* v7.42: a clicker press that lands on the BOARD while slides are staged (something took the
+       keys between two looks of the keeper) goes straight back to the slides: this press is
+       spent, the next one turns the page — the clicker is never dead until the slide is tapped.
+       Before the entry step: a timer's or Mathle's unfinished entry used to swallow it. */
+    if (isClickerKey(k) && !Ink.isArmed() && Canvas.deckStaged()){
+      Canvas.refocusDeck(true); e.preventDefault(); return;
+    }
+
     // 5. active digit entry (on the selected timer widget)
     if (sel && sel.entryActive()){
       if (sel.typeKey && sel.typeKey(k)){ e.preventDefault(); return; }   // v7.33: Mathle takes letters, Backspace, Enter
@@ -18250,10 +18438,10 @@ var Keys = (function(){
     if (Ink.isArmed() && k === "Escape"){ Ink.finish(); e.preventDefault(); return; }
     /* v7.15: the clicker ends the drawing — its first press clears the ink and hands the deck
        the keys, the next one moves the slide (a press can't be passed on into the deck's frame) */
-    if (Ink.isArmed() && !Settings.isOpen() &&
-        ["PageDown", "PageUp", "ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].indexOf(k) !== -1){
+    if (Ink.isArmed() && !Settings.isOpen() && isClickerKey(k)){
       Ink.finish(); e.preventDefault(); return;
     }
+
     /* v7.7: while the clock IS the settle count, Space restarts it and R
        stands it down (the card's old chips) — the selected timer waits */
     var settleLive = false, wrapLive = false;
