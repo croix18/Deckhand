@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.43.0",
+  "appVersion": "7.44.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -647,6 +647,7 @@
     display:flex; gap:10px; align-items:center; max-width:94vw;
   }
   #verNudge[hidden]{display:none;}
+  #verNudge.vnFade{opacity:0; transition:opacity .55s ease;}   /* still tappable while it fades: a tap there keeps it (never falls through to a card) */
   #verNudge button{
     font:inherit; font-weight:700; cursor:pointer; border:0; border-radius:999px;
     padding:8px 14px; min-height:40px; background:var(--turq); color:var(--navy);
@@ -4759,7 +4760,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.43.0",
+  appVersion: "7.44.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -17548,6 +17549,7 @@ var SaveState = (function(){
         suspended = true;
         try {
           var vn1 = document.getElementById("verNudge");
+          clearTimeout(vn1.__tid); vn1.__tid = null; vn1.classList.remove("vnFade");   // this one stays
           document.getElementById("verNudgeText").textContent = "This board was changed in another window. Reload to pick it up — nothing will be saved from here until then.";
           document.getElementById("verNudgeBells").hidden = true;
           vn1.hidden = false;
@@ -17586,6 +17588,21 @@ var SaveState = (function(){
           if (!fileBells || pick(fileBells) === pick(cfg.bell)){
             bellBtn.hidden = true;               // nothing to adopt
           }
+          /* v7.44 (Croix: "That saved your board and rosters message, can you have it go away after a
+             few seconds"): it fades by itself — six seconds, or fifteen when it offers the new bell
+             schedule (a choice deserves the time to read it). A touch on it keeps it until × or the
+             button. The warnings that share this banner (a newer file, an unreadable board, another
+             window) still stay until dismissed. */
+          vn.__tid = setTimeout(function(){
+            vn.classList.add("vnFade");
+            vn.__tid = setTimeout(function(){ vn.hidden = true; vn.classList.remove("vnFade"); vn.__tid = null; }, 600);
+          }, bellBtn.hidden ? 6000 : 15000);
+          var vnKeep = function(){
+            if (!vn.__tid) return;
+            clearTimeout(vn.__tid); vn.__tid = null; vn.classList.remove("vnFade");
+          };
+          vn.addEventListener("pointerdown", vnKeep);
+          vn.addEventListener("focusin", vnKeep);          // a keyboard on its buttons keeps it too
           wireButton(bellBtn, function(){
             cfg.bell.groups = fileBells.groups;
             cfg.bell.anchorMonday = fileBells.anchorMonday;

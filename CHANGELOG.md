@@ -2,6 +2,19 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.44.0 — 2026-10-09
+
+**The update banner goes away by itself.** Croix: "That saved your board and rosters message, can
+you have it go away after a few seconds."
+
+- "Deckhand 7.44 — your saved board and rosters were kept." now fades out after six seconds.
+  When it also offers **Use the new bell schedule**, it waits fifteen seconds so there is time to
+  read the offer. Touching it keeps it up until you tap × or the button.
+- A tap on the banner while it fades still counts. It keeps the banner up and never lands on the
+  card underneath.
+- The warnings that use the same banner still stay until you dismiss them: a newer file, a board
+  this file can't read, or another window saving the board.
+
 ## 7.43.0 — 2026-10-08
 
 **Done on a note, in one tap.** Croix: "The text box tool was super weird. The title wouldn't go

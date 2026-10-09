@@ -2759,3 +2759,59 @@ test.describe("v7.43", () => {
     });
   }
 });
+
+test.describe("v7.44", () => {
+  /* Croix: "That saved your board and rosters message, can you have it go away after a few seconds" */
+  const olderCopy = async (page, bells) => page.evaluate(b => {
+    const o = JSON.parse(localStorage.getItem("deckhand.config"));
+    o.fileVersion = "6.33.0";
+    if (b) o.cfg.bell.groups[0].name = "Old Week";
+    localStorage.setItem("deckhand.config", JSON.stringify(o));
+  }, bells);
+  test("v7.44: the 'board and rosters were kept' banner goes away by itself in a few seconds — longer when it offers the new bells; a touch keeps it; the other-window warning in the same banner stays", async ({ page, dh }) => {
+    test.setTimeout(90000);
+    // plain: gone by itself in about six seconds
+    await dh.openAt("#t=2026-09-21T10:30");
+    await olderCopy(page, false);
+    await dh.reopen("#t=2026-09-21T10:30");
+    await expect(page.locator("#verNudgeText")).toContainText("rosters were kept");
+    await page.waitForTimeout(4500);
+    await expect(page.locator("#verNudge")).toBeVisible();
+    await expect(page.locator("#verNudge")).toBeHidden({ timeout: 4000 });
+    // offering the new bell schedule: still there at eight seconds, gone by itself after
+    await olderCopy(page, true);
+    await dh.reopen("#t=2026-09-21T10:30");
+    await expect(page.locator("#verNudgeBells")).toBeVisible();
+    await page.waitForTimeout(8000);
+    await expect(page.locator("#verNudge")).toBeVisible();
+    await expect(page.locator("#verNudge")).toBeHidden({ timeout: 9000 });
+    // a tap on "Use the new bell schedule" while it is fading still adopts the bells (it used to fall through to the card below)
+    await olderCopy(page, true);
+    await dh.reopen("#t=2026-09-21T10:30");
+    await expect(page.locator("#verNudgeBells")).toBeVisible();
+    await page.waitForFunction(() => document.getElementById("verNudge").classList.contains("vnFade"), null, { timeout: 17000 });
+    await page.click("#verNudgeBells", { force: true });
+    await expect(page.locator("#verNudge")).toBeHidden();
+    ok((await page.evaluate(() => window.Deckhand.config.bell.groups[0].name)) === "Teal Week", "the bells tap during the fade was lost");
+    // a touch on it keeps it until × or the button
+    await olderCopy(page, false);
+    await dh.reopen("#t=2026-09-21T10:30");
+    await page.locator("#verNudgeText").click();
+    await page.waitForTimeout(7500);
+    await expect(page.locator("#verNudge")).toBeVisible();
+    await page.click("#verNudgeKeep");
+    await expect(page.locator("#verNudge")).toBeHidden();
+    // the update banner up, then another window saves: that warning must not fade with it
+    await olderCopy(page, false);
+    await dh.reopen("#t=2026-09-21T10:30");
+    await page.evaluate(() => {
+      const o = JSON.parse(localStorage.getItem("deckhand.config")); o.cfg.ownerName = "Ms. Other";
+      const str = JSON.stringify(o); localStorage.setItem("deckhand.config", str);
+      window.dispatchEvent(new StorageEvent("storage", { key: "deckhand.config", newValue: str, oldValue: "x" }));
+    });
+    await expect(page.locator("#verNudgeText")).toContainText("another window");
+    await page.waitForTimeout(8000);
+    await expect(page.locator("#verNudge")).toBeVisible();
+    await expect(page.locator("#verNudgeText")).toContainText("another window");
+  });
+});
