@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.46.0",
+  "appVersion": "7.46.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2218,18 +2218,22 @@
   .pkPopBd[hidden]{display:none;}
   .pkPopNum{font-weight:900; color:var(--teal); font-size:20px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:-10px;}
   .pkPopNum[hidden]{display:none;}
-  #bdList{position:fixed; top:8px; left:12px; z-index:899999; max-width:min(64vw, calc(100vw - 460px)); display:flex; align-items:flex-start; gap:8px;
-    background:var(--navy); border:2px solid var(--turq); border-radius:22px; padding:8px 8px 8px 12px; box-shadow:4px 6px 0 var(--shadow);}
+  /* v7.46.1 (Croix: "I want the names up and large with their numbers. Not tiny and pill form."): a band
+     across the top of the slides, under the stage bar — each number and name as big as the band allows
+     (two or three to a row at full size), sized down only as the list grows */
+  #bdList{position:fixed; top:8px; left:12px; right:12px; z-index:899999; display:flex; align-items:flex-start; gap:8px;
+    background:var(--navy); border:3px solid var(--turq); border-radius:22px; padding:.6vh 10px .6vh 2vw; box-shadow:4px 6px 0 var(--shadow);}
   #bdList[hidden], body.landing #bdList{display:none;}
   /* it never sits over Settings, the day editor or a ringing timer */
   body:has(#settingsWrap:not([hidden])) #bdList, body:has(#dayEditorWrap:not([hidden])) #bdList, body:has(#alarm.on:not(.calm)) #bdList{visibility:hidden;}
-  #bdList{max-height:34vh; overflow:hidden;}
-  #bdList.many .bdItem{font-size:clamp(16px, 1.7vw, 30px);}
-  #bdList .bdItems{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 10px; min-width:0;}
-  #bdList .bdItem{display:inline-flex; align-items:center; gap:10px; background:var(--white); color:var(--navy); border-radius:999px; padding:4px 18px 4px 6px;
-    font-weight:900; font-size:clamp(20px, 2.4vw, 40px); line-height:1.15; white-space:nowrap; animation:inkPop .2s ease-out;}
-  #bdList .bdNum{display:inline-flex; align-items:center; justify-content:center; min-width:1.5em; height:1.5em; padding:0 .3em; box-sizing:border-box; border-radius:999px; background:var(--turq); color:var(--navy); font-size:.8em;}
-  #bdList .bdX{flex:none; width:40px; height:40px; border:0; border-radius:999px; background:transparent; color:var(--turq); font-size:20px; cursor:pointer;}
+  /* nor over an open menu (+ Add, ⋮, Scenes) */
+  body:has(#addMenu:not([hidden])) #bdList, body:has(#moreMenu:not([hidden])) #bdList, body:has(#sceneMenu:not([hidden])) #bdList{visibility:hidden;}
+  #bdList .bdItems{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; justify-content:center; align-items:baseline;
+    gap:0 1.1em; flex:1; min-width:0; font-size:96px; line-height:1.12;}
+  #bdList .bdItem{display:inline-flex; align-items:baseline; gap:.32em; color:var(--white); font-weight:900; white-space:nowrap; animation:inkPop .2s ease-out;}
+  #bdList .bdNum{color:var(--turq);}
+  #bdList .bdNum::after{content:"."; }
+  #bdList .bdX{flex:none; align-self:center; width:44px; height:44px; border:0; border-radius:999px; background:transparent; color:var(--turq); font-size:22px; cursor:pointer;}
   @media (prefers-reduced-motion: reduce){ #bdList .bdItem{animation:none;} }
   #ccPop.ccFade{opacity:0; transition:opacity .45s ease; pointer-events:none;}   /* fading is gone: a tap there meets the cover, never a tile */
   #ccPop.ccHold .ccGrid, #ccPop.ccHold .ccStat{pointer-events:none;}             /* just up under the finger that tapped Refused */
@@ -4793,7 +4797,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.46.0",
+  appVersion: "7.46.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -18221,18 +18225,30 @@ var CcardPop = (function(){
 var BoardList = (function(){
   var el = null, items = [], per = null;
   /* its right edge stops short of the stage bar (Timer, Minimize, the tabs) — however wide that is now */
-  function fitBox(){
+  var fitW = 0, fitN = -1;
+  /* it hangs under the stage bar (Timer, Minimize, the tabs), the width of the screen; the type is as
+     big as fits: up to about a tenth of the screen's height, the band no taller than a third of it */
+  function fitBox(force){
     if (!el || el.hidden) return;
-    var fb = $("focusBar"), right = window.innerWidth - 60, top = 8;   // (off the stage: clear of the fullscreen corner)
-    if (fb && !fb.hidden){
-      var r = fb.getBoundingClientRect();
-      if (r.width){
-        right = r.left - 16;
-        if (right - 12 < 520){ top = Math.round(r.bottom + 8); right = window.innerWidth - 60; }   // a crowded bar: the list hangs just under it
-      }
+    var fb = $("focusBar"), top = 8, right = 12, left = 12;
+    if (fb && !fb.hidden){ var r = fb.getBoundingClientRect(); if (r.width) top = Math.round(r.bottom + 8); }
+    else right = 56;                              // off the stage: clear of the fullscreen corner
+    /* the pen out on the left: the band starts after its colors (it must never cover them) */
+    var ib = $("inkBar");
+    if (document.body.classList.contains("inking") && ib && !ib.hidden){
+      var q = ib.getBoundingClientRect();
+      if (q.width && q.left < window.innerWidth / 2 && q.top < top + window.innerHeight * 0.4) left = Math.round(q.right + 10);
     }
-    el.style.top = top + "px";
-    el.style.maxWidth = Math.max(220, right - 12) + "px";
+    el.style.top = top + "px"; el.style.right = right + "px"; el.style.left = left + "px";
+    var w = el.clientWidth;
+    if (!force && w === fitW && items.length === fitN) return;
+    fitW = w; fitN = items.length;
+    var ol = el.querySelector(".bdItems"), maxH = window.innerHeight * 0.34;
+    var f = Math.round(Math.min(120, Math.max(36, window.innerHeight * 0.1)));
+    for (; f > 22; f = Math.round(f * 0.92)){
+      ol.style.fontSize = f + "px";
+      if (ol.scrollHeight <= maxH && ol.scrollWidth <= ol.clientWidth + 1) break;
+    }
   }
   function paint(){
     var ol = el.querySelector(".bdItems");
@@ -18244,8 +18260,7 @@ var BoardList = (function(){
       li.appendChild(b); li.appendChild(t); ol.appendChild(li);
     });
     el.hidden = !items.length;
-    el.classList.toggle("many", items.length > 8);
-    fitBox();
+    fitBox(true);
   }
   function clear(){ items = []; per = null; if (el) paint(); try { document.dispatchEvent(new CustomEvent("deckhand:boardlist")); } catch(e){} }
   return {
@@ -18254,7 +18269,7 @@ var BoardList = (function(){
       wireButton(el.querySelector(".bdX"), function(){ clear(); try { Canvas.refocusDeck(); } catch(e){} });
       setInterval(function(){ if (items.length && per && quickPeriod() !== per) clear(); }, 2000);   // the next class: not their names
       setInterval(fitBox, 700);                   // (a tab added to the stage bar, the stage ending)
-      window.addEventListener("resize", fitBox);
+      window.addEventListener("resize", function(){ fitBox(true); });
     },
     start: function(p){ items = []; per = p; paint(); },
     add: function(num, name){ items.push({ num: num, name: name }); paint(); },

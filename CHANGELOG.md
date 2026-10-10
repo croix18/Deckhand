@@ -2,6 +2,19 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.46.1 — 2026-10-10
+
+**The board list, big.** Croix: "That's not quite there. I want the names up and large with their
+numbers. Not tiny and pill form."
+
+- The list is now a navy band across the top of the screen, just under the stage bar. Each entry
+  reads "1. Bob" with a turquoise number and a big white name.
+- The names are as large as the band allows: about a tenth of the screen's height for a short
+  list. They shrink only as the list grows, and the band never takes more than a third of the
+  screen.
+- With the pen out on the left, the band starts after the pen's colors. It also hides while a
+  menu is open.
+
 ## 7.46.0 — 2026-10-10
 
 **The board list.** Croix: "can I get an option after the first name is drawn to add it to a quick
