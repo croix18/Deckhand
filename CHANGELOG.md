@@ -2,6 +2,17 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.48.0 — 2026-10-10
+
+**The corner tools, quieter.** Croix: "Name picker and comment cards don't need to pop up on full
+screen like that. Also, can you make them fit in with the other buttons. They don't need to be so
+dark."
+
+- The "Comment cards" and "Pick a name" labels no longer spring out when a deck takes the stage.
+  They still show under a mouse pointer, and the + Add menu still points at the tool it opened.
+- The two buttons are now the pen's twins: the same size and the same soft grey. A card still
+  owed, an open tool, or a touch brings one up to full strength.
+
 ## 7.47.0 — 2026-10-10
 
 **The name picker, settled.** Croix: "Can you take another look at the name picker. I want it to be

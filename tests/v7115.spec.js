@@ -1968,8 +1968,10 @@ test.describe("v7.40", () => {
     await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
     await page.evaluate(() => document.querySelector(".w-text .wFocus").click());
     await expect(page.locator("#ccBlob")).toBeVisible();
-    const blob = await page.evaluate(() => { const b = document.getElementById("ccBlob"), r = b.getBoundingClientRect(); return { w: Math.round(r.width), op: +getComputedStyle(b).opacity }; });
-    ok(blob.w >= 52 && blob.op >= 0.7, "the opener is large and not faint: " + JSON.stringify(blob));
+    /* v7.40 made the opener larger and less faint than the pen; v7.48 (Croix: "make them fit in with
+       the other buttons. They don't need to be so dark") makes it the pen's twin — a card owed brings it up */
+    const blob = await page.evaluate(() => { const b = document.getElementById("ccBlob"), i = document.getElementById("inkBlob"); return { w: b.offsetWidth, iw: i.offsetWidth, op: +getComputedStyle(b).opacity, iop: +getComputedStyle(i).opacity }; });
+    ok(blob.w === blob.iw && blob.op === blob.iop, "the opener does not match the pen: " + JSON.stringify(blob));
     await page.click("#ccBlob");
     await expect(page.locator("#ccPop .ccTile")).toHaveCount(26);
     const pop = await shape(page, "#ccPop");
@@ -2325,7 +2327,10 @@ test.describe("v7.41", () => {
     await stageDeck(page, dh);
     await expect(page.locator("#pkBlob")).toBeVisible();
     // the buttons say what they are when a card takes the stage
-    ok(await page.evaluate(() => document.body.classList.contains("blobTips")), "no labels when the stage came up");
+    ok(!(await page.evaluate(() => document.body.classList.contains("blobTips"))), "v7.48: the labels sprang out when the stage came up (Croix: they don't need to pop up like that)");
+    /* the four corner tools are one row: the same size and the same faintness as the pen */
+    const same = await page.evaluate(() => ["inkBlob", "zoomBlob", "ccBlob", "pkBlob"].map(id => { const e = document.getElementById(id), c = getComputedStyle(e); return [e.offsetWidth, e.offsetHeight, c.opacity].join("/"); }));
+    ok(new Set(same).size === 1, "the corner tools do not match: " + same.join(" "));
     await expect(page.locator("#pkBlob .blobTip")).toHaveText("Pick a name");
     await expect(page.locator("#ccBlob .blobTip")).toHaveText("Comment cards");
     const name = () => page.locator("#pkPop .pkPopName").textContent();
@@ -2800,8 +2805,12 @@ test.describe("v7.44", () => {
     await olderCopy(page, true);
     await dh.reopen("#t=2026-09-21T10:30");
     await expect(page.locator("#verNudgeBells")).toBeVisible();
-    await page.waitForFunction(() => document.getElementById("verNudge").classList.contains("vnFade"), null, { timeout: 17000 });
-    await page.click("#verNudgeBells", { force: true });
+    /* the tap lands the moment the fade begins (the fade is .6 s; a round trip from the test runner can be slower than that on a busy machine) */
+    await page.evaluate(() => new Promise(res => {
+      const vn = document.getElementById("verNudge");
+      new MutationObserver((m, o) => { if (vn.classList.contains("vnFade")){ o.disconnect(); setTimeout(() => { document.getElementById("verNudgeBells").click(); res(); }, 120); } })
+        .observe(vn, { attributes: true, attributeFilter: ["class"] });
+    }));
     await expect(page.locator("#verNudge")).toBeHidden();
     ok((await page.evaluate(() => window.Deckhand.config.bell.groups[0].name)) === "Teal Week", "the bells tap during the fade was lost");
     // a touch on it keeps it until × or the button

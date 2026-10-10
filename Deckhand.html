@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.47.0",
+  "appVersion": "7.48.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2135,7 +2135,7 @@
   #fsBtn[aria-pressed="true"] .fsIn{display:none;}
   #fsBtn[aria-pressed="true"] .fsOut{display:block;}
   #fsBtn[hidden], #inkBlob[hidden]{display:none;}
-  @media (hover:hover){ #fsBtn:hover, #inkBlob:hover{opacity:1;} }
+  @media (hover:hover){ #fsBtn:hover, #inkBlob:hover, #zoomBlob:hover{opacity:1;} }
   #fsBtn:focus-visible, #inkBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
   body.focusMode:not(.landing) #focusBar{right:56px; top:6px;}
   #inkBlob{right:24px; bottom:16px; display:none;}
@@ -2143,8 +2143,10 @@
   #zoomBlob{right:80px; bottom:16px; display:none;}
   /* v7.35 the comment-card blob, third in the row; a badge counts the cards still owed.
      v7.40: larger than its neighbours and not faint — it is the one that gets reached for mid-sentence */
-  #ccBlob{right:132px; bottom:12px; width:52px; height:52px; opacity:.78; display:none;}
-  #ccBlob svg{width:24px; height:24px;}
+  /* v7.48 (Croix: "make them fit in with the other buttons. They don't need to be so dark"): the same
+     size and faintness as the pen and the magnifier; an owed card, an open tool or a finger brings one up */
+  #ccBlob{right:136px; bottom:16px; display:none;}
+  #ccBlob svg{width:20px; height:20px;}
   body.focusMode:not(.landing):not(.inking):not(.zooming) #ccBlob{display:inline-flex;}
   #ccBlob.has{opacity:1;}
   #ccBlob[aria-expanded="true"]{opacity:1; background:var(--teal);}
@@ -2156,13 +2158,13 @@
   /* v7.40 the sheet: big enough to find a name from across the room, on the pen's side, as tall
      as the class needs (--ccR rows); the scrim under it takes the tap that puts it away */
   /* v7.41 the name picker's blob, next after the comment cards'; one tap and a name is up */
-  #pkBlob{right:194px; bottom:12px; width:52px; height:52px; opacity:.78; display:none;}
-  #pkBlob svg{width:24px; height:24px;}
+  #pkBlob{right:192px; bottom:16px; display:none;}
+  #pkBlob svg{width:20px; height:20px;}
   body.focusMode:not(.landing):not(.inking):not(.zooming) #pkBlob{display:inline-flex;}
   #pkBlob[aria-expanded="true"]{opacity:1; background:var(--teal);}
   @media (hover:hover){ #pkBlob:hover{opacity:1;} }
   #pkBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
-  body.inkLeft #pkBlob{right:auto; bottom:auto; left:8px; top:calc(50% + 122px);}
+  body.inkLeft #pkBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 116px);}
   body.focusMode:not(.landing):has(.w-picker.wFull) #pkBlob{display:none !important;}   /* the picker itself is on the stage */
   /* the quick tools say what they are: for a few seconds when a card takes the stage (BlobTips),
      and under a pointer. To the side of the left-hand stack; above the right-hand row. */
@@ -2293,7 +2295,7 @@
   #ccRemFull{position:fixed; inset:0; z-index:900003; gap:2.6vh; padding:4vh 4vw; background:rgba(255,255,255,.97);}
   #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2vw;}
   #ccRemFull .ccRemName{font-size:clamp(24px, var(--ccRemF, 7vw), 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
-  body.inkLeft #ccBlob{right:auto; bottom:auto; left:8px; top:calc(50% + 60px);}
+  body.inkLeft #ccBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 60px);}
   @media (max-width: 780px), (max-height: 540px){ #ccBlob, #ccPop, #ccScrim, #pkBlob, #pkPop, #pkScrim{display:none !important;} }
   body.focusMode:not(.landing):not(.inking):not(.zooming) #zoomBlob{display:inline-flex;}
   @media (hover:hover){ #zoomBlob:hover{opacity:1;} }
@@ -4820,7 +4822,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.47.0",
+  appVersion: "7.48.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -18558,9 +18560,11 @@ var BlobTips = (function(){
   return {
     init: function(){
       /* each time a card takes the stage — not the clock (the settle-in's count is not a lesson) */
+      /* v7.48 (Croix: the labels "don't need to pop up on full screen like that"): a card taking
+         the stage no longer shows them — a pointer over a button does, and the + Add road still
+         points at the tool it opened. The stage ending puts any label away. */
       document.addEventListener("deckhand:stage", function(e){
         var ty = e.detail && e.detail.type;
-        if (ty && ty !== "clock" && ty !== wasStage) show(6000);
         if (!ty || ty === "clock"){ clearTimeout(tid); document.body.classList.remove("blobTips"); }
         wasStage = ty || null;
       });
