@@ -2,6 +2,25 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.47.0 — 2026-10-10
+
+**The name picker, settled.** Croix: "Can you take another look at the name picker. I want it to be
+easy to use and not break. And apple quality of design."
+
+- **Nothing moves under your finger.** The three buttons — Refused, Pick another, Problem #1 — are
+  there from the moment the card opens, in the same three spots in every state. While the names
+  shuffle they dim; once a name lands they come on. The "Problem N" line above the name is always
+  reserved, and a long name set smaller no longer shortens the card.
+- **One action that matters.** Pick another is the only filled button. Refused and Problem #1 are
+  quiet, so the eye lands on the right one.
+- **Done numbering.** Once you've started a list, the third button becomes "Done numbering". One
+  tap ends the numbering and leaves the list up. The next Problem #1 starts a new list.
+- **The head is just the class and the count** — no title to read past. The count shows from the
+  first moment.
+- **Small things:** the name lands with a soft pop; a finger's double tap on Pick another is one
+  pick; Refused after Done numbering still takes that student off the list; on a 1366-wide screen
+  the primary gets its own row so nothing is clipped.
+
 ## 7.46.3 — 2026-10-10
 
 **The board list, with restraint.** Croix: "I want you to take an Apple look. Then decide how to

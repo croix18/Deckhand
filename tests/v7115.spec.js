@@ -2786,9 +2786,9 @@ test.describe("v7.44", () => {
     await olderCopy(page, false);
     await dh.reopen("#t=2026-09-21T10:30");
     await expect(page.locator("#verNudgeText")).toContainText("rosters were kept");
-    await page.waitForTimeout(4500);
+    await page.waitForTimeout(3000);
     await expect(page.locator("#verNudge")).toBeVisible();
-    await expect(page.locator("#verNudge")).toBeHidden({ timeout: 4000 });
+    await expect(page.locator("#verNudge")).toBeHidden({ timeout: 5500 });
     // offering the new bell schedule: still there at eight seconds, gone by itself after
     await olderCopy(page, true);
     await dh.reopen("#t=2026-09-21T10:30");
@@ -2861,8 +2861,8 @@ test.describe("v7.45", () => {
     const marks = () => page.evaluate(() => window.Deckhand.ccToday.peek("5th") || {});
     const name = () => page.locator("#pkPop .pkPopName").textContent();
     await page.click("#pkBlob");
-    await expect(page.locator("#pkPop .pkPopRef")).toBeHidden();      // not while the names shuffle
-    await expect(page.locator("#pkPop .pkPopRef")).toBeVisible({ timeout: 3000 });
+    await expect(page.locator("#pkPop .pkPopRef")).toBeDisabled();    // not while the names shuffle (v7.47: there, but waiting — nothing moves)
+    await expect(page.locator("#pkPop .pkPopRef")).toBeEnabled({ timeout: 3000 });
     await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("4 of 5 left");
     const who = await name();
     await page.click("#pkPop .pkPopRef");
@@ -2880,7 +2880,8 @@ test.describe("v7.45", () => {
     const rest = [next];
     for (let i = 0; i < 4; i++){ await page.click("#pkPop .pkPopGo"); rest.push(await name()); }
     ok(rest.slice().sort().join() === NAMES.join(), "the round after a refusal: " + rest.join());
-    // the second refusal is a card
+    // the second refusal is a card (a longer flash here: the touch below must land while the sheet is up)
+    await page.evaluate(() => { window.Deckhand.ccardPop.times.flash = 4000; });
     while ((await name()) !== who) await page.click("#pkPop .pkPopGo");
     await page.click("#pkPop .pkPopRef");
     await expect(page.locator("#ccPop .ccStatTxt")).toHaveText(who + " — comment card (refused)");
@@ -2888,7 +2889,7 @@ test.describe("v7.45", () => {
     // a touch keeps the sheet up (once it has been up a moment); Undo takes the card back and their turn counts after all
     await page.waitForTimeout(800);
     await page.locator("#ccPop .ccPopHead > b").first().click();
-    await page.waitForTimeout(2200);
+    await page.waitForTimeout(4200);                                   // past the flash: the touch kept it
     await expect(page.locator("#ccPop")).toBeVisible();
     await page.click("#ccPop .ccUndo");
     ok((await marks())[who] === "warn", "Undo did not take the card back: " + JSON.stringify(await marks()));
@@ -3004,13 +3005,14 @@ test.describe("v7.46", () => {
     const list = () => page.evaluate(() => window.Deckhand.boardList.items().map(i => i.num + ":" + i.name).join(" "));
     await page.click("#pkBlob");
     await expect(page.locator("#pkPop .pkPopBd")).toHaveText("Problem #1");
+    await expect(page.locator("#pkPop .pkPopBd")).toBeEnabled();
     await expect(page.locator("#bdList")).toBeHidden();
     const a = await name();
     await page.click("#pkPop .pkPopBd");
     await expect(page.locator("#bdList")).toBeVisible();
     await expect(page.locator("#bdList .bdItem")).toHaveText(["1" + a]);
     await expect(page.locator("#pkPop .pkPopNum")).toHaveText("Problem 1");
-    await expect(page.locator("#pkPop .pkPopBd")).toBeHidden();
+    await expect(page.locator("#pkPop .pkPopBd")).toHaveText("Done numbering");   // v7.47: the slot stays, and ends the run
     await page.waitForTimeout(2000);
     await expect(page.locator("#pkPop")).toBeVisible();              // numbering: it does not put itself away
     await page.click("#pkPop .pkPopGo");
@@ -3040,11 +3042,31 @@ test.describe("v7.46", () => {
     await expect(page.locator("#bdList .bdItem")).toHaveCount(3);
     await page.click("#pkBlob");
     const e = await name();
-    await expect(page.locator("#pkPop .pkPopNum")).toBeHidden();
+    await expect(page.locator("#pkPop .pkPopNum")).toHaveText("");
     await expect(page.locator("#pkPop .pkPopBd")).toHaveText("Problem #1");
     ok(![a, b, d].includes(e), "a student on the list was picked again before the round was out: " + e);
     await page.click("#pkPop .pkPopBd");                              // a new list replaces the old one
     await expect(page.locator("#bdList .bdItem")).toHaveText(["1" + e]);
+    // v7.47 "Done numbering": the run ends, the list stays, the next pick is plain and can start a new list
+    await page.evaluate(() => { window.Deckhand.pickPop.times.after = 60000; });   // (out of a run the card drains again — not under these steps)
+    await page.click("#pkPop .pkPopGo");
+    await expect(page.locator("#pkPop .pkPopNum")).toHaveText("Problem 2");
+    await page.click("#pkPop .pkPopBd");
+    await expect(page.locator("#pkPop .pkPopBd")).toHaveText("Problem #1");
+    await expect(page.locator("#bdList .bdItem")).toHaveCount(2);
+    await page.click("#pkPop .pkPopGo");
+    await expect(page.locator("#pkPop .pkPopNum")).toHaveText("");
+    await expect(page.locator("#bdList .bdItem")).toHaveCount(2);
+    await expect(page.locator("#pkPop .pkPopBd")).toBeEnabled();
+    // the three buttons never move: the same spots during a shuffle and with a name up
+    await page.evaluate(() => { window.Deckhand.pickPop.times.spin = 1500; window.Deckhand.pickPop.times.force = true; });
+    await page.click("#pkPop .pkPopGo");
+    const during = await page.evaluate(() => [".pkPopRef", ".pkPopGo", ".pkPopBd"].map(s => { const r = document.querySelector("#pkPop " + s).getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width)].join(","); }).join(" "));
+    await expect(page.locator("#pkPop .pkPopRef")).toBeDisabled();
+    await expect(page.locator("#pkPop .pkPopRef")).toBeEnabled({ timeout: 3000 });
+    const after = await page.evaluate(() => [".pkPopRef", ".pkPopGo", ".pkPopBd"].map(s => { const r = document.querySelector("#pkPop " + s).getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width)].join(","); }).join(" "));
+    ok(during === after, "the buttons moved when the name landed: " + during + " → " + after);
+    await page.evaluate(() => { window.Deckhand.pickPop.times.spin = 0; });
     // its ✕ clears it in one tap, even with the picker up (the tap goes through the picker's cover), and the slides have the keys
     const x = await page.locator("#bdList .bdX").boundingBox();
     await page.mouse.click(x.x + x.width / 2, x.y + x.height / 2);
