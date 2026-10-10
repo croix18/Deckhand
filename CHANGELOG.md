@@ -2,6 +2,28 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.46.0 — 2026-10-10
+
+**The board list.** Croix: "can I get an option after the first name is drawn to add it to a quick
+list that hangs the name at the top of the screen for a set of problems to solve on the board…
+I get an option to assign bob to question 1. From there, every consequetive roll gets an
+assignment number. It goes up until I dismiss the picker to where it would restart. But the names
+would be counted as picked. Id also want the refused button." (Asked: the list stays until you
+clear it; the numbers come by themselves.)
+
+- Once a name is up, the name picker offers **Problem #1**. Tapping it hangs "1 Bob" at the top
+  of the screen.
+- From then on, every pick gets the next number by itself ("Problem 2", "Problem 3"…). While
+  you're numbering, the picker stays up instead of putting itself away.
+- **Refused** still works: that student gets their comment-card step, comes off the list, goes back
+  into the round, and their number goes to the next pick.
+- Closing the picker (✕, a tap outside, the clicker, Escape) ends the numbering. The list stays up
+  for the students at the board until you tap its ✕. The next Problem #1 starts a new list.
+- Names on the list count as picked for the round.
+- The list stays clear of the stage bar and its tabs. When the bar is crowded, it hangs just
+  under it. It hides behind Settings and a ringing timer, and it clears itself when the next
+  class starts.
+
 ## 7.45.0 — 2026-10-10
 
 **Slides off for the day, and Refused on the name picker.**

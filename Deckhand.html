@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.45.0",
+  "appVersion": "7.46.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2213,6 +2213,24 @@
   .pkPopBtns{display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap;}
   .pkPopRef{background:var(--white); color:var(--navy); border:3px solid var(--navy); font-size:20px; min-height:56px; padding:0 30px;}
   .pkPopRef[hidden]{display:none;}
+  /* v7.46 the board list: "Problem #1" starts it; every pick after lands on the next number */
+  .pkPopBd{background:var(--navy); color:var(--white); font-size:20px; min-height:56px; padding:0 26px;}
+  .pkPopBd[hidden]{display:none;}
+  .pkPopNum{font-weight:900; color:var(--teal); font-size:20px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:-10px;}
+  .pkPopNum[hidden]{display:none;}
+  #bdList{position:fixed; top:8px; left:12px; z-index:899999; max-width:min(64vw, calc(100vw - 460px)); display:flex; align-items:flex-start; gap:8px;
+    background:var(--navy); border:2px solid var(--turq); border-radius:22px; padding:8px 8px 8px 12px; box-shadow:4px 6px 0 var(--shadow);}
+  #bdList[hidden], body.landing #bdList{display:none;}
+  /* it never sits over Settings, the day editor or a ringing timer */
+  body:has(#settingsWrap:not([hidden])) #bdList, body:has(#dayEditorWrap:not([hidden])) #bdList, body:has(#alarm.on:not(.calm)) #bdList{visibility:hidden;}
+  #bdList{max-height:34vh; overflow:hidden;}
+  #bdList.many .bdItem{font-size:clamp(16px, 1.7vw, 30px);}
+  #bdList .bdItems{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 10px; min-width:0;}
+  #bdList .bdItem{display:inline-flex; align-items:center; gap:10px; background:var(--white); color:var(--navy); border-radius:999px; padding:4px 18px 4px 6px;
+    font-weight:900; font-size:clamp(20px, 2.4vw, 40px); line-height:1.15; white-space:nowrap; animation:inkPop .2s ease-out;}
+  #bdList .bdNum{display:inline-flex; align-items:center; justify-content:center; min-width:1.5em; height:1.5em; padding:0 .3em; box-sizing:border-box; border-radius:999px; background:var(--turq); color:var(--navy); font-size:.8em;}
+  #bdList .bdX{flex:none; width:40px; height:40px; border:0; border-radius:999px; background:transparent; color:var(--turq); font-size:20px; cursor:pointer;}
+  @media (prefers-reduced-motion: reduce){ #bdList .bdItem{animation:none;} }
   #ccPop.ccFade{opacity:0; transition:opacity .45s ease; pointer-events:none;}   /* fading is gone: a tap there meets the cover, never a tile */
   #ccPop.ccHold .ccGrid, #ccPop.ccHold .ccStat{pointer-events:none;}             /* just up under the finger that tapped Refused */
   @media (prefers-reduced-motion: reduce){ #ccPop.ccFade{transition:none;} }
@@ -4659,12 +4677,16 @@
 <!-- v7.41 (Croix: "Button by the pen"): the name picker's quick-draw — one tap, a name over the slides -->
 <button id="pkBlob" type="button" aria-label="Pick a name" aria-expanded="false"><svg class="wIcon"><use href="#i-picker"/></svg><span class="blobTip" aria-hidden="true">Pick a name</span></button>
 <div id="pkScrim" hidden></div>
+<!-- v7.46: who is doing which problem at the board — hangs at the top of the screen until cleared -->
+<div id="bdList" role="status" aria-label="At the board" hidden><ol class="bdItems"></ol><button type="button" class="bdX" aria-label="Clear the board list">&#x2715;</button></div>
 <div id="pkPop" role="dialog" aria-label="Name picker" tabindex="-1" hidden>
   <div class="pkPopHead"><b>Name picker</b><span class="pkPopPer"></span><span class="pkPopLeft"></span><button type="button" class="ccLogX pkPopX" aria-label="Close">&#x2715;</button></div>
+  <div class="pkPopNum" hidden></div>
   <div class="pkPopName" role="status"></div>
   <div class="wEmpty pkPopEmpty"></div>
   <div class="pkPopBtns">
     <button type="button" class="btn pkPopGo">Pick another</button>
+    <button type="button" class="btn pkPopBd" hidden>Problem #1</button>
     <button type="button" class="btn pkPopRef" hidden>Refused</button>
   </div>
   <div class="quickNote">One tap from the slides: the button beside the pen.</div>
@@ -4771,7 +4793,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.45.0",
+  appVersion: "7.46.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -18189,6 +18211,61 @@ var CcardPop = (function(){
    Picker card: nobody is called twice until everyone has been, and absent students are skipped.
    v7.42: while a name is up it holds the keys, so the clicker's press puts it away (the next one
    turns the slide). */
+/* v7.46 (Croix: "can I get an option after the first name is drawn to add it to a quick list that hangs
+   the name at the top of the screen for a set of problems to solve on the board… it rolls the names it
+   picks bob. I get an option to assign bob to question 1. From there, every consequetive roll gets an
+   assignment number. It goes up until I dismiss the picker to where it would restart. But the names
+   would be counted as picked. Id also want the refused button." Asked: the list stays until cleared;
+   the numbers come by themselves). The list: numbered names, top-left, over everything but the quick
+   tools; its ✕ clears it; a new list replaces it; the next class clears it. Session only. */
+var BoardList = (function(){
+  var el = null, items = [], per = null;
+  /* its right edge stops short of the stage bar (Timer, Minimize, the tabs) — however wide that is now */
+  function fitBox(){
+    if (!el || el.hidden) return;
+    var fb = $("focusBar"), right = window.innerWidth - 60, top = 8;   // (off the stage: clear of the fullscreen corner)
+    if (fb && !fb.hidden){
+      var r = fb.getBoundingClientRect();
+      if (r.width){
+        right = r.left - 16;
+        if (right - 12 < 520){ top = Math.round(r.bottom + 8); right = window.innerWidth - 60; }   // a crowded bar: the list hangs just under it
+      }
+    }
+    el.style.top = top + "px";
+    el.style.maxWidth = Math.max(220, right - 12) + "px";
+  }
+  function paint(){
+    var ol = el.querySelector(".bdItems");
+    ol.textContent = "";
+    items.forEach(function(it){
+      var li = document.createElement("li"), b = document.createElement("span"), t = document.createElement("span");
+      li.className = "bdItem"; b.className = "bdNum"; b.textContent = String(it.num);
+      t.textContent = it.name;                    // user data: textContent only
+      li.appendChild(b); li.appendChild(t); ol.appendChild(li);
+    });
+    el.hidden = !items.length;
+    el.classList.toggle("many", items.length > 8);
+    fitBox();
+  }
+  function clear(){ items = []; per = null; if (el) paint(); try { document.dispatchEvent(new CustomEvent("deckhand:boardlist")); } catch(e){} }
+  return {
+    init: function(){
+      el = $("bdList");
+      wireButton(el.querySelector(".bdX"), function(){ clear(); try { Canvas.refocusDeck(); } catch(e){} });
+      setInterval(function(){ if (items.length && per && quickPeriod() !== per) clear(); }, 2000);   // the next class: not their names
+      setInterval(fitBox, 700);                   // (a tab added to the stage bar, the stage ending)
+      window.addEventListener("resize", fitBox);
+    },
+    start: function(p){ items = []; per = p; paint(); },
+    add: function(num, name){ items.push({ num: num, name: name }); paint(); },
+    drop: function(num){ items = items.filter(function(it){ return it.num !== num; }); paint(); },   // (empty, it hides; the run goes on)
+    last: function(){ return items.length ? items[items.length - 1].num : 0; },
+    period: function(){ return per; },
+    clear: clear,
+    items: function(){ return items.slice(); }      // (tests)
+  };
+})();
+
 var PickPop = (function(){
   var blob = null, pop = null, scrim = null, nameEl = null, open = false;
   var closeTid = null, spinTid = null, ghostTid = null, small = null, period = null, fitFor = null, pending = null;
@@ -18206,6 +18283,7 @@ var PickPop = (function(){
     clearTimeout(closeTid);
     pop.classList.remove("live"); void pop.offsetWidth;
     if (!open) return;
+    if (run) return;                              // v7.46: numbering the board — it stays until put away
     pop.style.setProperty("--pkMs", T.after + "ms");
     pop.classList.add("live");                    // the bar under the name runs down
     closeTid = setTimeout(function(){ show(false, true); }, T.after);
@@ -18229,8 +18307,27 @@ var PickPop = (function(){
     var w = widths[n];
     nameEl.style.fontSize = Math.max(22, Math.min(fClass, w ? (pop.clientWidth - 72) / (w / 100) : fClass)).toFixed(0) + "px";
   }
-  var shown = null;                              // v7.45: the name that is up {p, name} — what Refused acts on
-  function refBtn(who){ shown = who || null; pop.querySelector(".pkPopRef").hidden = !shown; }
+  var shown = null;                              // v7.45: the name that is up {p, name, num} — what Refused acts on
+  var run = null;                                // v7.46: a board list being numbered {p, next}; a dismissal ends it
+  function refBtn(who){
+    shown = who || null;
+    pop.querySelector(".pkPopRef").hidden = !shown;
+    pop.querySelector(".pkPopBd").hidden = !shown || !!run || shown.num != null;
+    var num = pop.querySelector(".pkPopNum");
+    num.hidden = !(shown && shown.num != null);
+    num.textContent = shown && shown.num != null ? "Problem " + shown.num : "";
+  }
+  function endRun(){ run = null; }
+  var holdRun = false, heldAt = 0;               // Refused closes the picker without ending the numbering (for two minutes)
+  /* "Problem #1": this name starts a new board list (any list up is replaced) */
+  function toBoard(){
+    if (!open || !shown || spinTid || run) return;
+    run = { p: shown.p, next: 2 };
+    BoardList.start(shown.p);
+    BoardList.add(1, shown.name);
+    refBtn({ p: shown.p, name: shown.name, num: 1 });
+    arm();                                        // (in a run the name stays until the picker is put away)
+  }
   function say(msg){
     stopSpin();
     refBtn(null);
@@ -18263,7 +18360,10 @@ var PickPop = (function(){
       stopSpin();
       setName(d.name);
       pickerCommit(p, d.name);
-      refBtn({ p: p, name: d.name });
+      var num = null;
+      if (run && run.p === p && BoardList.period() === p){ num = run.next++; BoardList.add(num, d.name); }   // the next problem, by itself
+      else run = null;
+      refBtn({ p: p, name: d.name, num: num });
       paintLeft();
       arm();
     };
@@ -18297,6 +18397,7 @@ var PickPop = (function(){
     clearTimeout(closeTid); closeTid = null; pop.classList.remove("live"); pop.classList.remove("fromMenu");
     stopSpin();
     refBtn(null);
+    if (holdRun){ holdRun = false; heldAt = Date.now(); } else endRun();   // v7.46: any close but Refused ends the numbering
     if (pending){ pickerUndraw(pending.p, pending.name); pending = null; }   // put away mid-shuffle: nobody saw the name, so nobody loses a turn
     if (auto){
       /* it put itself away: a finger already on its way to "Pick another" lands on nothing, not on the slide */
@@ -18313,19 +18414,23 @@ var PickPop = (function(){
      and the student goes back into the round, later. */
   function refused(){
     if (!open || !shown || spinTid) return;
-    var p = shown.p, n = shown.name;
+    var p = shown.p, n = shown.name, num = shown.num;
     var r = ccardStep(p, n, 1);                   // (null at nine cards: the most there is)
+    if (num != null && run && run.p === p){ BoardList.drop(num); run.next = num; }   // v7.46: their number goes to the next pick
     pickerBack(p, n);
+    holdRun = !!run;
     show(false, false, true);                     // the sheet takes the keys next
     try {
       CcardPop.flash(p, n, r, function(){
         if (r && CcToday.peek(p)[n] === r.next) ccardSet(p, n, r.prev);
         pickerTakeBack(p, n);
+        if (num != null && run && run.p === p && run.next === num && BoardList.last() < num){ BoardList.add(num, n); run.next = num + 1; }   // their number is still free
       });
     } catch(e){}
   }
   function go(){                                  // the blob, "Pick another", Space
-    if (!open) show(true);
+    if (!open && run && heldAt && Date.now() - heldAt > 120000) endRun();   // back long after a refusal: a plain pick
+    if (!open){ heldAt = 0; show(true); }
     if (!open) return;
     pick();
   }
@@ -18335,7 +18440,12 @@ var PickPop = (function(){
       try { small = window.matchMedia("(max-width: 780px), (max-height: 540px)"); } catch(e){ small = null; }
       wireButton(blob, go);
       wireButton(pop.querySelector(".pkPopGo"), go);
-      wireButton(pop.querySelector(".pkPopX"), function(){ show(false); });
+      wireButton(pop.querySelector(".pkPopX"), function(){ endRun(); show(false); });
+      wireButton(pop.querySelector(".pkPopBd"), toBoard);
+      document.addEventListener("deckhand:boardlist", function(){   // the list was cleared: the name up can start a new one
+        run = null;
+        if (open && shown) refBtn({ p: shown.p, name: shown.name, num: null });
+      });
       wireButton(pop.querySelector(".pkPopRef"), refused);
       pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
       /* a tap anywhere else puts the name away — on the click, so it cannot reach the slide. A tap
@@ -18345,22 +18455,25 @@ var PickPop = (function(){
       scrim.addEventListener("click", function(e){
         e.stopPropagation();
         if (!open) return;
-        show(false);
+        endRun(); show(false);
         try {
           var under = document.elementFromPoint(e.clientX, e.clientY);
           var btn = under && under.closest ? under.closest("button, [role=button], [role=checkbox]") : null;
-          if (btn && !btn.disabled && btn !== blob && btn.closest("#focusBar, #dock, .widget, #fsBtn, #inkBlob, #zoomBlob, #ccBlob")) btn.click();
+          if (btn && !btn.disabled && btn !== blob && btn.closest("#focusBar, #dock, .widget, #fsBtn, #inkBlob, #zoomBlob, #ccBlob, #bdList")) btn.click();
         } catch(_){}
       });
-      document.addEventListener("deckhand:home", function(){ show(false); });
+      document.addEventListener("deckhand:home", function(){ endRun(); show(false); });
       document.addEventListener("deckhand:picker", function(){ if (open && !spinTid) paintLeft(); });
-      var gone = function(){ if (open && !fits()) show(false); };
+      var gone = function(){
+        if (!document.body.classList.contains("focusMode")) endRun();   // the stage is over: so is the numbering
+        if (open && !fits()) show(false);
+      };
       try { new MutationObserver(gone).observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch(e){}
       window.addEventListener("resize", function(){ gone(); fitFor = null; });
       document.addEventListener("keydown", function(e){     // only when the board (not a deck) has the keys
         if (!open) return;
         try { if (Alarm.isOn() || CcardPop.reminding()) return; } catch(_){}
-        if (e.key === "Escape" || isClickerKey(e.key)){ show(false); e.stopPropagation(); e.preventDefault(); return; }   // v7.42: the clicker puts the name away
+        if (e.key === "Escape" || isClickerKey(e.key)){ endRun(); show(false); e.stopPropagation(); e.preventDefault(); return; }   // v7.42: the clicker puts the name away
         /* Space picks the next (as on the card) — one press, one name; Enter stays the timer's */
         if (e.key === " " && !(e.target && e.target.closest && e.target.closest("button, input, textarea, select, [contenteditable]"))){
           e.stopPropagation(); e.preventDefault();
@@ -18674,7 +18787,7 @@ var Keys = (function(){
    cards are built, so the picker and the comment cards open knowing their class */
 var rostersAuto = null;
 try { rostersAuto = Settings.autoRosters(); } catch(e){ try { console.error("Deckhand: class lists not read", e); } catch(_){} }
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, PickPop, BlobTips, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -18725,6 +18838,7 @@ window.Deckhand = {
   ccardPop: CcardPop,                           // v7.35: the quick-draw comment cards (tests)
   ccToday: CcToday,                             // v7.40: today's marks (tests)
   pickPop: PickPop,                             // v7.41: the quick-draw name picker (tests)
+  boardList: BoardList,                         // v7.46: who is at the board (tests)
   blobTips: BlobTips,
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
   nature: Nature,                               // v7.24: the nature sounds (tests render them offline)

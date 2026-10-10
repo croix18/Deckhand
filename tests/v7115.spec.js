@@ -2963,3 +2963,82 @@ test.describe("v7.45", () => {
     await expect(page.locator(".w-embed")).toBeVisible();
   });
 });
+
+test.describe("v7.46", () => {
+  /* Croix: "can I get an option after the first name is drawn to add it to a quick list that hangs the name at
+     the top of the screen for a set of problems to solve on the board… I get an option to assign bob to
+     question 1. From there, every consequetive roll gets an assignment number. It goes up until I dismiss the
+     picker to where it would restart. But the names would be counted as picked. Id also want the refused
+     button." Asked: the list stays until cleared; the numbers come by themselves. */
+  const stageDeck = async (page, dh) => {
+    const deck = path.join(dh.fixtureDir, "tmp_board_deck.html");
+    fs.writeFileSync(deck, "<!DOCTYPE html><title>Deck</title><body><h1>Problems 1-6</h1>");
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn"); inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets; w[w.length - 1].url = u; document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#focusBar")).toBeVisible();
+  };
+  test("v7.46: the board list — Problem #1 hangs the name at the top; every pick after gets the next number and the picker stays up; Refused gives that number to the next pick; a dismissal ends the numbering but the list stays until its ✕; the next list starts at 1; the names count as picked", async ({ page, dh }) => {
+    test.setTimeout(90000);
+    await dh.openAt("#t=2026-09-29T10:30");                   // 5th period
+    await dh.launch();
+    const NAMES = ["Ava", "Ben", "Cal", "Dee", "Eli", "Fay"];
+    await page.evaluate(names => { window.Deckhand.config.rosters = [{ period: "5th", names }]; }, NAMES);
+    await stageDeck(page, dh);
+    await page.evaluate(() => { const t = window.Deckhand.pickPop.times; t.spin = 0; t.after = 1500; window.Deckhand.ccardPop.times.flash = 1200; });
+    const name = () => page.locator("#pkPop .pkPopName").textContent();
+    const list = () => page.evaluate(() => window.Deckhand.boardList.items().map(i => i.num + ":" + i.name).join(" "));
+    await page.click("#pkBlob");
+    await expect(page.locator("#pkPop .pkPopBd")).toHaveText("Problem #1");
+    await expect(page.locator("#bdList")).toBeHidden();
+    const a = await name();
+    await page.click("#pkPop .pkPopBd");
+    await expect(page.locator("#bdList")).toBeVisible();
+    await expect(page.locator("#bdList .bdItem")).toHaveText(["1" + a]);
+    await expect(page.locator("#pkPop .pkPopNum")).toHaveText("Problem 1");
+    await expect(page.locator("#pkPop .pkPopBd")).toBeHidden();
+    await page.waitForTimeout(2000);
+    await expect(page.locator("#pkPop")).toBeVisible();              // numbering: it does not put itself away
+    await page.click("#pkPop .pkPopGo");
+    const b = await name();
+    await expect(page.locator("#pkPop .pkPopNum")).toHaveText("Problem 2");
+    ok((await list()) === "1:" + a + " 2:" + b, "the second pick: " + await list());
+    await page.waitForTimeout(800);
+    const box = await page.evaluate(() => { const l = document.getElementById("bdList").getBoundingClientRect(), f = document.getElementById("focusBar").getBoundingClientRect(); return { lr: l.right, lt: l.top, fl: f.left, fb: f.bottom }; });
+    ok(box.lr <= box.fl || box.lt >= box.fb, "the list covers the stage bar: " + JSON.stringify(box));   // beside it, or (a crowded bar) under it
+    // Refused on #3: a warning, off the list, and #3 goes to the next pick
+    await page.click("#pkPop .pkPopGo");
+    const c = await name();
+    ok((await list()).endsWith("3:" + c), "the third pick: " + await list());
+    await page.click("#pkPop .pkPopRef");
+    await expect(page.locator("#ccPop")).toBeVisible();
+    ok((await list()) === "1:" + a + " 2:" + b, "the refused student is still on the list: " + await list());
+    ok((await page.evaluate(() => window.Deckhand.ccToday.peek("5th") || {}))[c] === "warn", "no warning for the refusal");
+    await expect(page.locator("#ccPop")).toBeHidden({ timeout: 4000 });
+    await page.click("#pkBlob");                                     // back to the picker: the numbering goes on
+    const d = await name();
+    ok(d !== c, "the refused student was the very next pick");
+    ok((await list()) === "1:" + a + " 2:" + b + " 3:" + d, "after a refusal: " + await list());
+    await expect(page.locator("#pkPop .pkPopNum")).toHaveText("Problem 3");
+    // dismissed: the numbering is over, the list stays up for the students at the board
+    await page.click("#pkPop .pkPopX");
+    await expect(page.locator("#pkPop")).toBeHidden();
+    await expect(page.locator("#bdList .bdItem")).toHaveCount(3);
+    await page.click("#pkBlob");
+    const e = await name();
+    await expect(page.locator("#pkPop .pkPopNum")).toBeHidden();
+    await expect(page.locator("#pkPop .pkPopBd")).toHaveText("Problem #1");
+    ok(![a, b, d].includes(e), "a student on the list was picked again before the round was out: " + e);
+    await page.click("#pkPop .pkPopBd");                              // a new list replaces the old one
+    await expect(page.locator("#bdList .bdItem")).toHaveText(["1" + e]);
+    // its ✕ clears it in one tap, even with the picker up (the tap goes through the picker's cover), and the slides have the keys
+    const x = await page.locator("#bdList .bdX").boundingBox();
+    await page.mouse.click(x.x + x.width / 2, x.y + x.height / 2);
+    await expect(page.locator("#pkPop")).toBeHidden();
+    await expect(page.locator("#bdList")).toBeHidden();
+    await expect.poll(() => page.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("embFrame"))).toBe(true);
+  });
+});
