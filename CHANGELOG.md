@@ -2,6 +2,40 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.45.0 — 2026-10-10
+
+**Slides off for the day, and Refused on the name picker.**
+
+Croix: "Can you make it so I have an option to turn off the auto slides. Today I pivoted and
+decided to not do notes. But it was awkward for the slides to keep coming up." (Asked: just
+today, one tap during class.)
+
+- **⋮ → Slides after the bell** turns the bell's hand-off to the slides off **for today**. It
+  turns itself back on tomorrow, and a reload keeps it off for the rest of the day. The settle-in
+  count still runs, then the clock face comes back. A deck that was on the stage when the bell
+  rang goes to its tab instead of onto the board. A deck that was only sitting on the board stays
+  where it was.
+- When the bell skips the slides, a toast says "Slides are off for today". Its **Slides on** button
+  brings them back right away, along with any running timer.
+- **Minimize on the stage** now offers **Keep off today**, so the switch is one tap at the moment
+  you put the slides away.
+- Slides you already have up stay up when you turn the switch off.
+
+Croix: "Could I have a refused button that only shows up after the student is picked? … for
+students who refuse to go up to the board to do the problem. Or refuse to try to give me an
+answer. If clicked, it will trigger a comment card strike. The comment card tab should pull up
+and fade away. And add the student back into the que."
+
+- **Refused** appears beside "Pick another" once a name is up (not while the names shuffle).
+- One tap gives that student one step on the comment cards: a warning first, then a card, the
+  same as tapping their tile.
+- The comment cards come up showing "Name — warning (refused)" with Undo, then fade away after
+  four seconds. Touching the sheet keeps it up.
+- The student goes back into the class's round at a random later spot, never as the very next
+  pick. Undo takes back both the mark and the extra turn.
+- A double tap on Refused can't mark a second student, and a tap while the sheet is fading
+  doesn't mark anyone.
+
 ## 7.44.0 — 2026-10-09
 
 **The update banner goes away by itself.** Croix: "That saved your board and rosters message, can

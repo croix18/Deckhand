@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.44.0",
+  "appVersion": "7.45.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -152,7 +152,7 @@
     font:inherit; font-weight:700; font-size:14px;
     padding:11px 18px; min-height:40px; border-radius:999px;   /* v7.0: IR-panel finger size */
   }
-  #soundBtn[aria-pressed="false"]{background:var(--cream); box-shadow:inset 0 0 0 2px var(--sand);}
+  #soundBtn[aria-pressed="false"], #slidesBtn[aria-pressed="false"]{background:var(--cream); box-shadow:inset 0 0 0 2px var(--sand);}
   #setBtn{background:var(--paleturq);}
   #setBtn.dirty::after{
     content:""; display:inline-block; width:9px; height:9px; border-radius:50%;
@@ -2209,6 +2209,13 @@
   #pkPop .pkPopEmpty:empty{display:none;}
   .pkPopGo{background:var(--turq); color:var(--navy); font-size:20px; min-height:56px; padding:0 34px;}
   .pkPopGo[hidden]{display:none;}
+  /* v7.45 Refused: only once a name is up; a step on the comment cards and back into the round */
+  .pkPopBtns{display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap;}
+  .pkPopRef{background:var(--white); color:var(--navy); border:3px solid var(--navy); font-size:20px; min-height:56px; padding:0 30px;}
+  .pkPopRef[hidden]{display:none;}
+  #ccPop.ccFade{opacity:0; transition:opacity .45s ease; pointer-events:none;}   /* fading is gone: a tap there meets the cover, never a tile */
+  #ccPop.ccHold .ccGrid, #ccPop.ccHold .ccStat{pointer-events:none;}             /* just up under the finger that tapped Refused */
+  @media (prefers-reduced-motion: reduce){ #ccPop.ccFade{transition:none;} }
   .pkProbe{position:absolute; left:-9999px; top:0; visibility:hidden; white-space:nowrap; font-weight:900; font-size:100px; line-height:1; pointer-events:none;}
   #pkPop.live::after{content:""; position:absolute; left:0; bottom:0; height:5px; width:100%; background:var(--turq); transform-origin:0 50%;
     animation:ccDrain var(--pkMs, 8s) linear forwards;}
@@ -3859,6 +3866,7 @@
           <button class="popItem" id="sceneBtn" type="button" aria-expanded="false" aria-haspopup="true">Scenes <span class="popSub">new, duplicate, rename, delete</span></button>
           <button class="popItem" id="homeBtn" type="button">Home <span class="popSub">pick the week <span class="kbd">(H)</span></span></button>
           <button class="popItem" id="soundBtn" type="button" aria-pressed="true">Sound On</button>
+          <button class="popItem" id="slidesBtn" type="button" aria-pressed="true">Slides after the bell <span class="popSub">on</span></button>
         </div>
       </div>
     </div>
@@ -4655,7 +4663,10 @@
   <div class="pkPopHead"><b>Name picker</b><span class="pkPopPer"></span><span class="pkPopLeft"></span><button type="button" class="ccLogX pkPopX" aria-label="Close">&#x2715;</button></div>
   <div class="pkPopName" role="status"></div>
   <div class="wEmpty pkPopEmpty"></div>
-  <button type="button" class="btn pkPopGo">Pick another</button>
+  <div class="pkPopBtns">
+    <button type="button" class="btn pkPopGo">Pick another</button>
+    <button type="button" class="btn pkPopRef" hidden>Refused</button>
+  </div>
   <div class="quickNote">One tap from the slides: the button beside the pen.</div>
   <span class="pkProbe" aria-hidden="true"></span>
 </div>
@@ -4760,7 +4771,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.44.0",
+  appVersion: "7.45.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5177,7 +5188,8 @@ function sanitize(c){
           season: u.season === "off" ? "off" : "auto",          // v7.10: seasonal touches (October…)
           npPos: isObj(u.npPos) && typeof u.npPos.x === "number" && typeof u.npPos.y === "number" && isFinite(u.npPos.x) && isFinite(u.npPos.y)
             ? { x: Math.max(0, Math.min(1, u.npPos.x)), y: Math.max(0, Math.min(1, u.npPos.y)) } : null,   // v7.28: where the Now Playing pill sits
-          inkSide: u.inkSide === "right" ? "right" : "left" },  // v7.28: the pen tools' side
+          inkSide: u.inkSide === "right" ? "right" : "left",    // v7.28: the pen tools' side
+          slidesOff: typeof u.slidesOff === "string" && /^\d{4}-\d{2}-\d{2}$/.test(u.slidesOff) ? u.slidesOff : "" },   // v7.45: the day the slides were turned off
     activeScene: activeScene,
     scenes: scenes,
     rosters: rosters,
@@ -5287,6 +5299,13 @@ function sanitize(c){
 function dateKey(d){
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
     String(d.getDate()).padStart(2, "0");
+}
+/* v7.45 (Croix: "Can you make it so I have an option to turn off the auto slides. Today I pivoted
+   and decided to not do notes. But it was awkward for the slides to keep coming up."): ⋮ → "Slides
+   after the bell" turns the hand-off off FOR TODAY. It is kept as the date it was turned off, so a
+   reload keeps it and tomorrow it is simply on again. */
+function slidesOffToday(){
+  return !!(cfg && cfg.ui && cfg.ui.slidesOff && cfg.ui.slidesOff === dateKey(now()));
 }
 /* Older downloaded copies migrate up the chain: 1 (auto week-parity era)
    -> 2 (flat manual schedules) -> 3 (week groups). */
@@ -5683,9 +5702,10 @@ var Undo = (function(){
     wireButton(el.querySelector("button"), function(){ var f = fn; hide(); if (f) f(); });
   }
   function hide(){ clearTimeout(tid); tid = null; fn = null; if (el) el.hidden = true; }
-  function show(text, restore){
+  function show(text, restore, label){
     ensure();
     el.querySelector("span").textContent = text; fn = restore; el.hidden = false;
+    el.querySelector("button").textContent = label || "Undo";   // v7.45: "Slides on"
     clearTimeout(tid); tid = setTimeout(hide, 5000);
   }
   return { show: show, hide: hide };
@@ -7306,6 +7326,23 @@ function pickerCommit(p, name){                  // the name was shown: it is th
 function pickerUndraw(p, name){                  // drawn but never shown (put away mid-shuffle): back in the round
   var r = pickerRound(p);
   if (r) r.pool.push(name);                      // exactly the one that was drawn — two students may share a first name
+}
+/* v7.45: a student who refused goes back into the round — somewhere in what is left, never the very
+   next pick (unless they are all that is left) */
+function pickerBack(p, name){
+  var r = pickerRound(p); if (!r) return;
+  /* the draw takes the LAST present name in the pool: in front of it is never next (students
+     marked absent mid-round stay in the pool, so the last present one is the mark, not the end) */
+  var present = Absent.presentFor(p), lastP = -1;
+  for (var i = r.pool.length - 1; i >= 0; i--){ if (present.indexOf(r.pool[i]) !== -1){ lastP = i; break; } }
+  var at = lastP >= 0 ? Math.floor(Math.random() * (lastP + 1)) : 0;
+  r.pool.splice(at, 0, name);
+  try { document.dispatchEvent(new CustomEvent("deckhand:picker")); } catch(e){}
+}
+function pickerTakeBack(p, name){                // Undo of a refusal: their turn counted after all
+  var r = pickerRound(p); if (!r) return;
+  var i = r.pool.indexOf(name); if (i !== -1) r.pool.splice(i, 1);
+  try { document.dispatchEvent(new CustomEvent("deckhand:picker")); } catch(e){}
 }
 function pickerLeft(p){
   var present = Absent.presentFor(p), r = pickerRound(p);
@@ -15424,6 +15461,22 @@ var Canvas = (function(){
     if (byClicker === true){ giveForClicker(); return; }
     giveKeys(fr, false);                                             // (a deliberate hand-back: keysHold only stays the keeper's own hand)
   }
+  var bellStage = null, wrapResetAt = 0;         // v7.45: the card on the stage when the count took it
+  function ride(riders){                         // running timers ride over the slides that just took the stage
+    riders.forEach(function(r2){
+      if (entries.indexOf(r2) === -1 || !(r2.api.running && r2.api.running())) return;
+      r2.float = true;
+      if (!r2.cfg.pin && !r2.stageBox){
+        r2.stageBox = true;
+        r2.el.style.left = "66%"; r2.el.style.top = "50%";
+        r2.el.style.width = "31%"; r2.el.style.height = "44%";
+      }
+      r2.ghostHold = 1;                          // mid-lesson: ghost right away
+                                                 // (truthy — 0 would read as
+                                                 // "never seen" and re-stamp)
+      bringToFront(r2);
+    });
+  }
   /* v6.24: the settle-in ROUTINE. On a bell-started run the settle
      widget takes the stage; when its consequence spell ends, the stage
      hands itself to the first Slides widget (per-period decks resolve
@@ -15441,7 +15494,12 @@ var Canvas = (function(){
     if (d.phase === "start"){
       /* on Home the count still runs, but the landing keeps the screen */
       if (document.body.classList.contains("landing")) return;
-      if (focusedEntry !== en) setFocus(en);
+      if (focusedEntry !== en){
+        /* v7.45: what was up when the bell rang — or, when the wrap-up handed straight over to the
+           settle-in, what was up before the wrap-up */
+        bellStage = focusedEntry || (Date.now() - wrapResetAt < 2000 ? bellStage : null);
+        setFocus(en);
+      }
       /* the takeover must also take the KEYBOARD — a previously staged
          deck's iframe was still eating Space/Escape (adversarial find) */
       try {
@@ -15453,7 +15511,7 @@ var Canvas = (function(){
     } else if (d.phase === "end"){
       if (focusedEntry !== en) return;           // the teacher intervened
       var emb = entries.filter(function(e2){ return e2.type === "embed"; })[0];
-      if (emb && emb.cfg && emb.cfg.min) restore(emb, true);   // v7.18: the next class's slides come back by themselves
+      var was = bellStage; bellStage = null;
       /* a ghost timer summoned OVER the count must ride onto the slides
          too — the generic exit pass expires floats, which buried a
          still-running timer under the deck (adversarial find) */
@@ -15461,20 +15519,22 @@ var Canvas = (function(){
         return e2 !== en && e2.float && e2.api.kind === "timer" &&
                e2.api.running && e2.api.running();
       });
+      /* v7.45: slides off today — the count ends on the board's face. The deck that was up when
+         the bell rang goes to its tab (not onto the board); a deck that was only sitting on the
+         board stays as it was. The toast says so and can bring them back (riders and all). */
+      if (emb && slidesOffToday()){
+        var back = was && entries.indexOf(was) !== -1 && (was.type === "embed" || was.type === "yt") ? was : null;
+        setFocus(null);
+        if (back && !back.cfg.stageOnly) minimize(back);
+        var up = back && back.type === "embed" ? back : emb;
+        try { Undo.show("Slides are off for today", function(){ setSlidesOff(false); showSlides(up, riders); }, "Slides on"); } catch(e){}
+        return;
+      }
+      if (emb && emb.cfg && emb.cfg.min) restore(emb, true);   // v7.18: the next class's slides come back by themselves
       setFocus(emb || null);                     // the slides — or stand down
-      if (emb) riders.forEach(function(r2){
-        r2.float = true;
-        if (!r2.cfg.pin && !r2.stageBox){
-          r2.stageBox = true;
-          r2.el.style.left = "66%"; r2.el.style.top = "50%";
-          r2.el.style.width = "31%"; r2.el.style.height = "44%";
-        }
-        r2.ghostHold = 1;                        // mid-lesson: ghost right away
-                                                 // (truthy — 0 would read as
-                                                 // "never seen" and re-stamp)
-        bringToFront(r2);
-      });
+      if (emb) ride(riders);
     } else if (d.phase === "reset"){
+      if (d.kind === "wrapup") wrapResetAt = Date.now();
       if (focusedEntry === en) setFocus(null);   // R stands the stage down
     }
   });
@@ -16149,6 +16209,25 @@ var Canvas = (function(){
     $("addMenu").hidden = !open;
     $("addBtn").setAttribute("aria-expanded", open ? "true" : "false");
   }
+  /* v7.45: ⋮ → Slides after the bell (on / off for today) */
+  function paintSlidesBtn(){
+    var b = $("slidesBtn"); if (!b) return;
+    var off = slidesOffToday();
+    b.setAttribute("aria-pressed", off ? "false" : "true");
+    b.innerHTML = 'Slides after the bell <span class="popSub"></span>';
+    b.querySelector(".popSub").textContent = off ? "off today" : "on";
+  }
+  function setSlidesOff(off){
+    cfg.ui.slidesOff = off ? dateKey(now()) : "";
+    paintSlidesBtn();
+    try { SaveState.flush(); } catch(e){}
+  }
+  function showSlides(en, riders){               // "Slides on" from the toast: the deck takes the stage now
+    if (!en || entries.indexOf(en) === -1) return;
+    if (en.cfg && en.cfg.min) restore(en, true);
+    if (focusedEntry !== en) setFocus(en);
+    if (focusedEntry === en && riders) ride(riders);
+  }
   /* v7.7: ⋮ — the old header's Home / Sound / Fullscreen, and the brand */
   function hideMoreMenu(){
     $("moreMenu").hidden = true;
@@ -16157,6 +16236,7 @@ var Canvas = (function(){
   function toggleMoreMenu(){
     var open = $("moreMenu").hidden;
     hideAddMenu(); hideSceneMenu();
+    if (open) paintSlidesBtn();                  // (midnight may have turned them back on)
     $("moreMenu").hidden = !open;
     $("moreBtn").setAttribute("aria-expanded", open ? "true" : "false");
   }
@@ -16283,7 +16363,18 @@ var Canvas = (function(){
       }, true);
       wireButton($("addBtn"), toggleAddMenu);
       wireButton($("unfocusBtn"), function(){ setFocus(null); });
-      wireButton($("minStageBtn"), function(){ minimize(focusedEntry); });   // v7.18
+      wireButton($("minStageBtn"), function(){                              // v7.18
+        var en = focusedEntry;
+        minimize(en);
+        /* v7.45: putting the slides away is the moment a plan changes — one tap there keeps the
+           bell from bringing them back today (⋮ → Slides after the bell is the same switch) */
+        if (en && en.type === "embed" && !slidesOffToday() && cfg.bell && cfg.bell.settle && cfg.bell.settle.on){
+          try { Undo.show("Slides put away", function(){
+            setSlidesOff(true);
+            Undo.show("Slides are off for today", function(){ setSlidesOff(false); });
+          }, "Keep off today"); } catch(e){}
+        }
+      });
       wireButton($("reloadStageBtn"), function(){ if (focusedEntry && focusedEntry.api.reload) focusedEntry.api.reload(); });   // v7.28
       wireButton($("zoomBlob"), zoomOn);                                     // v7.21
       wireButton($("zoomBar").querySelector(".zmIn"), function(){ zoomStep(1); refocusDeck(); });
@@ -16334,7 +16425,14 @@ var Canvas = (function(){
         });
       });
       wireButton($("moreBtn"), toggleMoreMenu);
-      ["homeBtn", "soundBtn"].forEach(function(id){   // a pick closes ⋮
+      wireButton($("slidesBtn"), function(){
+        var off = !slidesOffToday();
+        setSlidesOff(off);
+        /* turned off with the slides up: they stay for now (the teacher may still want this one) —
+           the next bell is the one that does not bring them */
+      });
+      paintSlidesBtn();
+      ["homeBtn", "soundBtn", "slidesBtn"].forEach(function(id){   // a pick closes ⋮
         $(id).addEventListener("click", hideMoreMenu);
       });
       document.addEventListener("pointerdown", function(e){
@@ -17870,10 +17968,20 @@ var Ink = (function(){
 var CcardPop = (function(){
   var blob = null, pop = null, scrim = null, panel = null, open = false, period = null, idleTid = null, ghostTid = null;
   /* how long the sheet waits, and how long after the last mark a late reminder holds off (tests shorten these) */
-  var T = { idle: 30000, after: 8000, quiet: 6000, grace: 700, ghost: 900 };
+  var T = { idle: 30000, after: 8000, quiet: 6000, grace: 700, ghost: 900, flash: 4000 };
   var bootSynced = false, small = null, lastSum = null;
   function cur(){ return quickPeriod(); }
-  function arm(ms){ clearTimeout(idleTid); idleTid = open ? setTimeout(function(){ show(false, false, true); }, ms) : null; }
+  var fadeTid = null;
+  function unfade(){ clearTimeout(fadeTid); fadeTid = null; if (pop) pop.classList.remove("ccFade"); }
+  /* it puts itself away with a fade (v7.45: "pull up and fade away"); while it fades it takes no taps
+     (they meet the cover underneath, which swallows them) */
+  function arm(ms){
+    clearTimeout(idleTid); unfade();
+    idleTid = open ? setTimeout(function(){
+      idleTid = null; pop.classList.add("ccFade");
+      fadeTid = setTimeout(function(){ fadeTid = null; pop.classList.remove("ccFade"); show(false, false, true); }, REDUCED ? 0 : 450);
+    }, ms) : null;
+  }
   /* the sheet belongs to a staged card: no stage (or the pen, the magnifier, a screen too small
      for it) and it has no opener, so it must not be up either */
   function fits(){
@@ -17996,7 +18104,7 @@ var CcardPop = (function(){
       try { pop.focus({ preventScroll: true }); } catch(e){}    // the keys leave the slides: Escape closes this, the clicker turns no page behind it
       return;
     }
-    clearTimeout(idleTid); idleTid = null; panel.idle(); pop.classList.remove("fromMenu");
+    clearTimeout(idleTid); idleTid = null; unfade(); panel.idle(); pop.classList.remove("fromMenu");
     if (auto){
       /* it put itself away: a finger already on its way to a tile must land on nothing, not on
          the slide — the scrim stays, unseen, for a moment */
@@ -18047,6 +18155,19 @@ var CcardPop = (function(){
       paintBadge();
     },
     open: function(){ show(true); }, close: function(){ show(false); },
+    /* v7.45 Refused (from the name picker): the sheet comes up with that student's step said, and
+       Undo; it fades away by itself unless touched */
+    flash: function(p, n, r, undo){
+      show(true);
+      if (!open) return false;
+      /* it comes up under the finger that tapped Refused: the second tap of a double tap must not mark a tile */
+      pop.classList.add("ccHold");
+      setTimeout(function(){ pop.classList.remove("ccHold"); }, 700);
+      var msg = r ? n + " — " + ccardSay(r.next) + " (refused)" : n + " — nine cards is the most.";
+      panel.say(msg, r ? function(){ if (undo) undo(); arm(T.idle); } : null, Math.max(T.flash, T.after));   // (the line and its Undo outlast the fade, so a touch that keeps the sheet keeps them)
+      arm(T.flash);
+      return true;
+    },
     isOpen: function(){ return open; },
     canOpen: fits,                                // v7.41: the + Add road asks first
     remind: function(p){ return showReminder(p, true); },     // the card's Reminder button
@@ -18108,8 +18229,11 @@ var PickPop = (function(){
     var w = widths[n];
     nameEl.style.fontSize = Math.max(22, Math.min(fClass, w ? (pop.clientWidth - 72) / (w / 100) : fClass)).toFixed(0) + "px";
   }
+  var shown = null;                              // v7.45: the name that is up {p, name} — what Refused acts on
+  function refBtn(who){ shown = who || null; pop.querySelector(".pkPopRef").hidden = !shown; }
   function say(msg){
     stopSpin();
+    refBtn(null);
     nameEl.textContent = "";
     pop.querySelector(".pkPopEmpty").textContent = msg;
     pop.querySelector(".pkPopLeft").textContent = "";
@@ -18131,6 +18255,7 @@ var PickPop = (function(){
     if (!d){ say("Everyone is marked absent."); arm(); return; }
     pop.querySelector(".pkPopEmpty").textContent = "";
     pop.querySelector(".pkPopGo").hidden = false;
+    refBtn(null);                                 // not while the names shuffle
     fit(d.names);
     clearTimeout(closeTid); pop.classList.remove("live");
     var p = period, done = function(){
@@ -18138,6 +18263,7 @@ var PickPop = (function(){
       stopSpin();
       setName(d.name);
       pickerCommit(p, d.name);
+      refBtn({ p: p, name: d.name });
       paintLeft();
       arm();
     };
@@ -18170,6 +18296,7 @@ var PickPop = (function(){
     }
     clearTimeout(closeTid); closeTid = null; pop.classList.remove("live"); pop.classList.remove("fromMenu");
     stopSpin();
+    refBtn(null);
     if (pending){ pickerUndraw(pending.p, pending.name); pending = null; }   // put away mid-shuffle: nobody saw the name, so nobody loses a turn
     if (auto){
       /* it put itself away: a finger already on its way to "Pick another" lands on nothing, not on the slide */
@@ -18177,6 +18304,25 @@ var PickPop = (function(){
       ghostTid = setTimeout(function(){ ghostTid = null; scrim.classList.remove("ghost"); if (!open) scrim.hidden = true; }, T.ghost);
     }
     if (!keepFocus){ try { if (!CcardPop.reminding()) Canvas.refocusDeck(); } catch(e){} }   // never hand the slides the keys from under the reminder
+  }
+  /* v7.45 (Croix: "a refused button that only shows up after the student is picked… for students who
+     refuse to go up to the board to do the problem. Or refuse to try to give me an answer. If clicked,
+     it will trigger a comment card strike. The comment card tab should pull up and fade away. And add
+     the student back into the que."): one step on the comment cards (a warning, then a card — the
+     same as a tap on their tile), the comment cards come up showing it and fade away by themselves,
+     and the student goes back into the round, later. */
+  function refused(){
+    if (!open || !shown || spinTid) return;
+    var p = shown.p, n = shown.name;
+    var r = ccardStep(p, n, 1);                   // (null at nine cards: the most there is)
+    pickerBack(p, n);
+    show(false, false, true);                     // the sheet takes the keys next
+    try {
+      CcardPop.flash(p, n, r, function(){
+        if (r && CcToday.peek(p)[n] === r.next) ccardSet(p, n, r.prev);
+        pickerTakeBack(p, n);
+      });
+    } catch(e){}
   }
   function go(){                                  // the blob, "Pick another", Space
     if (!open) show(true);
@@ -18190,6 +18336,7 @@ var PickPop = (function(){
       wireButton(blob, go);
       wireButton(pop.querySelector(".pkPopGo"), go);
       wireButton(pop.querySelector(".pkPopX"), function(){ show(false); });
+      wireButton(pop.querySelector(".pkPopRef"), refused);
       pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
       /* a tap anywhere else puts the name away — on the click, so it cannot reach the slide. A tap
          that was aimed at one of the board's own buttons (a tab, the Timer, a tally's +1) still

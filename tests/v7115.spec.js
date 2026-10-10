@@ -2815,3 +2815,151 @@ test.describe("v7.44", () => {
     await expect(page.locator("#verNudgeText")).toContainText("another window");
   });
 });
+
+test.describe("v7.45", () => {
+  /* Croix: "Can you make it so I have an option to turn off the auto slides. Today I pivoted and decided
+     to not do notes. But it was awkward for the slides to keep coming up." Asked: just today, one tap. */
+  const loadDeck = async (page, dh) => {
+    const deck = path.join(dh.fixtureDir, "tmp_off_deck.html");
+    fs.writeFileSync(deck, "<!DOCTYPE html><title>OffDeck</title><body><h1>DECK</h1>");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn");
+      inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets;
+      w[w.length - 1].url = u;
+      document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.waitForTimeout(300);
+  };
+  const label = page => page.evaluate(() => document.getElementById("slidesBtn").textContent.replace(/\s+/g, " ").trim());
+  /* Croix: "Could I have a refused button that only shows up after the student is picked? … for students who
+     refuse to go up to the board to do the problem. Or refuse to try to give me an answer. If clicked, it will
+     trigger a comment card strike. The comment card tab should pull up and fade away. And add the student back
+     into the que." */
+  test("v7.45: the name picker's Refused — only once a name is up; a step on the comment cards (a warning, then a card); the comment cards come up saying so and fade away; the student goes back into the round, never as the very next pick; Undo takes it all back", async ({ page, dh }) => {
+    test.setTimeout(90000);
+    await dh.openAt("#t=2026-09-29T10:30");                   // 5th period
+    await dh.launch();
+    const NAMES = ["Ava", "Ben", "Cal", "Dee", "Eli"];
+    await page.evaluate(names => { window.Deckhand.config.rosters = [{ period: "5th", names }]; }, NAMES);
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await loadDeck(page, dh);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#pkBlob")).toBeVisible();
+    await page.evaluate(() => { window.Deckhand.pickPop.times.spin = 600; window.Deckhand.pickPop.times.force = true; window.Deckhand.ccardPop.times.flash = 1500; });
+    const marks = () => page.evaluate(() => window.Deckhand.ccToday.peek("5th") || {});
+    const name = () => page.locator("#pkPop .pkPopName").textContent();
+    await page.click("#pkBlob");
+    await expect(page.locator("#pkPop .pkPopRef")).toBeHidden();      // not while the names shuffle
+    await expect(page.locator("#pkPop .pkPopRef")).toBeVisible({ timeout: 3000 });
+    await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("4 of 5 left");
+    const who = await name();
+    await page.click("#pkPop .pkPopRef");
+    await expect(page.locator("#pkPop")).toBeHidden();
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await expect(page.locator("#ccPop .ccStatTxt")).toHaveText(who + " — warning (refused)");
+    ok((await marks())[who] === "warn", "no warning: " + JSON.stringify(await marks()));
+    await expect(page.locator("#ccPop")).toBeHidden({ timeout: 4000 });   // it fades away by itself
+    // back in the round: five left again, not the next name, and called again before the round is out
+    await page.evaluate(() => { window.Deckhand.pickPop.times.spin = 0; });
+    await page.click("#pkBlob");
+    const next = await name();
+    ok(next !== who, "the refused student was the very next pick");
+    await expect(page.locator("#pkPop .pkPopLeft")).toHaveText("4 of 5 left");
+    const rest = [next];
+    for (let i = 0; i < 4; i++){ await page.click("#pkPop .pkPopGo"); rest.push(await name()); }
+    ok(rest.slice().sort().join() === NAMES.join(), "the round after a refusal: " + rest.join());
+    // the second refusal is a card
+    while ((await name()) !== who) await page.click("#pkPop .pkPopGo");
+    await page.click("#pkPop .pkPopRef");
+    await expect(page.locator("#ccPop .ccStatTxt")).toHaveText(who + " — comment card (refused)");
+    ok((await marks())[who] === 1, "the second refusal: " + JSON.stringify(await marks()));
+    // a touch keeps the sheet up (once it has been up a moment); Undo takes the card back and their turn counts after all
+    await page.waitForTimeout(800);
+    await page.locator("#ccPop .ccPopHead > b").first().click();
+    await page.waitForTimeout(2200);
+    await expect(page.locator("#ccPop")).toBeVisible();
+    await page.click("#ccPop .ccUndo");
+    ok((await marks())[who] === "warn", "Undo did not take the card back: " + JSON.stringify(await marks()));
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#ccPop")).toBeHidden();
+    // the slides have the keys back once the sheet is gone
+    await expect.poll(() => page.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("embFrame"))).toBe(true);
+  });
+
+  test("v7.45: ⋮ → Slides after the bell turns the hand-off off for today — the slides up now stay up; at the bell the count ends on the clock and the deck goes to its tab, a toast can bring them back; a reload keeps it; tomorrow it is on again", async ({ page, dh }) => {
+    test.setTimeout(90000);
+    await dh.openAt("#t=2026-09-08T10:15:40");                  // 20 s before 2nd period
+    await dh.launch();
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await loadDeck(page, dh);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());   // teaching from the slides
+    await expect(page.locator(".w-embed.wFull")).toHaveCount(1);
+    await page.click("#dockTog");                                // on the stage: unfold the menu bar, then ⋮
+    await page.click("#moreBtn");
+    ok((await label(page)) === "Slides after the bell on", "the switch: " + await label(page));
+    await page.click("#slidesBtn");
+    await expect(page.locator("#moreMenu")).toBeHidden();       // a pick closes ⋮
+    ok((await page.evaluate(() => window.Deckhand.config.ui.slidesOff)) === "2026-09-08", "not kept as today's date");
+    await page.click("#moreBtn");
+    ok((await label(page)) === "Slides after the bell off today", "off: " + await label(page));
+    await expect(page.locator("#slidesBtn")).toHaveAttribute("aria-pressed", "false");
+    await page.click("#moreBtn");
+    ok(await page.locator(".w-embed.wFull").count() === 1, "turning them off took the slides off the stage mid-lesson");
+    // the bell at 10:16: the count still runs — and ends on the board's face, the deck put away to its tab
+    await page.evaluate(() => { window.Deckhand.config.bell.settle.seconds = 5; window.Deckhand.settle._doneMs(300); });
+    await expect(page.locator("#clockWidget.stLive")).toHaveCount(1, { timeout: 30000 });
+    await expect(page.locator("#clockWidget.stLive")).toHaveCount(0, { timeout: 15000 });
+    await expect(page.locator("#undoToast")).toBeVisible();
+    await expect(page.locator("#undoToast")).toContainText("Slides are off for today");
+    await page.waitForTimeout(400);
+    let s = await page.evaluate(() => ({ staged: document.body.classList.contains("focusMode"), min: !!window.Deckhand.config.scenes[0].widgets.find(w => w.type === "embed").min }));
+    ok(!s.staged && s.min, "the slides came up anyway (or landed on the board): " + JSON.stringify(s));
+    await expect(page.locator("#clockWidget")).toBeVisible();
+    // the toast's button: slides back on, and up now
+    await expect(page.locator("#undoToast button")).toHaveText("Slides on");
+    await page.click("#undoToast button");
+    await expect(page.locator(".w-embed.wFull")).toHaveCount(1);
+    ok((await page.evaluate(() => window.Deckhand.config.ui.slidesOff)) === "", "Slides on did not turn them back on");
+    // off again; a reload keeps it; the next day it is on by itself
+    await page.click("#unfocusBtn");
+    await page.click("#moreBtn"); await page.click("#slidesBtn");
+    await page.evaluate(() => window.Deckhand.flush());
+    await dh.reopen("#t=2026-09-08T10:40");
+    await page.click("#moreBtn");
+    ok((await label(page)).includes("off today"), "a reload turned them back on: " + await label(page));
+    await page.click("#moreBtn");
+    await dh.reopen("#t=2026-09-09T10:40");
+    await page.click("#moreBtn");
+    ok((await label(page)) === "Slides after the bell on", "still off the next day: " + await label(page));
+    // sanitize keeps a date and nothing else
+    const san = await page.evaluate(() => [window.Deckhand.sanitize({ ui: { slidesOff: "2026-09-08" } }).ui.slidesOff, window.Deckhand.sanitize({ ui: { slidesOff: "<b>x" } }).ui.slidesOff, window.Deckhand.sanitize({}).ui.slidesOff]);
+    ok(JSON.stringify(san) === '["2026-09-08","",""]', "sanitize: " + JSON.stringify(san));
+  });
+  test("v7.45: putting the slides away from the stage offers 'Keep off today'; with them off, a deck that was only sitting on the board stays on the board at the bell", async ({ page, dh }) => {
+    test.setTimeout(90000);
+    await dh.openAt("#t=2026-09-08T10:15:40");
+    await dh.launch();
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await loadDeck(page, dh);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await page.click("#minStageBtn");
+    await expect(page.locator("#undoToast")).toContainText("Slides put away");
+    await expect(page.locator("#undoToast button")).toHaveText("Keep off today");
+    await page.click("#undoToast button");
+    await expect(page.locator("#undoToast")).toContainText("Slides are off for today");
+    await expect(page.locator("#undoToast button")).toHaveText("Undo");
+    ok((await page.evaluate(() => window.Deckhand.config.ui.slidesOff)) === "2026-09-08", "Keep off today did not turn them off");
+    // the deck back on the board (not the stage), and the bell: it stays a card on the board
+    await page.click("#shelf .minChip");
+    await page.evaluate(() => { if (document.body.classList.contains("focusMode")) document.getElementById("unfocusBtn").click(); });
+    await expect(page.locator(".w-embed")).toBeVisible();
+    await page.evaluate(() => { window.Deckhand.config.bell.settle.seconds = 5; window.Deckhand.settle._doneMs(300); });
+    await expect(page.locator("#clockWidget.stLive")).toHaveCount(1, { timeout: 30000 });
+    await expect(page.locator("#clockWidget.stLive")).toHaveCount(0, { timeout: 15000 });
+    await page.waitForTimeout(400);
+    const s = await page.evaluate(() => ({ staged: document.body.classList.contains("focusMode"), min: !!window.Deckhand.config.scenes[0].widgets.find(w => w.type === "embed").min }));
+    ok(!s.staged && !s.min, "a board deck was put away (or staged) at the bell: " + JSON.stringify(s));
+    await expect(page.locator(".w-embed")).toBeVisible();
+  });
+});
