@@ -2,6 +2,18 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.46.2 — 2026-10-10
+
+**The board list, just the names.** Croix: "Woah no not like that. That's scary. Just text of their
+name."
+
+- No band and no box. The numbers and names are plain large text across the top of the slides:
+  navy names, teal numbers, with a thin white edge so they read on any slide.
+- The text is about 7.5% of the screen's height for a short list and shrinks as the list grows.
+  It never takes more than a quarter of the screen.
+- Taps go straight through the names to the slide. Only the small faint ✕ in the corner takes a
+  tap.
+
 ## 7.46.1 — 2026-10-10
 
 **The board list, big.** Croix: "That's not quite there. I want the names up and large with their

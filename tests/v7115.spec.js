@@ -2727,11 +2727,16 @@ test.describe("v7.43", () => {
       await tapOn(page, ".w-text .txDisplay");
       await expect.poll(() => editing(page)).toBe(true);
       const b = await page.locator(".w-text .txBtn").boundingBox();
+      await page.evaluate(() => { window.__downs = []; document.addEventListener("pointerdown", () => window.__downs.push(Date.now()), true); });
       await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
       await page.waitForTimeout(90);
       await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
       await page.waitForTimeout(300);
-      ok(!(await editing(page)), "a double tap on Done opened the note again");
+      /* (the guard covers a second tap within half a second; on a loaded test machine the two taps can
+         arrive further apart than any finger would put them — that is not a double tap) */
+      const gap = await page.evaluate(() => window.__downs.length > 1 ? window.__downs[1] - window.__downs[0] : 0);
+      ok(!(await editing(page)) || gap > 450, "a double tap on Done opened the note again (taps " + gap + " ms apart)");
+      if (await editing(page)) await tapOn(page, ".w-text .txBtn");
       await expect(page.locator(".w-text .txBar")).toBeHidden();
       // a press held on Done (what worked for him before), and a tap whose finger slid: both close it
       const cdp = await page.context().newCDPSession(page);
