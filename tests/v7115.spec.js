@@ -2300,7 +2300,13 @@ test.describe("v7.41", () => {
     await page.waitForTimeout(550);
     await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).click();
     ok(await onTop(page, ".w-picker"), "second stage: the tab did not bring the card up");
-    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).dblclick();   // a double tap is one tap
+    /* a double tap is one tap: from a put-away card, it comes up and STAYS up (the test used to double-tap
+       right after the single tap above and only passed when that landed inside the first tap's own guard) */
+    await page.waitForTimeout(550);
+    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).click();     // away
+    ok(!(await onTop(page, ".w-picker")), "the tab did not put the card away");
+    await page.waitForTimeout(550);
+    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).dblclick();
     ok(await onTop(page, ".w-picker"), "a double tap put the card straight back");
     await page.click("#unfocusBtn");
     // off the stage its chip brings it home: an ordinary card, in its own layer and place

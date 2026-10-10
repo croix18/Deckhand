@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.46.2",
+  "appVersion": "7.46.3",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2218,26 +2218,30 @@
   .pkPopBd[hidden]{display:none;}
   .pkPopNum{font-weight:900; color:var(--teal); font-size:20px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:-10px;}
   .pkPopNum[hidden]{display:none;}
-  /* v7.46.1 (Croix: "I want the names up and large with their numbers. Not tiny and pill form.") →
-     v7.46.2 ("Woah no not like that. That's scary. Just text of their name."): no band, no box — the
-     numbers and names as plain large text across the top of the slides, navy with a thin white edge so
-     they read on any slide; sized down only as the list grows */
-  #bdList{position:fixed; top:8px; left:12px; right:12px; z-index:899999; display:flex; align-items:flex-start; gap:8px; pointer-events:none;}
+  /* v7.46.3 the board list, set with restraint (Croix: 7.46.1's navy band was "scary", 7.46.2's outlined
+     text was asked to be looked at again): one frosted strip, top center, hugging its names — translucent
+     white over the slide, a hairline edge, a soft shadow; the names in one weight, the numbers smaller and
+     quieter before them; no outlines. It reads on a light or a dark slide and never looks like a wall. */
+  #bdList{position:fixed; top:8px; left:0; right:0; margin:0 auto; width:fit-content; max-width:min(92vw, 1700px); z-index:899999;
+    display:flex; align-items:center; gap:4px; padding:10px 10px 10px 28px; border-radius:22px;
+    background:rgba(255,255,255,.78); -webkit-backdrop-filter:saturate(1.3) blur(18px); backdrop-filter:saturate(1.3) blur(18px);
+    border:1px solid rgba(23,50,77,.1); box-shadow:0 8px 28px rgba(23,50,77,.16), 0 1px 0 rgba(255,255,255,.6) inset;
+    pointer-events:none; animation:bdIn .22s ease-out;}
+  @keyframes bdIn{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:none;}}
   #bdList[hidden], body.landing #bdList{display:none;}
   /* it never sits over Settings, the day editor or a ringing timer */
   body:has(#settingsWrap:not([hidden])) #bdList, body:has(#dayEditorWrap:not([hidden])) #bdList, body:has(#alarm.on:not(.calm)) #bdList{visibility:hidden;}
   /* nor over an open menu (+ Add, ⋮, Scenes) */
   body:has(#addMenu:not([hidden])) #bdList, body:has(#moreMenu:not([hidden])) #bdList, body:has(#sceneMenu:not([hidden])) #bdList{visibility:hidden;}
   #bdList .bdItems{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; justify-content:center; align-items:baseline;
-    gap:0 1em; flex:1; min-width:0; font-size:72px; line-height:1.15;}
-  #bdList .bdItem{display:inline-flex; align-items:baseline; gap:.28em; color:var(--navy); font-weight:900; white-space:nowrap;
-    paint-order:stroke fill; -webkit-text-stroke:.14em var(--white); animation:inkPop .2s ease-out;}
-  #bdList .bdNum{color:var(--teal);}
-  #bdList .bdNum::after{content:".";}
-  #bdList .bdX{pointer-events:auto; flex:none; align-self:flex-start; width:40px; height:40px; border:2px solid rgba(23,50,77,.25); border-radius:999px;
-    background:rgba(255,255,255,.85); color:var(--navy); font-size:18px; cursor:pointer; opacity:.6;}
-  @media (hover:hover){ #bdList .bdX:hover{opacity:1;} }
-  @media (prefers-reduced-motion: reduce){ #bdList .bdItem{animation:none;} }
+    column-gap:1.25em; row-gap:.1em; min-width:0; font-size:56px; line-height:1.2;}
+  #bdList .bdItem{display:inline-flex; align-items:baseline; gap:.3em; color:var(--navy); font-weight:700; letter-spacing:-.01em; white-space:nowrap; animation:bdItem .25s ease-out;}
+  @keyframes bdItem{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+  #bdList .bdNum{color:var(--teal); font-weight:800; font-size:.68em; font-variant-numeric:tabular-nums; letter-spacing:0;}
+  #bdList .bdX{pointer-events:auto; flex:none; align-self:center; width:40px; height:40px; margin-left:14px; border:0; border-radius:999px;
+    background:rgba(23,50,77,.06); color:rgba(23,50,77,.55); font-size:17px; cursor:pointer;}
+  @media (hover:hover){ #bdList .bdX:hover{background:rgba(23,50,77,.12); color:var(--navy);} }
+  @media (prefers-reduced-motion: reduce){ #bdList, #bdList .bdItem{animation:none;} }
   #ccPop.ccFade{opacity:0; transition:opacity .45s ease; pointer-events:none;}   /* fading is gone: a tap there meets the cover, never a tile */
   #ccPop.ccHold .ccGrid, #ccPop.ccHold .ccStat{pointer-events:none;}             /* just up under the finger that tapped Refused */
   @media (prefers-reduced-motion: reduce){ #ccPop.ccFade{transition:none;} }
@@ -4800,7 +4804,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.46.2",
+  appVersion: "7.46.3",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -18229,26 +18233,25 @@ var BoardList = (function(){
   var el = null, items = [], per = null;
   /* its right edge stops short of the stage bar (Timer, Minimize, the tabs) — however wide that is now */
   var fitW = 0, fitN = -1;
-  /* it hangs under the stage bar (Timer, Minimize, the tabs), the width of the screen; the type is as
-     big as fits: up to about 7.5% of the screen's height, the names no taller than a quarter of it */
+  /* it hangs under the stage bar (Timer, Minimize, the tabs), centered; the type is as big as fits:
+     about 5% of the screen's height, the strip no taller than a fifth of it; beside the pen's colors
+     when the pen is out on the left */
   function fitBox(force){
     if (!el || el.hidden) return;
-    var fb = $("focusBar"), top = 8, right = 12, left = 12;
+    var fb = $("focusBar"), top = 8;
     if (fb && !fb.hidden){ var r = fb.getBoundingClientRect(); if (r.width) top = Math.round(r.bottom + 8); }
-    else right = 56;                              // off the stage: clear of the fullscreen corner
-    /* the pen out on the left: the band starts after its colors (it must never cover them) */
-    var ib = $("inkBar");
+    var ib = $("inkBar"), lead = 0;
     if (document.body.classList.contains("inking") && ib && !ib.hidden){
       var q = ib.getBoundingClientRect();
-      if (q.width && q.left < window.innerWidth / 2 && q.top < top + window.innerHeight * 0.4) left = Math.round(q.right + 10);
+      if (q.width && q.left < window.innerWidth / 2 && q.top < top + window.innerHeight * 0.3) lead = Math.round(q.right + 10);
     }
-    el.style.top = top + "px"; el.style.right = right + "px"; el.style.left = left + "px";
-    var w = el.clientWidth;
-    if (!force && w === fitW && items.length === fitN) return;
-    fitW = w; fitN = items.length;
-    var ol = el.querySelector(".bdItems"), maxH = window.innerHeight * 0.26;
-    var f = Math.round(Math.min(84, Math.max(32, window.innerHeight * 0.075)));
-    for (; f > 22; f = Math.round(f * 0.92)){
+    el.style.top = top + "px";
+    el.style.maxWidth = (lead ? Math.max(320, window.innerWidth - lead * 2 - 12) : Math.min(window.innerWidth * 0.92, 1700)) + "px";
+    var ol = el.querySelector(".bdItems"), maxH = window.innerHeight * 0.22;
+    if (!force && items.length === fitN && window.innerWidth === fitW) return;
+    fitW = window.innerWidth; fitN = items.length;
+    var f = Math.round(Math.min(64, Math.max(26, window.innerHeight * 0.052)));
+    for (; f > 20; f = Math.round(f * 0.92)){
       ol.style.fontSize = f + "px";
       if (ol.scrollHeight <= maxH && ol.scrollWidth <= ol.clientWidth + 1) break;
     }

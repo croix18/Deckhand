@@ -2,6 +2,18 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.46.3 — 2026-10-10
+
+**The board list, with restraint.** Croix: "I want you to take an Apple look. Then decide how to
+fix it."
+
+- One frosted white strip, centered under the stage bar, that hugs its names: translucent over
+  the slide with a hairline edge and a soft shadow. No outlines on the letters, no dark band.
+- The names are all one weight. The numbers are smaller and teal, set just before each name.
+- About 56px on the panel for up to six names, 44px for twelve; never more than a fifth of the
+  screen tall.
+- Taps still pass through to the slide. The small ✕ at the strip's end clears it.
+
 ## 7.46.2 — 2026-10-10
 
 **The board list, just the names.** Croix: "Woah no not like that. That's scary. Just text of their
