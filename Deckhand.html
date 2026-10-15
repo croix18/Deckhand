@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.48.0",
+  "appVersion": "7.49.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -762,16 +762,20 @@
     background:var(--navy); color:var(--white);
     border:2px solid var(--turq); border-radius:999px;
     font:inherit; font-weight:900; font-size:14px; letter-spacing:.04em;
-    padding:9px 18px; cursor:pointer; opacity:.88;
+    padding:9px 18px; cursor:pointer; opacity:.45; transition:opacity .15s;
     display:inline-flex; align-items:center; gap:7px;
   }
+  /* v7.49 (Croix: "the buttons up top need to be faded like the buttons on the side are"): the stage
+     bar is as faint as the pen and its row; a pointer, the keyboard, a press or an open menu brings
+     one up, and a tab whose card is up stays bright so it says so */
   @media (hover:hover){ #focusBar button:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
+  #focusBar button:focus-visible, #focusBar button:active, #focusBar button[aria-expanded="true"]{opacity:1;}
   /* v7.41 the stage bar's tabs: sand when the card is put away, turquoise while it is up */
   #focusBar{max-width:calc(100vw - 72px);}
   #stageShelf{display:flex; gap:8px; align-items:center; justify-content:flex-end; min-width:0; flex:0 1 auto;}
   #stageShelf:empty{display:none;}
   #focusBar > button, #focusTimerWrap{flex:none;}   /* the stage's own buttons never shrink; the tabs do */
-  #focusBar button.stTab{background:var(--sand); color:var(--navy); border-color:var(--sand); max-width:160px; min-width:0; flex:0 1 auto; opacity:.92;}
+  #focusBar button.stTab{background:var(--sand); color:var(--navy); border-color:var(--sand); max-width:160px; min-width:0; flex:0 1 auto; opacity:.6;}
   @media (max-width: 1280px){ #focusBar button.stTab span{display:none;} #focusBar button.stTab{padding:9px 14px; flex:none;} }   /* a small screen: the tool's icon alone */
   #focusBar button.stTab span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
   #focusBar button.stTab svg{flex:none;}
@@ -4822,7 +4826,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.48.0",
+  appVersion: "7.49.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -15083,9 +15087,19 @@ var Canvas = (function(){
      One tap brings a card up over the slides, the same tap tucks it away: no bottom menu.
      Timers keep their own road (the ⏱ summon and its ghost) unless one came up from a tab. */
   var TYPE_ICON = {};                            // type → its + Add tile's icon (filled when the tiles are wired)
+  /* v7.49 (Croix: "why is there a comment card button on the top and the side? I only need it on the
+     side"): a put-away Comment Cards or Name Picker card gets no stage tab — the button by the pen is
+     its way in. (A screen too small for those buttons keeps the tab; a card that is UP keeps its tab
+     so the same tap puts it away.) */
+  var quickSmall = null;
+  function quickTool(e2){
+    if (e2.type !== "ccard" && e2.type !== "picker") return false;
+    try { quickSmall = quickSmall || window.matchMedia("(max-width: 780px), (max-height: 540px)"); } catch(e){ return false; }
+    return !(quickSmall && quickSmall.matches);
+  }
   function stageTabbed(e2){
     if (!focusedEntry || e2 === focusedEntry || e2.type === "clock") return false;
-    if (e2.cfg && e2.cfg.min) return true;
+    if (e2.cfg && e2.cfg.min) return !quickTool(e2);
     if (e2.fromTab) return true;                 // whatever a tab brought up, a tab puts away (a pinned card too)
     return !!e2.float && !(e2.cfg && e2.cfg.pin) && e2.api.kind !== "timer";
   }

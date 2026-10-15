@@ -2254,35 +2254,45 @@ test.describe("v7.41", () => {
     await dh.openAt(T);
     await dh.launch();
     await page.evaluate(() => { window.Deckhand.config.rosters = [{ period: "5th", names: ["Ava","Ben","Cal","Dee"] }]; });
-    await dh.addW("addPickerBtn"); await page.keyboard.press("Escape");
-    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(w => w.type === "picker"); w.x = 60; w.y = 0; document.querySelector(".w-picker")._entry.api.resync(); document.querySelector(".w-picker").style.left = "60%"; document.querySelector(".w-picker").style.top = "0%"; });   // its home is the top edge
-    await page.click(".w-picker .wMin");
+    await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(w => w.type === "text"); w.x = 60; w.y = 0; document.querySelector(".w-text")._entry.api.resync(); document.querySelector(".w-text").style.left = "60%"; document.querySelector(".w-text").style.top = "0%"; });   // its home is the top edge
+    await page.click(".w-text .wMin");
     await expect(page.locator("#shelf .minChip")).toHaveCount(1);
+    /* v7.49 (Croix: "why is there a comment card button on the top and the side? I only need it on the
+       side"): a put-away Comment Cards or Name Picker card has no tab on the stage — its button by the pen is the way in */
+    await dh.addW("addCcardBtn"); await page.keyboard.press("Escape"); await page.click(".w-ccard .wMin");
+    await dh.addW("addPickerBtn"); await page.keyboard.press("Escape"); await page.click(".w-picker .wMin");
+    await expect(page.locator("#shelf .minChip")).toHaveCount(3);
     await stageDeck(page, dh);
+    await expect(page.locator("#stageShelf .stTab")).toHaveCount(1);
+    await expect(page.locator("#stageShelf .stTab")).toHaveText("Text Box");
+    await expect(page.locator("#ccBlob")).toBeVisible(); await expect(page.locator("#pkBlob")).toBeVisible();
+    // v7.49 the stage bar is as faint as the pen
+    ok((await page.evaluate(() => [getComputedStyle(document.getElementById("unfocusBtn")).opacity, getComputedStyle(document.getElementById("inkBlob")).opacity].join())) === "0.45,0.45", "the stage bar is not faded like the pen");
     // the road he took: open the bottom menu, tap the tab
     await page.click("#dockTog");
-    await page.click("#shelf .minChip");
-    await expect(page.locator("#shelf .minChip")).toHaveCount(0);
-    ok(await onTop(page, ".w-picker"), "the card came back under the slides");
-    const top = await page.evaluate(() => document.querySelector(".w-picker").getBoundingClientRect().top);
+    await page.locator("#shelf .minChip", { hasText: "Text" }).click();
+    await expect(page.locator("#shelf .minChip")).toHaveCount(2);
+    ok(await onTop(page, ".w-text"), "the card came back under the slides");
+    const top = await page.evaluate(() => document.querySelector(".w-text").getBoundingClientRect().top);
     ok(top >= 60, "the card's strip is under the stage bar: top " + top);
     // the stage bar holds its tab while it is up: the same tap puts it away
-    const tab = page.locator("#stageShelf .stTab", { hasText: "Name Picker" });
+    const tab = page.locator("#stageShelf .stTab", { hasText: "Text" });
     await expect(tab).toHaveAttribute("aria-pressed", "true");
     const tap = async () => { await page.waitForTimeout(550); await tab.click(); };   // (two taps inside half a second are one)
     await tap();
-    await expect(page.locator(".w-picker")).toBeHidden();
+    await expect(page.locator(".w-text")).toBeHidden();
     await expect(tab).toHaveAttribute("aria-pressed", "false");
     ok(await deckHasKeys(page), "the clicker's keys did not go back to the slides");
     await tap();                                                      // …and up again, with the bottom menu shut
-    ok(await onTop(page, ".w-picker"), "the stage tab did not bring the card up over the slides");
+    ok(await onTop(page, ".w-text"), "the stage tab did not bring the card up over the slides");
     await expect(tab).toHaveAttribute("aria-pressed", "true");
     // locked: tabs are a live action
     await page.evaluate(() => { window.Deckhand.config.ui.locked = true; document.body.classList.add("locked"); });
     await tap();
-    await expect(page.locator(".w-picker")).toBeHidden();
+    await expect(page.locator(".w-text")).toBeHidden();
     await tap();
-    ok(await onTop(page, ".w-picker"), "locked: the tab did not bring the card up");
+    ok(await onTop(page, ".w-text"), "locked: the tab did not bring the card up");
     await page.evaluate(() => { window.Deckhand.config.ui.locked = false; document.body.classList.remove("locked"); });
     // a card added over the slides has a tab too; the summoned timer keeps its own road
     if (await page.evaluate(() => document.body.classList.contains("dockMin"))) await page.click("#dockTog");
@@ -2293,28 +2303,28 @@ test.describe("v7.41", () => {
     // the next slides with no tab); a card added over the slides stays on the board
     await page.click("#unfocusBtn");
     await expect(page.locator("#stageShelf .stTab")).toHaveCount(0);
-    await expect(page.locator(".w-picker")).toBeHidden();
-    await expect(page.locator("#shelf .minChip")).toHaveCount(1);
+    await expect(page.locator(".w-text")).toBeHidden();
+    await expect(page.locator("#shelf .minChip")).toHaveCount(3);
     await expect(page.locator(".w-tally")).toBeVisible();
     // …so on the next stage its tab is there again, one tap from the slides
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
-    await expect(page.locator("#stageShelf .stTab", { hasText: "Name Picker" })).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator("#stageShelf .stTab", { hasText: "Text" })).toHaveAttribute("aria-pressed", "false");
     await page.waitForTimeout(550);
-    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).click();
-    ok(await onTop(page, ".w-picker"), "second stage: the tab did not bring the card up");
+    await page.locator("#stageShelf .stTab", { hasText: "Text" }).click();
+    ok(await onTop(page, ".w-text"), "second stage: the tab did not bring the card up");
     /* a double tap is one tap: from a put-away card, it comes up and STAYS up (the test used to double-tap
        right after the single tap above and only passed when that landed inside the first tap's own guard) */
     await page.waitForTimeout(550);
-    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).click();     // away
-    ok(!(await onTop(page, ".w-picker")), "the tab did not put the card away");
+    await page.locator("#stageShelf .stTab", { hasText: "Text" }).click();     // away
+    ok(!(await onTop(page, ".w-text")), "the tab did not put the card away");
     await page.waitForTimeout(550);
-    await page.locator("#stageShelf .stTab", { hasText: "Name Picker" }).dblclick();
-    ok(await onTop(page, ".w-picker"), "a double tap put the card straight back");
+    await page.locator("#stageShelf .stTab", { hasText: "Text" }).dblclick();
+    ok(await onTop(page, ".w-text"), "a double tap put the card straight back");
     await page.click("#unfocusBtn");
     // off the stage its chip brings it home: an ordinary card, in its own layer and place
-    await page.click("#shelf .minChip");
-    await expect(page.locator(".w-picker")).toBeVisible();
-    const home = await page.evaluate(() => { const w = document.querySelector(".w-picker"); return { z: +w.style.zIndex, top: w.style.top }; });
+    await page.locator("#shelf .minChip", { hasText: "Text" }).click();
+    await expect(page.locator(".w-text")).toBeVisible();
+    const home = await page.evaluate(() => { const w = document.querySelector(".w-text"); return { z: +w.style.zIndex, top: w.style.top }; });
     ok(home.z < 250000 && home.top === "0%", "the card did not go home: " + JSON.stringify(home));
   });
 

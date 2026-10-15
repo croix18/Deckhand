@@ -2,6 +2,18 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.49.0 — 2026-10-15
+
+**One way in, and a quieter stage bar.** Croix: "When I go into the slides, why is there a comment
+card button on the top and the side? I only need it on the side. Also, the buttons up top need to be
+faded like the buttons on the side are."
+
+- A put-away Comment Cards card no longer gets a tab in the stage bar. The button by the pen is its
+  way in. The same goes for a put-away Name Picker card. (On a screen too small for those side
+  buttons, the tab stays. A card that's up keeps its tab, so the same tap still puts it away.)
+- Timer, Refresh, Minimize, Exit and the card tabs are now as faint as the pen and its row. A tap,
+  a mouse pointer or an open Timer menu brings a button up, and a tab whose card is up stays bright.
+
 ## 7.48.0 — 2026-10-10
 
 **The corner tools, quieter.** Croix: "Name picker and comment cards don't need to pop up on full
