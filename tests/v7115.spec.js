@@ -5,7 +5,7 @@
  * reload, a renamed default week, M as a real setting, the picker's un-mark,
  * the sea under Seasonal touches Off and under motion Off, a stopwatch as a
  * working room, and the timer's end armed as one timeout. */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, stageBtn, offered } = require("./helpers");
 const path = require("path"), fs = require("fs");
 
 test.describe("v7.11.5 hardening", () => {
@@ -867,8 +867,8 @@ test.describe("v7.18", () => {
     await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
     await loadDeck(page, dh);
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
-    await expect(page.locator("#minStageBtn")).toBeVisible();
-    await page.click("#minStageBtn");
+    ok(await offered(page, "minStageBtn"), "Minimize not offered on the stage");
+    await stageBtn(page, "minStageBtn");
     let s = await st(page);
     ok(!s.staged && !s.shown && s.src === null && s.chips.join() === "Slides" && s.min, "the stage bar's Minimize: " + JSON.stringify(s));
     await expect(page.locator("#clockWidget")).toBeVisible();
@@ -889,9 +889,9 @@ test.describe("v7.18", () => {
     s = await st(page);
     ok(s.staged && s.shown && !s.min && !s.chips.length, "the settle-in did not bring the slides back: " + JSON.stringify(s));
     // the clock is never minimized from the stage bar
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await page.click("#clockWidget .wFocus");
-    await expect(page.locator("#minStageBtn")).toBeHidden();
+    ok(!(await offered(page, "minStageBtn")), "Minimize offered for the clock");
   });
 
   test("v7.18: the minutes-left flash — a faint numeral over every screen at the crossing, once a class, never when opened inside the window, off in Settings", async ({ page, dh }) => {
@@ -995,7 +995,7 @@ test.describe("v7.20", () => {
     await dh.addW("addTimerBtn"); await page.keyboard.press("Escape");
     await page.click(".w-timer .wFocus");
     await expect(pill()).toBeVisible();
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await expect(pill()).toBeHidden({ timeout: 2000 });
     // Sound Off (M) silences the tape too
     await page.keyboard.press("m");
@@ -1049,7 +1049,10 @@ test.describe("v7.21", () => {
     s = await z();
     ok(!s.on && (await page.evaluate(() => document.querySelector(".w-embed .wBody").style.transform)) === "", "Done: " + JSON.stringify(s));
     await page.click("#zoomBlob");
-    await page.click("#unfocusBtn");
+    /* v7.50: while zoomed the toolbar stands aside for the zoom bar (Done is there); leaving the stage by
+       any road — Exit's own code here — still puts the card back to 100% */
+    await expect(page.locator("#focusBar")).toBeHidden();
+    await page.evaluate(() => document.getElementById("unfocusBtn").click());
     ok(!(await z()).on, "Exit left the card zoomed");
     await expect(page.locator("#zoomBar")).toBeHidden();
   });
@@ -1321,16 +1324,16 @@ test.describe("v7.28", () => {
     await page.click(".w-embed .wReload");
     await expect.poll(slide, { timeout: 5000 }).toBe("Version 2");
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
-    await expect(page.locator("#reloadStageBtn")).toBeVisible();
+    ok(await offered(page, "reloadStageBtn"), "Refresh not offered for the slides");
     write("Version 3");
-    await page.click("#reloadStageBtn");
+    await stageBtn(page, "reloadStageBtn");
     await expect.poll(slide, { timeout: 5000 }).toBe("Version 3");
     await page.waitForTimeout(400);
     await page.keyboard.press("PageDown");
     await expect.poll(slide).toBe("Version 3 2");                  // the clicker's keys went back to the slides
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await page.click("#clockWidget .wFocus");
-    await expect(page.locator("#reloadStageBtn")).toBeHidden();    // only for slides
+    ok(!(await offered(page, "reloadStageBtn")), "Refresh offered off the slides");    // only for slides
   });
 
   test("v7.28: the pen tools stand up along the left edge; ⇄ moves them (and the pen) to the right and back, remembered", async ({ page, dh }) => {
@@ -1560,8 +1563,8 @@ test.describe("v7.33", () => {
     await expect(page.frameLocator(".w-cadence .cdFrame").locator("#n")).toHaveText("Cadence");
     ok((await page.evaluate(() => window.Deckhand.config.scenes[0].widgets.find(x => x.type === "cadence").url)) === "file://" + stub, "the link was not kept");
     await page.evaluate(() => document.querySelector(".w-cadence .wFocus").click());
-    await expect(page.locator("#reloadStageBtn")).toBeVisible();
-    await page.click("#unfocusBtn");
+    ok(await offered(page, "reloadStageBtn"), "Refresh not offered for the slides");
+    await stageBtn(page, "unfocusBtn");
     const bad = await page.evaluate(() => window.Deckhand.sanitize({ schemaVersion: 4, appVersion: "7.33.0", scenes: [{ name: "Daily Board", widgets: [{ type: "cadence", url: "javascript:alert(1)" }, { type: "cadence", url: "https://example.com/cadence.html" }] }] }).scenes[0].widgets.map(w => w.url));
     ok(bad[0] === "" && bad[1] === "https://example.com/cadence.html", "sanitize: " + JSON.stringify(bad));
   });
@@ -1679,7 +1682,7 @@ test.describe("v7.35", () => {
     await page.click("#ccPop .ccPopX");
     await expect(page.locator("#ccPop")).toBeHidden();
     await expect(page.locator("#ccScrim")).toBeHidden();
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
     const cardTile = n => page.locator(".w-ccard .ccTile", { has: page.locator(".ccTileName", { hasText: n }) });
     await expect(cardTile("Ben")).toHaveClass(/isCard/);
@@ -1963,7 +1966,7 @@ test.describe("v7.40", () => {
     const stage = await shape(page, ".w-ccard");
     ok(stage.order === AZ && stage.cols === 4 && !stage.scrolls && !stage.clipped && stage.f >= 40, "the stage: " + JSON.stringify(stage));
     await expect(page.locator("#ccBlob")).toBeHidden();
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     // the quick-draw over another staged card: the same again
     await dh.addW("addTextBtn"); await page.keyboard.press("Escape");
     await page.evaluate(() => document.querySelector(".w-text .wFocus").click());
@@ -2011,10 +2014,10 @@ test.describe("v7.40", () => {
     await page.click("#ccPop .ccUndo");
     ok(await marks() === '{"Ben":"warn"}', "Undo of a minus: " + await marks());
     // a tap outside: closed, and the tap did not land on the board's button under it
-    const exit = await page.locator("#unfocusBtn").boundingBox();
+    const exit = await page.locator("#stageMoreBtn").boundingBox();                 // v7.50: the toolbar's ⋯ (Exit lives behind it)
     await page.mouse.click(exit.x + exit.width / 2, exit.y + exit.height / 2);
     await expect(page.locator("#ccPop")).toBeHidden();
-    ok(await page.evaluate(() => document.body.classList.contains("focusMode")), "the outside tap reached Exit");
+    ok(await page.evaluate(() => document.body.classList.contains("focusMode") && document.getElementById("stageMoreMenu").hidden), "the outside tap reached the toolbar's button");
     // it closes itself after a mark…
     await page.evaluate(() => { window.Deckhand.ccardPop.times.after = 700; window.Deckhand.ccardPop.times.idle = 60000; });
     await page.click("#ccBlob");
@@ -2268,7 +2271,7 @@ test.describe("v7.41", () => {
     await expect(page.locator("#stageShelf .stTab")).toHaveText("Text Box");
     await expect(page.locator("#ccBlob")).toBeVisible(); await expect(page.locator("#pkBlob")).toBeVisible();
     // v7.49 the stage bar is as faint as the pen
-    ok((await page.evaluate(() => [getComputedStyle(document.getElementById("unfocusBtn")).opacity, getComputedStyle(document.getElementById("inkBlob")).opacity].join())) === "0.45,0.45", "the stage bar is not faded like the pen");
+    ok((await page.evaluate(() => [getComputedStyle(document.getElementById("focusTimerBtn")).opacity, getComputedStyle(document.getElementById("inkBlob")).opacity].join())) === "0.45,0.45", "the stage bar is not faded like the pen");
     // the road he took: open the bottom menu, tap the tab
     await page.click("#dockTog");
     await page.locator("#shelf .minChip", { hasText: "Text" }).click();
@@ -2301,7 +2304,7 @@ test.describe("v7.41", () => {
     await expect(page.locator("#stageShelf .stTab", { hasText: "Tally" })).toHaveAttribute("aria-pressed", "true");
     // the stage ends: no tabs. What a tab brought up goes back to its tab (left up, it was under
     // the next slides with no tab); a card added over the slides stays on the board
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await expect(page.locator("#stageShelf .stTab")).toHaveCount(0);
     await expect(page.locator(".w-text")).toBeHidden();
     await expect(page.locator("#shelf .minChip")).toHaveCount(3);
@@ -2320,7 +2323,7 @@ test.describe("v7.41", () => {
     await page.waitForTimeout(550);
     await page.locator("#stageShelf .stTab", { hasText: "Text" }).dblclick();
     ok(await onTop(page, ".w-text"), "a double tap put the card straight back");
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     // off the stage its chip brings it home: an ordinary card, in its own layer and place
     await page.locator("#shelf .minChip", { hasText: "Text" }).click();
     await expect(page.locator(".w-text")).toBeVisible();
@@ -2403,7 +2406,7 @@ test.describe("v7.41", () => {
     await expect(page.locator("#pkPop")).toBeHidden();
     await page.click("#inkDone");
     // the same round as the picker card: it opens on the last name, with the same count
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await dh.addW("addPickerBtn"); await page.keyboard.press("Escape");
     await expect(page.locator(".w-picker .pkName")).toHaveText(before);
     const left = await page.locator(".w-picker .pkLeft").textContent();
@@ -2440,7 +2443,7 @@ test.describe("v7.41", () => {
     ok(["Ava","Ben","Cal","Dee"].includes(await page.locator("#pkPop .pkPopName").textContent()), "the menu's picker did not pick");
     await page.click("#pkPop .pkPopX");
     // off the stage: cards
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await dh.addW("addPickerBtn"); await page.keyboard.press("Escape");
     await dh.addW("addCcardBtn"); await page.keyboard.press("Escape");
     await expect(page.locator(".w-picker")).toHaveCount(1);
@@ -2503,7 +2506,7 @@ test.describe("v7.41", () => {
     await page.locator("#zoomBar .zmDone").click();
     // a Stage-only deck: minimized from the stage, its tab stages it again in one tap
     await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(w => w.type === "embed"); w.stageOnly = true; window.Deckhand.canvas.syncShelf(document.querySelector(".w-embed")._entry); });
-    await page.click("#minStageBtn");
+    await stageBtn(page, "minStageBtn");
     ok(!(await page.evaluate(() => document.body.classList.contains("focusMode"))), "Minimize did not leave the stage");
     await page.locator("#shelf .minChip", { hasText: "Slides" }).click();
     await expect(page.locator(".w-embed")).toHaveClass(/wFull/);
@@ -2569,11 +2572,11 @@ test.describe("v7.42", () => {
     await stageDeck(page, dh);
     await turns(page, "the slides took the stage");
     // Refresh: the frame navigates, and in another process that dropped the keys while it still LOOKED focused
-    await page.click("#reloadStageBtn");
+    await stageBtn(page, "reloadStageBtn");
     await expect.poll(() => slide(page), { timeout: 6000 }).toBe(1);
     await turns(page, "Refresh");
     // the deck put away and brought back (what the bell does with the next class's slides)
-    await page.click("#minStageBtn");
+    await stageBtn(page, "minStageBtn");
     await page.locator("#shelf .minChip", { hasText: "Slides" }).click();
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
     await expect.poll(() => slide(page), { timeout: 6000 }).toBe(1);
@@ -2710,7 +2713,7 @@ test.describe("v7.42", () => {
     await expect(page.locator("#dock")).toBeHidden();
     await page.click("#inkDone");
     await expect(page.locator("#dock")).toBeVisible();
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     b = await box();
     ok(inCorner(b), "off the stage the bar is not home: " + JSON.stringify(b));
   });
@@ -2953,7 +2956,7 @@ test.describe("v7.45", () => {
     await expect(page.locator(".w-embed.wFull")).toHaveCount(1);
     ok((await page.evaluate(() => window.Deckhand.config.ui.slidesOff)) === "", "Slides on did not turn them back on");
     // off again; a reload keeps it; the next day it is on by itself
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await page.click("#moreBtn"); await page.click("#slidesBtn");
     await page.evaluate(() => window.Deckhand.flush());
     await dh.reopen("#t=2026-09-08T10:40");
@@ -2974,7 +2977,7 @@ test.describe("v7.45", () => {
     await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
     await loadDeck(page, dh);
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
-    await page.click("#minStageBtn");
+    await stageBtn(page, "minStageBtn");
     await expect(page.locator("#undoToast")).toContainText("Slides put away");
     await expect(page.locator("#undoToast button")).toHaveText("Keep off today");
     await page.click("#undoToast button");
@@ -3039,8 +3042,8 @@ test.describe("v7.46", () => {
     await expect(page.locator("#pkPop .pkPopNum")).toHaveText("Problem 2");
     ok((await list()) === "1:" + a + " 2:" + b, "the second pick: " + await list());
     await page.waitForTimeout(800);
-    const box = await page.evaluate(() => { const l = document.getElementById("bdList").getBoundingClientRect(), f = document.getElementById("focusBar").getBoundingClientRect(); return { lr: l.right, lt: l.top, fl: f.left, fb: f.bottom }; });
-    ok(box.lr <= box.fl || box.lt >= box.fb, "the list covers the stage bar: " + JSON.stringify(box));   // beside it, or (a crowded bar) under it
+    const box = await page.evaluate(() => { const l = document.getElementById("bdList").getBoundingClientRect(), f = document.getElementById("focusBar").getBoundingClientRect(); return { lb: l.bottom, lr: l.right, ll: l.left, ft: f.top, fl: f.left, fr: f.right }; });
+    ok(box.lb <= box.ft || box.ll >= box.fr || box.lr <= box.fl, "the list covers the stage toolbar: " + JSON.stringify(box));
     // Refused on #3: a warning, off the list, and #3 goes to the next pick
     await page.click("#pkPop .pkPopGo");
     const c = await name();
@@ -3092,5 +3095,50 @@ test.describe("v7.46", () => {
     await expect(page.locator("#pkPop")).toBeHidden();
     await expect(page.locator("#bdList")).toBeHidden();
     await expect.poll(() => page.evaluate(() => !!document.activeElement && document.activeElement.classList.contains("embFrame"))).toBe(true);
+  });
+});
+
+test.describe("v7.50", () => {
+  /* Croix: "That's still a lot up top. Can you take a look at what we can do about it?" — chose "one toolbar by the pen, top clear" */
+  test("v7.50: the stage's buttons join the pen's column — nothing at the top; Timer, the card tabs and ⋯ (Refresh, Minimize, Exit) under the picker; a tap beside an open menu closes it and never reaches the slide; the pen keeps its spot whatever the tabs", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.ui.inkSide = "left"; document.body.classList.add("inkLeft"); });
+    const deck = path.join(dh.fixtureDir, "tmp_rail_deck.html");
+    fs.writeFileSync(deck, '<!DOCTYPE html><title>Deck</title><body><h1>Slide</h1><script>window.clicks = 0; addEventListener("click", () => { window.clicks++; });</scr' + 'ipt>');
+    await dh.addW("addEmbedBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(u => {
+      const inp = document.querySelector(".w-embed .embIn"); inp.value = "https://example.com/x"; inp.dispatchEvent(new Event("blur"));
+      const w = window.Deckhand.config.scenes[0].widgets; w[w.length - 1].url = u; document.querySelector(".w-embed .embFrame").src = u;
+    }, "file://" + deck);
+    await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());
+    await expect(page.locator("#focusBar")).toBeVisible();
+    const col = () => page.evaluate(() => ["inkBlob", "zoomBlob", "ccBlob", "pkBlob", "focusTimerBtn", "stageMoreBtn", "dockTog"].map(id => { const r = document.getElementById(id).getBoundingClientRect(); return { id, x: Math.round(r.left), t: Math.round(r.top), b: Math.round(r.bottom) }; }));
+    let c = await col();
+    ok(c.every(e => e.x < 70), "not one column on the left edge: " + JSON.stringify(c));
+    ok(c.every((e, i) => i === 0 || e.t >= c[i - 1].b), "the column's buttons overlap: " + JSON.stringify(c));
+    ok(c[c.length - 1].b <= 1080 - 60, "the column runs into the Slides controls: " + JSON.stringify(c[c.length - 1]));
+    ok((await page.evaluate(() => [...document.querySelectorAll("button")].filter(b => { const r = b.getBoundingClientRect(); if (!r.width || r.top >= 60 || r.left <= 200 || r.right >= 1860) return false; const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!e && b.contains(e); }).length)) === 0, "something is still at the top of the slides");
+    const penAt = c[0].t;
+    // a card put away gets a tab in the column; the pen does not move
+    if (await page.evaluate(() => document.body.classList.contains("dockMin"))) await page.click("#dockTog");
+    await dh.addW("addTallyBtn"); await page.click(".w-tally .wMin");
+    if (!(await page.evaluate(() => document.body.classList.contains("dockMin")))) await page.click("#dockTog");
+    await expect(page.locator("#stageShelf .stTab")).toHaveCount(1);
+    c = await col();
+    ok(c[0].t === penAt, "the pen moved for a tab: " + penAt + " → " + c[0].t);
+    // ⋯ holds Refresh, Minimize and Exit; a tap on the slide with it open only closes it
+    await page.click("#stageMoreBtn");
+    await expect(page.locator("#stageMoreMenu")).toBeVisible();
+    await expect(page.locator("#reloadStageBtn")).toBeVisible();
+    await expect(page.locator("#minStageBtn")).toBeVisible();
+    await expect(page.locator("#unfocusBtn")).toBeVisible();
+    const clicks = () => page.frames().find(f => /tmp_rail_deck/.test(f.url())).evaluate(() => window.clicks);
+    const before = await clicks();
+    await page.mouse.click(1200, 600);
+    await expect(page.locator("#stageMoreMenu")).toBeHidden();
+    ok((await clicks()) === before, "the tap beside the open menu reached the slide");
+    await stageBtn(page, "unfocusBtn");
+    ok(!(await page.evaluate(() => document.body.classList.contains("focusMode"))), "Exit did not leave the stage");
   });
 });

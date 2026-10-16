@@ -193,4 +193,13 @@ const test = base.test.extend({
   }
 });
 
-module.exports = { test, expect: base.expect, ok, launch, inject, SRC, APP, APP_URL, ROOT };
+/* v7.50: Refresh, Minimize and Exit live behind the stage toolbar's "⋯" — open it when the button is in
+   its closed menu, then press the button (what a finger does) */
+const stageBtn = async (page, id) => {
+  const inMenu = await page.evaluate(id => { const b = document.getElementById(id), m = document.getElementById("stageMoreMenu"); return !!(b && m && m.contains(b) && m.hidden); }, id);
+  if (inMenu) await page.click("#stageMoreBtn");
+  await page.click("#" + id);
+};
+/* is the stage offering this button (the toolbar is up and the button is not withheld)? */
+const offered = (page, id) => page.evaluate(id => { const b = document.getElementById(id), fb = document.getElementById("focusBar"); return !!b && !b.hidden && !!fb && !fb.hidden; }, id);
+module.exports = { test, expect: base.expect, ok, launch, inject, SRC, APP, APP_URL, ROOT, stageBtn, offered };

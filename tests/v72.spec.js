@@ -1,6 +1,6 @@
 /* v7.2 — the pennant and the Ink overlay. (The Pledge rework and the
    per-period settle seconds live in v71.spec.js next to the routine.) */
-const { test, expect, ok, launch } = require("./helpers");
+const { test, expect, ok, launch, stageBtn, offered } = require("./helpers");
 
 test("v7.2: the boat runs up a '<name> Rules' pennant now and then, and it follows the greeting name", async ({ page, dh }) => {
   const pg = await dh.newPage({ reducedMotion: "no-preference" });
@@ -68,7 +68,7 @@ test("v7.2: Ink — draw over the board, Done clears it (with Undo) and the boar
   await page.mouse.move(600, 500); await page.mouse.down(); await page.mouse.move(900, 520); await page.mouse.up();
   ok((await page.evaluate(() => window.Deckhand.ink.count())) === 1, "could not draw over the stage");
   await page.click("#inkDone");
-  await page.click("#unfocusBtn");
+  await stageBtn(page, "unfocusBtn");
   // Home folds the palette; the alarm still wins over an armed pen
   await page.keyboard.press("d");
   await page.keyboard.press("h");

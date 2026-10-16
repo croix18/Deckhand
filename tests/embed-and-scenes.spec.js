@@ -3,7 +3,7 @@
  * Every test boots its own board; the local iframe targets the embed tests
  * need are written into dh.fixtureDir (per-test temp dir) and opened over
  * file://. */
-const { test, expect, ok, launch } = require("./helpers");
+const { test, expect, ok, launch, stageBtn, offered } = require("./helpers");
 const { chromium } = require("@playwright/test");
 const path = require("path");
 const fs = require("fs");
@@ -408,7 +408,7 @@ test.describe("focus, pin and stage", () => {
       return Math.abs(w.width - c.width) < 2;
     });
     ok(lockedFull, "focus dead while locked");
-    await page.click("#unfocusBtn");             // v6.14: the strip folds in
+    await stageBtn(page, "unfocusBtn");             // v6.14: the strip folds in
     await dh.unlock();                           // stage mode — Exit collapses
     // the clock focuses too, and only one widget can ever be full
     await page.click("#clockWidget .wFocus");
@@ -479,7 +479,7 @@ test.describe("focus, pin and stage", () => {
     ok(under, "unpinned timer still floats over the deck");
     // v6.22: the staged deck OWNS the keyboard now (clicker fix), so
     // Escape dies inside the iframe by design — exit via the pill
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     // ⇈ edits saved config, so it hides while locked (⛶ stays)
     await page.click("#lockBtn");
     ok(await page.locator(".w-timer .wPin").isHidden(), "⇈ visible while locked");

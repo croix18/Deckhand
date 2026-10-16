@@ -6,7 +6,7 @@
  * instead of sleeping, and sleep only for NEGATIVE asserts ("did not
  * ghost after the fuse"), which need the wall clock to pass.
  */
-const { test, expect, ok } = require("./helpers");
+const { test, expect, ok, stageBtn, offered } = require("./helpers");
 const fs = require("fs");
 const path = require("path");
 
@@ -36,7 +36,7 @@ test.describe("v6.14 stage mode", () => {
     ok(staged.mode && staged.header === null && staged.dockMin, "stage not struck: " + JSON.stringify(staged));
     ok(staged.width > before * 2 && staged.top < 20,
       "deck did not take the screen: " + JSON.stringify(staged));
-    ok(staged.barBtns === 3 && !staged.barHidden, "focus bar incomplete");   // Timer · Minimize (v7.18) · Exit (v7.15: the pen is a blob in the bottom-right corner)
+    ok(staged.barBtns === 4 && !staged.barHidden, "focus bar incomplete: " + staged.barBtns);   // Timer · ⋯ and, behind it, Minimize (v7.18) · Exit (v7.50: the toolbar by the pen)
     await page.keyboard.press("Escape");         // Esc fully restores
     const restored = await page.evaluate(() => ({
       mode: document.body.classList.contains("focusMode"),
@@ -547,7 +547,7 @@ test.describe("v6.22 waterline motion + clicker refocus", () => {
     await expect(page.locator("#alarm")).toHaveClass(/\bon\b/);   // 1s ring
     await page.click("#alarm");
     ok(await focused(), "alarm dismiss kept the keyboard");
-    await page.click("#unfocusBtn");             // Escape would die in the iframe
+    await stageBtn(page, "unfocusBtn");             // Escape would die in the iframe
     ok(await page.evaluate(() =>
       document.querySelectorAll(".widget.wFull").length) === 0,
       "Exit pill did not exit");

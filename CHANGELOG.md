@@ -2,6 +2,24 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.50.0 — 2026-10-16
+
+**The top of the slides is clear.** Croix: "That's still a lot up top. Can you take a look at what
+we can do about it?" (Shown three mockups, he chose one toolbar by the pen.)
+
+- Nothing sits along the top of the slides any more. Timer, the card tabs and a single "⋯" join
+  the pen's column, under the comment cards and the picker. With the pen on the right, they join
+  its row instead.
+- "⋯" holds Refresh, Minimize and Exit — the end-of-lesson buttons — so they're one tap further away
+  and out of sight while you teach.
+- The buttons are the pen's twins: small faint circles. A card's tab shows that card's icon and
+  turns turquoise while the card is up. A second card of the same kind carries a small "2".
+- The pen keeps its spot. Adding a tab, or zooming, no longer moves any of the tools, and the
+  column always stays clear of the Slides player's page controls at the bottom.
+- A tap beside an open Timer or "⋯" menu just closes it; it no longer turns the slide.
+- While the bottom menu is open, the pen is out, or the magnifier is on, the toolbar steps aside.
+  Their own bars have Done.
+
 ## 7.49.0 — 2026-10-15
 
 **One way in, and a quieter stage bar.** Croix: "When I go into the slides, why is there a comment

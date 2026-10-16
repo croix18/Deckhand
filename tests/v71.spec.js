@@ -1,7 +1,7 @@
 /* v7.1 — the week-of-notes release: today override + day editor, noise
    game tally, embed shelf/library/paste box/fullscreen delegation, the
    Pledge flag, and the sea's new visitors. */
-const { test, expect, ok, launch } = require("./helpers");
+const { test, expect, ok, launch, stageBtn, offered } = require("./helpers");
 const fs = require("fs");
 const path = require("path");
 
@@ -152,7 +152,7 @@ test.describe("embed", () => {
     await page.click("#shelf .pill");
     await expect(page.locator(".w-embed")).toHaveClass(/wFull/);
     await expect(page.locator("body")).toHaveClass(/focusMode/);
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     await expect(page.locator(".w-embed")).toBeHidden();
     // the bell routine: the clock takes the stage as the count, then the shelved deck
     await page.evaluate(() => { window.Deckhand.config.bell.settle.seconds = 5; window.Deckhand.settle._doneMs(1200); });

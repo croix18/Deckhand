@@ -5,7 +5,7 @@
  * clock did NOT start", "the sea stayed quiet") — nothing else can prove
  * that time passed with nothing happening.
  */
-const { test, expect, ok, launch } = require("./helpers");
+const { test, expect, ok, launch, stageBtn, offered } = require("./helpers");
 const fs = require("fs");
 const path = require("path");
 
@@ -137,7 +137,7 @@ test.describe("settle-in routine", () => {
     // 3s count + 0.7s spell → the slides own the stage; the clock is a clock again
     await expect(page.locator(".w-embed.wFull")).toHaveCount(1, { timeout: 10000 });
     await expect(page.locator("#clockWidget")).not.toHaveClass(/stLive/);
-    await page.click("#unfocusBtn");               // staged embed owns Escape
+    await stageBtn(page, "unfocusBtn");               // staged embed owns Escape
     ok(await page.evaluate(() =>
       !document.body.classList.contains("focusMode")), "Exit did not exit");
   });
@@ -160,7 +160,7 @@ test.describe("settle-in routine", () => {
     await st.seconds(40);
     await st.doneMs(700);
     await st.start();                              // a run is already in flight pre-bell…
-    await page.click("#unfocusBtn");               // (the clock came back to the front, over the deck's strip)
+    await stageBtn(page, "unfocusBtn");               // (the clock came back to the front, over the deck's strip)
     await page.evaluate(() => document.querySelector(".w-embed .wFocus").click());   // …while the DECK is staged
     ok(await page.evaluate(() =>
       document.activeElement &&
@@ -203,7 +203,7 @@ test.describe("settle-in routine", () => {
       "ghost timer buried by the handoff: " + JSON.stringify(after));
     // ghostSync tick
     await expect(page.locator(".w-timer")).toHaveClass(/wGhost/, { timeout: 6000 });
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     // R while the clock is the count: the stage stands DOWN and the face returns
     await dh.openAt("#t=2026-09-08T10:30");
     await dh.launch();
@@ -657,7 +657,7 @@ test.describe("embeds", () => {
       !!document.activeElement &&
       document.activeElement.classList.contains("ytFrame")),
       "staged YouTube card did not take the keys");
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     // closing the card silences it: the frame is blanked
     await page.click(".w-yt .wClose");
     ok(await page.evaluate(() =>

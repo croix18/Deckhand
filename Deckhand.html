@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.49.0",
+  "appVersion": "7.50.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -478,9 +478,9 @@
   body.inkLeft #inkBar .inkGroup .inkTool:not(.inkSwatch){padding:6px 8px;}
   body.inkLeft #inkBar .inkGroup:nth-of-type(2), body.inkLeft #inkBar .inkGroup:nth-of-type(3){grid-template-columns:1fr; justify-items:center;}
   body.inkLeft.focusMode #inkBar{left:12px; right:auto;}
-  body.inkLeft #inkBlob{right:auto; bottom:auto; left:12px; top:calc(50% - 50px);}
-  body.inkLeft #zoomBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 6px);}
-  body.inkLeft #zoomBar{right:auto; bottom:auto; left:12px; top:calc(50% + 2px);}
+  body.inkLeft #inkBlob{right:auto; bottom:auto; left:12px; top:var(--rInk, calc(50% - 50px));}
+  body.inkLeft #zoomBlob{right:auto; bottom:auto; left:12px; top:var(--rZoom, calc(50% + 6px));}
+  body.inkLeft #zoomBar{right:auto; bottom:auto; left:12px; top:var(--rZoom, calc(50% + 2px));}
 
   /* ===== settings panel (v7.2 design pass) =====
      A preferences panel, not a scroll of collapsibles: a tab rail on the
@@ -722,23 +722,41 @@
      exactly over the focused widget's own ⛶ (triple-review find). One
      fixed cluster — ⏱ Timer summon + Exit — above the pinned stratum,
      always reachable. */
+  /* v7.50 (Croix: "That's still a lot up top. Can you take a look at what we can do about it?" — chose
+     "one toolbar by the pen, top clear"): the stage's buttons leave the top of the slides and join the
+     pen's column (or, with the pen on the right, its row): Timer, then a tab for each card that is put
+     away or up, then one "⋯" holding Refresh, Minimize and Exit. Canvas.layoutRail() stacks the whole
+     column — pen, magnifier, comment cards, picker, this bar, the menu handle — centred on the edge. */
   #focusBar{
-    position:fixed; right:24px; top:74px; z-index:900000;
-    display:flex; gap:10px;
+    position:fixed; left:12px; top:calc(50% + 62px); z-index:899995;   /* over the board list, under the quick tools' covers (a tap outside the comment cards or a name lands on the cover first) */
+    display:flex; flex-direction:column; align-items:center; gap:12px;
   }
+  body:not(.inkLeft) #focusBar{left:auto; top:auto; right:248px; bottom:16px; flex-direction:row-reverse;}
   #focusBar[hidden]{display:none;}
-  #focusTimerWrap{position:relative;}
+  body.inking #focusBar, body.zooming #focusBar{display:none;}
+  body.focusMode:not(.dockMin):not(.inkLeft) #focusBar{bottom:84px;}  /* the bottom menu unfolded along the bottom: the row stands just above it */
+  body:has(#alarm.on:not(.calm)) #focusBar{visibility:hidden;}
+  #railScrim{position:fixed; inset:0; z-index:899994; background:transparent;}   /* an open toolbar menu: a tap anywhere else only closes it */
+  #railScrim[hidden]{display:none;}   /* the pen's and the magnifier's own bars stand where it would; each has Done */
+  #focusTimerWrap{position:relative; order:1;}
+  #stageShelf{order:2;}
+  #stageMoreWrap{position:relative; order:3;}
   /* v7.2: the preset drop-under is a sheet like the dock popovers —
      a white card, a navy strip, one column of uniform 48px pills, and
      "Until bell" / "Type a time…" set apart from the numbers */
-  #focusTimerMenu{
-    position:absolute; top:calc(100% + 10px); right:0;
+  #focusTimerMenu, #stageMoreMenu{
+    position:fixed; left:0; top:0;               /* placed beside its button by placeMenu() */
     background:var(--white); color:var(--navy); border-radius:16px;
     box-shadow:6px 8px 0 var(--shadow); border:2px solid var(--grid); overflow:hidden;
     display:flex; flex-direction:column; min-width:200px;
     max-height:calc(100vh - 90px); overflow-y:auto;
   }
-  #focusTimerMenu[hidden]{display:none;}
+  #focusTimerMenu[hidden], #stageMoreMenu[hidden]{display:none;}
+  #stageMoreMenu{padding:10px; gap:6px; min-width:210px;}
+  #stageMoreMenu button{display:flex; align-items:center; width:100%; justify-content:flex-start; min-height:52px; padding:0 18px; border:0; border-radius:12px; opacity:1;
+    background:var(--paleturq); color:var(--navy); font-size:16px; font-weight:800; letter-spacing:0; box-shadow:none; gap:12px;}
+  #stageMoreMenu button svg{width:20px; height:20px;}
+  #stageMoreMenu #unfocusBtn{background:var(--turq);}
   #focusTimerMenu .strip{
     position:sticky; top:0; z-index:1;
     background:var(--navy); color:var(--white); padding:12px 16px;
@@ -758,29 +776,27 @@
   #focusTimerMenu .pill:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
   #focusTimerMenu .pill .tmSub{font-weight:500; font-size:12px; color:var(--teal);}
   #focusTimerMenu .menuLabel{padding:10px 16px 12px; color:var(--teal); text-align:center;}
-  #focusBar button{
-    background:var(--navy); color:var(--white);
-    border:2px solid var(--turq); border-radius:999px;
-    font:inherit; font-weight:900; font-size:14px; letter-spacing:.04em;
-    padding:9px 18px; cursor:pointer; opacity:.45; transition:opacity .15s;
-    display:inline-flex; align-items:center; gap:7px;
+  /* the bar's buttons are the pen's twins: 44px circles, navy, faint until touched */
+  #focusBar :where(#focusTimerBtn, #stageMoreBtn, .stTab){   /* (:where keeps this at one id, so the bright states below win) */
+    width:44px; height:44px; border-radius:999px; border:0; padding:0; flex:none;
+    background:var(--navy); color:var(--white); box-shadow:3px 4px 0 var(--shadow);
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:.45; transition:opacity .15s;
+    font:inherit; font-weight:900; font-size:13px;
   }
-  /* v7.49 (Croix: "the buttons up top need to be faded like the buttons on the side are"): the stage
-     bar is as faint as the pen and its row; a pointer, the keyboard, a press or an open menu brings
-     one up, and a tab whose card is up stays bright so it says so */
+  #focusBar :where(#focusTimerBtn, #stageMoreBtn, .stTab) svg{width:20px; height:20px; flex:none;}
+  /* two cards of one kind: the second tab carries a small number (Tally, Tally 2) */
+  #focusBar .stTab{position:relative;}
+  #focusBar .stTab .stNum{position:absolute; top:-5px; right:-5px; min-width:20px; height:20px; border-radius:999px; background:var(--white); color:var(--navy);
+    font-size:12px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 4px; box-shadow:0 0 0 2px var(--navy);}
+  #focusBar .fbLbl, #focusBar .stTab span{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}   /* for screen readers; the icon is the button */
   @media (hover:hover){ #focusBar button:hover{opacity:1;} }   /* v7.12: no sticky hover on the panel */
   #focusBar button:focus-visible, #focusBar button:active, #focusBar button[aria-expanded="true"]{opacity:1;}
-  /* v7.41 the stage bar's tabs: sand when the card is put away, turquoise while it is up */
-  #focusBar{max-width:calc(100vw - 72px);}
-  #stageShelf{display:flex; gap:8px; align-items:center; justify-content:flex-end; min-width:0; flex:0 1 auto;}
+  #focusBar button:focus-visible{outline:3px solid var(--turq); outline-offset:2px;}
+  /* a card's tab: the same circle with the card's icon; turquoise while the card is up */
+  #stageShelf{display:flex; flex-direction:column; gap:12px; align-items:center; padding-top:12px; border-top:2px solid rgba(23,50,77,.18);}
+  body:not(.inkLeft) #stageShelf{flex-direction:row-reverse; padding:0 12px 0 0; border-top:0; border-right:2px solid rgba(23,50,77,.18);}
   #stageShelf:empty{display:none;}
-  #focusBar > button, #focusTimerWrap{flex:none;}   /* the stage's own buttons never shrink; the tabs do */
-  #focusBar button.stTab{background:var(--sand); color:var(--navy); border-color:var(--sand); max-width:160px; min-width:0; flex:0 1 auto; opacity:.6;}
-  @media (max-width: 1280px){ #focusBar button.stTab span{display:none;} #focusBar button.stTab{padding:9px 14px; flex:none;} }   /* a small screen: the tool's icon alone */
-  #focusBar button.stTab span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
-  #focusBar button.stTab svg{flex:none;}
-  #focusBar button.stTab[aria-pressed="true"]{background:var(--turq); border-color:var(--turq); opacity:1;}
-  #focusBar button.stTab:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
+  #focusBar .stTab[aria-pressed="true"]{background:var(--turq); color:var(--navy); opacity:1;}
 
   /* ===== v6.14 STAGE MODE: direct instruction gets the WHOLE screen =====
      (Croix, field: "look at all the space the date and top bar are
@@ -790,7 +806,6 @@
   body.focusMode:not(.landing) .wvLayer{display:none;}
   body.focusMode:not(.landing) #sea{display:none;}
   body.focusMode:not(.landing) main#canvas{margin:10px 12px 8px;}
-  body.focusMode:not(.landing) #focusBar{top:16px;}
   /* the focused widget's own strip folds too — its buttons sat exactly
      under the focus bar, and the deck deserves every pixel. The bar
      (⏱ + Exit) is the chrome now. */
@@ -2141,7 +2156,6 @@
   #fsBtn[hidden], #inkBlob[hidden]{display:none;}
   @media (hover:hover){ #fsBtn:hover, #inkBlob:hover, #zoomBlob:hover{opacity:1;} }
   #fsBtn:focus-visible, #inkBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
-  body.focusMode:not(.landing) #focusBar{right:56px; top:6px;}
   #inkBlob{right:24px; bottom:16px; display:none;}
   /* v7.21 zoom: the magnifier sits left of the pen; zoomed, the bar takes its place */
   #zoomBlob{right:80px; bottom:16px; display:none;}
@@ -2168,7 +2182,7 @@
   #pkBlob[aria-expanded="true"]{opacity:1; background:var(--teal);}
   @media (hover:hover){ #pkBlob:hover{opacity:1;} }
   #pkBlob:focus-visible{opacity:1; outline:3px solid var(--turq); outline-offset:2px;}
-  body.inkLeft #pkBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 116px);}
+  body.inkLeft #pkBlob{right:auto; bottom:auto; left:12px; top:var(--rPk, calc(50% + 116px));}
   body.focusMode:not(.landing):has(.w-picker.wFull) #pkBlob{display:none !important;}   /* the picker itself is on the stage */
   /* the quick tools say what they are: for a few seconds when a card takes the stage (BlobTips),
      and under a pointer. To the side of the left-hand stack; above the right-hand row. */
@@ -2243,7 +2257,7 @@
      text was asked to be looked at again): one frosted strip, top center, hugging its names — translucent
      white over the slide, a hairline edge, a soft shadow; the names in one weight, the numbers smaller and
      quieter before them; no outlines. It reads on a light or a dark slide and never looks like a wall. */
-  #bdList{position:fixed; top:8px; left:0; right:0; margin:0 auto; width:fit-content; max-width:min(92vw, 1700px); z-index:899999;
+  #bdList{position:fixed; top:8px; left:0; right:0; margin:0 auto; width:fit-content; max-width:min(92vw, 1700px); z-index:899990;
     display:flex; align-items:center; gap:4px; padding:10px 10px 10px 28px; border-radius:22px;
     background:rgba(255,255,255,.78); -webkit-backdrop-filter:saturate(1.3) blur(18px); backdrop-filter:saturate(1.3) blur(18px);
     border:1px solid rgba(23,50,77,.1); box-shadow:0 8px 28px rgba(23,50,77,.16), 0 1px 0 rgba(255,255,255,.6) inset;
@@ -2299,7 +2313,7 @@
   #ccRemFull{position:fixed; inset:0; z-index:900003; gap:2.6vh; padding:4vh 4vw; background:rgba(255,255,255,.97);}
   #ccRemFull .ccRemTop{font-size:clamp(14px, 2.4vw, 34px);} #ccRemFull .ccRemNames{gap:1.5vh 2vw;}
   #ccRemFull .ccRemName{font-size:clamp(24px, var(--ccRemF, 7vw), 120px);} #ccRemFull .ccRemMsg{font-size:clamp(16px, 3vw, 44px);} #ccRemFull .ccRemDone{font-size:clamp(15px, 2.4vw, 28px);}
-  body.inkLeft #ccBlob{right:auto; bottom:auto; left:12px; top:calc(50% + 60px);}
+  body.inkLeft #ccBlob{right:auto; bottom:auto; left:12px; top:var(--rCc, calc(50% + 60px));}
   @media (max-width: 780px), (max-height: 540px){ #ccBlob, #ccPop, #ccScrim, #pkBlob, #pkPop, #pkScrim{display:none !important;} }
   body.focusMode:not(.landing):not(.inking):not(.zooming) #zoomBlob{display:inline-flex;}
   @media (hover:hover){ #zoomBlob:hover{opacity:1;} }
@@ -2331,8 +2345,9 @@
      bar opens along the bottom as before.) The pen's and the magnifier's own bars have Done. */
   #tapGuard{position:fixed; inset:0; z-index:900006; background:transparent;}
   #tapGuard[hidden]{display:none;}
-  body.focusMode.dockMin:not(.landing) #dock{left:4px; bottom:auto; top:calc(50% + 184px);}
-  body.focusMode.dockMin:not(.landing):not(.inkLeft) #dock{left:auto; top:auto; right:256px; bottom:8px;}
+  body.focusMode.dockMin:not(.landing) #dock{left:4px; bottom:auto; top:var(--rDock, calc(50% + 184px));}
+  body.focusMode.dockMin:not(.landing):not(.inkLeft) #dock{left:auto; top:auto; right:var(--rDockR, 256px); bottom:8px;}
+  body.focusMode.inkLeft:not(.landing) #focusBar{top:var(--rBar, calc(50% + 172px));}
   body.focusMode.dockMin.inking:not(.landing) #dock, body.focusMode.dockMin.zooming:not(.landing):not(.inkLeft) #dock{display:none;}   /* (their bars stand where it would) */
   @media (max-height: 560px){ body.focusMode.dockMin:not(.landing) #dock{left:4px; right:auto; bottom:auto; top:8px;} }   /* no room under the tools: the top corner */
   #dock select{
@@ -3668,14 +3683,20 @@
     <div id="stageShelf" role="group" aria-label="Cards over the slides"></div>
     <div id="focusTimerWrap">
       <button id="focusTimerBtn" type="button" aria-label="Timer over the board"
-              aria-haspopup="true" aria-expanded="false"><svg class="wIcon"><use href="#i-timer"/></svg> Timer</button>
+              aria-haspopup="true" aria-expanded="false"><svg class="wIcon"><use href="#i-timer"/></svg><span class="fbLbl">Timer</span></button>
       <!-- v6.17: pick a preset, get JUST the running wheel — never the card -->
       <div id="focusTimerMenu" role="group" aria-label="Timer presets" hidden></div>
     </div>
 
-    <button id="reloadStageBtn" type="button" aria-label="Refresh the slides"><svg class="wIcon"><use href="#i-reload"/></svg> Refresh</button>
-    <button id="minStageBtn" type="button" aria-label="Minimize this card to the dock"><svg class="wIcon"><use href="#i-min"/></svg> Minimize</button>
-    <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
+    <!-- v7.50: the end-of-lesson buttons, behind one "⋯" at the end of the toolbar -->
+    <div id="stageMoreWrap">
+      <button id="stageMoreBtn" type="button" aria-label="More: refresh, minimize, exit" aria-haspopup="true" aria-expanded="false"><svg class="wIcon"><use href="#i-dots"/></svg></button>
+      <div id="stageMoreMenu" role="group" aria-label="The slides" hidden>
+        <button id="reloadStageBtn" type="button" aria-label="Refresh the slides"><svg class="wIcon"><use href="#i-reload"/></svg> Refresh</button>
+        <button id="minStageBtn" type="button" aria-label="Minimize this card to the dock"><svg class="wIcon"><use href="#i-min"/></svg> Minimize</button>
+        <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
+      </div>
+    </div>
   </div>
   <section class="card widget w-clock" id="clockWidget" aria-label="Current time and bell schedule">
     <div class="strip"><span class="wLabel">CLOCK</span><div class="wSize" aria-hidden="true"><svg class="wIcon"><use href="#i-resize"/></svg></div><button class="wFocus" type="button" aria-label="Fill the board" aria-pressed="false"><svg class="wIcon"><use href="#i-expand"/></svg></button><button class="wPin" type="button" aria-label="Keep on top" aria-pressed="false"><svg class="wIcon"><use href="#i-pin"/></svg></button><button class="wClose" type="button" aria-label="Remove clock"><svg class="wIcon"><use href="#i-x"/></svg></button></div>
@@ -4826,7 +4847,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.49.0",
+  appVersion: "7.50.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -15136,16 +15157,24 @@ var Canvas = (function(){
     var st = $("stageShelf");
     if (!st) return;
     st.innerHTML = "";
-    var MAX = 5, tabs = entries.filter(stageTabbed), shown = tabs;
+    /* v7.50: in the pen's column the tabs share the screen's height with the tools (eight others at 56px) */
+    var tabs = entries.filter(stageTabbed), shown = tabs;
+    var MAX = document.body.classList.contains("inkLeft") ? railSlots() : 5;
+    if (tabs.length > MAX) MAX = Math.max(1, MAX - 1);   // the "+N" takes a slot of its own
     /* the tabs keep their places (a tab must not move under the finger that tapped it). With more
        than five, the cards that are UP keep theirs and the put-away ones give way from the end:
        a card over the slides never lacks its tab. */
     if (tabs.length > MAX){
       var room = MAX - tabs.filter(function(e2){ return !(e2.cfg && e2.cfg.min); }).length;
       shown = tabs.filter(function(e2){ return !(e2.cfg && e2.cfg.min) || room-- > 0; });
+      /* v7.50: more cards UP than the column has slots — the column must still fit the screen; the
+         latest ones go to the "+N" (the dock lists them all) */
+      if (shown.length > MAX) shown = shown.slice(0, MAX);
     }
+    var seenType = Object.create(null);
     shown.forEach(function(e2){
       var up = !(e2.cfg && e2.cfg.min), nm = e2.cfg.label || WIDGET_NAMES[e2.type] || "Card";
+      var nth = seenType[e2.type] = (seenType[e2.type] || 0) + 1;
       var tb = document.createElement("button");
       tb.type = "button"; tb.className = "stTab";
       tb.setAttribute("aria-pressed", up ? "true" : "false");
@@ -15153,6 +15182,11 @@ var Canvas = (function(){
       tb.innerHTML = '<svg class="wIcon"><use href="' + (/^#i-[a-z]+$/.test(TYPE_ICON[e2.type] || "") ? TYPE_ICON[e2.type] : "#i-min") + '"/></svg>';
       var sp = document.createElement("span"); sp.textContent = nm;   // user data: textContent only
       tb.appendChild(sp);
+      if (nth > 1 || (e2.type === "timer")){            // a second of one kind, or a timer card beside the Timer button
+        var bd = document.createElement("i"); bd.className = "stNum"; bd.setAttribute("aria-hidden", "true");
+        bd.textContent = String(nth);
+        tb.appendChild(bd);
+      }
       wireButton(tb, function(){ toggleStageTab(e2); });
       st.appendChild(tb);
     });
@@ -15163,6 +15197,7 @@ var Canvas = (function(){
       wireButton(more, function(){ setDockMin(false); });
       st.appendChild(more);
     }
+    layoutRail();
   }
   function applyBox(en){
     en.el.style.left = en.cfg.x + "%";
@@ -15402,6 +15437,7 @@ var Canvas = (function(){
     }
     hideTimerMenu();   // an open preset menu must never survive into
                        // (or out of) a stage change
+    hideStageMore();
     refocusDeck();     // clicker keys belong to the deck from second one
     $("focusBar").hidden = !focusedEntry;        // the no-keyboard exit + ⏱
     $("minStageBtn").hidden = !focusedEntry || focusedEntry.type === "clock";   // v7.18: the clock is the board, not a card to put away
@@ -15411,6 +15447,7 @@ var Canvas = (function(){
     document.body.classList.toggle("focusMode", !!focusedEntry);
     setDockMin(!!focusedEntry);
     alignGrid();
+    layoutRail();
     refreshShelf();                              // v7.41: the stage bar's tabs come and go with the stage
     try { document.dispatchEvent(new CustomEvent("deckhand:stage", { detail: { type: focusedEntry ? focusedEntry.type : null } })); } catch(e){}
   }
@@ -15461,7 +15498,7 @@ var Canvas = (function(){
       if (Ink.isArmed() || Alarm.isOn() || Settings.isOpen() || DayEditor.isOpen() || Landing.isShowing()) return true;
       if (CcardPop.isOpen() || CcardPop.reminding() || PickPop.isOpen()) return true;
     } catch(e){ return true; }
-    return !$("addMenu").hidden || !$("sceneMenu").hidden || !$("moreMenu").hidden || !$("focusTimerMenu").hidden;
+    return !$("addMenu").hidden || !$("sceneMenu").hidden || !$("moreMenu").hidden || !$("focusTimerMenu").hidden || !$("stageMoreMenu").hidden;
   }
   /* `touched`: a touch on the board has just ended — the deck gets the keys even if a frame seems to have them */
   function keysWanted(touched){
@@ -16203,16 +16240,76 @@ var Canvas = (function(){
     $("addBtn").setAttribute("aria-expanded", "false");
   }
   /* ---- v6.17: the ⏱ preset menu (focus bar) ---- */
+  function railScrim(){ var sc = $("railScrim"); if (sc) sc.hidden = $("focusTimerMenu").hidden && $("stageMoreMenu").hidden; }
   function hideTimerMenu(){
     $("focusTimerMenu").hidden = true;
     $("focusTimerBtn").setAttribute("aria-expanded", "false");
+    railScrim();
   }
   function toggleTimerMenu(){
     var m = $("focusTimerMenu");
     if (!m.hidden){ hideTimerMenu(); return; }
+    hideStageMore();
     buildTimerMenu();
     m.hidden = false;
+    placeMenu(m, $("focusTimerBtn"));
     $("focusTimerBtn").setAttribute("aria-expanded", "true");
+    railScrim();
+  }
+  /* v7.50 the toolbar's menus open beside their button: to the right of the pen's column, or above
+     its row — kept inside the screen */
+  function placeMenu(m, btn){
+    var r = btn.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight;
+    m.style.maxHeight = (H - 32) + "px";
+    var w = m.offsetWidth, h = m.offsetHeight, x, y;
+    if (document.body.classList.contains("inkLeft")){
+      x = r.right + 14; y = Math.max(16, Math.min(H - h - 16, r.top + r.height / 2 - h / 2));
+    } else {
+      y = Math.max(16, r.top - 14 - h); x = Math.max(16, Math.min(W - w - 16, r.left + r.width / 2 - w / 2));
+    }
+    m.style.left = Math.round(x) + "px"; m.style.top = Math.round(y) + "px";
+  }
+  function hideStageMore(){
+    $("stageMoreMenu").hidden = true;
+    $("stageMoreBtn").setAttribute("aria-expanded", "false");
+    railScrim();
+  }
+  function toggleStageMore(){
+    var m = $("stageMoreMenu");
+    if (!m.hidden){ hideStageMore(); return; }
+    hideTimerMenu();
+    m.hidden = false;
+    placeMenu(m, $("stageMoreBtn"));
+    $("stageMoreBtn").setAttribute("aria-expanded", "true");
+    railScrim();
+  }
+  /* v7.50: the pen's column is one stack — pen, magnifier, comment cards, picker, Timer, the card tabs,
+     ⋯, the menu handle — on the left edge, 12px between every button. Every tool keeps its own slot
+     whether it is showing or not (the pen never moves while you teach: not for a tab, not for the
+     magnifier), and the column stays above the bottom 64px, where the Slides player keeps its page
+     controls. With the pen on the right, the menu handle follows the toolbar's row. */
+  var RAIL = { step: 56, top: 12, bottom: 64, fixed: 7 };   // fixed: pen, magnifier, comment cards, picker, Timer, ⋯, handle
+  function railSlots(){                          // how many card tabs fit in the column on this screen
+    return Math.max(1, Math.min(5, Math.floor((window.innerHeight - RAIL.top - RAIL.bottom - 14) / RAIL.step) - RAIL.fixed));
+  }
+  function layoutRail(){
+    var bs = document.body.style, staged = !!focusedEntry && document.body.classList.contains("focusMode");
+    var keys = ["--rInk", "--rZoom", "--rCc", "--rPk", "--rBar", "--rDock", "--rDockR"];
+    if (!staged){ keys.forEach(function(k){ bs.removeProperty(k); }); return; }
+    var fb = $("focusBar");
+    if (!document.body.classList.contains("inkLeft")){
+      ["--rInk", "--rZoom", "--rCc", "--rPk", "--rBar", "--rDock"].forEach(function(k){ bs.removeProperty(k); });
+      var rb = fb.getBoundingClientRect();
+      if (rb.width) bs.setProperty("--rDockR", Math.round(window.innerWidth - rb.left + 12) + "px");
+      return;
+    }
+    bs.removeProperty("--rDockR");
+    /* the column is centred as if every tab slot were full, so a tab more or less never moves the tools */
+    var full = (RAIL.fixed + railSlots()) * RAIL.step + 14, room = window.innerHeight - RAIL.top - RAIL.bottom;
+    var y = RAIL.top + Math.max(0, Math.round((room - full) / 2));
+    ["--rInk", "--rZoom", "--rCc", "--rPk", "--rBar"].forEach(function(k){ bs.setProperty(k, y + "px"); y += RAIL.step; });
+    var barH = fb.hidden || getComputedStyle(fb).display === "none" ? RAIL.step - 12 : fb.offsetHeight;
+    bs.setProperty("--rDock", (parseFloat(bs.getPropertyValue("--rBar")) + barH + 12 - 4) + "px");
   }
   function buildTimerMenu(){
     var m = $("focusTimerMenu");
@@ -16427,7 +16524,19 @@ var Canvas = (function(){
         if (giveOnKeyUp) giveForClicker(); else keepKeys();
       }, true);
       wireButton($("addBtn"), toggleAddMenu);
-      wireButton($("unfocusBtn"), function(){ setFocus(null); });
+      wireButton($("unfocusBtn"), function(){ hideStageMore(); setFocus(null); });
+      wireButton($("stageMoreBtn"), toggleStageMore);
+      ["reloadStageBtn", "minStageBtn"].forEach(function(id){ $(id).addEventListener("click", hideStageMore); });   // a pick closes ⋯
+      /* the toolbar lives at the body's level: inside the canvas its z-index only ranked it among the cards */
+      document.body.appendChild($("focusBar"));
+      var scrim = document.createElement("div"); scrim.id = "railScrim"; scrim.hidden = true; document.body.appendChild(scrim);
+      scrim.addEventListener("click", function(e){ e.stopPropagation(); hideTimerMenu(); hideStageMore(); });   // (it swallows the tap: no slide turns)
+      var railSide = null;
+      window.addEventListener("resize", function(){ hideTimerMenu(); hideStageMore(); refreshShelf(); });
+      try { new MutationObserver(function(){
+        var side = document.body.classList.contains("inkLeft");
+        if (side !== railSide){ railSide = side; refreshShelf(); } else layoutRail();
+      }).observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch(e){}
       wireButton($("minStageBtn"), function(){                              // v7.18
         var en = focusedEntry;
         minimize(en);
@@ -16504,7 +16613,9 @@ var Canvas = (function(){
         if (!$("addMenu").hidden && !e.target.closest("#addWrap")) hideAddMenu();
         if (!$("sceneMenu").hidden && !e.target.closest("#sceneWrap")) hideSceneMenu();
         if (!$("moreMenu").hidden && !e.target.closest("#moreWrap")) hideMoreMenu();
+        if (e.target.id === "railScrim") return;    // the scrim closes them on the click, so the tap cannot reach the slide
         if (!$("focusTimerMenu").hidden && !e.target.closest("#focusTimerWrap")) hideTimerMenu();
+        if (!$("stageMoreMenu").hidden && !e.target.closest("#stageMoreWrap")) hideStageMore();
       });
       wireButton($("sceneBtn"), toggleSceneMenu);
       wireButton($("sceneNewBtn"), function(){
@@ -16600,8 +16711,8 @@ var Canvas = (function(){
       /* returns whether anything was open — Escape peels ONE layer:
          an open menu first, the stage only on the next press */
       var any = !$("addMenu").hidden || !$("sceneMenu").hidden ||
-                !$("focusTimerMenu").hidden || !$("moreMenu").hidden;
-      hideAddMenu(); hideSceneMenu(); hideTimerMenu(); hideMoreMenu();
+                !$("focusTimerMenu").hidden || !$("moreMenu").hidden || !$("stageMoreMenu").hidden;
+      hideAddMenu(); hideSceneMenu(); hideTimerMenu(); hideMoreMenu(); hideStageMore();
       return any;
     },
     unfocus: function(){ setFocus(null); },
@@ -18270,15 +18381,14 @@ var BoardList = (function(){
      when the pen is out on the left */
   function fitBox(force){
     if (!el || el.hidden) return;
-    var fb = $("focusBar"), top = 8;
-    if (fb && !fb.hidden){ var r = fb.getBoundingClientRect(); if (r.width) top = Math.round(r.bottom + 8); }
+    var top = 8;                                  // (v7.50: the stage's buttons left the top — the list has it to itself)
     var ib = $("inkBar"), lead = 0;
     if (document.body.classList.contains("inking") && ib && !ib.hidden){
       var q = ib.getBoundingClientRect();
       if (q.width && q.left < window.innerWidth / 2 && q.top < top + window.innerHeight * 0.3) lead = Math.round(q.right + 10);
     }
     el.style.top = top + "px";
-    el.style.maxWidth = (lead ? Math.max(320, window.innerWidth - lead * 2 - 12) : Math.min(window.innerWidth * 0.92, 1700)) + "px";
+    el.style.maxWidth = (lead ? Math.max(320, window.innerWidth - lead * 2 - 12) : Math.min(window.innerWidth - 120, 1700)) + "px";   // clear of the fullscreen corner
     var ol = el.querySelector(".bdItems"), maxH = window.innerHeight * 0.22;
     if (!force && items.length === fitN && window.innerWidth === fitW) return;
     fitW = window.innerWidth; fitN = items.length;

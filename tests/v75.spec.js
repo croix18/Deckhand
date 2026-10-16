@@ -2,7 +2,7 @@
    acts themselves are checked in v71 (attack, lanes, the swell) and in
    settle-and-media (serpent, whale, stage mode); the pictures were reviewed
    by hand from frame grabs (docs/SEA.md). */
-const { test, expect, ok, launch } = require("./helpers");
+const { test, expect, ok, launch, stageBtn, offered } = require("./helpers");
 
 test.describe("the sea's director", () => {
   test("v7.5: a period's setlist is a pure function of (date, period) — greeting, hush, rares late, nothing at the end", async ({ page, dh }) => {
@@ -201,7 +201,7 @@ test.describe("v7.5.1 — the audits' evening one", () => {
     ok((await page.evaluate(() => getComputedStyle(document.querySelector(".w-timer .wFocus"), "::after").content)) === '"Stage"', "no Stage word on the chip");
     await page.click(".w-timer .wFocus");        // still a live view action while locked
     await expect(page.locator(".w-timer")).toHaveClass(/wFull/);
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     // Settings is behind the lock
     await page.click("#setBtn");
     ok(await page.locator("#settingsWrap").isHidden(), "Settings opened while locked");

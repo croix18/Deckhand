@@ -3,7 +3,7 @@
  * targets, grouped menu, motion, phone viewport, fixes).
  * Ported from test_deckhand_v6.js lines 2586–2967.
  */
-const { test, expect, ok, launch } = require("./helpers");
+const { test, expect, ok, launch, stageBtn, offered } = require("./helpers");
 
 /* The suite is meant to run under reduced motion, but `reducedMotion` at the
  * top level of a project's `use` is not a runner option (@playwright/test only
@@ -209,14 +209,14 @@ test.describe("focus pill, embed notes, settings", () => {
     await page.click(".w-timer .wPin");          // unpin…
     await page.click(".w-timer .wPin");          // …repin (syncs aria + z)
     await page.click("#clockWidget .wFocus");
-    ok(!(await page.locator("#unfocusBtn").isHidden()), "pill missing in focus");
+    ok(!(await page.locator("#stageMoreBtn").isHidden()), "the way out is missing in focus");   // v7.50: Exit is behind the toolbar's ⋯
     const onTop = await page.evaluate(() => {
-      const b = document.getElementById("unfocusBtn").getBoundingClientRect();
+      const b = document.getElementById("stageMoreBtn").getBoundingClientRect();
       const el = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
-      return el ? el.id === "unfocusBtn" : false;
+      return el ? !!el.closest("#stageMoreBtn") : false;
     });
     ok(onTop, "pinned widget buried the exit pill");
-    await page.click("#unfocusBtn");
+    await stageBtn(page, "unfocusBtn");
     ok(await page.evaluate(() =>
       document.querySelectorAll(".widget.wFull").length) === 0, "pill did not unfocus");
     ok(await page.locator("#unfocusBtn").isHidden(), "pill lingers after exit");
