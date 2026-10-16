@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.50.0",
+  "appVersion": "7.51.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -514,6 +514,12 @@
   .setSec[hidden]{display:none;}
   .setH{font-weight:900; font-size:24px; letter-spacing:-.01em; line-height:1.1;}
   .fGroup{display:flex; flex-direction:column; gap:14px;}
+  /* v7.51 the wrap-up song */
+  .wsCtl{display:flex; flex-wrap:wrap; align-items:center; gap:10px;}
+  .wsName{font-weight:700; color:var(--navy); max-width:36ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .wsCtl .btn{min-height:40px; padding:0 16px; font-size:14px; background:var(--paleturq); color:var(--navy);}
+  .wsCtl .btn[hidden], .wsVol[hidden]{display:none;}
+  .wsVol{display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:14px; color:var(--teal);}
   .fGroup + .fGroup{border-top:2px solid var(--grid); padding-top:20px;}
   .fSection{font-weight:900; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); font-size:13px;}
   .fGrid{display:grid; gap:14px 16px; align-items:start;}
@@ -4495,7 +4501,18 @@
                   <textarea class="setInput" id="sWuSteps" rows="3" placeholder="Finish the exit ticket&#10;Pack up&#10;Push in your chair"></textarea>
                 </div>
               </div>
-              <div class="fHint">The clock takes the stage with the time to the bell, the exit ticket, the checklist (tap a line to check it off) and the rule; at the bell the face comes back. R stands it down for that period.</div>
+              <div class="fField wsRow">
+                <span class="fLabel">A song for the wrap-up</span>
+                <div class="wsCtl">
+                  <span class="wsName" id="sWsName">None</span>
+                  <button type="button" class="btn wsPick" id="sWsPick">Pick a song…</button>
+                  <button type="button" class="btn wsTry" id="sWsTry" hidden>Play</button>
+                  <button type="button" class="btn wsDel" id="sWsDel" hidden>Remove</button>
+                  <label class="wsVol" id="sWsVolWrap" hidden>Volume <input type="range" id="sWsVol" min="5" max="100" step="5"></label>
+                  <input type="file" id="sWsFile" accept="audio/*" hidden>
+                </div>
+              </div>
+              <div class="fHint">The clock takes the stage with the time to the bell, the exit ticket, the checklist (tap a line to check it off) and the rule; at the bell the face comes back. R stands it down for that period. <b>The song</b> plays from the beginning when the wrap-up comes up and fades out at the bell (R, Sound Off and the Now Playing pill stop it too). It is kept on this computer only — never in the file, a download of your board or the public copy.</div>
             </div>
             <div class="fGroup">
               <div class="fSection">Bathroom window</div>
@@ -4847,7 +4864,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.50.0",
+  appVersion: "7.51.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -10213,6 +10230,114 @@ var Settle = (function(){
   };
 })();
 
+/* ================= v7.51 The wrap-up song =================
+   Croix: "If I upload a copy of semisocis closings time, can you incorporate it into the end of class
+   routine?" Asked when: "When the wrap-up appears." The teacher picks an audio file in Settings →
+   Bells; it is kept in this browser's IndexedDB (never in the config, the file, an export or the
+   public repo — it is his copy of a song, not ours to ship). It plays from the start when the
+   wrap-up takes the stage and fades out over three seconds when the wrap-up ends (the bell, R).
+   Sound Off and the Now Playing pill stop it; it stays quiet while the Music card is playing. */
+var WrapSong = (function(){
+  var DB = "deckhand-media", STORE = "files", KEY = "wrapup-song";
+  var rec = null, url = null, audio = null, fadeTid = null, host = null;
+  function db(){
+    return new Promise(function(res, rej){
+      try {
+        var q = indexedDB.open(DB, 1);
+        q.onupgradeneeded = function(){ q.result.createObjectStore(STORE); };
+        q.onsuccess = function(){ res(q.result); }; q.onerror = function(){ rej(q.error); };
+      } catch(e){ rej(e); }
+    });
+  }
+  function tx(mode, fn){
+    return db().then(function(d){ return new Promise(function(res, rej){
+      var t = d.transaction(STORE, mode), st = t.objectStore(STORE), r = fn(st);
+      t.oncomplete = function(){ res(r && r.result); d.close(); }; t.onerror = function(){ rej(t.error); d.close(); };
+    }); });
+  }
+  function vol(){ return rec && typeof rec.vol === "number" ? Math.max(0.05, Math.min(1, rec.vol)) : 0.6; }
+  function report(on){
+    if (!host){ host = document.createElement("div"); host.hidden = true; host.id = "wrapSongHost"; document.body.appendChild(host); }
+    try { NowPlaying.report(host, on, rec ? rec.name.replace(/\.[a-z0-9]{2,4}$/i, "") : ""); } catch(e){}
+  }
+  function load(r){
+    rec = r || null;
+    if (url){ try { URL.revokeObjectURL(url); } catch(e){} url = null; }
+    if (rec && rec.blob){ url = URL.createObjectURL(rec.blob); }
+    paintSettings();
+  }
+  function playing(){ return !!audio && !audio.paused; }
+  function stop(fadeMs){
+    clearInterval(fadeTid); fadeTid = null;
+    if (!audio) return;
+    var a = audio;
+    if (!fadeMs || a.paused){ a.pause(); audio = null; report(false); paintSettings(); return; }
+    var v0 = a.volume, t0 = Date.now();
+    fadeTid = setInterval(function(){
+      var k = Math.min(1, (Date.now() - t0) / fadeMs);
+      a.volume = Math.max(0, v0 * (1 - k));
+      if (k >= 1){ clearInterval(fadeTid); fadeTid = null; a.pause(); if (audio === a) audio = null; report(false); paintSettings(); }
+    }, 60);
+  }
+  function play(fromSettings){
+    if (!url) return false;
+    if (!fromSettings){
+      try { if (!Sound.isOn()) return false; } catch(e){}
+      try { if (NowPlaying.othersPlaying(host)) return false; } catch(e){}   // the Music card is on: it wins
+    }
+    stop(0);
+    var a = new Audio(url);
+    a.volume = vol();
+    a.addEventListener("ended", function(){ if (audio === a){ audio = null; report(false); paintSettings(); } });
+    audio = a;
+    var pr = null; try { pr = a.play(); } catch(e){}
+    if (pr && pr.catch) pr.catch(function(){ if (audio === a){ audio = null; report(false); paintSettings(); } });   // no tap on the page yet: the browser refuses sound
+    report(true); paintSettings();
+    return true;
+  }
+  function paintSettings(){
+    var nm = $("sWsName"); if (!nm) return;
+    nm.textContent = rec ? rec.name : "None";      // the file's own name: textContent only
+    $("sWsPick").textContent = rec ? "Change…" : "Pick a song…";
+    $("sWsTry").hidden = !rec; $("sWsDel").hidden = !rec; $("sWsVolWrap").hidden = !rec;
+    $("sWsTry").textContent = playing() ? "Stop" : "Play";
+    $("sWsVol").value = Math.round(vol() * 100);
+  }
+  return {
+    init: function(){
+      try { tx("readonly", function(st){ return st.get(KEY); }).then(load).catch(function(){}); } catch(e){}
+      var file = $("sWsFile");
+      wireButton($("sWsPick"), function(){ file.value = ""; file.click(); });
+      file.addEventListener("change", function(){
+        var f = file.files && file.files[0];
+        if (!f) return;
+        if (!/^audio\//.test(f.type || "") && !/\.(mp3|m4a|aac|wav|ogg|oga|flac|webm)$/i.test(f.name)){ $("sWsName").textContent = "That is not an audio file."; return; }
+        if (f.size > 40 * 1024 * 1024){ $("sWsName").textContent = "That file is too big (40 MB at most)."; return; }
+        var r = { name: String(f.name).slice(0, 120), type: f.type || "audio/mpeg", blob: f, vol: vol() };
+        tx("readwrite", function(st){ return st.put(r, KEY); }).then(function(){ stop(0); load(r); })
+          .catch(function(){ $("sWsName").textContent = "This browser could not keep the song."; });
+      });
+      wireButton($("sWsTry"), function(){ if (playing()) stop(400); else play(true); });
+      wireButton($("sWsDel"), function(){
+        stop(0);
+        tx("readwrite", function(st){ return st["delete"](KEY); }).then(function(){ load(null); }).catch(function(){});
+      });
+      $("sWsVol").addEventListener("input", function(){
+        if (!rec) return;
+        rec.vol = Math.max(0.05, Math.min(1, (+this.value || 60) / 100));
+        if (audio && !fadeTid) audio.volume = rec.vol;
+        var r = rec; tx("readwrite", function(st){ return st.put(r, KEY); }).catch(function(){});
+      });
+      document.addEventListener("deckhand:music-stop", function(){ stop(300); });
+    },
+    start: function(){ return play(false); },     // the wrap-up took the stage
+    end: function(){ stop(3000); },               // the bell (or R): fade out
+    has: function(){ return !!rec; },
+    playing: playing,
+    name: function(){ return rec ? rec.name : ""; }
+  };
+})();
+
 /* v7.14 (tools audit §4.1): THE WRAP-UP — the settle-in's twin. N minutes before the bell the
    clock card takes the stage with the time to the bell, the exit-ticket prompt (or link), a
    pack-up checklist the teacher taps off, and the room's rule ("the teacher dismisses you, not
@@ -10275,11 +10400,13 @@ var Wrapup = (function(){
     stage.hidden = false; host.classList.add("wuLive");
     paint(remainMs);
     try { Sound.soft(); } catch(e){}
+    try { WrapSong.start(); } catch(e){}          // v7.51: the class's song, from the top
     tell("start");
   }
   function end(){
     if (!live) return;
     live = false; stage.hidden = true; host.classList.remove("wuLive");
+    try { WrapSong.end(); } catch(e){}            // v7.51: it fades out with the wrap-up
     tell("reset");
   }
   function reset(){                              // R: stood down for this period
@@ -18971,7 +19098,7 @@ var Keys = (function(){
    cards are built, so the picker and the comment cards open knowing their class */
 var rostersAuto = null;
 try { rostersAuto = Settings.autoRosters(); } catch(e){ try { console.error("Deckhand: class lists not read", e); } catch(_){} }
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, WrapSong, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -19023,6 +19150,7 @@ window.Deckhand = {
   ccToday: CcToday,                             // v7.40: today's marks (tests)
   pickPop: PickPop,                             // v7.41: the quick-draw name picker (tests)
   boardList: BoardList,                         // v7.46: who is at the board (tests)
+  wrapSong: WrapSong,                           // v7.51: the wrap-up song (tests)
   blobTips: BlobTips,
   lofi: Lofi,                                   // v7.23: the tape engine (tests render sides offline)
   nature: Nature,                               // v7.24: the nature sounds (tests render them offline)

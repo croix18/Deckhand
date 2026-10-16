@@ -3142,3 +3142,40 @@ test.describe("v7.50", () => {
     ok(!(await page.evaluate(() => document.body.classList.contains("focusMode"))), "Exit did not leave the stage");
   });
 });
+
+test.describe("v7.51", () => {
+  /* Croix: "If I upload a copy of semisocis closings time, can you incorporate it into the end of class routine?" — "When the wrap-up appears." */
+  test("v7.51: a song picked in Settings is kept on this computer (not in the config or a download), plays from the top when the wrap-up comes up, and fades out when the wrap-up ends; Sound Off and the pill stop it", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-09-29T10:30");
+    await dh.launch();
+    await page.mouse.click(1500, 1050);                              // a tap on the page: the browser lets it make sound
+    const wav = path.join(dh.fixtureDir, "tmp_song.wav");
+    { // two seconds of a quiet tone — synthetic, no one's music
+      const rate = 8000, n = rate * 2, buf = Buffer.alloc(44 + n * 2);
+      buf.write("RIFF", 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write("WAVEfmt ", 8); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22);
+      buf.writeUInt32LE(rate, 24); buf.writeUInt32LE(rate * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34); buf.write("data", 36); buf.writeUInt32LE(n * 2, 40);
+      for (let i = 0; i < n; i++) buf.writeInt16LE(Math.round(3000 * Math.sin(2 * Math.PI * 440 * i / rate)), 44 + i * 2);
+      fs.writeFileSync(wav, buf);
+    }
+    await page.setInputFiles("#sWsFile", wav);
+    await expect.poll(() => page.evaluate(() => window.Deckhand.wrapSong.name())).toBe("tmp_song.wav");
+    const cfgText = await page.evaluate(() => JSON.stringify(window.Deckhand.config));
+    ok(!/tmp_song/.test(cfgText), "the song's name reached the config (and so a download of the board)");
+    // the wrap-up comes up: the song plays; R stands it down: the song fades out
+    await page.evaluate(() => { window.Deckhand.config.bell.wrapup.on = true; window.Deckhand.wrapup.start(); });
+    await expect.poll(() => page.evaluate(() => window.Deckhand.wrapSong.playing())).toBe(true);
+    await page.evaluate(() => window.Deckhand.wrapup.reset());
+    ok(await page.evaluate(() => window.Deckhand.wrapSong.playing()), "it stopped dead instead of fading");
+    await expect.poll(() => page.evaluate(() => window.Deckhand.wrapSong.playing()), { timeout: 6000 }).toBe(false);
+    // Sound Off: the wrap-up comes up silent
+    await page.evaluate(() => { window.Deckhand.config.sound.enabled = true; document.dispatchEvent(new CustomEvent("deckhand:music-stop")); });
+    await page.evaluate(() => { document.getElementById("soundBtn").click(); window.Deckhand.wrapup.start(); });
+    await page.waitForTimeout(400);
+    ok(!(await page.evaluate(() => window.Deckhand.wrapSong.playing())), "it played with Sound Off");
+    // a reload keeps it (it lives in this browser), and Remove forgets it
+    await dh.reopen("#t=2026-09-29T10:30");
+    await expect.poll(() => page.evaluate(() => window.Deckhand.wrapSong.name())).toBe("tmp_song.wav");
+    await page.evaluate(() => document.getElementById("sWsDel").click());
+    await expect.poll(() => page.evaluate(() => window.Deckhand.wrapSong.has())).toBe(false);
+  });
+});

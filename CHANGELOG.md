@@ -2,6 +2,20 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.51.0 — 2026-10-16
+
+**A song for the wrap-up.** Croix: "If I upload a copy of semisocis closings time, can you
+incorporate it into the end of class routine?" Asked when: "When the wrap-up appears."
+
+- Settings → Bells → Wrap-up at the bell has a new row, "A song for the wrap-up": **Pick a song…**
+  loads any audio file from the computer, with Play (to try it), Remove and a volume slider.
+- The song plays from the beginning when the wrap-up comes up and fades out over three seconds at
+  the bell (or when R stands the wrap-up down). Sound Off and the Now Playing pill stop it, and it
+  stays quiet while the Music card is playing.
+- The song is kept by the browser on that computer only. It is never written into Deckhand.html, a
+  download of your board, or the public GitHub copy. A newer Deckhand.html opened on the same
+  computer finds it again.
+
 ## 7.50.0 — 2026-10-16
 
 **The top of the slides is clear.** Croix: "That's still a lot up top. Can you take a look at what
