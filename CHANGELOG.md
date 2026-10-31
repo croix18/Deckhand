@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.54.0 — 2026-10-31
+
+**The board stays awake.** Croix: "Is there any way to stop the Promethean from falling asleep? If I
+have a YouTube video up playing it won't fall asleep, but deckhand in full screen mode will."
+
+- Deckhand now asks the browser to keep the screen on while the board is showing (the Screen Wake
+  Lock), the way a playing video does. The browser lets go when the tab is hidden; the board asks
+  again when it comes back, and on the first tap where a gesture is wanted. A school-managed
+  device's power policy can still override it.
+
 ## 7.53.0 — 2026-10-31
 
 **The name picker picks a group.** Croix: "Can I get an option to multi pick a number, like 4 or 5, and

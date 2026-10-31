@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.53.0",
+  "appVersion": "7.54.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -4900,7 +4900,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.53.0",
+  appVersion: "7.54.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -19341,6 +19341,36 @@ var Keys = (function(){
   } catch(e){}
 })();
 
+/* ================= v7.54 Awake =================
+   Croix: "Is there any way to stop the Promethean from falling asleep? If I have a YouTube video up
+   playing it won't fall asleep, but deckhand in full screen mode will." A playing video holds the
+   screen; a page of its own has to ask. The Screen Wake Lock API asks: held while the board is
+   showing, let go by the browser when the tab is hidden, asked for again when it comes back (and on
+   the first tap, where the browser wanted a gesture). A managed device's power policy can still win. */
+var Awake = (function(){
+  var lock = null, want = true, asking = false;
+  function request(){
+    if (!want || lock || asking || document.visibilityState !== "visible") return;
+    if (!(navigator.wakeLock && navigator.wakeLock.request)) return;
+    asking = true;
+    navigator.wakeLock.request("screen").then(function(l){
+      lock = l; asking = false;
+      l.addEventListener("release", function(){ lock = null; });   // the browser let go (hidden tab, low battery): asked again on return
+    }, function(){ asking = false; });
+  }
+  return {
+    init: function(){
+      request();
+      document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "visible") request(); });
+      window.addEventListener("focus", request);
+      ["pointerdown", "keydown"].forEach(function(ev){ document.addEventListener(ev, function(){ if (!lock) request(); }, true); });
+      setInterval(request, 60000);               // (a release nobody heard about)
+    },
+    held: function(){ return !!lock; },
+    supported: function(){ return !!(navigator.wakeLock && navigator.wakeLock.request); }
+  };
+})();
+
 /* ================= boot =================
    Each module boots independently: one failure (e.g. a hostile
    hand-edited config slipping past sanitize) must never take the
@@ -19349,7 +19379,7 @@ var Keys = (function(){
    cards are built, so the picker and the comment cards open knowing their class */
 var rostersAuto = null;
 try { rostersAuto = Settings.autoRosters(); } catch(e){ try { console.error("Deckhand: class lists not read", e); } catch(_){} }
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, WrapSong, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, WrapSong, Awake, Ink, Keys, SaveState].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -19392,6 +19422,7 @@ window.Deckhand = {
   canvas: Canvas,                               // v7.5: timerRunning() for the sea's director (tests)
   absent: Absent,                               // v7.6: date-keyed marks (tests)
   dayStore: DayStore,                           // v7.53: the tools' day state (tests)
+  awake: Awake,                                 // v7.54: the screen wake lock (tests)
   settle: Settle,                               // v7.7: the settle-in, a moment of the clock (tests)
   wrapup: Wrapup,                               // v7.14: the wrap-up at the bell (tests)
   flash: Flash,                                 // v7.18: the minutes-left flash (tests)
