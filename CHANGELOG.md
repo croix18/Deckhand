@@ -2,6 +2,20 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.52.0 — 2026-10-31
+
+**The stage-only deck's way out.** Croix: an embed from a finished unit "triggers at the bell. If I
+turn off that feature, it stays ready as slides 1. There's seemingly no way for me to delete it or
+change it. I've had to add another embed and just open it manually."
+
+- A "Stage only" deck is hidden on the board, and the stage hides every card's strip — so once it
+  was shelved, its ✎ and ✕ were out of reach. The stage's "⋯" now holds **Change the link** (the
+  card opens on the board with its link row, library, Stage only and its own ✕), **After the bell**
+  (which deck the settle-in hands the room to — a check marks it; the first Slides card is the
+  bell's until another is marked) and **Remove from board** (five seconds of Undo).
+- Remove is offered for any staged card but the clock; Change the link and After the bell for a
+  deck. None of the three while the board is locked.
+
 ## 7.51.0 — 2026-10-16
 
 **A song for the wrap-up.** Croix: "If I upload a copy of semisocis closings time, can you

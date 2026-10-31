@@ -36,7 +36,7 @@ test.describe("v6.14 stage mode", () => {
     ok(staged.mode && staged.header === null && staged.dockMin, "stage not struck: " + JSON.stringify(staged));
     ok(staged.width > before * 2 && staged.top < 20,
       "deck did not take the screen: " + JSON.stringify(staged));
-    ok(staged.barBtns === 4 && !staged.barHidden, "focus bar incomplete: " + staged.barBtns);   // Timer · ⋯ and, behind it, Minimize (v7.18) · Exit (v7.50: the toolbar by the pen)
+    ok(staged.barBtns === 5 && !staged.barHidden, "focus bar incomplete: " + staged.barBtns);   // Timer · ⋯ and, behind it, Minimize (v7.18) · Exit (v7.50: the toolbar by the pen) · Remove (v7.52)
     await page.keyboard.press("Escape");         // Esc fully restores
     const restored = await page.evaluate(() => ({
       mode: document.body.classList.contains("focusMode"),

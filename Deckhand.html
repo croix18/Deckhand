@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.51.0",
+  "appVersion": "7.52.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -763,6 +763,10 @@
     background:var(--paleturq); color:var(--navy); font-size:16px; font-weight:800; letter-spacing:0; box-shadow:none; gap:12px;}
   #stageMoreMenu button svg{width:20px; height:20px;}
   #stageMoreMenu #unfocusBtn{background:var(--turq);}
+  #stageMoreMenu #removeStageBtn{background:var(--cream); box-shadow:inset 0 0 0 2px var(--sand);}
+  #stageMoreMenu #editStageBtn[hidden], #stageMoreMenu #bellStageBtn[hidden], #stageMoreMenu #removeStageBtn[hidden]{display:none;}
+  #stageMoreMenu .stageSub{margin-left:auto; font-size:13px; font-weight:700; color:var(--teal);}
+  #stageMoreMenu #bellStageBtn[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--turq);}
   #focusTimerMenu .strip{
     position:sticky; top:0; z-index:1;
     background:var(--navy); color:var(--white); padding:12px 16px;
@@ -3699,8 +3703,12 @@
       <button id="stageMoreBtn" type="button" aria-label="More: refresh, minimize, exit" aria-haspopup="true" aria-expanded="false"><svg class="wIcon"><use href="#i-dots"/></svg></button>
       <div id="stageMoreMenu" role="group" aria-label="The slides" hidden>
         <button id="reloadStageBtn" type="button" aria-label="Refresh the slides"><svg class="wIcon"><use href="#i-reload"/></svg> Refresh</button>
+        <!-- v7.52: a stage-only deck is hidden on the board and the stage hides its strip — its link, its bell and its ✕ live here -->
+        <button id="editStageBtn" type="button" aria-label="Change the link"><svg class="wIcon"><use href="#i-pencil"/></svg> Change the link</button>
+        <button id="bellStageBtn" type="button" aria-label="Use these slides after the bell" aria-pressed="false"><svg class="wIcon"><use href="#i-bell"/></svg> <span>After the bell</span><span class="stageSub"></span></button>
         <button id="minStageBtn" type="button" aria-label="Minimize this card to the dock"><svg class="wIcon"><use href="#i-min"/></svg> Minimize</button>
         <button id="unfocusBtn" type="button" aria-label="Exit full-board view"><svg class="wIcon"><use href="#i-expand"/></svg> Exit</button>
+        <button id="removeStageBtn" type="button" aria-label="Remove this card from the board"><svg class="wIcon"><use href="#i-x"/></svg> Remove from board</button>
       </div>
     </div>
   </div>
@@ -4864,7 +4872,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.51.0",
+  appVersion: "7.52.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5040,6 +5048,7 @@ function sanitize(c){
         wc.url = /^https?:\/\//i.test(eu) ? eu : "";   // web URLs only, never javascript:
         wc.perPeriod = bool(w.perPeriod, false);
         wc.stageOnly = bool(w.stageOnly, false);          // v7.1: lives on the shelf
+        wc.bell = bool(w.bell, false);                    // v7.52: the deck the settle-in hands the room to
         wc.saved = (Array.isArray(w.saved) ? w.saved : []).filter(isObj)   // v7.1: deck library
           .map(function(d2){
             var du = str(d2.url, "").slice(0, 500);
@@ -14557,6 +14566,12 @@ function makeEmbed(host, wcfg){
     entryActive: function(){ return false; },
     hide: onHome, show: function(){ render(); },  // v7.18: minimize / bring back (the period's deck)
     reload: reload,                              // v7.28: ↻ on the card and the stage bar
+    edit: function(){                            // v7.52: the stage's "Change the link" — the ✎ row, opened from outside
+      rowOpen = true; paintRow();
+      input.value = activeURL();
+      draftFor = wcfg.perPeriod ? resolvedPeriod() : null;
+      try { input.focus(); input.select(); } catch(e){}
+    },
     rebuild: render,
     resync: function(){},
     destroy: function(){                         // scene switch unloads the iframe
@@ -15569,6 +15584,7 @@ var Canvas = (function(){
     $("focusBar").hidden = !focusedEntry;        // the no-keyboard exit + ⏱
     $("minStageBtn").hidden = !focusedEntry || focusedEntry.type === "clock";   // v7.18: the clock is the board, not a card to put away
     $("reloadStageBtn").hidden = !focusedEntry || !(focusedEntry.type === "embed" || focusedEntry.type === "cadence");   // v7.28: fresh slides without leaving the stage (v7.33: Cadence too)
+    paintStageMore();                            // v7.52
     /* STAGE MODE: header/waves fold away; the dock folds to its handle
        (it sat on the Slides ‹ › arrows); grid re-anchors */
     document.body.classList.toggle("focusMode", !!focusedEntry);
@@ -15691,6 +15707,43 @@ var Canvas = (function(){
     giveKeys(fr, false);                                             // (a deliberate hand-back: keysHold only stays the keeper's own hand)
   }
   var bellStage = null, wrapResetAt = 0;         // v7.45: the card on the stage when the count took it
+  /* v7.52 (Croix: the deck from a finished unit "triggers at the bell… there's seemingly no way for me
+     to delete it or change it"): the settle-in hands the room to the deck marked After the bell (the
+     stage's ⋯), else to the first Slides card, as before. One card holds the mark at a time. */
+  function bellDeck(){
+    var embs = entries.filter(function(e2){ return e2.type === "embed"; });
+    return embs.filter(function(e2){ return e2.cfg && e2.cfg.bell; })[0] || embs[0] || null;
+  }
+  function setBellDeck(en, on){
+    entries.forEach(function(e2){ if (e2.type === "embed" && e2.cfg) delete e2.cfg.bell; });
+    if (on && en && en.type === "embed") en.cfg.bell = true;
+    paintStageMore();
+  }
+  /* v7.52: the stage's ⋯ for the card that is up — what it offers depends on the card and the lock */
+  function paintStageMore(){
+    var en = focusedEntry, emb = !!(en && en.type === "embed"), locked = !!cfg.ui.locked;
+    $("editStageBtn").hidden = !emb || locked || !en.api.edit;
+    $("removeStageBtn").hidden = !en || en.type === "clock" || locked;
+    var bb = $("bellStageBtn"); bb.hidden = !emb || locked;
+    if (emb){
+      var mine = bellDeck() === en;
+      bb.setAttribute("aria-pressed", mine ? "true" : "false");
+      bb.querySelector(".stageSub").textContent = mine ? "\u2713" : "";
+    }
+  }
+  /* v7.52: ✕ from the stage — the card goes, with five seconds to take it back */
+  function removeWithUndo(en){
+    if (!en || en.type === "clock" || cfg.ui.locked) return;
+    var sc = activeSceneObj(), w = en.cfg, at = sc.widgets.indexOf(w);
+    var name = (w && w.label) || WIDGET_NAMES[en.type] || "Card";
+    removeEntry(en); refreshShelf();
+    try { Undo.show(name + " removed", function(){
+      if (activeSceneObj() !== sc || sc.widgets.indexOf(w) !== -1 || sc.widgets.length >= 12) return;
+      sc.widgets.splice(Math.min(Math.max(at, 0), sc.widgets.length), 0, w);
+      var back = buildDynamic(w, false);
+      select(back); bringToFront(back); refreshDock(); refreshShelf();
+    }); } catch(e){}
+  }
   function ride(riders){                         // running timers ride over the slides that just took the stage
     riders.forEach(function(r2){
       if (entries.indexOf(r2) === -1 || !(r2.api.running && r2.api.running())) return;
@@ -15739,7 +15792,7 @@ var Canvas = (function(){
       } catch(e){}
     } else if (d.phase === "end"){
       if (focusedEntry !== en) return;           // the teacher intervened
-      var emb = entries.filter(function(e2){ return e2.type === "embed"; })[0];
+      var emb = bellDeck();
       var was = bellStage; bellStage = null;
       /* a ghost timer summoned OVER the count must ride onto the slides
          too — the generic exit pass expires floats, which buried a
@@ -16405,6 +16458,7 @@ var Canvas = (function(){
     var m = $("stageMoreMenu");
     if (!m.hidden){ hideStageMore(); return; }
     hideTimerMenu();
+    paintStageMore();
     m.hidden = false;
     placeMenu(m, $("stageMoreBtn"));
     $("stageMoreBtn").setAttribute("aria-expanded", "true");
@@ -16653,7 +16707,21 @@ var Canvas = (function(){
       wireButton($("addBtn"), toggleAddMenu);
       wireButton($("unfocusBtn"), function(){ hideStageMore(); setFocus(null); });
       wireButton($("stageMoreBtn"), toggleStageMore);
-      ["reloadStageBtn", "minStageBtn"].forEach(function(id){ $(id).addEventListener("click", hideStageMore); });   // a pick closes ⋯
+      ["reloadStageBtn", "minStageBtn", "editStageBtn", "removeStageBtn"].forEach(function(id){ $(id).addEventListener("click", hideStageMore); });   // a pick closes ⋯
+      /* v7.52: the stage-only deck's way out of the trap — its ✎ row opens on the board (a card being
+         edited shows even when it is stage-only), with its link, library, Stage only and its own ✕ */
+      wireButton($("editStageBtn"), function(){
+        var en = focusedEntry; if (!en || !en.api.edit) return;
+        setFocus(null);
+        delete en.cfg.min; syncShelf(en);
+        en.api.edit(); select(en); bringToFront(en);
+      });
+      wireButton($("bellStageBtn"), function(){
+        var en = focusedEntry; if (!en || en.type !== "embed") return;
+        setBellDeck(en, bellDeck() !== en);
+        refocusDeck();
+      });
+      wireButton($("removeStageBtn"), function(){ removeWithUndo(focusedEntry); });
       /* the toolbar lives at the body's level: inside the canvas its z-index only ranked it among the cards */
       document.body.appendChild($("focusBar"));
       var scrim = document.createElement("div"); scrim.id = "railScrim"; scrim.hidden = true; document.body.appendChild(scrim);
