@@ -89,12 +89,20 @@ test.describe("the boat and the residents", () => {
     ok((await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .glPerch")).visibility)) === "visible", "gull not perched");
     ok(await pg.evaluate(() => window.Deckhand.seaModule.residents.gull), "resident flag off");
     // something loud is coming: the gull leaves FIRST, the whale surfaces three seconds later
-    const t0 = Date.now();
-    await pg.evaluate(() => window.Deckhand.sea("whale"));
+    /* v7.55 (audit): the tell is timed IN the page (a MutationObserver stamps the whale's "go"),
+       not by the runner's wall clock, and polled for — no fixed sleeps */
+    await pg.evaluate(() => {
+      const wh = document.getElementById("sea-whale");
+      window.__whaleT0 = performance.now(); window.__whaleUp = null;
+      new MutationObserver((_, mo) => { if (wh.classList.contains("go")){ window.__whaleUp = performance.now(); mo.disconnect(); } })
+        .observe(wh, { attributes: true, attributeFilter: ["class"] });
+      window.Deckhand.sea("whale");
+    });
     await expect(pg.locator("#boat")).toHaveClass(/gullOut/);
     ok(!(await pg.evaluate(() => document.getElementById("sea-whale").classList.contains("go"))), "the whale came up before the gull left");
-    await expect(pg.locator("#sea-whale")).toHaveClass(/go/, { timeout: 6000 });
-    ok(Date.now() - t0 >= 2500, "no tell before the whale");
+    await expect.poll(() => pg.evaluate(() => window.__whaleUp), { timeout: 6000 }).not.toBeNull();
+    const tell = await pg.evaluate(() => window.__whaleUp - window.__whaleT0);
+    ok(tell >= 2500, "no tell before the whale: " + Math.round(tell) + " ms");
     await expect(pg.locator("#boat")).toHaveClass(/rippled/);
     await pg.evaluate(() => { document.getElementById("sea-whale").classList.remove("go"); document.getElementById("boat").classList.remove("rippled", "gullOut"); });
     // the pennant: mast, lump, reveal — on a clip so the letters keep their shape
@@ -124,13 +132,18 @@ test.describe("the boat and the residents", () => {
     ok(second.at === first.at, "the cooldown let a second show through");
     await expect(pg.locator("#boat")).toHaveClass(/hop/);
     // the long press
+    /* v7.55 (audit): hold UNTIL the rare is staged (polled), instead of a fixed 2.6 s that a
+       loaded runner could undercut — the hold (1.5 s) + the earned defer (0.8 s) run in the page.
+       clear() keeps lastStaged, so the poll waits for a NEW staging (a later .at), not the tap's.
+       TODO: a Sea._setHoldMs(ms) test hook in Deckhand.html would let this hold for ~100 ms. */
     await pg.evaluate(() => window.Deckhand.seaModule.clear());
     const box = await pg.locator("#boat").boundingBox();
     await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await pg.mouse.down();
-    await pg.waitForTimeout(2600);                 // a loaded runner can hold the pointerdown back a few hundred ms
+    const rare = () => pg.evaluate(at => { const l = window.Deckhand.seaModule.lastStaged(); return l && l.at !== at ? l.act : null; }, first.at);
+    await expect.poll(rare, { timeout: 8000 }).toMatch(/attack|scatter|whale/);
     await pg.mouse.up();
-    await expect.poll(() => pg.evaluate(() => (window.Deckhand.seaModule.lastStaged() || {}).act), { timeout: 4000 }).toMatch(/attack|scatter|whale/);
+    ok(/attack|scatter|whale/.test(await rare()), "the release undid the rare");
     await pg.close();
   });
 
@@ -221,9 +234,13 @@ test.describe("v7.5.1 — the audits' evening one", () => {
     await page.waitForTimeout(700);
     ok(!(await page.evaluate(() => window.Deckhand.settle._pledgeUntil())), "undoing the change fired the Pledge");
     // Lunch is not a class
+    /* v7.55 (audit): carry the board's clock across Lunch's bell with shiftClock instead of
+       waiting 6.5 s of real time, then give the clock loop a moment to see it */
     await dh.openAt("#t=2026-09-28T12:41:55");
     await dh.launch();
-    await page.waitForTimeout(6500);
+    await page.evaluate(() => window.Deckhand.shiftClock(6500));
+    await expect.poll(() => page.evaluate(() => window.Deckhand.now().getMinutes()), { timeout: 3000 }).toBeGreaterThanOrEqual(42);
+    await page.waitForTimeout(700);                // a few clock ticks past the bell
     ok(!(await page.evaluate(() => window.Deckhand.settle.running())), "the settle-in ran at Lunch");
     // a bell behind the landing page opens the board
     await dh.openAt("#t=2026-09-28T13:14:56");

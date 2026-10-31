@@ -55,7 +55,7 @@ Chart backup…** takes its exported JSON anywhere. Apply to keep.
 
 ## Tests
 
-`tests/` — a Playwright suite (`@playwright/test`), 301 tests split by feature, each in
+`tests/` — a Playwright suite (`@playwright/test`), 325 tests split by feature, each in
 its own fresh browser context, run in parallel.
 
 ```sh

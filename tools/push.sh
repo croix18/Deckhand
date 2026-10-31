@@ -13,6 +13,8 @@ set -e
 cd "$(dirname "$0")/.."
 
 [ -f .github-token ] || { echo "no .github-token file"; exit 1; }
+# v7.55 (audit): the check runs BEFORE anything is staged — the image refusal (ALLOW_IMAGES=1)
+# and the roster scan see the untracked files the `git add` below would sweep in
 sh tools/check.sh
 
 T=$(cat .github-token)
@@ -25,6 +27,8 @@ export GIT_CONFIG_VALUE_0="Authorization: Basic $B"
 # dropped into this folder would otherwise publish unchecked
 git add Deckhand.html index.html Deckhand_v6.html README.md CHANGELOG.md LICENSE .nojekyll .gitignore \
         package.json package-lock.json playwright.config.js tests tools docs hosting .github archive screenshots webapp-test deckhand.webmanifest deckhand-sw.js icons CNAME 2>/dev/null || true
+# v7.55 (audit): and once more on what is now staged (a tmp_ fixture, the staged tree)
+sh tools/check.sh || { echo "push.sh: refused after staging — unstage with: git reset"; exit 1; }
 UNTRACKED=$(git ls-files --others --exclude-standard | grep -v '^tests/tmp_' || true)
 if [ -n "$UNTRACKED" ]; then
   echo "push.sh: NOT staged (add by hand if they belong in a public repo):"; echo "$UNTRACKED" | sed 's/^/   /'

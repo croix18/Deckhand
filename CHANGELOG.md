@@ -2,6 +2,50 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.55.0 — 2026-10-31
+
+**The audit.** Croix: "run a full hardcore audit on the entire codebase… look for opportunities to
+clean up the code, strengthen the code, fortify the code." Six reviewers read every module, the
+offline worker, the repo guard and the test suite; about seventy findings, the real ones fixed here.
+Nothing changes how the board looks; a lot changes in what can no longer go wrong.
+
+- **Timers and tools.** A timer removed while running no longer rings at 0:00. The name picker's
+  round reaches a student un-marked absent (or added) mid-round and never calls the same student
+  twice in a row across rounds; a pick cancelled mid-shuffle goes back into the round. Team-count
+  chips on the Scoreboard and Tally honor the lock. Mathle starts a new word after midnight on a
+  board left on. Groups with fewer than two students clear properly. A spinner torn down mid-spin
+  counts its result. The Event card stops recomputing school days twice a second.
+- **Bells, saving, rosters.** "Regular times instead" on a Wednesday now actually runs the regular
+  bells. "Use this file's settings" works when this computer's storage is full. Quarantined copies
+  of an unreadable board (which can carry rosters) are kept to one and cleared on reset. A
+  hand-edited bell time like 13:15 is read as 1:15 instead of silently dropping the block. A board
+  file missing its schemaVersion keeps its scenes. Two students with the same name are told apart.
+  A failed first save shows the dirty dot. The Now Playing pill never sits over the alarm.
+- **The stage.** A bell that stages the clock mid-drag no longer clobbers the stage or deadens the
+  clicker. Undo after "Remove from board" respects the lock, rides over the stage with a tab, and
+  says so when the board is full; a timer carried from another scene is removed without an undo
+  that would have shared one card between two scenes. The keyboard keeper leaves an open dropdown
+  alone. New cards no longer avoid cards nobody can see. A minimized running timer the bell brings
+  along comes back visible. A group's empty slot is never numbered.
+- **Settle-in, wrap-up, media.** A manual Space count during the wrap-up no longer cancels the
+  wrap-up for the period. With the settle-in off, the deck that was up comes back after the wrap-up
+  instead of a bare board. The wrap-up song's volume slider no longer rewrites the whole song file
+  on every nudge. Stations park under the class they belong to across a bell. The noise meter
+  doesn't count time away from the scene as quiet, and never runs mic and by-hand at once. Passing
+  music and the wrap-up song step aside for a playing YouTube card. A minimized deck or video
+  doesn't load (or play) hidden. http links are upgraded on the https copy. The pen, number line
+  and sketch pad can't wedge on a lost touch.
+- **Settings, keys, sheets.** Clear mid-stroke no longer kills the pen for the session. A reset in
+  one window isn't undone by another window's autosave. Held Tab stays inside Settings. Importing
+  a board saved by a newer Deckhand is refused with a plain message. The comment-card reminder
+  leaves Settings' buttons alone. A refusal that can't show the cards offers Undo.
+- **Offline worker.** Only a real copy of Deckhand is cached (a filter's block page used to be cached
+  as the board); a hung connection gets four seconds, then the cached board opens.
+- **The repo guard and the tests.** check.sh scans every text file (not four extensions), refuses new
+  screenshots unless allowed by hand, and knows every free-text field the sanitizer keeps. The test
+  harness no longer wipes the board's storage from inside a deck's frame, boots on a fixed quiet
+  moment instead of the wall clock, and several real-time waits became deterministic. 325 tests.
+
 ## 7.54.0 — 2026-10-31
 
 **The board stays awake.** Croix: "Is there any way to stop the Promethean from falling asleep? If I

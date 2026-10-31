@@ -10,7 +10,9 @@ jobs:
     name: config privacy guard
     runs-on: ubuntu-latest
     steps:
+      # v7.55 (audit): the whole history, so origin/main exists (check.sh fails under CI without it)
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: sh tools/check.sh

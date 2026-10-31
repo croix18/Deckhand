@@ -192,7 +192,13 @@ test.describe("v7.8 the probability kit", () => {
     await dh.addW("addDiceBtn");
     await place(page, ".w-dice", [61, 2, 36, 70]);
     const t = () => page.evaluate(() => document.querySelector(".w-dice")._entry.api.tally());
-    for (let i = 0; i < 4; i++){ await page.click(".w-dice .dcGo"); await page.waitForTimeout(80); }
+    /* v7.55 (audit): drive the roll itself (api.startPause IS roll — the api has no roll()), one at a
+       time: a press mid-roll is ignored, so each waits for its own tally instead of an 80 ms sleep */
+    for (let i = 0; i < 4; i++){
+      await page.evaluate(() => document.querySelector(".w-dice")._entry.api.startPause());
+      await expect.poll(async () => (await t()).rolls).toBe(i + 1);
+    }
+    await expect.poll(async () => (await t()).rolls).toBe(4);
     let s = await t();
     const sum = Object.values(s.counts).reduce((a, b) => a + b, 0);
     ok(s.rolls === 4 && sum === 4 && Object.keys(s.counts).every(k => +k >= 2 && +k <= 12), "two-dice tally: " + JSON.stringify(s));

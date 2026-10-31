@@ -6,7 +6,7 @@ const { test, expect, ok } = require("./helpers");
 /* ---------- landing ---------- */
 test.describe("landing", () => {
   test("landing: greeting, Teal/Black/No-bells chips, hint 1–3", async ({ page, dh }) => {
-    await dh.openAt("");
+    await dh.openLive();                 // v7.55: the one boot kept on the real clock (any hour greets)
     ok(/^Good (morning|afternoon|evening), Mr\. Shaffer$/.test(await dh.text("#greet")),
       "greeting: " + await dh.text("#greet"));
     const names = await page.locator("#schedChips .chip").allTextContents();

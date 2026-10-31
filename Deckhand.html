@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.54.0",
+  "appVersion": "7.55.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -629,8 +629,10 @@
   }
   #undoToast[hidden]{display:none;}
   /* v7.39: the class-lists notice — the Undo toast's look, two answers, and it waits */
+  /* v7.55 (audit): its own slot, one above the Undo toast — they shared the exact spot, and an
+     Undo shown while the notice waited covered its answers */
   #rosterNote{
-    position:fixed; bottom:96px; left:50%; transform:translateX(-50%); z-index:16; max-width:94vw;
+    position:fixed; bottom:168px; left:50%; transform:translateX(-50%); z-index:16; max-width:94vw;
     background:var(--navy); color:var(--white); border-radius:999px;
     padding:8px 8px 8px 22px; font-weight:700; font-size:clamp(14px, 1.2vw, 19px);
     box-shadow:4px 6px 0 var(--shadow); display:flex; align-items:center; gap:10px; white-space:nowrap;
@@ -742,6 +744,8 @@
   body.inking #focusBar, body.zooming #focusBar{display:none;}
   body.focusMode:not(.dockMin):not(.inkLeft) #focusBar{bottom:84px;}  /* the bottom menu unfolded along the bottom: the row stands just above it */
   body:has(#alarm.on:not(.calm)) #focusBar{visibility:hidden;}
+  /* v7.55 (audit): the Now Playing pill (z 900003) sat over the alarm's own controls */
+  body:has(#alarm.on:not(.calm)) #nowPlaying{visibility:hidden;}
   #railScrim{position:fixed; inset:0; z-index:899994; background:transparent;}   /* an open toolbar menu: a tap anywhere else only closes it */
   #railScrim[hidden]{display:none;}   /* the pen's and the magnifier's own bars stand where it would; each has Done */
   #focusTimerWrap{position:relative; order:1;}
@@ -4900,7 +4904,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.54.0",
+  appVersion: "7.55.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -4928,6 +4932,32 @@ function hasOwn(o, k){ return !!o && Object.prototype.hasOwnProperty.call(o, k);
 /* Sanitize the raw config: every field is type-checked and coerced with a
    per-field fallback, so a hand-edited config that is valid JSON but the
    wrong SHAPE degrades field-by-field instead of killing the app. */
+/* v7.55 (audit): ONE rule for a block's clock time, shared by sanitize and the bells. cleanBlocks
+   used to accept anything shaped "13:15" that parseClock then refused, so a hand-edited block
+   vanished from the day with no word. A 24-hour afternoon (13:00–17:59) is unambiguous on this
+   12-hour school clock and is kept as 1:00–5:59; anything else the bells can't read is refused
+   in both places. Returns "h:mm" (h 1–12) or null. */
+function normClock(str){
+  var m = /^(\d{1,2}):(\d{2})$/.exec(String(str).trim());
+  if (!m) return null;
+  var h = +m[1], mm = +m[2];
+  if (mm > 59) return null;
+  if (h >= 13 && h <= 17) h -= 12;
+  if (h < 1 || h > 12) return null;
+  return h + ":" + m[2];
+}
+/* v7.55 (audit): two identical names in one roster were ONE student to Absent, the comment cards
+   and the picker (all keyed by name). A repeat is told apart — "Sam", "Sam (2)", "Sam (3)" —
+   within the 40-character cap, so a second pass leaves the list as it is. */
+function uniqueNames(names){
+  var seen = Object.create(null), out = [];
+  names.forEach(function(n){
+    var nm = n, k = 2;
+    while (seen[nm]){ var suf = " (" + (k++) + ")"; nm = n.slice(0, 40 - suf.length).trim() + suf; }
+    seen[nm] = true; out.push(nm);
+  });
+  return out;
+}
 function sanitize(c){
   if (!isObj(c)) c = {};
   function num(v, d){ return typeof v === "number" && isFinite(v) ? v : d; }
@@ -4944,6 +4974,7 @@ function sanitize(c){
         return typeof n === "number" && isFinite(n) && n >= 0.25 && n <= 120;   // v7.13: seconds allowed (0.25 = 15 s)
       }).map(function(n){ return Math.round(n * 100) / 100; }).slice(0, 6)
     : [];
+  function keepClock(v){ v = v.trim(); return parseInt(v, 10) >= 13 ? normClock(v) : v; }   // v7.55: only a 24-hour afternoon is rewritten
   function cleanBlocks(arr){
     if (!Array.isArray(arr)) return [];
     /* bound EVERYTHING: unbounded block lists / megabyte time strings
@@ -4952,11 +4983,11 @@ function sanitize(c){
     return arr.filter(function(x){
       return isObj(x) && typeof x.label === "string" &&
              typeof x.start === "string" && typeof x.end === "string" &&
-             /^\d{1,2}:\d{2}$/.test(x.start.trim()) &&
-             /^\d{1,2}:\d{2}$/.test(x.end.trim());
+             x.start.length <= 8 && x.end.length <= 8 &&
+             normClock(x.start) !== null && normClock(x.end) !== null;   // v7.55: the bells' own rule
     }).slice(0, 20)
       .map(function(x){ return { label: x.label.trim().slice(0, 20).trim(),
-                                 start: x.start.trim(), end: x.end.trim() }; });
+                                 start: keepClock(x.start), end: keepClock(x.end) }; });
   }
   var groups = [];
   var seenGroupNames = Object.create(null);
@@ -5300,6 +5331,7 @@ function sanitize(c){
       .filter(function(n){ return typeof n === "string" && n.trim(); })
       .map(function(n){ return n.trim().slice(0, 40); })
       .slice(0, 80);
+    names = uniqueNames(names);                  // v7.55
     if (names.length){ seenPeriod[p] = true; rosters.push({ period: p, names: names }); }
   });
   var activeScene = str(c.activeScene, "");
@@ -5328,7 +5360,9 @@ function sanitize(c){
        board (device storage, like the rosters); never in the public file (tools/check.sh). */
     cards: { log: (function(){
       var src = isObj(c.cards) && Array.isArray(c.cards.log) ? c.cards.log : [];
-      return src.slice(-600).map(function(e){
+      /* v7.55 (audit): cap AFTER dropping the bad entries — capping first let junk at the end
+         push real entries out (the coarse slice before only bounds the work) */
+      return src.slice(-6000).map(function(e){
         if (!isObj(e)) return null;
         var d = str(e.d, ""), p = str(e.p, "").trim().slice(0, 20);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !p || p === "__proto__") return null;
@@ -5344,7 +5378,7 @@ function sanitize(c){
             .map(function(n){ return n.trim().slice(0, 40); });
         }
         return out;
-      }).filter(Boolean);
+      }).filter(Boolean).slice(-600);
     })() },
     sound: { enabled: bool(s.enabled, true),
              volume: Math.max(0, Math.min(1, num(s.volume, 0.25))) },
@@ -5443,6 +5477,11 @@ function slidesOffToday(){
 function migrate(raw){
   if (!isObj(raw)) return {};
   var sv = +raw.schemaVersion;         // tolerate hand-edited versions as strings
+  /* v7.55 (audit): a missing or garbled version (NaN) threw and reset the whole board to the
+     defaults — a board that has the v4 shape (scenes, or week groups) is read as v4 */
+  if ((!isFinite(sv) || sv === 0) && (Array.isArray(raw.scenes) || (isObj(raw.bell) && Array.isArray(raw.bell.groups)))){
+    raw.schemaVersion = 4; sv = 4;
+  }
   if (sv === 4) return raw;
   if (sv === 3){
     raw.schemaVersion = 4;             // scenes/ui absent -> sanitize defaults them
@@ -5701,17 +5740,29 @@ var Store = (function(){
       return isObj(o) && isObj(o.cfg) ? o : null;
     } catch(e){ lastErr = e; return null; }
   }
+  /* v7.55 (audit): the boot probe used to decide for the whole session — a quota that was full
+     at boot refused every later save even after room was made. Each write tries, and its
+     outcome is the new answer. */
   function write(c){
-    if (!ok) return false;
     try {
       var str = JSON.stringify({
         v: 1, savedAt: new Date().toISOString(),
         fileVersion: DEFAULTS.appVersion, cfg: c
       });
       localStorage.setItem(KEY, str);
-      lastWritten = str; lastErr = null;
+      lastWritten = str; lastErr = null; ok = true;
       return true;
-    } catch(e){ lastErr = e; return false; }
+    } catch(e){ lastErr = e; ok = false; return false; }
+  }
+  function badKeys(){                            // the quarantined copies (full boards — they may carry rosters)
+    var out = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (k && k.indexOf(KEY + ".bad-") === 0) out.push(k);
+      }
+    } catch(e){}
+    return out;
   }
   /* v7.5.1: an unreadable device copy is QUARANTINED, never seeded over */
   function quarantine(){
@@ -5719,18 +5770,21 @@ var Store = (function(){
        roster-bearing blob to the shared, quota-tight file:// origin */
     try {
       if (!rawSeen) return;
-      for (var i = 0; i < localStorage.length; i++){
-        var k = localStorage.key(i);
-        if (k && k.indexOf(KEY + ".bad-") === 0 && localStorage.getItem(k) === rawSeen) return;
-      }
+      var bad = badKeys();
+      for (var i = 0; i < bad.length; i++){ if (localStorage.getItem(bad[i]) === rawSeen) return; }
+      /* v7.55 (audit): at most ONE set-aside copy — older ones (full boards, rosters and all)
+         were never deleted */
+      bad.forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
       localStorage.setItem(KEY + ".bad-" + Date.now(), rawSeen);
     } catch(e){}
   }
+  /* v7.55 (audit): not gated on the write probe — removeItem never fails for quota, and a full
+     origin is exactly when "Use this file's settings" must work. The set-aside copies go too. */
   function clear(){
-    if (!ok) return;
     try { localStorage.removeItem(KEY); } catch(e){ lastErr = e; }
+    badKeys().forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
   }
-  return { ok: ok, read: read, write: write, clear: clear, key: KEY, quarantine: quarantine,
+  return { get ok(){ return ok; }, read: read, write: write, clear: clear, key: KEY, quarantine: quarantine,
            hasRaw: function(){ return !!rawSeen; },
            wroteIt: function(str){ return str === lastWritten; },
            lastError: function(){ return lastErr; } };
@@ -5837,6 +5891,7 @@ var Undo = (function(){
     ensure();
     el.querySelector("span").textContent = text; fn = restore; el.hidden = false;
     el.querySelector("button").textContent = label || "Undo";   // v7.45: "Slides on"
+    el.querySelector("button").hidden = !restore;                // v7.55: a toast with nothing to take back is just a status
     clearTimeout(tid); tid = setTimeout(hide, 5000);
   }
   return { show: show, hide: hide };
@@ -5893,10 +5948,10 @@ var Bell = (function(){
   var active = -1;                    // index into cfg.bell.groups, -1 = no bells
 
   function parseClock(str){
-    var m = /^(\d{1,2}):(\d{2})$/.exec(String(str).trim());
-    if (!m) return null;
+    var n = normClock(str);          // v7.55: the same rule sanitize keeps blocks by
+    if (n === null) return null;
+    var m = /^(\d{1,2}):(\d{2})$/.exec(n);
     var h = +m[1], mm = +m[2];
-    if (mm > 59 || h < 1 || h > 12) return null;
     if (h <= 5) h += 12;             // 12:00-5:59 -> PM; 6:00-11:59 -> AM
     return h * 60 + mm;              // minutes of day
   }
@@ -5956,7 +6011,9 @@ var Bell = (function(){
   /* the dated "today" override, if it names this calendar day */
   function overrideFor(day){
     var t = cfg.bell.today;
-    return (t && t.date && t.date === dateKey(day) && t.mode !== "regular") ? t : null;
+    /* v7.55 (audit): "regular" is an override too — on a Wednesday, "Regular times instead"
+       returned null here and the Wednesday schedule ran anyway */
+    return (t && t.date && t.date === dateKey(day)) ? t : null;
   }
   /* v7.11.5 (audit): "Weeks with no school" used to steer only the rotation — the Friday
      before Thanksgiving still said "Next: 1st · Monday", and a board left open over a break
@@ -6751,14 +6808,18 @@ function parsePresetToken(s){                    // "3", "0:30", "1:30", "0.5" �
   if (/^\d+(\.\d+)?$/.test(s)) return +s;
   return null;
 }
+/* The entry face shows the digits as typed (a keypad: "7","3" reads 0:73); what runs is the
+   normalized time — seconds of 60 or more carry into the minutes (the microwave rule, pinned by
+   bells.spec: "0:73" runs 1:13). v7.55 (audit) looked at "9999": it runs 100:39, and the running
+   face says so the moment it starts. */
 function fmtEntryStr(d){
   var p = d.padStart(3, "0");
   return parseInt(p.slice(0, -2), 10) + ":" + p.slice(-2);
 }
 function entrySecs(d){
   if (!d) return 0;
-  var p = d.padStart(3, "0");
-  return parseInt(p.slice(0, -2), 10) * 60 + parseInt(p.slice(-2), 10);
+  var p = String(d).padStart(3, "0");
+  return parseInt(p.slice(0, -2), 10) * 60 + parseInt(p.slice(-2), 10);   // carries: "190" → 1:90 → 150 s
 }
 var REDUCED = window.matchMedia &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -6919,7 +6980,7 @@ function makeTimer(host, wcfg, assignIds){
     startBtn.textContent = t.endAt ? "Pause" : "Start";
   }
   function loop(){
-    if (!t.endAt) return;                        // paused or reset since this tick was armed
+    if (destroyed || !t.endAt) return;           // paused or reset since this tick was armed (v7.55 (audit): or deleted — a removed card never rings)
     t.remainMs = t.endAt - Date.now();
     if (t.remainMs <= 0){
       t.remainMs = 0; t.endAt = null;
@@ -7100,6 +7161,9 @@ function makeTimer(host, wcfg, assignIds){
     destroy: function(){
       destroyed = true;
       clearTimeout(t.tid);
+      /* v7.55 (audit): the single end timeout (v7.11.5) outlived the card — a deleted running
+         timer still rang the full-screen alarm at 0:00 */
+      clearTimeout(t.endTid); t.endTid = null; t.endAt = null;
       clearInterval(ubTid);
       if (visRaf !== null) cancelAnimationFrame(visRaf);
     }
@@ -7433,39 +7497,67 @@ function buildPeriodSelect(sel, wcfg, onChange){
    repeats until everyone has had a turn, R starts the round over. */
 /* v7.41: the draw itself, shared by the Name Picker card and the quick-draw by the pen. The round
    lives in DayStore by class ("picker:5th": {pool, last}) — one round per class per day. */
+/* v7.55 (audit): the round also keeps who has been drawn ({pool, done, last}). The pool used to be
+   built once from the students present at the start, so a student un-marked absent (or added to
+   the roster) mid-round was in neither list and was never drawn until the round ended. */
 function pickerRound(p){ return p ? DayStore.get("picker:" + p) : null; }
+function pickerDone(r){ if (!Array.isArray(r.done)) r.done = []; return r.done; }
+function pickerLastPresent(r, present){          // the index the next draw takes (-1: nobody present waits)
+  for (var i = r.pool.length - 1; i >= 0; i--){ if (present.indexOf(r.pool[i]) !== -1) return i; }
+  return -1;
+}
+function pickerDrop(list, name){ var i = list.indexOf(name); if (i !== -1) list.splice(i, 1); }
 function pickerDraw(p){                          // the next name of the class's round (a fresh shuffle when everyone has been), or null
   var names = p ? Absent.presentFor(p) : [];     // never call on the kid at home
   if (!names.length) return null;
-  var r = pickerRound(p) || { pool: [], last: "" };
+  var r = pickerRound(p) || { pool: [], done: [], last: "" };
+  var done = pickerDone(r);
+  /* v7.55 (audit): a present student in neither list joins this round — somewhere in what is
+     left, never jumping the queue past the next name (pickerBack's rule) */
+  if (r.pool.length || done.length){
+    names.forEach(function(n){
+      if (r.pool.indexOf(n) !== -1 || done.indexOf(n) !== -1) return;
+      var lastP = pickerLastPresent(r, names);
+      r.pool.splice(lastP >= 0 ? Math.floor(Math.random() * (lastP + 1)) : 0, 0, n);
+    });
+  }
   /* someone marked absent MID-ROUND is skipped — but stays in the pool, so un-marking
      them puts them back in this round (v7.11.5: the filter used to be permanent) */
-  var eligible = r.pool.filter(function(n){ return names.indexOf(n) >= 0; });
-  if (!eligible.length){                         // fresh round
+  var at = pickerLastPresent(r, names);
+  if (at < 0){                                   // fresh round
     r.pool = shuffleNames(names.slice());
-    eligible = r.pool.slice();
+    r.done = done = [];
+    at = r.pool.length - 1;
+    /* v7.55 (audit): across the round boundary the last student of one round could open the
+       next — called twice in a row. Swap them deeper into the new round. */
+    if (r.pool.length > 1 && r.pool[at] === r.last){
+      var j = Math.floor(Math.random() * at), tmp = r.pool[j];
+      r.pool[j] = r.pool[at]; r.pool[at] = tmp;
+    }
   }
   DayStore.set("picker:" + p, r);
-  var target = eligible[eligible.length - 1];
-  r.pool.splice(r.pool.lastIndexOf(target), 1);
+  var target = r.pool[at];
+  r.pool.splice(at, 1);
+  done.push(target);                             // drawn is drawn: a second picker mid-shuffle never re-adds them
   return { name: target, names: names };
 }
 function pickerCommit(p, name){                  // the name was shown: it is the round's last, and every picker hears
-  var r = pickerRound(p); if (r) r.last = name;
+  var r = pickerRound(p);
+  if (r){ r.last = name; if (pickerDone(r).indexOf(name) === -1) r.done.push(name); }
   try { document.dispatchEvent(new CustomEvent("deckhand:picker")); } catch(e){}
 }
 function pickerUndraw(p, name){                  // drawn but never shown (put away mid-shuffle): back in the round
   var r = pickerRound(p);
-  if (r) r.pool.push(name);                      // exactly the one that was drawn — two students may share a first name
+  if (r){ pickerDrop(pickerDone(r), name); r.pool.push(name); }   // exactly the one that was drawn — two students may share a first name
 }
 /* v7.45: a student who refused goes back into the round — somewhere in what is left, never the very
    next pick (unless they are all that is left) */
 function pickerBack(p, name){
   var r = pickerRound(p); if (!r) return;
+  pickerDrop(pickerDone(r), name);               // v7.55: waiting again, not drawn
   /* the draw takes the LAST present name in the pool: in front of it is never next (students
      marked absent mid-round stay in the pool, so the last present one is the mark, not the end) */
-  var present = Absent.presentFor(p), lastP = -1;
-  for (var i = r.pool.length - 1; i >= 0; i--){ if (present.indexOf(r.pool[i]) !== -1){ lastP = i; break; } }
+  var present = Absent.presentFor(p), lastP = pickerLastPresent(r, present);
   var at = lastP >= 0 ? Math.floor(Math.random() * (lastP + 1)) : 0;
   r.pool.splice(at, 0, name);
   try { document.dispatchEvent(new CustomEvent("deckhand:picker")); } catch(e){}
@@ -7473,11 +7565,14 @@ function pickerBack(p, name){
 function pickerTakeBack(p, name){                // Undo of a refusal: their turn counted after all
   var r = pickerRound(p); if (!r) return;
   var i = r.pool.indexOf(name); if (i !== -1) r.pool.splice(i, 1);
+  if (pickerDone(r).indexOf(name) === -1) r.done.push(name);   // v7.55
   try { document.dispatchEvent(new CustomEvent("deckhand:picker")); } catch(e){}
 }
 function pickerLeft(p){
   var present = Absent.presentFor(p), r = pickerRound(p);
-  return { left: r ? r.pool.filter(function(n){ return present.indexOf(n) >= 0; }).length : present.length,
+  /* v7.55 (audit): a present student not yet drawn is waiting — in the pool or about to join it */
+  var done = r ? pickerDone(r) : [];
+  return { left: r ? present.filter(function(n){ return r.pool.indexOf(n) >= 0 || done.indexOf(n) === -1; }).length : present.length,
            of: present.length, out: Absent.countOut(p) };
 }
 /* the class the quick tools work on: the one the bell says is in the room (a board with no bells: the first roster) */
@@ -7509,14 +7604,19 @@ function makePicker(host, wcfg){
   /* v7.13: the round lives in DayStore by class ("picker:5th"), so it survives a scene
      switch and is shared by every picker on the board — 5th period has ONE round today */
   function round(p){ return p ? DayStore.get("picker:" + p) : null; }   // {pool, last} or undefined
+  var pending = null;                           // v7.55 (audit): {p, name} drawn for the spin, not yet shown
   function cancelSpin(){
     if (spinTid){                               // a reset mid-spin cancels the spin —
       clearInterval(spinTid); spinTid = null;   // never commit a student who was
       nameEl.classList.remove("spin");          // reset (or edited) away
     }
+    /* v7.55 (audit): …but the drawn name goes back in the round — a period change or rebuild
+       mid-spin used to lose it silently (the PickPop already did this) */
+    if (pending){ pickerUndraw(pending.p, pending.name); pending = null; }
   }
   function resetPool(){
-    cancelSpin();
+    if (spinTid){ clearInterval(spinTid); spinTid = null; nameEl.classList.remove("spin"); }
+    pending = null;                              // the round starts over: nothing to put back
     var p = period.current();
     if (p) DayStore.clear("picker:" + p);
   }
@@ -7536,16 +7636,12 @@ function makePicker(host, wcfg){
     }
     emptyEl.textContent = "";
     hintEl.textContent = "Space picks · R restarts the round";
-    var present = Absent.presentFor(p);
-    var r = round(p);
-    var left = r
-      ? r.pool.filter(function(n){ return present.indexOf(n) >= 0; }).length   // absent or edited away: not waiting
-      : present.length;
-    var out = Absent.countOut(p);
-    leftEl.textContent = left + " of " + present.length + " left" +
-      (out ? " · " + out + " out" : "");
+    var c = pickerLeft(p);                       // v7.55: one count for the card and the quick-draw (absent or edited away: not waiting)
+    leftEl.textContent = c.left + " of " + c.of + " left" +
+      (c.out ? " · " + c.out + " out" : "");
   }
   function commit(name, p){
+    pending = null;
     nameEl.classList.remove("spin");
     nameEl.textContent = name;
     pickerCommit(p, name);
@@ -7563,6 +7659,7 @@ function makePicker(host, wcfg){
     var target = d.name, names = d.names;
     if (REDUCED){ commit(target, p); return; }
     var t0 = Date.now();
+    pending = { p: p, name: target };
     nameEl.classList.add("spin");
     spinTid = setInterval(function(){
       if (destroyed){ clearInterval(spinTid); return; }
@@ -7594,7 +7691,7 @@ function makePicker(host, wcfg){
     destroy: function(){
       destroyed = true;
       clearInterval(refreshTid);
-      if (spinTid) clearInterval(spinTid);
+      cancelSpin();                              // v7.55 (audit): put away mid-spin: the name goes back in the round
       document.removeEventListener("deckhand:picker", onPick);
     }
   };
@@ -8231,10 +8328,11 @@ function makeMathle(host, wcfg){
   /* the game lives in DayStore under this card's config, so a scene switch keeps it */
   var st = DayStore.get(wcfg);
   function fresh(entry, isDaily){
-    st = { w: entry.w, h: entry.h, guesses: [], cur: "", done: false, won: false, hint: false, daily: !!isDaily };
+    st = { w: entry.w, h: entry.h, guesses: [], cur: "", done: false, won: false, hint: false, daily: !!isDaily, d: dateKey(now()) };
     DayStore.set(wcfg, st);
   }
   if (!st || !st.w) fresh(daily(), true);
+  if (!st.d) st.d = dateKey(now());
   function N(){ return st.w.length; }
   /* Wordle's colouring, repeats handled: exact matches first, then the rest from what's left */
   function score(guess){
@@ -8353,7 +8451,16 @@ function makeMathle(host, wcfg){
     else if (st.guesses.length >= ROWS){ st.done = true; st.won = false; }
     reveal(r, g, score(g), function(){ if (st.won){ try { Sound.soft(); } catch(e){} } });
   }
+  /* v7.55 (audit): `st` was read once at build — after midnight DayStore wiped the day but this card
+     kept yesterday's game (and yesterday's word of the day). Each touch and a minute's tick check. */
+  function dayCheck(){
+    if (destroyed || st.d === dateKey(now())) return false;
+    restart(daily(), true);
+    return true;
+  }
+  var dayTid = setInterval(dayCheck, 60000);
   function typeKey(k){
+    dayCheck();
     if (st.done || revealing) return st.done ? false : /^[a-zA-Z]$|^(Backspace|Enter)$/.test(k);   // mid-reveal: swallowed, not passed to shortcuts
     if (k === "Backspace"){ if (st.cur){ st.cur = st.cur.slice(0, -1); paintCur(); } return true; }
     if (k === "Enter"){ submit(); return true; }
@@ -8390,7 +8497,7 @@ function makeMathle(host, wcfg){
   }
   bandEl.value = wcfg.band;
   bandEl.addEventListener("change", function(){ wcfg.band = this.value; this.blur(); restart(daily(), true); });
-  wireButton(hintBtn, function(){ st.hint = !st.hint; paintMsg(); });
+  wireButton(hintBtn, function(){ dayCheck(); st.hint = !st.hint; paintMsg(); });
   wireButton(q(".mlNew"), function(){
     var p = pool().filter(function(x){ return x.w !== st.w; });
     restart(p[Math.floor(Math.random() * p.length)] || pool()[0], false);
@@ -8404,12 +8511,12 @@ function makeMathle(host, wcfg){
     entryActive: function(){ return !st.done || revealing; },   // a live game owns the keyboard while the card is selected
     typeKey: typeKey,
     entryDigit: function(){}, entryBackspace: function(){ typeKey("Backspace"); }, entryCancel: function(){}, commitEntryAndStart: function(){},
-    rebuild: build, resync: function(){ size(); },
+    rebuild: function(){ if (!dayCheck()) build(); }, resync: function(){ if (!dayCheck()) size(); },
     word: function(){ return st.w; },                   // test hook
     has: mathleHas,                                     // test hook (v7.34)
     revealing: function(){ return revealing; },         // test hook
     state: function(){ return JSON.parse(JSON.stringify(st)); },   // test hook
-    destroy: function(){ destroyed = true; timers.forEach(clearTimeout); clearTimeout(noteTid); try { if (ro) ro.disconnect(); } catch(e){} }
+    destroy: function(){ destroyed = true; timers.forEach(clearTimeout); clearTimeout(noteTid); clearInterval(dayTid); try { if (ro) ro.disconnect(); } catch(e){} }
   };
 }
 
@@ -8475,7 +8582,12 @@ function makeGroups(host, wcfg){
     if (!p){ paint(); return; }
     var names = shuffleNames(Absent.presentFor(p));  // absent kids sit out
     out.innerHTML = "";
-    if (names.length < 2){ paint(); return; }
+    if (names.length < 2){
+      /* v7.55 (audit): the display cleared but today's groups, the `made` look and "Shuffle"
+         stayed — a scene switch brought the stale groups back */
+      DayStore.clear("groups:" + p); host.classList.remove("made"); q(".gpGo").textContent = "Make groups";
+      paint(); return;
+    }
     var count;
     if (wcfg.by === "count"){
       /* "make me 4 groups" — never more groups than kids */
@@ -9521,7 +9633,9 @@ function makeSpin(host, wcfg){
     entryActive: function(){ return false; },
     rebuild: function(){ buildWheel(); paint(); }, resync: function(){},
     tally: function(){ return { counts: counts.slice(), spins: spins, result: result, angle: angle }; },   // test hook
-    destroy: function(){ destroyed = true; clearTimeout(tid); }
+    /* v7.55 (audit): put away mid-spin (a scene switch), the spin was lost and the rebuilt card
+       snapped back to the old angle — it lands now: counted, the angle parked */
+    destroy: function(){ clearTimeout(tid); if (spinning) settle(); destroyed = true; }
   };
 }
 /* the cards: a standard 52, drawn without replacement (the count drops —
@@ -9695,6 +9809,7 @@ function makeScore(host, wcfg){
     b.dataset.n = n;
     b.textContent = n + " teams";
     wireButton(b, function(){
+      if (cfg.ui.locked) return;                  // v7.55 (audit): dropping teams is setup, like renaming (and has no Undo)
       while (wcfg.teams.length > n) wcfg.teams.pop();
       while (wcfg.teams.length < n){
         wcfg.teams.push({ name: "Team " + (wcfg.teams.length + 1), score: 0 });
@@ -9767,7 +9882,17 @@ function makeEvent(host, wcfg){
     return d;
   }
   function two(n){ return (n < 10 ? "0" : "") + n; }
+  /* v7.55 (audit): paint ran twice a second and walked Bell.schoolDaysBetween (up to 1000 days)
+     each time. The count is cached by the day (and the event), and the card ticks fast only
+     when it shows a clock (an event later today, with a time). */
+  var sdKey = null, sdVal = 0, fast = false;
+  function schoolDays(n, t){
+    var k = dateKey(n) + "|" + wcfg.when;
+    if (k !== sdKey){ sdKey = k; sdVal = Bell.schoolDaysBetween(n, t); }
+    return sdVal;
+  }
   function paint(){
+    fast = false;
     title.textContent = wcfg.title;
     title.hidden = !wcfg.title;
     big.classList.remove("evAccent");
@@ -9787,7 +9912,7 @@ function makeEvent(host, wcfg){
     if (hasTime) fmt += " · " + t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     sub.textContent = fmt;
     if (dd > 0){
-      var sd = wcfg.schoolDays ? Bell.schoolDaysBetween(n, t) : 0;
+      var sd = wcfg.schoolDays ? schoolDays(n, t) : 0;
       if (sd > 0){                               // v7.13: "4 school days" — the number a class can plan by
         big.textContent = sd;
         unit.textContent = sd === 1 ? "school day to go" : "school days to go";
@@ -9798,6 +9923,7 @@ function makeEvent(host, wcfg){
       }
     } else if (dd === 0 && hasTime && t - n > 0){
       var left = Math.floor((t - n) / 1000);
+      fast = true;
       big.textContent = Math.floor(left / 3600) + ":" +
         two(Math.floor(left / 60) % 60) + ":" + two(left % 60);
       unit.textContent = "to go";
@@ -9825,7 +9951,7 @@ function makeEvent(host, wcfg){
       ? d + (/^\d{2}:\d{2}$/.test(timeIn.value) ? "T" + timeIn.value : "")
       : "";
     row.hidden = true;
-    paint();
+    clearTimeout(tid); tick();                   // v7.55: an event later today ticks fast at once
   }
   wireButton(q(".evBtn"), commit);
   var schoolBtn = q(".evSchool");
@@ -9842,21 +9968,26 @@ function makeEvent(host, wcfg){
   wireButton(pencil, function(){
     if (row.hidden) startEdit(); else commit();
   });
-  var tid = setInterval(paint, 500);
-  paint();
+  var tid = null, evDead = false;
+  function tick(){
+    if (evDead) return;
+    paint();
+    tid = setTimeout(tick, fast ? 500 : 2000);   // (a slow tick still notices an edit within two seconds)
+  }
+  tick();
   return {
     kind: "event",
     label: function(){ return wcfg.label || "Countdown"; },
     startPause: function(){}, reset: function(){},
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){ paintSchool(); paint(); }, resync: paint,
+    rebuild: function(){ sdKey = null; paintSchool(); paint(); }, resync: function(){ sdKey = null; clearTimeout(tid); tick(); },
     destroy: function(){
       /* scene switch / Home with the row open: keep the typed event —
          every other editor tap-away-saves, so losing it here would
          surprise (the cfg object outlives this DOM) */
       if (!row.hidden) commit();
-      clearInterval(tid);
+      evDead = true; clearTimeout(tid);
     }
   };
 }
@@ -9946,6 +10077,7 @@ function makeTally(host, wcfg){
     b.dataset.n = n;
     b.textContent = n === 1 ? "1 counter" : "2 counters";
     wireButton(b, function(){
+      if (cfg.ui.locked) return;                  // v7.55 (audit): dropping a counter is setup, like renaming (and has no Undo)
       while (wcfg.items.length > n) wcfg.items.pop();
       while (wcfg.items.length < n){
         wcfg.items.push({ name: "Tally " + (wcfg.items.length + 1), count: 0 });
@@ -10116,7 +10248,9 @@ var Settle = (function(){
   function start(auto, firstBell){
     if (!hasCard()) return;
     if (auto === true && !S().on) return;
-    try { if (typeof Wrapup !== "undefined" && Wrapup.live()) Wrapup.reset(); } catch(e){}   // v7.14: the bell outranks the wrap-up
+    /* v7.14: the bell outranks the wrap-up. v7.55 (audit): a MANUAL count only interrupts it —
+       reset() stood it down for the whole period */
+    try { if (typeof Wrapup !== "undefined" && Wrapup.live()){ if (auto === true) Wrapup.reset(); else Wrapup.interrupt(); } } catch(e){}
     try { Landing.dismissToast(); } catch(e){}    // the greeting yields the top of the screen
     doneUntil = null; clearTimeout(doneTid);
     clearTimeout(t.tid); clearTimeout(halfTid);
@@ -10277,6 +10411,9 @@ var Settle = (function(){
    Sound Off and the Now Playing pill stop it; it stays quiet while the Music card is playing. */
 var WrapSong = (function(){
   var DB = "deckhand-media", STORE = "files", KEY = "wrapup-song";
+  /* v7.55 (audit): the volume has its own small record — the slider re-put the whole song blob
+     to IndexedDB on every input event. A record from before keeps its rec.vol as the fallback. */
+  var VKEY = "wrapup-song-vol", volSaved = null;
   var rec = null, url = null, audio = null, fadeTid = null, host = null;
   function db(){
     return new Promise(function(res, rej){
@@ -10289,11 +10426,20 @@ var WrapSong = (function(){
   }
   function tx(mode, fn){
     return db().then(function(d){ return new Promise(function(res, rej){
-      var t = d.transaction(STORE, mode), st = t.objectStore(STORE), r = fn(st);
-      t.oncomplete = function(){ res(r && r.result); d.close(); }; t.onerror = function(){ rej(t.error); d.close(); };
+      /* v7.55 (audit): an aborted transaction (quota, a closing db) never settled the promise and
+         kept the db open; a throw creating it (the store gone) leaked it too */
+      var t, r;
+      try { t = d.transaction(STORE, mode); r = fn(t.objectStore(STORE)); }
+      catch(e){ try { d.close(); } catch(_){} rej(e); return; }
+      t.oncomplete = function(){ res(r && r.result); d.close(); };
+      t.onerror = function(){ rej(t.error); d.close(); };
+      t.onabort = function(){ rej(t.error); try { d.close(); } catch(_){} };
     }); });
   }
-  function vol(){ return rec && typeof rec.vol === "number" ? Math.max(0.05, Math.min(1, rec.vol)) : 0.6; }
+  function vol(){
+    var v = typeof volSaved === "number" ? volSaved : (rec && typeof rec.vol === "number" ? rec.vol : 0.6);
+    return Math.max(0.05, Math.min(1, v));
+  }
   function report(on){
     if (!host){ host = document.createElement("div"); host.hidden = true; host.id = "wrapSongHost"; document.body.appendChild(host); }
     try { NowPlaying.report(host, on, rec ? rec.name.replace(/\.[a-z0-9]{2,4}$/i, "") : ""); } catch(e){}
@@ -10343,7 +10489,15 @@ var WrapSong = (function(){
   }
   return {
     init: function(){
-      try { tx("readonly", function(st){ return st.get(KEY); }).then(load).catch(function(){}); } catch(e){}
+      try {
+        tx("readonly", function(st){
+          var a = st.get(KEY), b = st.get(VKEY);
+          return { get result(){ return { rec: a.result, vol: b.result }; } };
+        }).then(function(o){
+          if (o && typeof o.vol === "number" && isFinite(o.vol)) volSaved = o.vol;
+          load(o ? o.rec : null);
+        }).catch(function(){});
+      } catch(e){}
       var file = $("sWsFile");
       wireButton($("sWsPick"), function(){ file.value = ""; file.click(); });
       file.addEventListener("change", function(){
@@ -10362,9 +10516,12 @@ var WrapSong = (function(){
       });
       $("sWsVol").addEventListener("input", function(){
         if (!rec) return;
-        rec.vol = Math.max(0.05, Math.min(1, (+this.value || 60) / 100));
-        if (audio && !fadeTid) audio.volume = rec.vol;
-        var r = rec; tx("readwrite", function(st){ return st.put(r, KEY); }).catch(function(){});
+        volSaved = rec.vol = Math.max(0.05, Math.min(1, (+this.value || 60) / 100));
+        if (audio && !fadeTid) audio.volume = volSaved;
+      });
+      $("sWsVol").addEventListener("change", function(){   // v7.55: kept once, when the slider is let go
+        if (typeof volSaved !== "number") return;
+        var v = volSaved; tx("readwrite", function(st){ return st.put(v, VKEY); }).catch(function(){});
       });
       document.addEventListener("deckhand:music-stop", function(){ stop(300); });
     },
@@ -10388,8 +10545,8 @@ var Wrapup = (function(){
       list = stage.querySelector(".wuList"), msg = stage.querySelector(".wuMsg");
   var live = false, curKey = null, stoodDown = null, tid = null, lastShown = null;
   function W(){ return (cfg.bell && isObj(cfg.bell.wrapup)) ? cfg.bell.wrapup : DEFAULT_WRAPUP; }
-  function tell(phase){
-    try { document.dispatchEvent(new CustomEvent("deckhand:settle", { detail: { phase: phase, host: host, kind: "wrapup" } })); } catch(e){}
+  function tell(phase, atBell){
+    try { document.dispatchEvent(new CustomEvent("deckhand:settle", { detail: { phase: phase, host: host, kind: "wrapup", atBell: !!atBell } })); } catch(e){}
   }
   function hasCard(){ try { return Canvas.clockMounted(); } catch(e){ return !host.hidden; } }
   function build(){
@@ -10441,23 +10598,27 @@ var Wrapup = (function(){
     try { WrapSong.start(); } catch(e){}          // v7.51: the class's song, from the top
     tell("start");
   }
-  function end(){
+  function end(atBell){
     if (!live) return;
     live = false; stage.hidden = true; host.classList.remove("wuLive");
     try { WrapSong.end(); } catch(e){}            // v7.51: it fades out with the wrap-up
-    tell("reset");
+    tell("reset", atBell);                        // v7.55: the stage knows a bell ended it (not R)
   }
   function reset(){                              // R: stood down for this period
     stoodDown = curKey;
     end();
   }
+  /* v7.55 (audit): a manual settle-in count during the wrap-up ends it for now — NOT for the
+     period (reset() set stoodDown, so one Space stood the wrap-up down until the bell). watch()
+     brings it back once the count is over. */
+  function interrupt(){ end(); }
   function watch(){
     var s = null; try { s = Bell.statusAt(now()); } catch(e){}
     var w = W();
     var inClass = s && s.type === "in" && !/lunch/i.test(s.label || "");
     var key = inClass ? dateKey(now()) + "|" + s.label + "|" + s.idx : null;
     if (live){
-      if (!inClass || key !== curKey || s.remainMs <= 0){ end(); return; }
+      if (!inClass || key !== curKey || s.remainMs <= 0){ end(true); return; }
       paint(s.remainMs);
       return;
     }
@@ -10471,6 +10632,7 @@ var Wrapup = (function(){
     init: function(){ tid = setInterval(watch, 250); },
     live: function(){ return live; },
     reset: reset,
+    interrupt: interrupt,
     start: function(){                           // the API / a test: run it now for the rest of the period
       var s = null; try { s = Bell.statusAt(now()); } catch(e){}
       if (!s || s.type !== "in") return;
@@ -10628,17 +10790,23 @@ function makeStations(host, wcfg){
   var q = function(s){ return host.querySelector(s); };
   var sel = q(".pkSel"), rotEl = q(".snRot"), timeEl = q(".snTime"), grid = q(".snGrid"), emptyEl = q(".snEmpty");
   var editRow = q(".snEdit"), namesIn = q(".snNames"), goBtn = q(".snGo");
-  var st = null, tid = null, destroyed = false, lastShown = null;
-  var period = buildPeriodSelect(sel, wcfg, function(){ load(); paint(); ab.repaint(); });
+  var st = null, tid = null, destroyed = false, lastShown = null, curKey = null;
+  /* v7.55 (audit): a class change re-arms the clock for the class now showing (the old class's
+     tick kept running and wrote into the new one) */
+  function switchClass(){ clearTimeout(tid); load(); paint(); if (st.endAt) loop(); }
+  var period = buildPeriodSelect(sel, wcfg, function(){ switchClass(); ab.repaint(); });
   var ab = attachAbsent(host, function(){ return period.current(); }, function(){ paint(); });
   function key(){ var p = period.current(); return p ? "stations:" + p : null; }
   function fresh(){ return { groups: null, count: wcfg.count, rot: 0, endAt: null, remain: wcfg.mins * 60000, done: false }; }
   function load(){
     var k = key();
+    curKey = k;                                  // v7.55 (audit): the class this state belongs to
     st = (k && DayStore.get(k)) || fresh();
     if (st.count !== wcfg.count){ st.groups = null; st.count = wcfg.count; st.rot = 0; }
   }
-  function park(){ var k = key(); if (k) DayStore.set(k, st); }
+  /* v7.55 (audit): parked under the class it was LOADED for — key() reads the period live, so a
+     bell mid-run wrote one class's groups and rotation under the next class's key */
+  function park(){ if (curKey) DayStore.set(curKey, st); }
   function makeGroups(){
     var p = period.current();
     if (!p) return null;
@@ -10742,7 +10910,10 @@ function makeStations(host, wcfg){
     e.stopPropagation();
     if (e.key === "Escape") commit();
   });
-  var refreshTid = setInterval(function(){ period.fill(); ab.repaint(); }, 5000);
+  var refreshTid = setInterval(function(){
+    period.fill(); ab.repaint();
+    if (key() !== curKey) switchClass();         // v7.55 (audit): the bell brought the next class in
+  }, 5000);
   load(); paint();
   if (st.endAt) loop();                          // back on this scene: the clock is still running
   return {
@@ -10753,7 +10924,7 @@ function makeStations(host, wcfg){
     state: function(){ return { rot: st.rot, done: st.done, groups: st.groups, endAt: st.endAt }; },   // test hook
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
-    rebuild: function(){ period.fill(); load(); paint(); }, resync: paint,
+    rebuild: function(){ period.fill(); switchClass(); }, resync: paint,
     destroy: function(){ destroyed = true; clearTimeout(tid); clearInterval(refreshTid); if (!editRow.hidden) commit(); }
   };
 }
@@ -10949,6 +11120,10 @@ function makeNumline(host, wcfg){
     commit(before); render();
   }
   svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
+  /* v7.55 (audit): a capture that failed or was taken away never delivered the up — `pid` stayed
+     set and the line ignored every later touch. The release lands wherever it happens. */
+  svg.addEventListener("lostpointercapture", up);
+  window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
   function setMode(m){
     mode = m;
     host.querySelectorAll(".nlMode .chip").forEach(function(c){ c.setAttribute("aria-pressed", c.dataset.mode === m ? "true" : "false"); });
@@ -11047,7 +11222,7 @@ function makeNumline(host, wcfg){
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: function(){ fillLine(); paintRange(); render(); }, resync: function(){},
-    destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} clearTimeout(roTid); }
+    destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} clearTimeout(roTid); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); }
   };
 }
 
@@ -11135,6 +11310,7 @@ var NowPlaying = (function(){
       paint();
     },
     showing: function(){ return !!el && !el.hidden; },  // test hook
+    onScreen: onScreen,                          // v7.55: the YouTube card asks before the pill stops it
     othersPlaying: function(except){ return live.some(function(x){ return x.host !== except && x.host.isConnected; }); }   // v7.31
   };
 })();
@@ -13024,11 +13200,28 @@ function makeYT(host, wcfg){
     clearTimeout(noteTid);
     noteTid = setTimeout(function(){ note.hidden = true; }, 8000);
   }
+  /* v7.55 (audit): the card never told Now Playing it was sounding, so the passing music and the
+     wrap-up song started over an audible video. A loaded frame on a card that is not minimized
+     counts as playing (the board cannot hear inside YouTube's frame); the pill stops it only
+     when the card is out of sight — on screen, its own controls are right there. */
+  var ytGone = false;
+  function ytLoaded(){ var s0 = frame.getAttribute("src"); return !!s0 && s0 !== "about:blank"; }
+  function report(){
+    try { NowPlaying.report(host, !ytGone && !wcfg.min && ytLoaded(), wcfg.label || "YouTube"); } catch(e){}
+  }
+  function onStop(){
+    var seen = true; try { seen = NowPlaying.onScreen(host); } catch(e){}
+    if (seen || !ytLoaded()) return;
+    try { frame.removeAttribute("src"); } catch(e){}
+    report();
+  }
+  document.addEventListener("deckhand:music-stop", onStop);
   function setURL(u){
     wcfg.url = u || "";
     if (u){ frame.src = u; frame.hidden = false; empty.hidden = true; }
     else { frame.src = "about:blank"; frame.hidden = true; empty.hidden = false; }
     input.value = wcfg.url;
+    report();
   }
   var lib = q(".ytLib");
   function hideLib(){
@@ -13162,18 +13355,22 @@ function makeYT(host, wcfg){
     nameIn.value = "";
     renderStations();
   });
-  if (wcfg.url){ frame.src = wcfg.url; frame.hidden = false; empty.hidden = true; }
+  /* v7.55 (audit): a minimized card does not load its frame at boot — with autoplay it played
+     from a hidden frame after a reload */
+  if (wcfg.url){ if (!wcfg.min) frame.src = wcfg.url; frame.hidden = false; empty.hidden = true; }
   input.value = wcfg.url;
   renderStations();
+  report();
   /* v7.0: Home hides the board; like the Slides card, a video must not
      keep talking under the landing page (the yt card had no listener —
      only Slides went quiet). Board restores whatever was loaded. */
-  function onHome(){ try { frame.removeAttribute("src"); } catch(e){} }
+  function onHome(){ try { frame.removeAttribute("src"); } catch(e){} report(); }
   function onBoard(){
-    if (wcfg.min) return;                        // v7.18: a minimized video stays quiet
+    if (wcfg.min){ report(); return; }           // v7.18: a minimized video stays quiet
     if (wcfg.url && frame.getAttribute("src") !== wcfg.url){
       frame.src = wcfg.url; frame.hidden = false; empty.hidden = true;
     }
+    report();
   }
   document.addEventListener("deckhand:home", onHome);
   document.addEventListener("deckhand:board", onBoard);
@@ -13191,7 +13388,9 @@ function makeYT(host, wcfg){
          would keep singing from nowhere */
       document.removeEventListener("deckhand:home", onHome);
       document.removeEventListener("deckhand:board", onBoard);
+      document.removeEventListener("deckhand:music-stop", onStop);
       try { frame.src = "about:blank"; } catch(e){}
+      ytGone = true; report();                   // v7.55: and off the Now Playing list
     }
   };
 }
@@ -13582,7 +13781,8 @@ function makeMeter(host, wcfg){
      tally; the level bar and its limit are hidden because nothing measures. */
   var manual = false, manualTid = null;
   function gamePeriod(){ return currentPeriodLabel() || "Class"; }
-  function park(){ DayStore.set(wcfg, { mode: manual ? "hand" : (analyser ? "mic" : ""), streakStart: streakStart, strikes: strikes, curPeriod: curPeriod }); }
+  /* v7.55 (audit): lastSeen — the time away from this scene is not a quiet room (the hidden-tab rule) */
+  function park(){ DayStore.set(wcfg, { mode: manual ? "hand" : (analyser ? "mic" : ""), streakStart: streakStart, strikes: strikes, curPeriod: curPeriod, lastSeen: Date.now() }); }
   function fmtStreak(sec){
     return Math.floor(sec / 60) + ":" + String(Math.floor(sec % 60)).padStart(2, "0");
   }
@@ -13754,7 +13954,9 @@ function makeMeter(host, wcfg){
     status.textContent = "Asking for the microphone…";
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s){
       pending = false;
-      if (destroyed || stream){ s.getTracks().forEach(function(t){ t.stop(); }); return; }
+      /* v7.55 (audit): by hand already (the card was rebuilt by hand meanwhile) — the mic and the
+         hand must never run at once */
+      if (destroyed || stream || manual){ s.getTracks().forEach(function(t){ t.stop(); }); return; }
       stream = s;
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       var src = ctx.createMediaStreamSource(s);
@@ -13789,6 +13991,7 @@ function makeMeter(host, wcfg){
   var parked = DayStore.get(wcfg);
   if (parked && parked.mode && parked.curPeriod === curPeriod){
     strikes = parked.strikes; streakStart = parked.streakStart; lastShownSec = -1;
+    if (streakStart !== null && parked.lastSeen && Date.now() - parked.lastSeen > 1000) streakStart = Date.now();   // v7.55 (audit)
     paintGame();
     if (parked.mode === "hand") goManual(); else start();
   }
@@ -13809,6 +14012,7 @@ function makeMeter(host, wcfg){
     rebuild: function(){ slider.value = wcfg.limit; paintMark(); paintSens(); paintGame(); },
     resync: function(){ if (analyser && raf === null) raf = requestAnimationFrame(frame); },
     destroy: function(){
+      if (analyser || manual) park();            // v7.55: when it was last seen
       destroyed = true;
       clearInterval(periodTid); clearInterval(manualTid);
       document.removeEventListener("deckhand:workmode", onWorkMode);
@@ -14121,6 +14325,9 @@ function makeDraw(host, wcfg){
   }
   canvas.addEventListener("pointerup", endStroke);
   canvas.addEventListener("pointercancel", endStroke);
+  /* v7.55 (audit): the same guard as the number line — a lost or failed capture ends the stroke */
+  canvas.addEventListener("lostpointercapture", endStroke);
+  window.addEventListener("pointerup", endStroke); window.addEventListener("pointercancel", endStroke);
   return {
     kind: "draw",
     label: function(){ return wcfg.label || "Sketch"; },
@@ -14132,7 +14339,7 @@ function makeDraw(host, wcfg){
     entryActive: function(){ return false; },
     rebuild: function(){ bgSel.value = wcfg.bg; fillLine(); paintBg(); }, resync: function(){},
     setBg: function(k){ if (DRAW_BGS.indexOf(k) !== -1){ wcfg.bg = k; bgSel.value = k; paintBg(); } },   // test hook
-    destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} }
+    destroy: function(){ try { if (ro) ro.disconnect(); } catch(e){} window.removeEventListener("pointerup", endStroke); window.removeEventListener("pointercancel", endStroke); }
   };
 }
 
@@ -14192,6 +14399,10 @@ function embedURL(u){
     return /^https:\/\/www\.youtube-nocookie\.com\/embed\/(?:videoseries\?list=[\w-]{5,64}|[\w-]{5,20}(?:\?list=[\w-]{5,64})?)$/.test(u)
       ? u : "";
   }
+  /* v7.55 (audit): the https-hosted copy blocks an http:// frame as mixed content — the card was
+     silently blank. Ask for https (nearly every site has it); this machine's own server stays. */
+  var onHttps = false; try { onHttps = location.protocol === "https:"; } catch(e){}
+  if (onHttps && /^http:\/\//i.test(u) && !/^http:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?:[:\/?#]|$)/i.test(u)) u = "https://" + u.slice(7);
   return u;
 }
 function makeEmbed(host, wcfg){
@@ -14375,7 +14586,9 @@ function makeEmbed(host, wcfg){
       frame.hidden = false;
       /* compare the ATTRIBUTE — the src property returns a re-serialized
          URL, and a mismatch here would reload the deck on every Apply */
-      if (frame.getAttribute("src") !== u) frame.src = u;
+      /* v7.55 (audit): never while minimized — a deck (or a video in it) with autoplay played from
+         the hidden frame after a reload; show() loads it when the card comes back */
+      if (!wcfg.min && frame.getAttribute("src") !== u) frame.src = u;
     } else {
       empty.hidden = false;
       frame.hidden = true;
@@ -14438,6 +14651,7 @@ function makeEmbed(host, wcfg){
   }
   /* the big paste target in the empty state */
   function bigLoad(){
+    if (Alarm.isOn()) return;                    // v7.55 (audit): the alarm's focus steal — keep the paste (applyInput would refuse it)
     var v = bigIn.value.trim();
     if (!v) return;
     loadURL(v);
@@ -15017,7 +15231,12 @@ var Sea = (function(){
       clearTimeout(timers[n]);
     });
     Object.keys(timers).forEach(function(k){ if (k.indexOf("defer:") === 0){ clearTimeout(timers[k]); delete timers[k]; } });   // v7.11.5: a combo's second half, the gull's 3.2 s, the long press's 800 ms
+    /* v7.55 (audit): the gull's landing (6 s after its approach) and its leaving outlived the
+       clear — it landed on a boat the stage had hidden. A cleared sea has no gull. */
+    clearTimeout(timers.gullLand); delete timers.gullLand;
+    clearTimeout(gullTid); gullTid = null;
     var b = boat();
+    if (b && residents.gull){ residents.gull = false; b.classList.remove("gull"); }
     if (b) ["pennant", "gullIn", "gullOut", "struck", "rippled", "haunted", "wilson", "hop"].forEach(function(c){
       b.classList.remove(c); clearTimeout(timers["boat:" + c]);
     });
@@ -15331,7 +15550,9 @@ var Canvas = (function(){
     /* v7.50: in the pen's column the tabs share the screen's height with the tools (eight others at 56px) */
     var tabs = entries.filter(stageTabbed), shown = tabs;
     var MAX = document.body.classList.contains("inkLeft") ? railSlots() : 5;
-    if (tabs.length > MAX) MAX = Math.max(1, MAX - 1);   // the "+N" takes a slot of its own
+    /* the "+N" takes a slot of its own (v7.55 (audit): with ONE slot in the column, that slot is
+       the "+N" — Math.max(1, …) drew two where one fits) */
+    if (tabs.length > MAX) MAX = Math.max(0, MAX - 1);
     /* the tabs keep their places (a tab must not move under the finger that tapped it). With more
        than five, the cards that are UP keep theirs and the put-away ones give way from the end:
        a card over the slides never lacks its tab. */
@@ -15594,6 +15815,10 @@ var Canvas = (function(){
       });
     }
     if (en){
+      /* v7.55 (audit): a card being dragged when it takes the stage (the bell staging the clock
+         mid-drag) — the drag ends here, or its release clobbered the stage geometry and left
+         the clicker dead */
+      cancelDrag(en);
       focusedEntry = en;
       try { Sea.clear(); } catch(e){}   // stage hides the sea mid-animation:
                                         // end the show cleanly, don't pause it
@@ -15689,7 +15914,9 @@ var Canvas = (function(){
          one-line box, twenty seconds. A clicker's page keys take them back from either at once; a
          clicker that sends the arrows waits this out (the arrows are the caret's in a field). */
       if (typingField(a) && nowT - fieldAt < (a.isContentEditable || a.tagName === "TEXTAREA" ? 90000 : 20000)) return null;
-      if (a.tagName === "SELECT" && nowT - fieldAt < 6000) return null;   // a list just opened
+      /* v7.55 (audit): never from a list — six seconds on, the keeper took the keys from an OPEN
+         dropdown and shut it under the finger. (A clicker press still takes them: giveForClicker.) */
+      if (a.tagName === "SELECT") return null;
       try { if (a.matches(":focus-visible") && a.matches("button, a[href], [role=button], [role=checkbox], summary")) return null; } catch(e){}   // a keyboard user is on a button
     }
     return fr;
@@ -15764,18 +15991,28 @@ var Canvas = (function(){
   function removeWithUndo(en){
     if (!en || en.type === "clock" || cfg.ui.locked) return;
     var sc = activeSceneObj(), w = en.cfg, at = sc.widgets.indexOf(w);
+    /* v7.55 (audit): a timer carried over from another scene is not in this scene's list — an
+       Undo would have put it into the wrong scene. It just goes. */
+    if (en.carried || at === -1){ removeEntry(en); refreshShelf(); return; }
     var name = (w && w.label) || WIDGET_NAMES[en.type] || "Card";
     removeEntry(en); refreshShelf();
     try { Undo.show(name + " removed", function(){
-      if (activeSceneObj() !== sc || sc.widgets.indexOf(w) !== -1 || sc.widgets.length >= 12) return;
+      if (cfg.ui.locked) return;                 // v7.55 (audit): Lock went on in the five seconds — the board is read-only
+      if (activeSceneObj() !== sc || sc.widgets.indexOf(w) !== -1) return;
+      if (sc.widgets.length >= 12){ try { Undo.show("The board is full \u2014 remove a card first", null); } catch(e){} return; }   // v7.55: said, not a silent no-op
       sc.widgets.splice(Math.min(Math.max(at, 0), sc.widgets.length), 0, w);
       var back = buildDynamic(w, false);
+      /* v7.55 (audit): another card on the stage now — it comes back riding over it, with its tab */
+      if (focusedEntry){ back.float = true; back.fromTab = true; }
       select(back); bringToFront(back); refreshDock(); refreshShelf();
     }); } catch(e){}
   }
   function ride(riders){                         // running timers ride over the slides that just took the stage
     riders.forEach(function(r2){
       if (entries.indexOf(r2) === -1 || !(r2.api.running && r2.api.running())) return;
+      /* v7.55 (audit): a running timer brought up from a tab was minimized again by the exit pass
+         (fromTab) and then floated invisible — it comes back first */
+      if (r2.cfg.min) restore(r2, true);
       r2.float = true;
       if (!r2.cfg.pin && !r2.stageBox){
         r2.stageBox = true;
@@ -15846,7 +16083,21 @@ var Canvas = (function(){
       if (emb) ride(riders);
     } else if (d.phase === "reset"){
       if (d.kind === "wrapup") wrapResetAt = Date.now();
-      if (focusedEntry === en) setFocus(null);   // R stands the stage down
+      else bellStage = null;                     // v7.55 (audit): a settle-in stood down forgets the deck it would have handed back
+      if (focusedEntry === en){                  // R stands the stage down
+        /* v7.55 (audit): the wrap-up ended BY THE BELL with the settle-in off — no count follows
+           to hand the room back, so the deck that was up before the wrap-up comes back now
+           (it used to be lost at every bell) */
+        var sOn = true; try { sOn = !!(isObj(cfg.bell.settle) ? cfg.bell.settle : DEFAULT_SETTLE).on; } catch(e){}
+        var back = null;
+        if (d.kind === "wrapup" && d.atBell && !sOn){
+          back = bellStage; bellStage = null;
+          if (back && (entries.indexOf(back) === -1 || back === en)) back = null;
+          if (back && (back.type === "embed" || back.type === "yt") && slidesOffToday()) back = null;
+        }
+        if (back){ if (back.cfg && back.cfg.min) restore(back, true); setFocus(back); }
+        else setFocus(null);
+      }
     }
   });
   var dragging = false;
@@ -15940,6 +16191,7 @@ var Canvas = (function(){
       if (finished) return;
       if (ev && ev.pointerId !== e.pointerId) return;
       teardown();
+      if (en === focusedEntry) return;           // v7.55 (audit): it took the stage mid-drag — the stage's box stands
       /* Lock tapped mid-drag: the board is read-only NOW — discard the
          move instead of committing it into the locked config */
       if (pend && cfg.ui.locked){ applyBox(en); pend = null; }
@@ -16152,7 +16404,7 @@ var Canvas = (function(){
     $("clockWidget").hidden = true;
     entries = keep;
     keep.forEach(function(en){ en.carried = true; en.float = true; bringToFront(en); });
-    selected = null;
+    select(null);                                // v7.55 (audit): strips the carried card's .sel too
   }
   function loadScene(){
     clearScene();
@@ -16254,7 +16506,11 @@ var Canvas = (function(){
        over the "1"). A small clock is an ordinary obstacle, as before. */
     var clockW = sc.widgets.filter(function(b){ return b.type === "clock"; })[0];
     var bigClock = !!(clockW && clockW.w * clockW.h >= 4500);
-    var obstacles = sc.widgets.filter(function(b){ return !(bigClock && b === clockW); });
+    /* v7.55 (audit): a minimized card (a tab) and a stage-only Slides/YouTube card (a pill on
+       the shelf) take no room on the board — they were obstacles here */
+    var obstacles = sc.widgets.filter(function(b){
+      return !(bigClock && b === clockW) && !b.min && !(b.stageOnly && (b.type === "embed" || b.type === "yt"));
+    });
     var clearAt = function(x, y){
       return !obstacles.some(function(b){ return x < b.x + b.w && x + ww > b.x && y < b.y + b.h && y + wh > b.y; });
     };
@@ -16302,8 +16558,11 @@ var Canvas = (function(){
      (en.float — config untouched, so it works while LOCKED and never
      dirties the board); with none, one is created floating in the deck's
      lower-right corner WITHOUT collapsing focus. */
+  /* v7.55 (audit): a timer card whose factory threw has no startSeconds — counting it made the
+     presets a silent no-op */
+  function liveTimer(e){ return e.type === "timer" && e.api && typeof e.api.startSeconds === "function"; }
   function placeSummoned(){
-    var en = entries.filter(function(e){ return e.type === "timer"; })[0];
+    var en = entries.filter(liveTimer)[0];
     if (!en){
       en = addWidget("timer", {
         spot: focusedEntry ? { x: 66, y: 50, w: 31, h: 44 } : null
@@ -16564,7 +16823,7 @@ var Canvas = (function(){
     /* No timer in the scene and no way to make one (locked, or the
        12-widget cap): SAY so — a menu of silent no-op pills reads as
        "broken" mid-lesson (adversarial find) */
-    var hasTimer = entries.some(function(e2){ return e2.type === "timer"; });
+    var hasTimer = entries.some(liveTimer);        // v7.55
     if (!hasTimer && (cfg.ui.locked || activeSceneObj().widgets.length >= 12)){
       Array.prototype.forEach.call(m.querySelectorAll("button"), function(b){
         b.disabled = true;
@@ -17323,6 +17582,7 @@ var Settings = (function(){
         .map(function(s){ return s.trim().slice(0, 40); })
         .filter(function(s){ return s; })
         .slice(0, 80);
+      names = uniqueNames(names);                // v7.55: the same rule as sanitize
       if (names.length) out.push({ period: ta.dataset.period, names: names });
     });
     return out.slice(0, 12);                    // mirror sanitize's cap — no
@@ -17619,12 +17879,19 @@ var Settings = (function(){
     $("importBtn").classList.remove("armed");
     $("importBtn").textContent = "Import a board\u2026";
   }
+  var importNewer = null;                        // v7.55: the release a refused import was saved by
   function parseBoard(text){
     var raw = null;
+    importNewer = null;
     var m = /<script[^>]*id=["']deckhand-config["'][^>]*>([\s\S]*?)<\/script>/i.exec(text);
     try { raw = JSON.parse(m ? m[1] : text); } catch(e){ return null; }
+    /* v7.55 (audit): a board from a NEWER release is refused, as the boot path refuses one
+       (storedNewer) — sanitized down to this file's fields it would silently lose what it has */
+    var ver = isObj(raw) && typeof raw.fileVersion === "string" ? raw.fileVersion : null;
     if (isObj(raw) && isObj(raw.cfg) && !raw.schemaVersion) raw = raw.cfg;   // a saved-board blob {v, savedAt, cfg}
     if (!isObj(raw)) return null;
+    if (typeof raw.appVersion === "string" && (!ver || verNum(raw.appVersion) > verNum(ver))) ver = raw.appVersion;
+    if (ver && verNum(ver) > verNum(DEFAULTS.appVersion)){ importNewer = ver; return null; }
     var mig = migrate(raw);
     if (!isObj(mig) || !Object.keys(mig).length) return null;
     try { return sanitize(mig); } catch(e){ return null; }
@@ -17636,6 +17903,7 @@ var Settings = (function(){
     var rd = new FileReader();
     rd.onload = function(){
       var c = parseBoard(String(rd.result || ""));
+      if (!c && importNewer){ setMsg("That board was saved by Deckhand " + importNewer + ", newer than this file (" + DEFAULTS.appVersion + "). Open the newer Deckhand file and import it there.", false); return; }
       if (!c){ setMsg("That file doesn't hold a Deckhand board. Use the file Export a copy made.", false); return; }
       importPending = c;
       var nR = (c.rosters || []).length, nS = (c.scenes || []).length;
@@ -17819,7 +18087,7 @@ var Settings = (function(){
       if (hits[i].key === "seatingchart.v1" && !r.clash.length){
         var list = [];
         rosterLabels().forEach(function(label){
-          if (r.rosters[label] && r.rosters[label].length) list.push({ period: label, names: r.rosters[label] });
+          if (r.rosters[label] && r.rosters[label].length) list.push({ period: label, names: uniqueNames(r.rosters[label]) });   // v7.55
         });
         list = list.slice(0, 12);
         if (!list.length) continue;
@@ -17992,8 +18260,7 @@ var SaveState = (function(){
     if (suspended) return false;
     var cur = snap();
     if (cur === baseline) return true;
-    if (!Store.ok){ failed = true; paint(); return false; }
-    var okw = Store.write(cfg);
+    var okw = Store.write(cfg);                  // v7.55: tries even when the last one failed (the store answers again)
     if (okw){ baseline = cur; failed = false; lastSaved = new Date(); }
     else failed = true;
     paint();
@@ -18037,13 +18304,16 @@ var SaveState = (function(){
           document.getElementById("verNudgeBells").hidden = true;
           vn0.hidden = false;
         } catch(e){}
-      } else if (Store.ok && cfgSource !== "device" && !fileBroken){
+      } else if (cfgSource !== "device" && !fileBroken){
         if (Store.write(cfg)){ lastSaved = new Date(); cfgSource = "device"; }
+        else failed = true;                      // v7.55 (audit): the first save failed — the dot says so at once (paint below)
       }
       /* v7.5.1: two open copies must not erase each other — a write from another window
          suspends this one and says so */
       window.addEventListener("storage", function(e){
-        if (e.key !== Store.key || e.newValue === null || Store.wroteIt(e.newValue)) return;
+        /* v7.55 (audit): a null newValue is another window's reset ("Use this file's settings")
+           — it used to be ignored, and this window's next flush wrote the old board right back */
+        if (e.key !== Store.key || (e.newValue !== null && Store.wroteIt(e.newValue))) return;
         suspended = true;
         try {
           var vn1 = document.getElementById("verNudge");
@@ -18113,9 +18383,7 @@ var SaveState = (function(){
             vn.hidden = true;
             flush();
           });
-          wireButton(document.getElementById("verNudgeKeep"), function(){
-            vn.hidden = true; flush();
-          });
+          /* v7.55 (audit): × was wired twice (init wires it for every branch of this banner) */
           /* either way the device copy re-stamps to this release — a
              direct write, because flush() is a no-op when nothing changed */
           if (Store.ok && Store.write(cfg)){ baseline = snap(); lastSaved = new Date(); }
@@ -18266,7 +18534,7 @@ var Ink = (function(){
       var b = $(id); if (b) b.setAttribute("aria-pressed", armed ? "true" : "false");
     });
     if (armed){ fit(); paintBar(); }
-    else if (cur){ endStroke(); }
+    else if (cur || pid !== null){ endStroke(); }   // v7.55: a pointer still down is let go too
   }
   /* v7.15 (Croix, after class: "It was awkward to walk over, clear the screen, click done,
      collapse the bar, click back into the slides frame, to continue the lesson"): leaving the
@@ -18313,9 +18581,16 @@ var Ink = (function(){
     cur.pts.push({ x: e.clientX, y: e.clientY });
     advance();
   }
+  /* v7.55 (audit): `pid` was only let go inside endStroke, reached only with a stroke under way —
+     Clear (or Ink.clear()) mid-stroke set cur = null, the up was then ignored and the pen was
+     dead for the session. The pointer is checked first; its release always frees the pen. */
   function up(e){
-    if (!cur || e.pointerId !== pid) return;
+    if (pid === null || e.pointerId !== pid) return;
     endStroke();
+  }
+  function dropStroke(){                         // a clear mid-stroke: the stroke goes, the pen stays live
+    cur = null;
+    if (pid !== null){ try { cv.releasePointerCapture(pid); } catch(_){} pid = null; }
   }
   return {
     init: function(){
@@ -18336,7 +18611,7 @@ var Ink = (function(){
         else if (b.dataset.size){ size = +b.dataset.size; }
         else if (b.id === "inkEraser"){ erase = !erase; }
         else if (b.id === "inkUndo"){ strokes.pop(); redraw(); }
-        else if (b.id === "inkClear"){ strokes = []; cur = null; redraw(); }
+        else if (b.id === "inkClear"){ strokes = []; dropStroke(); redraw(); }
         else if (b.id === "inkDone"){ finish(); return; }
         else if (b.id === "inkSide"){ cfg.ui.inkSide = cfg.ui.inkSide === "right" ? "left" : "right"; side(); }   // v7.28
         paintBar();
@@ -18350,7 +18625,7 @@ var Ink = (function(){
     side: side,                                  // v7.28: re-read cfg.ui.inkSide
     arm: arm,
     isArmed: function(){ return armed; },
-    clear: function(){ strokes = []; cur = null; redraw(); },
+    clear: function(){ strokes = []; dropStroke(); redraw(); },
     count: function(){ return strokes.length; },  // test hook
     stats: function(){ return { full: stats.full, seg: stats.seg }; }   // test hook (v7.6)
   };
@@ -18460,7 +18735,8 @@ var CcardPop = (function(){
     paintReminder();
     /* the keyboard comes to the reminder: with the slides holding it the clicker would turn pages
        behind this and Escape would never get here. Someone typing keeps their place. */
-    if (!typing(document.activeElement)){ try { rem.focus({ preventScroll: true }); } catch(e){} }
+    var setOpen = false; try { setOpen = Settings.isOpen(); } catch(e){}
+    if (!typing(document.activeElement) && !setOpen){ try { rem.focus({ preventScroll: true }); } catch(e){} }   // v7.55 (audit): never out of Settings
     if (!byHand){ try { Sound.soft(); } catch(e){} }
     return true;
   }
@@ -18541,6 +18817,8 @@ var CcardPop = (function(){
         if (!$("ccRemFull").hidden && (e.key === "Escape" || e.key === "Enter" || e.key === " " || isClickerKey(e.key))){   // v7.42: the clicker too
           if (e.key !== "Escape" && e.target && e.target.closest && e.target.closest(".ccRemName")) return;   // the keyboard on a name checks it off
           if (e.key !== "Escape" && typing(e.target)) return;   // someone is typing: only Escape is the reminder's
+          var setOpen = false; try { setOpen = Settings.isOpen(); } catch(_){}
+          if (e.key !== "Escape" && setOpen) return;            // v7.55 (audit): Settings is open — its buttons keep Enter and Space
           hideReminder(); e.stopPropagation(); e.preventDefault(); return;
         }
         if (open && (e.key === "Escape" || (isClickerKey(e.key) && !typing(e.target)))){ show(false); e.stopPropagation(); e.preventDefault(); }   // v7.42: the clicker puts the sheet away
@@ -18722,9 +19000,14 @@ var PickPop = (function(){
     if (!open || spinTid || groupBusy()) return;
     if (run){ endRun(); refBtn(shown ? { p: shown.p, name: shown.name, num: shown.num } : null); arm(); return; }   // (the card drains again)
     if (group && group.length && !groupBusy()){   // v7.53: the whole group, in order, is problems 1…N
-      run = { p: group[0].p, next: group.length + 1 };
+      /* v7.55 (audit): only the lines with a name are numbered — an empty spot (nobody left to
+         roll into it) was a numbered blank line on the board */
+      var named = group.filter(function(g){ return g.name; });
+      group.forEach(function(g){ if (!g.name) g.num = null; });
+      if (!named.length){ arm(); return; }
+      run = { p: group[0].p, next: named.length + 1 };
       BoardList.start(group[0].p);
-      group.forEach(function(g, i){ g.num = i + 1; BoardList.add(g.num, g.name); });
+      named.forEach(function(g, i){ g.num = i + 1; BoardList.add(g.num, g.name); });
       refBtn(null); arm(); return;
     }
     if (!shown) return;
@@ -18835,17 +19118,23 @@ var PickPop = (function(){
     if (num != null && BoardList.period() === p){ BoardList.drop(num); if (run && run.p === p) run.next = num; }   // v7.46: off the list; in a run their number goes to the next pick
     pickerBack(p, n);
     holdRun = !!run;
-    show(false, false, true);                     // the sheet takes the keys next
-    try {
-      CcardPop.flash(p, n, r, function(){
-        if (r && CcToday.peek(p)[n] === r.next) ccardSet(p, n, r.prev);
-        pickerTakeBack(p, n);
-        if (num != null && BoardList.period() === p && BoardList.last() < num){   // their number is still free
-          BoardList.add(num, n);
-          if (run && run.p === p && run.next === num) run.next = num + 1;
-        }
-      });
-    } catch(e){}
+    var undoRefusal = function(){
+      if (r && CcToday.peek(p)[n] === r.next) ccardSet(p, n, r.prev);
+      pickerTakeBack(p, n);
+      if (num != null && BoardList.period() === p && BoardList.last() < num){   // their number is still free
+        BoardList.add(num, n);
+        if (run && run.p === p && run.next === num) run.next = num + 1;
+      }
+    };
+    /* v7.55 (audit): the comment cards cannot come up here (the pen is out, the screen is too
+       small): the strike was applied with no sheet and no way back. The Undo toast says it. */
+    var canSheet = false; try { canSheet = CcardPop.canOpen(); } catch(e){}
+    show(false, false, !!canSheet);               // the sheet takes the keys next
+    var shown2 = false;
+    if (canSheet){ try { shown2 = CcardPop.flash(p, n, r, undoRefusal) !== false; } catch(e){} }
+    if (!shown2){
+      try { Undo.show(r ? n + " \u2014 " + ccardSay(r.next) + " (refused)" : n + " \u2014 nine cards is the most.", r ? undoRefusal : null); } catch(e){}
+    }
   }
   /* ---- v7.53 a group of names (Croix: "multi pick a number, like 4 or 5, and it would do the dramatic
      roll with the wheel… instead of me having to click it that many times"; "a way to reroll an
@@ -19226,11 +19515,12 @@ var Keys = (function(){
       return;
     }
 
-    if (e.repeat) return;   // held keys must not strobe start/pause/mode
-
-    // 2. settings dialog: trap Tab inside it regardless of focus target
+    // 2. settings dialog: trap Tab inside it regardless of focus target. v7.55 (audit): ABOVE the
+    // repeat guard — a held Tab's repeats returned early and walked out of the trap.
     if (Settings.isOpen() && k === "Tab"){ Settings.trapTab(e); return; }
     if (DayEditor.isOpen()) return;              // the sheet handles its own keys
+
+    if (e.repeat) return;   // held keys must not strobe start/pause/mode
 
     // 3. typing in a form field: let it type; Esc closes settings.
     // Board selects (scene, period) are the exception: they take no typed

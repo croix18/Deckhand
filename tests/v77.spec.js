@@ -165,7 +165,10 @@ test.describe("v7.7 one chrome bar", () => {
     await page.click("#sceneNewBtn");
     await page.click("#clockWidget .wClose");
     ok(!(await page.evaluate(() => window.Deckhand.canvas.clockMounted())), "clock still mounted");
-    await page.waitForTimeout(9000);                    // 10:16 comes and goes (negative check)
+    /* v7.55 (audit): 10:16 comes and goes on the board's clock (shiftClock), not 9 s of real time */
+    await page.evaluate(() => window.Deckhand.shiftClock(9000));
+    await expect.poll(() => page.evaluate(() => { const n = window.Deckhand.now(); return n.getHours() * 60 + n.getMinutes(); }), { timeout: 3000 }).toBeGreaterThanOrEqual(10 * 60 + 16);
+    await page.waitForTimeout(700);                     // a few clock ticks past the bell (negative check)
     ok(!(await page.evaluate(() => window.Deckhand.settle.live())), "the moment ran with no clock on the board");
     ok(!(await page.evaluate(() => document.body.classList.contains("focusMode"))), "something was staged");
     // back on the Daily Board a manual run works; ✕ on the clock stands it down
