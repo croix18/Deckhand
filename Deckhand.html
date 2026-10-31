@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.52.0",
+  "appVersion": "7.53.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2252,15 +2252,39 @@
   .pkPopBtns .btn:disabled{opacity:.32; cursor:default;}
   .pkPopBtns .btn:not(:disabled):active{transform:scale(.97);}
   .pkPopGo{background:var(--turq); color:var(--navy); font-size:21px; padding:0 36px; min-width:220px;}
-  .pkPopRef, .pkPopBd{background:rgba(23,50,77,.07); color:var(--navy); justify-self:stretch; padding:0 14px;}
-  .pkPopRef{justify-self:end;}
+  .pkPopRef, .pkPopAbs, .pkPopBd{background:rgba(23,50,77,.07); color:var(--navy); justify-self:stretch; padding:0 14px;}
+  .pkPopQuiet{display:flex; gap:8px; justify-self:end; min-width:0;}
+  .pkPopQuiet .btn{flex:1 1 0; min-width:0;}
   .pkPopBd{justify-self:start;}
-  .pkPopRef, .pkPopBd{min-width:0; white-space:nowrap;}
+  .pkPopRef, .pkPopAbs, .pkPopBd{min-width:0; white-space:nowrap;}
   @media (max-width: 1440px){                     /* a narrower screen (1366 included): the primary on its own row, the quiet pair under it */
     .pkPopBtns{grid-template-columns:1fr 1fr;}
     .pkPopGo{grid-column:1 / -1; grid-row:1; justify-self:center;}
-    .pkPopRef{justify-self:stretch;} .pkPopBd{justify-self:stretch;}
+    .pkPopQuiet{justify-self:stretch;} .pkPopBd{justify-self:stretch;}
   }
+  /* v7.53 (Croix: "multi pick a number, like 4 or 5, and it would do the dramatic roll… for that number of
+     names"): the count, a quiet row of digits in the head; the group, one line per name, each with its
+     own Absent and a ↻ for that name alone */
+  .pkPopN{display:flex; gap:2px; background:rgba(23,50,77,.06); border-radius:999px; padding:3px;}
+  .pkPopN button{border:0; background:none; color:rgba(23,50,77,.55); font:inherit; font-weight:800; font-size:14px; width:30px; height:30px; border-radius:999px; cursor:pointer; padding:0;}
+  .pkPopN button[aria-pressed="true"]{background:var(--white); color:var(--teal); box-shadow:0 1px 3px rgba(23,50,77,.18);}
+  @media (hover:hover){ .pkPopN button:not([aria-pressed="true"]):hover{color:var(--navy);} }
+  .pkPopGroup{display:flex; flex-direction:column; width:100%; gap:2px; margin:4px 0 6px;}
+  .pkPopGroup[hidden]{display:none;}
+  .pkSlot{display:flex; align-items:center; gap:14px; width:100%; min-height:48px; padding:2px 0 2px 6px; border-radius:14px;}
+  .pkSlot + .pkSlot{border-top:1px solid rgba(23,50,77,.07);}
+  .pkSlotNum{flex:none; min-width:1.4em; font-weight:800; font-size:19px; color:rgba(23,50,77,.5); font-variant-numeric:tabular-nums; text-align:right;}
+  .pkSlotNum:empty{display:none;}
+  .pkSlotName{flex:1 1 0; min-width:0; font-weight:800; color:var(--navy); line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.015em; text-align:left;}
+  .pkSlotName.spin{color:var(--teal); opacity:.8;}
+  .pkSlotName.in{animation:pkIn .22s cubic-bezier(.2,.9,.3,1.15);}
+  .pkSlotBtns{flex:none; display:flex; gap:6px; opacity:0; transition:opacity .15s;}
+  .pkSlot.on .pkSlotBtns{opacity:1;}
+  .pkSlotBtns .btn{min-height:40px; font-size:15px; font-weight:800; padding:0 14px; border-radius:12px; background:rgba(23,50,77,.07); color:var(--navy);}
+  .pkSlotBtns .pkSlotRe{min-width:44px; padding:0 10px;}
+  .pkSlotBtns .pkSlotRe svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
+  .pkSlotBtns .btn:disabled{opacity:.32; cursor:default;}
+  @media (hover:hover){ .pkSlotBtns .btn:not(:disabled):hover{background:rgba(23,50,77,.12);} }
   .pkPopBd.on{background:var(--paleturq); color:var(--teal);}
   @media (hover:hover){ .pkPopRef:not(:disabled):hover, .pkPopBd:not(:disabled):hover{background:rgba(23,50,77,.12);} }
   /* v7.46.3 the board list, set with restraint (Croix: 7.46.1's navy band was "scary", 7.46.2's outlined
@@ -4759,12 +4783,16 @@
 <div id="bdList" role="status" aria-label="At the board" hidden><ol class="bdItems"></ol><button type="button" class="bdX" aria-label="Clear the board list">&#x2715;</button></div>
 <!-- v7.47: a card where nothing moves — every slot is there from the start; buttons dim, never vanish -->
 <div id="pkPop" role="dialog" aria-label="Name picker" tabindex="-1" hidden>
-  <div class="pkPopHead"><span class="pkPopPer"></span><span class="pkPopLeft"></span><button type="button" class="ccLogX pkPopX" aria-label="Close">&#x2715;</button></div>
+  <div class="pkPopHead"><span class="pkPopPer"></span>
+    <!-- v7.53: how many names a pick draws — one roll per name -->
+    <div class="pkPopN" role="group" aria-label="How many names"><button type="button" data-n="1" aria-pressed="true">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button><button type="button" data-n="5">5</button><button type="button" data-n="6">6</button></div>
+    <span class="pkPopLeft"></span><button type="button" class="ccLogX pkPopX" aria-label="Close">&#x2715;</button></div>
   <div class="pkPopNum" aria-live="polite"></div>
   <div class="pkPopName" role="status"></div>
+  <div class="pkPopGroup" role="list" aria-label="The names" hidden></div>
   <div class="wEmpty pkPopEmpty"></div>
   <div class="pkPopBtns">
-    <button type="button" class="btn pkPopRef" disabled>Refused</button>
+    <div class="pkPopQuiet"><button type="button" class="btn pkPopRef" disabled>Refused</button><button type="button" class="btn pkPopAbs" disabled>Absent</button></div>
     <button type="button" class="btn pkPopGo">Pick another</button>
     <button type="button" class="btn pkPopBd" disabled>Problem #1</button>
   </div>
@@ -4872,7 +4900,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.52.0",
+  appVersion: "7.53.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -5291,7 +5319,8 @@ function sanitize(c){
           npPos: isObj(u.npPos) && typeof u.npPos.x === "number" && typeof u.npPos.y === "number" && isFinite(u.npPos.x) && isFinite(u.npPos.y)
             ? { x: Math.max(0, Math.min(1, u.npPos.x)), y: Math.max(0, Math.min(1, u.npPos.y)) } : null,   // v7.28: where the Now Playing pill sits
           inkSide: u.inkSide === "right" ? "right" : "left",    // v7.28: the pen tools' side
-          slidesOff: typeof u.slidesOff === "string" && /^\d{4}-\d{2}-\d{2}$/.test(u.slidesOff) ? u.slidesOff : "" },   // v7.45: the day the slides were turned off
+          slidesOff: typeof u.slidesOff === "string" && /^\d{4}-\d{2}-\d{2}$/.test(u.slidesOff) ? u.slidesOff : "",   // v7.45: the day the slides were turned off
+          pickN: [1, 2, 3, 4, 5, 6].indexOf(u.pickN) !== -1 ? u.pickN : 1 },   // v7.53: how many names the quick-draw picks
     activeScene: activeScene,
     scenes: scenes,
     rosters: rosters,
@@ -18617,6 +18646,7 @@ var BoardList = (function(){
     start: function(p){ items = []; per = p; paint(); },
     add: function(num, name){ items.push({ num: num, name: name }); paint(); },
     drop: function(num){ items = items.filter(function(it){ return it.num !== num; }); paint(); },   // (empty, it hides; the run goes on)
+    replace: function(num, name){ items.forEach(function(it){ if (it.num === num) it.name = name; }); paint(); },   // v7.53: the same problem, another student
     last: function(){ return items.length ? items[items.length - 1].num : 0; },
     period: function(){ return per; },
     clear: clear,
@@ -18672,20 +18702,31 @@ var PickPop = (function(){
      slot starts a list ("Problem #1") and, in a run, ends it ("Done numbering") */
   function refBtn(who){
     shown = who || null;
-    var ref = pop.querySelector(".pkPopRef"), bd = pop.querySelector(".pkPopBd"), go = pop.querySelector(".pkPopGo");
-    ref.disabled = !shown;
-    go.disabled = !!spinTid;
+    var ref = pop.querySelector(".pkPopRef"), abs = pop.querySelector(".pkPopAbs"), bd = pop.querySelector(".pkPopBd"), go = pop.querySelector(".pkPopGo");
+    var busy = !!spinTid || groupBusy();
+    ref.disabled = !shown; abs.disabled = !shown;
+    pop.querySelector(".pkPopQuiet").style.visibility = group ? "hidden" : "";   // a group's lines carry their own Absent and ↻ (the slot keeps the primary in place)
+    go.disabled = busy;
+    go.textContent = count > 1 ? "Pick " + count : "Pick another";
+    var fresh = shown ? shown.num == null : !!(group && group.length && group.every(function(g){ return g.num == null; }));
     if (run){ bd.textContent = "Done numbering"; bd.classList.add("on"); bd.disabled = false; }
-    else { bd.textContent = "Problem #1"; bd.classList.remove("on"); bd.disabled = !shown || shown.num != null; }
+    else { bd.textContent = group ? "Problems #1\u2013" + group.length : "Problem #1"; bd.classList.remove("on"); bd.disabled = busy || !fresh; }
     pop.querySelector(".pkPopNum").textContent = shown && shown.num != null ? "Problem " + shown.num : "";
+    if (group) group.forEach(function(g){ g.el.querySelector(".pkSlotNum").textContent = g.num != null ? String(g.num) : ""; });
   }
   function endRun(){ run = null; }
   var holdRun = false, heldAt = 0;               // Refused closes the picker without ending the numbering (for two minutes)
   /* "Problem #1": this name starts a new board list (any list up is replaced); "Done numbering" ends
      the run and leaves the list up for the students at the board */
   function toBoard(){
-    if (!open || spinTid) return;
+    if (!open || spinTid || groupBusy()) return;
     if (run){ endRun(); refBtn(shown ? { p: shown.p, name: shown.name, num: shown.num } : null); arm(); return; }   // (the card drains again)
+    if (group && group.length && !groupBusy()){   // v7.53: the whole group, in order, is problems 1…N
+      run = { p: group[0].p, next: group.length + 1 };
+      BoardList.start(group[0].p);
+      group.forEach(function(g, i){ g.num = i + 1; BoardList.add(g.num, g.name); });
+      refBtn(null); arm(); return;
+    }
     if (!shown) return;
     run = { p: shown.p, next: 2 };
     BoardList.start(shown.p);
@@ -18694,7 +18735,7 @@ var PickPop = (function(){
     arm();                                        // (in a run the name stays until the picker is put away)
   }
   function say(msg){
-    stopSpin();
+    stopSpin(); clearGroup();
     refBtn(null);
     nameEl.textContent = "";
     pop.querySelector(".pkPopEmpty").textContent = msg;
@@ -18708,7 +18749,7 @@ var PickPop = (function(){
   }
   var landedAt = 0, byTouch = false;
   function pick(){
-    if (!open || spinTid) return;                 // one shuffle at a time
+    if (!open || spinTid || groupBusy()) return;  // one shuffle at a time
     if (byTouch && Date.now() - landedAt < 350) return;   // a finger's double tap right after a name landed (no shuffle to wait out): one name, not two
     period = quickPeriod();
     pop.querySelector(".pkPopPer").textContent = period || "No class";
@@ -18716,6 +18757,8 @@ var PickPop = (function(){
       say(cfg.rosters.length ? "No roster for this period." : "Add class rosters in Settings.");
       arm(); return;
     }
+    if (count > 1){ pickGroup(); return; }         // v7.53
+    clearGroup();
     var d = pickerDraw(period);
     if (!d){ say("Everyone is marked absent."); arm(); return; }
     pop.querySelector(".pkPopEmpty").textContent = "";
@@ -18771,6 +18814,7 @@ var PickPop = (function(){
     refBtn(null);
     if (holdRun){ holdRun = false; heldAt = Date.now(); } else endRun();   // v7.46: any close but Refused ends the numbering
     if (pending){ pickerUndraw(pending.p, pending.name); pending = null; }   // put away mid-shuffle: nobody saw the name, so nobody loses a turn
+    clearGroup();
     if (auto){
       /* it put itself away: a finger already on its way to "Pick another" lands on nothing, not on the slide */
       scrim.hidden = false; scrim.classList.add("ghost");
@@ -18803,6 +18847,139 @@ var PickPop = (function(){
       });
     } catch(e){}
   }
+  /* ---- v7.53 a group of names (Croix: "multi pick a number, like 4 or 5, and it would do the dramatic
+     roll with the wheel… instead of me having to click it that many times"; "a way to reroll an
+     individual but not the whole group"; and Absent, "on the individual roll" and in the group) ---- */
+  var count = 1;                                  // how many a pick draws (cfg.ui.pickN)
+  var group = null;                               // [{p, name, num, el, tid}] — the names up, one line each
+  var groupEl = null;
+  function groupBusy(){ return !!(group && group.some(function(g){ return g.tid; })); }
+  function clearGroup(){
+    if (group) group.forEach(function(g){ if (g.tid){ clearInterval(g.tid); if (g.name) pickerUndraw(g.p, g.name); } });   // mid-roll: nobody saw it, nobody loses a turn
+    group = null; if (groupEl){ groupEl.hidden = true; groupEl.textContent = ""; }
+  }
+  /* the next name for this group: never one already on its lines (a fresh round mid-group could repeat one) */
+  function drawFor(p, taken){
+    var d = null, back = [];
+    for (var guard = 0; guard < 12; guard++){
+      d = pickerDraw(p); if (!d) break;
+      if (taken.indexOf(d.name) === -1 || taken.length >= Absent.presentFor(p).length) break;
+      back.push(d.name); d = null;
+    }
+    back.forEach(function(n){ pickerUndraw(p, n); });
+    return d;
+  }
+  var slotF = 44;
+  function fitGroup(n){
+    slotF = Math.round(Math.max(26, Math.min(fClass * (n <= 2 ? 0.7 : n <= 4 ? 0.5 : 0.4), (pop.clientWidth - 300) / 9)));
+    groupEl.style.setProperty("--pkSlotF", slotF + "px");
+  }
+  function slotName(g, n){
+    var t = g.el.querySelector(".pkSlotName"); t.textContent = n;   // user data: textContent only
+    var w = widths[n], room = Math.max(120, pop.clientWidth - 72 - 230);
+    t.style.fontSize = Math.max(20, Math.min(slotF, w ? room / (w / 100) : slotF)).toFixed(0) + "px";
+  }
+  function makeSlot(){
+    var el = document.createElement("div"); el.className = "pkSlot"; el.setAttribute("role", "listitem");
+    el.innerHTML = '<span class="pkSlotNum"></span><span class="pkSlotName" role="status"></span><span class="pkSlotBtns">' +
+      '<button type="button" class="btn pkSlotAbs" disabled>Absent</button>' +
+      '<button type="button" class="btn pkSlotRe" disabled aria-label="Pick someone else for this spot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><polyline points="20 4 20 9 15 9"/></svg></button></span>';
+    groupEl.appendChild(el);
+    return el;
+  }
+  /* one line rolls: the shuffle, then the name lands, is committed and (in a run) numbered. `num` is
+     kept when a line is re-rolled — the same problem, another student. */
+  function roll(g, names, ms, after){
+    var p = g.p, d = drawFor(p, group.filter(function(o){ return o !== g && o.name; }).map(function(o){ return o.name; }));
+    if (!d){ slotName(g, ""); g.name = null; if (after) after(); return; }
+    g.name = d.name; g.el.classList.remove("on");
+    var t = g.el.querySelector(".pkSlotName"); t.classList.remove("in");
+    var land = function(){
+      if (g.tid){ clearInterval(g.tid); g.tid = null; }
+      t.classList.remove("spin"); t.removeAttribute("aria-busy");
+      slotName(g, d.name); pickerCommit(p, d.name);
+      if (g.num != null && BoardList.period() === p) BoardList.replace(g.num, d.name);
+      else if (run && run.p === p && BoardList.period() === p){ g.num = run.next++; BoardList.add(g.num, d.name); }
+      g.el.classList.add("on"); g.el.querySelectorAll("button").forEach(function(b){ b.disabled = false; });
+      t.classList.remove("in"); void t.offsetWidth; t.classList.add("in");
+      landedAt = Date.now(); paintLeft(); refBtn(null);
+      if (after) after();
+    };
+    if ((REDUCED && !T.force) || ms <= 0){ land(); return; }
+    var t0 = Date.now();
+    t.classList.add("spin"); t.setAttribute("aria-busy", "true");
+    g.tid = setInterval(function(){
+      if (Date.now() - t0 > ms) land();
+      else slotName(g, names[Math.floor(Math.random() * names.length)]);
+    }, 70);
+
+    refBtn(null);                                 // while a line rolls, the buttons wait
+  }
+  function pickGroup(){
+    clearGroup();
+    var p = period, names = Absent.presentFor(p);
+    var n = Math.min(count, names.length);
+    if (!n){ say("Everyone is marked absent."); arm(); return; }
+    pop.querySelector(".pkPopEmpty").textContent = "";
+    pop.querySelector(".pkPopBtns").hidden = false;
+    pop.querySelector(".pkPopNum").hidden = false;
+    nameEl.textContent = ""; nameEl.classList.remove("in");
+    fit(names); fitGroup(n);
+    clearTimeout(closeTid); pop.classList.remove("live");
+    groupEl.hidden = false;
+    group = [];
+    for (var i = 0; i < n; i++){
+      var g = { p: p, name: null, num: null, el: makeSlot(), tid: null };
+      group.push(g);
+      wireButton(g.el.querySelector(".pkSlotAbs"), absentSlot.bind(null, g));
+      wireButton(g.el.querySelector(".pkSlotRe"), rerollSlot.bind(null, g));
+    }
+    if (run && run.p !== p) run = null;
+    refBtn(null); paintLeft();
+    /* one after another — the first roll at full length, the rest shorter, each landing before the next starts */
+    var i2 = 0, next = function(){
+      if (!group || i2 >= group.length){ arm(); return; }
+      var ms = i2 === 0 ? T.spin : Math.max(0, Math.min(T.spin, 450));
+      roll(group[i2++], names, ms, next);
+    };
+    next();
+  }
+  /* a line's ↻: that student goes back into the round and another rolls into the spot (their problem number too) */
+  function rerollSlot(g){
+    if (!open || !group || g.tid || groupBusy() || !g.name) return;
+    pickerBack(g.p, g.name); g.name = null;
+    g.el.querySelectorAll("button").forEach(function(b){ b.disabled = true; });
+    refBtn(null);
+    roll(g, Absent.presentFor(g.p), Math.min(T.spin, 450), function(){ arm(); });
+  }
+  /* Absent: out for the rest of the day (the roster's mark — a tap on their tile un-marks them), their turn
+     kept for when they are back; another student rolls into the spot */
+  function absentSlot(g){
+    if (!open || !group || g.tid || groupBusy() || !g.name) return;
+    var p = g.p, n = g.name;
+    if (!Absent.isOut(p, n)) Absent.toggle(p, n);
+    pickerBack(p, n); g.name = null;
+    try { document.dispatchEvent(new CustomEvent("deckhand:absent")); } catch(e){}
+    g.el.querySelectorAll("button").forEach(function(b){ b.disabled = true; });
+    refBtn(null); paintLeft();
+    roll(g, Absent.presentFor(p), Math.min(T.spin, 450), function(){ arm(); });
+  }
+  function absentOne(){                           // the single name's Absent: the same, then the next name rolls in
+    if (!open || !shown || spinTid) return;
+    var p = shown.p, n = shown.name, num = shown.num;
+    if (!Absent.isOut(p, n)) Absent.toggle(p, n);
+    pickerBack(p, n);
+    try { document.dispatchEvent(new CustomEvent("deckhand:absent")); } catch(e){}
+    if (num != null && BoardList.period() === p){ BoardList.drop(num); if (run && run.p === p) run.next = num; }   // their problem goes to the next name
+    refBtn(null); paintLeft();
+    pick();
+  }
+  function setCount(n){
+    n = Math.max(1, Math.min(6, n | 0)) || 1;
+    count = n; cfg.ui.pickN = n;
+    pop.querySelectorAll(".pkPopN button").forEach(function(b){ b.setAttribute("aria-pressed", +b.dataset.n === n ? "true" : "false"); });
+    if (open) refBtn(shown);
+  }
   function go(){                                  // the blob, "Pick another", Space
     if (!open && run && heldAt && Date.now() - heldAt > 120000) endRun();   // back long after a refusal: a plain pick
     if (!open){ heldAt = 0; show(true); }
@@ -18811,7 +18988,10 @@ var PickPop = (function(){
   }
   return {
     init: function(){
-      blob = $("pkBlob"); pop = $("pkPop"); scrim = $("pkScrim"); nameEl = pop.querySelector(".pkPopName");
+      blob = $("pkBlob"); pop = $("pkPop"); scrim = $("pkScrim"); nameEl = pop.querySelector(".pkPopName"); groupEl = pop.querySelector(".pkPopGroup");
+      setCount(cfg.ui && cfg.ui.pickN);           // v7.53
+      pop.querySelectorAll(".pkPopN button").forEach(function(b){ wireButton(b, function(){ setCount(+b.dataset.n); try { pop.focus({ preventScroll: true }); } catch(e){} }); });
+      wireButton(pop.querySelector(".pkPopAbs"), absentOne);
       try { small = window.matchMedia("(max-width: 780px), (max-height: 540px)"); } catch(e){ small = null; }
       wireButton(blob, go);
       wireButton(pop.querySelector(".pkPopGo"), go);
@@ -18850,7 +19030,10 @@ var PickPop = (function(){
       document.addEventListener("keydown", function(e){     // only when the board (not a deck) has the keys
         if (!open) return;
         try { if (Alarm.isOn() || CcardPop.reminding()) return; } catch(_){}
-        if (e.key === "Escape" || isClickerKey(e.key)){ endRun(); show(false); e.stopPropagation(); e.preventDefault(); return; }   // v7.42: the clicker puts the name away
+        if (e.key === "Escape" || isClickerKey(e.key)){
+          if (isClickerKey(e.key)) BoardList.clear();   // v7.53 (Croix: "when I click the next slide button… the names clear like the drawings do")
+          endRun(); show(false); e.stopPropagation(); e.preventDefault(); return;   // v7.42: the clicker puts the name away
+        }
         /* Space picks the next (as on the card) — one press, one name; Enter stays the timer's */
         if (e.key === " " && !(e.target && e.target.closest && e.target.closest("button, input, textarea, select, [contenteditable]"))){
           e.stopPropagation(); e.preventDefault();
@@ -19208,6 +19391,7 @@ window.Deckhand = {
   seaModule: Sea,                               // v7.5: the director, weather, plan(), residents (tests + the aquarium)
   canvas: Canvas,                               // v7.5: timerRunning() for the sea's director (tests)
   absent: Absent,                               // v7.6: date-keyed marks (tests)
+  dayStore: DayStore,                           // v7.53: the tools' day state (tests)
   settle: Settle,                               // v7.7: the settle-in, a moment of the clock (tests)
   wrapup: Wrapup,                               // v7.14: the wrap-up at the bell (tests)
   flash: Flash,                                 // v7.18: the minutes-left flash (tests)

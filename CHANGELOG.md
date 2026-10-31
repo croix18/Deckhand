@@ -2,6 +2,27 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.53.0 — 2026-10-31
+
+**The name picker picks a group.** Croix: "Can I get an option to multi pick a number, like 4 or 5, and
+it would do the dramatic roll with the wheel… for that number of names instead of me having to click
+it that many times. Also, I need a way on the individual roll to say absent. Also, on the multi select,
+I'd like a way to reroll an individual but not the whole group. Also, when I click the next slide button
+on the clicker, I would like the names to clear like the drawings do."
+
+- A count (1–6) in the card's head. Pick 4 rolls four names one after another, each landing before
+  the next starts, every one off the round. "Problems #1–4" numbers them all for the board list; in a
+  run, the next pick numbers on.
+- Each line has its own **Absent** and **↻**. ↻ puts that student back into the round and rolls
+  someone else into the spot — the other lines stay, and the spot keeps its problem number (the board
+  list follows). Absent marks the student out for the rest of the day (the roster's mark, so their tile
+  un-marks them), keeps their turn, and rolls someone else in.
+- The single name has **Absent** too, beside Refused: out for the day, and the next name rolls in with
+  the same problem number.
+- The clicker's press puts the names away — the card and the board list both, like the ink. Escape
+  and ✕ still leave the list up for the students at the board. (Once the slides have the keys, the
+  board never sees the clicker, so the list clears on the press that closes the picker.)
+
 ## 7.52.0 — 2026-10-31
 
 **The stage-only deck's way out.** Croix: an embed from a finished unit "triggers at the bell. If I
