@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.55.0",
+  "appVersion": "7.56.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1058,6 +1058,38 @@
   @keyframes lScuttle{0%, 100%{transform:none;} 50%{transform:translateY(-1.5px);}}
   #lunchArt .lGhost.go{animation:lBoo 1.4s cubic-bezier(.3,.8,.4,1) !important;}
   @keyframes lBoo{0%{transform:translate(10px, 40px);} 25%{transform:translate(-34px, -42px) scale(1.12) rotate(-10deg);} 70%{transform:translate(-30px, -36px) rotate(-6deg);} 100%{transform:translate(10px, 40px);}}
+
+  /* v7.56 (Croix: "Halloween is over so I need a fall theme"): the lunch, gone fall — the
+     October swaps' structure exactly (.nvOnly / .nvNot under body.november). A slice of
+     pumpkin pie with a dollop where the cookie was (the three bites come out of the crust),
+     a mug of cider with a cinnamon stick where the carton was (it still slurps, and the
+     steam rises), and a rust tray. The sandwich and the apple stay: they're already fall. */
+  #lunchArt .nvOnly{display:none;}
+  body.november #lunchArt .nvOnly{display:inline;}
+  body.november #lunchArt .nvNot{display:none;}
+  body.november #lunchArt .lTrayBody{fill:var(--nov);}
+  body.november #lunchArt .lTrayShine{stroke:#D9875E;}
+  #lunchArt .lPieTop{fill:#C9772F; stroke:var(--navy); stroke-width:4; stroke-linejoin:round;}
+  #lunchArt .lPieSide{fill:#B5652A; stroke:var(--navy); stroke-width:4; stroke-linejoin:round;}
+  #lunchArt .lPieCrust{fill:var(--novGold); stroke:var(--navy); stroke-width:4; stroke-linejoin:round;}
+  #lunchArt .lPieCrimp{fill:none; stroke:#C99440; stroke-width:2.4; stroke-linecap:round;}
+  #lunchArt .lCream{fill:var(--white); stroke:var(--navy); stroke-width:3; stroke-linejoin:round;}
+  #lunchArt .lCreamSwirl{fill:none; stroke:var(--navy); stroke-width:2; stroke-linecap:round; opacity:.35;}
+  #lunchArt .lMugRim{fill:var(--white); stroke:var(--navy); stroke-width:4;}
+  #lunchArt .lCider{fill:var(--novAmber);}
+  #lunchArt .lMugHandle{fill:none; stroke:var(--navy); stroke-width:13; stroke-linecap:round;}
+  #lunchArt .lMugHandleIn{fill:none; stroke:var(--white); stroke-width:5; stroke-linecap:round;}
+  #lunchArt .lCinnamon{fill:var(--novDeep); stroke:var(--navy); stroke-width:3.4; stroke-linejoin:round;}
+  #lunchArt .lCinnamonCurl{fill:none; stroke:#C77A4E; stroke-width:2; stroke-linecap:round;}
+  #lunchArt .lSteam{fill:none; stroke:var(--grid); stroke-width:4; stroke-linecap:round; opacity:.9;}
+  body.november #lunchArt .lLabel{fill:var(--nov);}
+  #lunchArt .lLabelText.nvOnly{fill:var(--cream);}
+  #lunchArt .lSteam{transform-box:fill-box; transform-origin:50% 100%;}
+  @media (prefers-reduced-motion: no-preference){
+    body.november .lunchTime #lunchArt .lSteam{animation:lSteam 4.8s ease-in-out infinite;}
+    body.november .lunchTime #lunchArt .lSteam.s2{animation-delay:-2.4s;}
+  }
+  @keyframes lSteam{0%{transform:translateY(6px) scaleY(.8); opacity:0;} 30%{opacity:.9;} 70%{opacity:.6;} 100%{transform:translateY(-10px) scaleY(1.1); opacity:0;}}
 
   /* v7.32 COMMENT CARDS: the class as flat tiles in a grid — a left rail and the fill say the state.
      No pills, no coral.
@@ -3503,6 +3535,79 @@
     58.8%{transform:rotate(-22deg);} 59.6%{transform:rotate(22deg);} 60.5%{transform:rotate(-18deg);} 61.3%,80%{transform:rotate(0);}
     80.8%{transform:rotate(-22deg);} 81.6%{transform:rotate(22deg);} 82.5%{transform:rotate(-18deg);} 83.3%,100%{transform:rotate(0);}}
 
+  /* ===== v7.56 NOVEMBER (body.november, set by Season) ==========================
+     Croix: "Halloween is over so I need a fall theme. Not quite winter theming yet."
+     October's sibling, on the same rules: decoration at the edges only, gated on one body
+     class, gone from the landing page and the stage (body.focusMode — a staged card and the
+     settle-in's count), every motion behind body.waveMotion. Five pieces: leaves that fall
+     now and then down the board's outer edges and float off on the water; a lantern on the
+     boat's mast that brightens week by week; a V of geese crossing far off (a sea act);
+     the lunch tray gone fall (pie, cider, a rust tray); and Thanksgiving week's bowl of
+     gourds on the sand. --nov is the month's one colour; the leaves' four others live
+     only in their own SVG. */
+  :root{--nov:#B5542A; --novDeep:#8A3B1F; --novAmber:#D98E2B; --novGold:#E6B35A; --novGreen:#4F6B3A;}
+
+  /* ---- the leaves: Season places each one (its numbers are its own), the WAAPI moves it ---- */
+  #nvLeaves{position:fixed; inset:0; z-index:2; display:none; overflow:hidden; pointer-events:none;}   /* over the canvas (like the pumpkins), under the dock, the ink, the alarm */
+  body.november:not(.landing):not(.focusMode) #nvLeaves{display:block;}
+  .nvLeaf{position:absolute; top:0; left:0; pointer-events:auto; cursor:pointer; touch-action:manipulation;
+          -webkit-tap-highlight-color:transparent; will-change:transform;}
+  .nvLeaf .nvSway, .nvLeaf .nvFlip{width:100%; height:100%;}
+  .nvLeaf svg{display:block; width:100%; height:100%; overflow:visible;}
+  .nvVein{fill:none; stroke:var(--navy); stroke-width:1.1; stroke-linecap:round; stroke-linejoin:round; opacity:.3;}
+  .nvStemLine{fill:none; stroke-width:1.6; stroke-linecap:round;}
+
+  /* ---- the lantern on the mast: dim in the first week, bright for Thanksgiving ---- */
+  .nvLantern{display:none;}
+  body.november .nvLantern{display:inline;}
+  body{--lamp:.3;}
+  body[data-nv-lamp="2"]{--lamp:.5;}  body[data-nv-lamp="3"]{--lamp:.72;}  body[data-nv-lamp="4"]{--lamp:1;}
+  .nvLampGlow{fill:url(#nvLampGlowG); opacity:calc(var(--lamp) * .95); transform-box:fill-box; transform-origin:50% 50%; scale:calc(.7 + var(--lamp) * .45);}
+  .nvLampFrame{fill:var(--navy);}
+  .nvLampBail{fill:none; stroke:var(--navy); stroke-width:.7; stroke-linecap:round; stroke-linejoin:round;}
+  .nvLampPane{fill:var(--novAmber);}
+  .nvLampFlame{fill:var(--octLit, #FFE45C); opacity:calc(.25 + var(--lamp) * .75);}
+  .nvLampSwing{transform-box:view-box; transform-origin:23.2px 8.4px;}
+  body.waveMotion .nvLampGlow{animation:nvLampPulse 4.6s var(--sine) infinite alternate;}
+  body.waveMotion .nvLampSwing{animation:nvLampSwing calc(var(--T2) / 2) var(--sine) calc(var(--T2) / -8) infinite alternate;}
+  @keyframes nvLampPulse{from{opacity:calc(var(--lamp) * .7);} to{opacity:var(--lamp);}}
+  @keyframes nvLampSwing{from{rotate:-5deg;} to{rotate:4deg;}}   /* it hangs from a hook: the boat pitches, the lantern lags */
+
+  /* ---- GEESE (40 s, far): a V of eight, crossing the sky band over the water, right to left ---- */
+  #sea-geese{bottom:45px; left:0; width:100vw; height:34px; pointer-events:none;}   /* the band between the board's edge and the dune: the whole V fits under the card */
+  body:not(.waveMotion) #sea-geese.go{visibility:hidden;}   /* reduced motion: no geese at all, not a frozen V */
+  .nvV{position:absolute; left:100vw; top:0; width:90px; height:34px;}
+  .nvGoose{position:absolute; left:var(--gx); top:var(--gy); width:18px;}
+  .nvGoose svg{display:block; width:100%; overflow:visible;}
+  .nvGoose path{fill:var(--navy);}
+  .nvWing{transform-box:view-box; transform-origin:12px 7.8px;}
+  body.waveMotion #sea-geese.go .nvV{animation:nvGeeseFly 40s linear both;}
+  body.waveMotion #sea-geese.go .nvGoose{animation:nvGooseSlip var(--gs, 3.4s) ease-in-out var(--gd, 0s) infinite alternate;}
+  body.waveMotion #sea-geese.go .nvWing{animation:nvFlap var(--gf, .62s) ease-in-out var(--gd, 0s) infinite alternate;}
+  @keyframes nvGeeseFly{0%{transform:translateX(0) translateY(0);} 25%{transform:translateX(calc(-25vw - 30px)) translateY(-1.5px);}
+    50%{transform:translateX(calc(-50vw - 60px)) translateY(1px);} 75%{transform:translateX(calc(-75vw - 90px)) translateY(-1px);}
+    100%{transform:translateX(calc(-100vw - 120px)) translateY(0);}}
+  @keyframes nvGooseSlip{from{translate:-1.5px .8px;} to{translate:1.5px -.8px;}}   /* the spacing breathes */
+  @keyframes nvFlap{from{transform:scaleY(1);} to{transform:scaleY(-.55);}}
+
+  /* ---- Thanksgiving week: a bowl of gourds on the sand, where the vine was ---- */
+  #nvGourds{position:fixed; right:7vw; bottom:34px; width:clamp(150px, 11vw, 230px); height:auto;
+            z-index:2; display:none; overflow:visible; pointer-events:none;}
+  body.november.nvThanks:not(.landing):not(.focusMode) #nvGourds{display:block;}
+  .nvGourd{cursor:pointer; pointer-events:auto; transform-box:fill-box; transform-origin:50% 100%;}
+  .nvBowl{fill:#C9955A;}  .nvBowlRim{fill:#A8743F;}  .nvWeave{fill:none; stroke:#8C5B2E; stroke-width:1.4; stroke-linecap:round; opacity:.7;}
+  .nvGShade{fill:var(--shadow);}
+  .nvPk{fill:var(--novAmber);}  .nvPkSeam{fill:var(--nov); opacity:.55;}
+  .nvSq{fill:var(--novGold);}   .nvSqNeck{fill:#D9A548;}
+  .nvAcorn{fill:var(--novGreen);}  .nvAcornRib{fill:none; stroke:#6E8A4F; stroke-width:2.2; stroke-linecap:round;}
+  .nvStripe{stroke:var(--novGreen); opacity:.7;}  .nvLeafTuck{fill:var(--nov);}
+  .nvWhite{fill:#F3E6CC;}  .nvSpeck{fill:var(--novGreen); opacity:.55;}
+  .nvGStem{fill:var(--teal);}
+  .nvGStemLine{fill:none; stroke:var(--navy); stroke-width:1; opacity:.35; stroke-linecap:round;}
+  body.waveMotion .nvGourd.wob{animation:nvWobble .9s linear 1;}
+  @keyframes nvWobble{0%{rotate:0deg; animation-timing-function:cubic-bezier(.2,.7,.4,1);} 18%{rotate:-11deg; animation-timing-function:ease-in-out;}
+    40%{rotate:7deg; animation-timing-function:ease-in-out;} 60%{rotate:-4deg; animation-timing-function:ease-in-out;} 80%{rotate:1.5deg; animation-timing-function:ease-in-out;} 100%{rotate:0deg;}}
+
   @media (max-width: 780px), (max-height: 540px){
     html, body{height:auto; min-height:100%;}
     body{overflow:auto;}
@@ -3523,6 +3628,7 @@
     #waves{display:none;}
     #boat{display:none;}
     #ocPumpkins{display:none !important;}
+    #nvLeaves, #nvGourds{display:none !important;}   /* v7.56: no fall on a phone, like the pumpkins */
     .wvLayer{display:none;}
     #sea{display:none;}
     .tplGrid{grid-template-columns:1fr;}
@@ -3715,6 +3821,45 @@
 </g>
 </svg>
 
+<!-- v7.56 NOVEMBER: the falling leaves' layer (Season fills it: a leaf or two every 10–25 s
+     down the board's outer edges, never more than six, each floating off on the water), and
+     Thanksgiving week's bowl of gourds on the sand where October's vine was. A tap on a leaf
+     sends it spinning away; a tap on a gourd wobbles it. -->
+<div id="nvLeaves" aria-hidden="true"></div>
+<svg id="nvGourds" viewBox="0 0 200 110" aria-hidden="true">
+  <ellipse class="nvGShade" cx="100" cy="102" rx="90" ry="5"/>
+  <g class="nvGourd g1" data-g="acorn">
+    <path class="nvAcorn" d="M46,38 C60,38 68,48 68,60 C68,72 58,80 46,82 C34,80 24,72 24,60 C24,48 32,38 46,38 Z"/>
+    <path class="nvAcornRib" d="M46,41 C40,50 40,70 46,80 M46,41 C52,50 52,70 46,80 M35,45 C29,54 30,68 36,77 M57,45 C63,54 62,68 56,77"/>
+    <path class="nvGStem" d="M44,40 C43,34 44,31 47,28 L50.5,29.5 C48.5,32.5 48.5,36 48.5,40 Z"/>
+  </g>
+  <g class="nvGourd g2" data-g="pumpkin">
+    <path class="nvPk" d="M66,54 C66,38 78,30 92,32 C95,32.5 97,34 98,34 C99,34 101,32.5 104,32 C118,30 130,38 130,54 C130,66 118,74 104,74 C101,74 99,73 98,73 C97,73 95,74 92,74 C78,74 66,66 66,54 Z"/>
+    <path class="nvPkSeam" d="M92,33.5 C82,42 82,64 92,73 C86,62 86,44 92,33.5 Z M104,33.5 C114,42 114,64 104,73 C110,62 110,44 104,33.5 Z M79,36 C71,45 71,62 79,70 C75,61 75,45 79,36 Z M117,36 C125,45 125,62 117,70 C121,61 121,45 117,36 Z"/>
+    <path class="nvGStem" d="M95,34.5 C95,28 94,24 96.5,20.5 L102,21.5 C100,25.5 100,30 101,34.5 Z"/>
+    <path class="nvGStemLine" d="M97.5,23 C97,27 97.5,31 98,33.5"/>
+  </g>
+  <g class="nvGourd g3" data-g="crookneck">
+    <path class="nvSq" d="M136,70 C134,58 140,50 148,48 C152,47 154,44 155,38 C156,30 160,24 166,22 C170,21 171,25 168,27 C164,30 163,36 163,42 C163,48 168,52 168,62 C168,74 158,80 150,80 C142,80 137,76 136,70 Z"/>
+    <path class="nvSqNeck" d="M156,40 C157,32 160,27 165,24 C162,29 160,35 160.5,42 Z"/>
+    <path class="nvGStem" d="M166,22.5 C166.5,19 168.5,16.5 171.5,16.5 L172.5,18.8 C170.2,19.5 169.4,21 169.2,23.6 Z"/>
+  </g>
+  <g class="nvGourd g4" data-g="white">
+    <circle class="nvWhite" cx="74" cy="64" r="13"/>
+    <circle class="nvSpeck" cx="69" cy="60" r="1.4"/><circle class="nvSpeck" cx="78" cy="58" r="1.1"/><circle class="nvSpeck" cx="80" cy="66" r="1.3"/><circle class="nvSpeck" cx="68" cy="68" r="1"/>
+    <path class="nvGStem" d="M73,52 C73,49 74,47 76,46 L78,47.4 C76.6,48.4 76,50 76,52 Z"/>
+  </g>
+  <g class="nvGourd g5" data-g="stripe">
+    <ellipse class="nvWhite" cx="124" cy="66" rx="14" ry="11"/>
+    <path class="nvAcornRib nvStripe" d="M115,59 C113,64 114,70 117,74 M124,55 C122,62 122,70 124,77 M133,59 C135,64 134,70 131,74"/>
+    <path class="nvGStem" d="M123,56 C123,53 124,51 126,50 L128,51.4 C126.6,52.4 126,54 126,56 Z"/>
+  </g>
+  <path class="nvBowl" d="M10,70 Q100,80 190,70 L178,96 Q100,106 22,96 Z"/>
+  <path class="nvWeave" d="M16,80 Q100,90 184,80 M20,89 Q100,99 180,89 M40,75 L36,99 M64,77 L62,101 M88,78 L88,102 M112,78 L112,102 M136,77 L138,101 M160,75 L164,99"/>
+  <path class="nvBowlRim" d="M6,66 Q100,76 194,66 L192,73 Q100,83 8,73 Z"/>
+  <path class="nvLeafTuck" d="M168,70 L171,64 L166,63 L171,59 L169,55 L174,57 L177,52 L180,57 L185,55 L183,60 L188,63 L183,64 L185,70 C180,68 174,68 168,70 Z"/>
+</svg>
+
 <main id="canvas">
   <div id="focusBar" hidden>
     <!-- v7.41: tabs for the cards that are put away (or riding over the stage): a tap brings one up over the slides, a tap tucks it away -->
@@ -3763,7 +3908,8 @@
              then it's a fresh cookie), the milk slurps. -->
         <div id="lunchArt" aria-hidden="true">
           <svg class="lunchTray" viewBox="0 0 240 190">
-            <defs><clipPath id="lCookieClip"><circle cx="205" cy="132" r="20"/></clipPath></defs>
+            <defs><clipPath id="lCookieClip"><circle cx="205" cy="132" r="20"/></clipPath>
+              <clipPath id="lPieClip"><path d="M184 141 L207 106 Q234 109 230 140 L228 153 L185 153 Z"/></clipPath></defs>
             <ellipse cx="120" cy="180" rx="108" ry="7" class="lShadow"/>
             <rect x="10" y="150" width="220" height="24" rx="11" class="lTrayBody"/>
             <path d="M26 158 H214" class="lTrayShine"/>
@@ -3807,13 +3953,29 @@
                 <path d="M190 126 q-10 -8 -16 -2 M188 133 q-12 -2 -17 5 M190 140 q-9 4 -11 12 M196 146 q-5 6 -4 12"/>
                 <path d="M220 126 q10 -8 16 -2 M222 133 q12 -2 17 5 M220 140 q9 4 11 12 M214 146 q5 6 4 12"/>
               </g>
-              <circle cx="205" cy="132" r="18" class="lCookieBody"/>
+              <circle cx="205" cy="132" r="18" class="lCookieBody nvNot"/>
               <g class="ocOnly lCandyEyes"><circle cx="199" cy="128" r="5"/><circle cx="211" cy="128" r="5"/><circle cx="200" cy="129" r="2" class="lPupil"/><circle cx="210" cy="129" r="2" class="lPupil"/></g>
-              <g class="lChips"><circle cx="198" cy="125" r="2.8"/><circle cx="210" cy="123" r="2.8"/><circle cx="213" cy="136" r="2.8"/><circle cx="199" cy="140" r="2.8"/><circle cx="205" cy="132" r="2.8"/></g>
-              <g clip-path="url(#lCookieClip)">
+              <g class="lChips nvNot"><circle cx="198" cy="125" r="2.8"/><circle cx="210" cy="123" r="2.8"/><circle cx="213" cy="136" r="2.8"/><circle cx="199" cy="140" r="2.8"/><circle cx="205" cy="132" r="2.8"/></g>
+              <g clip-path="url(#lCookieClip)" class="nvNot">
                 <circle cx="222" cy="120" r="7.5" class="lBite" data-b="1"/>
                 <circle cx="225" cy="136" r="7.5" class="lBite" data-b="2"/>
                 <circle cx="215" cy="150" r="7.5" class="lBite" data-b="3"/>
+              </g>
+              <!-- v7.56 November: a slice of pumpkin pie, the point toward the apple, the crust at the back
+                   (where the bites come out), a dollop on top -->
+              <g class="nvOnly lPie">
+                <path d="M184 141 L228 139 L228 152 L185 153 Z" class="lPieSide"/>
+                <path d="M185 148 L228 146" class="lPieCrimp"/>
+                <path d="M184 141 L210 106 Q232 112 228 139 Z" class="lPieTop"/>
+                <path d="M207 107 Q233 110 230 140 L221 140 Q223 119 203 114 Z" class="lPieCrust"/>
+                <path d="M214 112 l2 4 M221 116 l-1 4 M225 123 l-3 2 M227 131 l-4 1" class="lPieCrimp"/>
+                <path d="M196 128 q-3 -8 5 -9 q1 -7 8 -5 q6 1 5 7 q7 1 5 7 q-1 3 -7 3 h-12 q-6 0 -4 -3 z" class="lCream"/>
+                <path d="M202 122 q5 -3 8 1" class="lCreamSwirl"/>
+                <g clip-path="url(#lPieClip)">
+                  <circle cx="223" cy="110" r="8.5" class="lBite" data-b="1"/>
+                  <circle cx="229" cy="125" r="8.5" class="lBite" data-b="2"/>
+                  <circle cx="228" cy="145" r="8.5" class="lBite" data-b="3"/>
+                </g>
               </g>
             </g>
           </svg>
@@ -3825,13 +3987,26 @@
               <ellipse cx="58" cy="101" rx="4" ry="5" class="lGhostEye"/>
             </g>
             <g class="lMilk lTap" data-l="milk">
-              <g class="lStraw"><path d="M80 44 V16 L98 6" class="lStrawOut"/><path d="M80 44 V16 L98 6" class="lStrawIn"/></g>
-              <rect x="36" y="30" width="58" height="12" rx="2" class="lCarton"/>
-              <path d="M22 74 L38 42 H92 L108 74 Z" class="lCarton"/>
+              <g class="lStraw nvNot"><path d="M80 44 V16 L98 6" class="lStrawOut"/><path d="M80 44 V16 L98 6" class="lStrawIn"/></g>
+              <rect x="36" y="30" width="58" height="12" rx="2" class="lCarton nvNot"/>
+              <path d="M22 74 L38 42 H92 L108 74 Z" class="lCarton nvNot"/>
+              <!-- v7.56 November: the carton is a mug of cider (a handle, a cinnamon stick, steam) -->
+              <g class="nvOnly">
+                <path d="M106 96 q18 0 18 22 q0 22 -18 22" class="lMugHandle"/>
+                <path d="M106 96 q18 0 18 22 q0 22 -18 22" class="lMugHandleIn"/>
+              </g>
               <rect x="22" y="72" width="86" height="112" rx="6" class="lCartonFill"/>
               <rect x="22" y="130" width="86" height="34" class="lLabel"/>
               <rect x="22" y="72" width="86" height="112" rx="6" class="lCartonLine"/>
-              <text x="65" y="154" class="lLabelText ocNot">MILK</text>
+              <g class="nvOnly">
+                <ellipse cx="65" cy="73" rx="43" ry="8" class="lMugRim"/>
+                <ellipse cx="65" cy="74" rx="36" ry="4.6" class="lCider"/>
+                <g class="lStraw"><path d="M74 75 L92 22 L99 24 L82 77 Z" class="lCinnamon"/><path d="M90 30 q4 -1 6 2 M87 40 q4 -1 6 2" class="lCinnamonCurl"/></g>
+                <path d="M46 58 q-6 -8 0 -16 q6 -8 0 -16" class="lSteam s1"/>
+                <path d="M62 56 q-6 -8 0 -16 q6 -8 0 -16" class="lSteam s2"/>
+              </g>
+              <text x="65" y="154" class="lLabelText ocNot nvNot">MILK</text>
+              <text x="65" y="154" class="lLabelText nvOnly">CIDER</text>
               <text x="65" y="154" class="lLabelText ocOnly">BOO</text>
               <g class="lEyes"><circle cx="52" cy="100" r="5"/><circle cx="78" cy="100" r="5"/></g>
               <ellipse cx="42" cy="111" rx="6" ry="3.4" class="lCheek"/><ellipse cx="88" cy="111" rx="6" ry="3.4" class="lCheek"/>
@@ -4240,6 +4415,21 @@
       </g>
     </svg>
   </div>
+  <!-- v7.56 November: GEESE — a V of eight far off, crossing the sky band over the water right
+       to left, slowly (40 s), each on its own wingbeat and its own slip so the V breathes.
+       Navy silhouettes like the rest of the cast, drawn head-first in the direction of travel. -->
+  <div id="sea-geese" class="seaThing">
+    <div class="nvV">
+      <div class="nvGoose" style="--gx:0px; --gy:10px; --gd:-0s; --gf:0.6s; --gs:3.1s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+      <div class="nvGoose" style="--gx:16px; --gy:6.5px; --gd:-0.21s; --gf:0.64s; --gs:3.6s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+      <div class="nvGoose" style="--gx:32px; --gy:3px; --gd:-0.47s; --gf:0.6s; --gs:2.9s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+      <div class="nvGoose" style="--gx:49px; --gy:0px; --gd:-0.12s; --gf:0.66s; --gs:3.9s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+      <div class="nvGoose" style="--gx:17px; --gy:13.5px; --gd:-0.36s; --gf:0.62s; --gs:3.3s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+      <div class="nvGoose" style="--gx:33px; --gy:17px; --gd:-0.29s; --gf:0.63s; --gs:3.5s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+      <div class="nvGoose" style="--gx:50px; --gy:20.5px; --gd:-0.05s; --gf:0.59s; --gs:3s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+      <div class="nvGoose" style="--gx:66px; --gy:24px; --gd:-0.41s; --gf:0.65s; --gs:3.8s"><svg viewBox="0 0 24 12"><path d="M2.5,7.7 C3.2,7.3 4,7.2 5,7.4 L8.5,7.6 C11,7.1 15,7.2 17.5,7.9 L20.5,7.4 L19.6,8.3 L20.6,9.1 L17.5,8.7 C15,9.3 11,9.3 8.5,8.5 L5,8.2 C4,8.3 3.2,8.2 2.5,7.7 Z"/><path class="nvWing" d="M9.6,7.9 C8.6,5.5 6.6,3.4 3.6,2.6 C6.8,2.6 10.2,4.4 12,7.4 C13.6,4.6 16.8,2.4 20.4,2.2 C17.4,3.2 15.2,5.4 14.2,8 Z"/></svg></div>
+    </div>
+  </div>
   <div id="sea-dolphins" class="seaThing">
     <svg class="dpArc" viewBox="0 0 420 72"><path d="M-10,70 Q30,-20 70,62 Q110,-12 150,62 Q190,-4 230,62 Q270,6 310,62 Q350,20 390,70"/></svg>
     <svg class="dpDol d1" viewBox="0 0 48 20">
@@ -4289,6 +4479,20 @@
             <path class="btBurgee" d="M20,2.6 L24.6,3.9 L20,5.2 Z"/>
             <!-- v7.11 October: the swallow-tail streamer that replaces the burgee for the month -->
             <path class="btStreamer" d="M20,2.4 L31,3.2 L27.8,4.2 L31,5.6 L20,5.4 Z"/>
+          </g>
+          <!-- v7.56 November: the streamer gives way to a lantern hung off the mast on a little
+               arm, below the masthead (the gull's perch) and inside the streamer's few units. It
+               glows a little more each week (body[data-nv-lamp], set by Season) and swings on its hook. -->
+          <g class="nvLantern">
+            <defs><radialGradient id="nvLampGlowG"><stop offset="0" stop-color="#FFE45C" stop-opacity=".95"/><stop offset=".35" stop-color="#F2C35A" stop-opacity=".55"/><stop offset="1" stop-color="#E6B35A" stop-opacity="0"/></radialGradient></defs>
+            <path class="nvLampBail" d="M20.5,7.4 H23.2 V8.6"/>
+            <g class="nvLampSwing">
+              <circle class="nvLampGlow" cx="23.2" cy="11.2" r="8.5"/>
+              <path class="nvLampFrame" d="M21.5,9.7 L22.5,8.5 H23.9 L24.9,9.7 Z"/>
+              <rect class="nvLampPane" x="21.7" y="9.6" width="3" height="3.3" rx=".5"/>
+              <ellipse class="nvLampFlame" cx="23.2" cy="11.35" rx=".8" ry="1.2"/>
+              <path class="nvLampFrame" d="M21.4,12.7 H25 V13.5 H21.4 Z"/>
+            </g>
           </g>
           <path class="btHull" d="M5,26.8 L37,25 Q34.6,31 29.5,34.8 L11.5,34.8 Q7,33 5,26.8 Z"/>
           <path class="btStripe" d="M7.2,29 L34.4,28.2"/>
@@ -4385,10 +4589,10 @@
                 <div class="fField">
                   <label class="fLabel" for="sSeason">Seasonal touches</label>
                   <select class="setSelect" id="sSeason">
-                    <option value="auto">Auto (October: webs, pumpkins, bats)</option>
+                    <option value="auto">Auto (October: webs, pumpkins, bats &middot; November: leaves, a lantern, geese)</option>
                     <option value="off">Off</option>
                   </select>
-                  <div class="fHint">Decoration at the edges by the calendar &mdash; never on a timer face, never during a bell routine. Off on November 1 by itself.</div>
+                  <div class="fHint">Decoration at the edges by the calendar &mdash; never on a timer face, never during a bell routine. October and November; off on December 1 by itself.</div>
                 </div>
               </div>
             </div>
@@ -4904,7 +5108,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.55.0",
+  appVersion: "7.56.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -6765,6 +6969,27 @@ var Sound = (function(){
       o.start(t0); o.stop(t0 + 0.09);
     } catch(e){ /* decoration — never let a click break the count */ }
   }
+  /* v7.56: the geese's faint two-note honk — a nasal reed (a sawtooth through a bandpass), a
+     falling pair, at a tenth of the volume. Decoration never wakes the audio: no running
+     context (no tap yet), no honk. */
+  function honk(){
+    if (!on || !ctx || ctx.state !== "running") return;
+    try {
+      [[392, 349], [370, 330]].forEach(function(f, n){
+        var t0 = ctx.currentTime + 0.02 + n * 0.24;
+        var o = ctx.createOscillator(), g = ctx.createGain(), bp = ctx.createBiquadFilter();
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(f[0], t0);
+        o.frequency.exponentialRampToValueAtTime(f[1], t0 + 0.14);
+        bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 2.2;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0008, cfg.sound.volume * 0.1), t0 + 0.025);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+        o.connect(bp); bp.connect(g); g.connect(ctx.destination);
+        o.start(t0); o.stop(t0 + 0.18);
+      });
+    } catch(e){ /* decoration */ }
+  }
   function paint(){
     el.soundBtn.textContent = on ? "Sound On" : "Sound Off";
     el.soundBtn.setAttribute("aria-pressed", on ? "true" : "false");
@@ -6776,7 +7001,7 @@ var Sound = (function(){
   function setOn(v){ on = !!v; paint(); }
   function primed(){ return !!ctx && ctx.state === "running"; }   // v7.7: has a gesture woken the audio yet?
   return { init: function(){ paint(); wireButton(el.soundBtn, toggle); },
-           toggle: toggle, setOn: setOn, chime: chime, tick: tick, soft: soft,
+           toggle: toggle, setOn: setOn, chime: chime, tick: tick, soft: soft, honk: honk,
            isOn: function(){ return on; }, primed: primed };
 })();
 
@@ -11327,7 +11552,7 @@ var PassingMusic = (function(){
   var playing = false, fading = false, tickTid = null, nextTime = 0, prevType = null, stoppedFor = null, sideIdx = 0, fadeTid = null;
   var pillHost = null, lastName = "";
   function P(){ return (cfg.bell && isObj(cfg.bell.passing)) ? cfg.bell.passing : DEFAULT_PASSING; }
-  function sides(){ var on = false; try { on = Season.active(); } catch(e){} return on ? Lofi.TRACKS.concat([Lofi.OCT]) : Lofi.TRACKS; }
+  function sides(){ var on = false; try { on = Season.active() === "october"; } catch(e){} return on ? Lofi.TRACKS.concat([Lofi.OCT]) : Lofi.TRACKS; }   // v7.56: active() names the month
   function report(on){
     if (!pillHost){ pillHost = document.createElement("div"); pillHost.hidden = true; pillHost.id = "passingMusicHost"; document.body.appendChild(pillHost); }
     try { NowPlaying.report(pillHost, on, lastName); } catch(e){}
@@ -12819,7 +13044,7 @@ function makeMusic(host, wcfg){
   var eng = null;
   function sides(){
     var on = false;
-    try { on = Season.active(); } catch(e){}
+    try { on = Season.active() === "october"; } catch(e){}   // v7.56: active() names the month; the haunted side is October's
     return on ? Lofi.TRACKS.concat([Lofi.OCT]) : Lofi.TRACKS;
   }
   function side(i){ var all = sides(); return all[i] || all[0]; }
@@ -14963,13 +15188,36 @@ var Sea = (function(){
     castaway: { tier: "common",   dur: 46500, lanes: ["near"], greeting: true, season: "october", boat: "wilson",
                 incompatible: ["ghost", "attack", "whale", "scatter"] },   /* v7.11.1 Wilson: surfaces beside the boat, drifts away */
     bones:    { tier: "uncommon", dur: 12500, lanes: ["far"], season: "october" },
-    haunt:    { tier: "uncommon", combo: [["school", 0], ["bones", 2200]], dur: 14700, season: "october" }
+    haunt:    { tier: "uncommon", combo: [["school", 0], ["bones", 2200]], dur: 14700, season: "october" },
+    /* v7.56 November: a V of geese far off. A SKY act — never in a period's setlist or the
+       free-time pool: the sky has its own clock (geeseTimes: once or twice a school day,
+       seeded by the date, twice on the last day before Thanksgiving week) */
+    geese:    { tier: "uncommon", dur: 40500, lanes: ["far"], season: "november", sky: true }
   };
   /* Halloween on the board: the 31st, or the last weekday before it (2026: Friday the 30th) */
   function halloweenDay(year){
     var d = new Date(year, 9, 31);
     while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
     return d.getDate();
+  }
+  /* v7.56: Thanksgiving, the fourth Thursday of November (2026: the 26th). Lake County's break
+     is that whole week, Monday to Sunday; the board's last school day before it is the Friday
+     before (Thanksgiving − 6). */
+  function thanksgivingDay(year){
+    var first = 1 + (4 - new Date(year, 10, 1).getDay() + 7) % 7;
+    return first + 21;
+  }
+  /* v7.56: the geese's clock. Pure: a function of the date string → minutes after midnight.
+     One crossing in the morning (9:15–11:45), a second in the afternoon (12:30–3:15) on about
+     two days in five and always on the Friday before the break ("once more"). In Thanksgiving
+     week itself the board may be up with no bells at all: they still fly, daily. */
+  function geeseTimes(dateStr){
+    if (!inSeason(ACTS.geese, dateStr)) return [];
+    var yr = +String(dateStr).slice(0, 4), day = +String(dateStr).slice(8, 10);
+    var r = rng(hash(dateStr + "|geese"));
+    var am = Math.round(9 * 60 + 15 + r() * 150), pm = Math.round(12 * 60 + 30 + r() * 165);
+    var twice = day === thanksgivingDay(yr) - 6 || r() < .4;
+    return twice ? [am, pm] : [am];
   }
   /* the month's weight on its acts: a rumour in the first third, itself in the second,
      a lit week from the 26th, and Halloween. Pure: a function of the date string. */
@@ -14983,7 +15231,7 @@ var Sea = (function(){
     if (!a.season) return true;
     var mo = dateStr ? +String(dateStr).slice(5, 7) : (now().getMonth() + 1);
     var off = typeof cfg !== "undefined" && cfg.ui && cfg.ui.season === "off";
-    return !off && a.season === "october" && mo === 10;
+    return !off && ((a.season === "october" && mo === 10) || (a.season === "november" && mo === 11));   // v7.56: November's sky
   }
   var TIER_W = { common: 1, uncommon: .4, rare: .12 };
   var SUMMON = { attack: .5, whale: .2, scatter: .15, chase: .15 };   // a tap wants a SHOW, not a 50s drift
@@ -15060,6 +15308,7 @@ var Sea = (function(){
       Object.keys(ACTS).forEach(function(k){
         var a = ACTS[k];
         if (a.greeting && k === greeting) return;
+        if (a.sky) return;                         // v7.56: the geese keep their own clock (geeseTimes)
         if (!inSeason(a, dateStr)) return;
         if (a.tier === "rare" && !lastThird) return;
         if (a.lastThird && !lastThird) return;
@@ -15093,7 +15342,7 @@ var Sea = (function(){
   }
 
   /* ---- the stage ---- */
-  var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "paper", "attack", "dolphins", "bats", "ghost", "castaway", "bones"];
+  var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "paper", "attack", "dolphins", "bats", "ghost", "castaway", "bones", "geese"];
   function elFor(name){ return document.getElementById("sea-" + name); }
   var boat = function(){ return document.getElementById("boat"); };
   var timers = {}, t0 = null, residents = { gull: false }, gullTid = null;
@@ -15218,6 +15467,13 @@ var Sea = (function(){
     alignHeave(th);
     clearTimeout(timers[name]);
     timers[name] = setTimeout(function(){ th.classList.remove("go"); }, a.dur);
+    /* v7.56: the geese honk once, faintly, as they come over the boat — through Sound, so Sound
+       Off is silence, and never over a running timer (a "defer:" timer: the clear() takes it) */
+    if (name === "geese"){
+      lastGeese = Date.now();                    // however they came (the clock, a test, the aquarium): no second V within twenty minutes
+      clearTimeout(timers["defer:honk"]);
+      timers["defer:honk"] = setTimeout(function(){ if (ok() && !timerRunning()) try { Sound.honk(); } catch(e){} }, Math.min(9000, a.dur / 2));
+    }
     return true;
   }
   /* display:none (stage mode, a shrunken window) CANCELS a CSS animation;
@@ -15263,8 +15519,31 @@ var Sea = (function(){
   function bellNow(){
     try { return Bell.statusAt(now()); } catch(e){ return { type: "off" }; }
   }
+  /* v7.56: the sky's clock — the geese at their minutes (geeseTimes), each crossing once a day,
+     waiting up to twenty minutes for a clear sea, a visible board and the period's hush (not in
+     the first ten minutes of a class or its last three) */
+  var skyFlown = { d: null, done: [] }, lastGeese = 0;
+  function skyTick(s){
+    var d = now(), ds = dateKey(d), mins = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+    var ts = geeseTimes(ds);
+    if (!ts.length) return;
+    if (skyFlown.d !== ds) skyFlown = { d: ds, done: [] };
+    if (s.type === "in"){
+      var el = (s.totalMs || 0) - (s.remainMs || 0);
+      if (el < 10 * 60000 || (s.remainMs || 0) < 3 * 60000) return;
+    }
+    for (var i = 0; i < ts.length; i++){
+      if (skyFlown.done.indexOf(i) !== -1 || mins < ts[i] || mins >= ts[i] + 20) continue;
+      if (Date.now() - lastGeese < 20 * 60000){ skyFlown.done.push(i); return; }   // they just crossed: that was this slot's V
+      if (!ok() || busy()) return;
+      skyFlown.done.push(i);
+      stage("geese");
+      return;
+    }
+  }
   function tick(){
     var s = bellNow();
+    try { skyTick(s); } catch(e){}
     if (s.type === "in"){
       var d = dateKey(now()), key = d + "|" + s.idx;
       if (!current || current.key !== key){
@@ -15293,7 +15572,7 @@ var Sea = (function(){
     if ((hurried || bellNow().type !== "in") && ok() && !busy()){
       var w = {};                                // the easy-going pool: single things only (no combos, no boat acts, nothing rare)
       var ow = octoberWeight(dateKey(now())).w;   // v7.11.5: October's acts only in October, at the month's weight
-      Object.keys(ACTS).forEach(function(k){ var a = ACTS[k]; if (a.tier !== "rare" && !a.resident && !a.combo && a.lanes && inSeason(a)) w[k] = TIER_W[a.tier] * (a.season ? ow : 1); });
+      Object.keys(ACTS).forEach(function(k){ var a = ACTS[k]; if (a.tier !== "rare" && !a.resident && !a.combo && a.lanes && !a.sky && inSeason(a)) w[k] = TIER_W[a.tier] * (a.season ? ow : 1); });
       var act = pickWeighted(Math.random, w);
       if (act) stage(act);
     }
@@ -15374,6 +15653,8 @@ var Sea = (function(){
     current: function(){ return current; },
     lastStaged: function(){ return lastStaged; },
     halloweenDay: halloweenDay,
+    thanksgivingDay: thanksgivingDay,            // v7.56
+    geeseTimes: geeseTimes,                      // v7.56: pure — the sky's minutes for a date (tests)
     octoberWeight: octoberWeight,
     _every: function(ms){                        // test hook: hurry the free-time scheduler (bells or not)
       clearTimeout(freeTid); MIN = ms; SPAN = 0; FIRST = ms; FSPAN = 0; hurried = true;
@@ -19400,7 +19681,10 @@ var LunchArt = (function(){
    November 1 by itself; every piece is CSS-gated on it. The pieces answer
    small taps (a pumpkin lights and changes its face; the spider drops) and
    never take the stage, make a sound, or touch a timer face. Settings →
-   General → Seasonal touches: Auto / Off. */
+   General → Seasonal touches: Auto / Off.
+   v7.56: and November, the sibling — body.november: falling leaves at the board's edges, a
+   lantern on the boat, a V of geese (the sea's sky act), the lunch gone fall, and
+   Thanksgiving week's gourds. December 1 clears it by itself. */
 var Season = (function(){
   /* v7.11 (docs/reviews/october-2.0-*.md): the month's furniture and its two toys.
      The furniture — web, spider, pumpkins on the vine, the boat's streamer — hangs off
@@ -19410,9 +19694,13 @@ var Season = (function(){
      The spider lets go on a tap, and a tap while it hangs or climbs makes it let go again
      from THERE (--sy / --st read off the computed styles), three re-drops a minute at most,
      then a leg twitch. From the 26th two pumpkins load lit; on Halloween all three. */
+  /* v7.56 (Croix: "Halloween is over so I need a fall theme. Not quite winter theming yet."):
+     the month by name — "october", "november" or null. October is exactly as it was; the
+     Seasonal touches switch (cfg.ui.season "off") takes both. */
   function active(){
-    if (cfg.ui && cfg.ui.season === "off") return false;
-    return now().getMonth() === 9;               // October
+    if (cfg.ui && cfg.ui.season === "off") return null;
+    var m = now().getMonth();
+    return m === 9 ? "october" : m === 10 ? "november" : null;
   }
   var prelitFor = null;
   function prelight(){
@@ -19427,9 +19715,197 @@ var Season = (function(){
     });
   }
   function apply(){
-    var on = active();
-    document.body.classList.toggle("october", on);
-    if (on) prelight();
+    var m = active(), d = now();
+    document.body.classList.toggle("october", m === "october");
+    document.body.classList.toggle("november", m === "november");
+    document.body.classList.toggle("nvThanks", m === "november" && thanksgivingWeek(d));
+    if (m === "november") document.body.dataset.nvLamp = String(lamp(d));
+    else delete document.body.dataset.nvLamp;
+    if (m === "october") prelight();
+    try { Leaves.step(); } catch(e){}
+  }
+
+  /* ---- v7.56 November ----
+     Thanksgiving week: from the Monday of it through the Sunday after (Lake County is off the
+     whole week). The lantern: dim the first week, a step brighter each week, brightest from
+     Thanksgiving week on (1–4 → body[data-nv-lamp] → --lamp). */
+  function thanksgivingWeek(d){
+    d = d || now();
+    var y = d.getFullYear(), tg = Sea.thanksgivingDay(y);
+    var from = new Date(y, 10, tg - 3), to = new Date(y, 10, tg + 4);   // Monday 00:00 → the next Monday 00:00
+    return d >= from && d < to;
+  }
+  function lamp(d){
+    d = d || now();
+    if (d.getMonth() !== 10) return 0;
+    if (d.getDate() >= Sea.thanksgivingDay(d.getFullYear()) - 3) return 4;
+    return Math.min(3, 1 + Math.floor((d.getDate() - 1) / 7));
+  }
+
+  /* The leaves. Sparse and slow: a leaf (sometimes two) every 10–25 s, never more than six on
+     the board, each down one of the board's OUTER columns — x within the outer 15% each side,
+     sway included, so nothing ever crosses the full-board clock's digits (31–69% at 1080p) or
+     the bell strip — tumbling as it falls (a pendulum sway with the tilt, sometimes a slow
+     flip), then lying flat on the water at the waterline, rocking on the swell's clock and
+     drifting off left with the waves as it fades. A tap sends one spinning away. Each leaf's
+     numbers are its own, so it moves on the Web Animations API, not a stylesheet keyframe.
+     The stage (body.focusMode), the landing page, a phone, a hidden tab: no leaves (the moving
+     ones are cleared, not frozen). Reduced motion (body.waveMotion off): nothing falls — three
+     leaves rest still on the water at the right edge. */
+  var Leaves = (function(){
+    var SHAPES = [   // a 40-unit box, the stalk down; s = where the stalk leaves the blade
+      { s: 32, d: "M20,32 L19,32 C17,32 15,33 12,34 L13.5,31 L7,29 L8.5,27 L3,22 L6,21.5 L4,16 L9,17.5 L10,15 L14.5,19.5 L13,10 L16,11.5 L20,3 L24,11.5 L27,10 L25.5,19.5 L30,15 L31,17.5 L36,16 L34,21.5 L37,22 L31.5,27 L33,29 L26.5,31 L28,34 C25,33 23,32 21,32 Z",
+        v: "M20,32 L20,8 M20,31 L6,19 M20,31 L34,19 M20,31 L10,29 M20,31 L30,29" },                     // maple
+      { s: 33, d: "M20,33 C17,33 15,31 16,29 C12,30 9,28 11,25 C8,25 7,22 9,20.5 C11,20 13,21 14,21 C11,19 9,17 10,14.5 C12,13 14,14 15,15 C13,12 13,9 15,7.5 C17,7 18,8 18.5,9 C18.5,6 19,4 20,3 C21,4 21.5,6 21.5,9 C22,8 23,7 25,7.5 C27,9 27,12 25,15 C26,14 28,13 30,14.5 C31,17 29,19 26,21 C27,21 29,20 31,20.5 C33,22 32,25 29,25 C31,28 28,30 24,29 C25,31 23,33 20,33 Z",
+        v: "M20,33 L20,7 M20,27 L13,24 M20,27 L27,24 M20,19 L13,16 M20,19 L27,16" },                    // oak
+      { s: 34, d: "M20,34 C11,30 8,20 12,12 C14,8 17,5 20,3 C23,5 26,8 28,12 C32,20 29,30 20,34 Z",
+        v: "M20,34 L20,6 M20,26 L13,20 M20,26 L27,20 M20,18 L15,13 M20,18 L25,13" },                    // aspen
+      { s: 35, d: "M20,35 C11,28 10,15 20,3 C30,15 29,28 20,35 Z",
+        v: "M20,35 L20,7 M20,25 L16,21 M20,25 L24,21 M20,17 L17,14 M20,17 L23,14" },                    // willow
+      { s: 32, d: "M20,32 L13,34 L15,29 L4,27 L12,22 L5,13 L15,17 L20,4 L25,17 L35,13 L28,22 L36,27 L25,29 L27,34 Z",
+        v: "M20,32 L20,8 M20,30 L8,26 M20,30 L32,26 M20,30 L9,15 M20,30 L31,15" }                       // sweetgum
+    ];
+    var COLORS = ["#B5542A", "#D98E2B", "#E6B35A", "#8A3B1F", "#4F6B3A"], CW = [3, 3, 2, 2, 1];   // the green is the rare one
+    var MAX = 6, COL = .15, FIRST = 3000, GAP = 10000, SPAN = 15000;
+    var host = null, nextAt = 0, tid = null;
+    function H(){ return host || (host = document.getElementById("nvLeaves")); }
+    function pick(arr, w){
+      var t = 0, i; for (i = 0; i < w.length; i++) t += w[i];
+      var x = Math.random() * t;
+      for (i = 0; i < w.length; i++){ x -= w[i]; if (x <= 0) return arr[i]; }
+      return arr[arr.length - 1];
+    }
+    function moving(){ try { return waveMotionOn(); } catch(e){ return false; } }
+    function shown(){
+      var b = document.body;
+      return active() === "november" && !document.hidden && !b.classList.contains("landing") && !b.classList.contains("focusMode") &&
+        window.innerWidth > 780 && window.innerHeight > 540;
+    }
+    function waterY(size){ return window.innerHeight - 20 - size / 2; }   // the leaf's centre on the front swell's mean line
+    function build(size, shape, color){
+      var el = document.createElement("div");
+      el.className = "nvLeaf";
+      el.style.width = el.style.height = size + "px";
+      el.innerHTML = '<div class="nvSway"><div class="nvFlip"><svg viewBox="0 0 40 40"><path class="nvStemLine" stroke="' + color + '" d="M20,' + shape.s + ' L20,39"/>' +
+        '<path fill="' + color + '" d="' + shape.d + '"/>' +
+        '<path class="nvVein" d="' + shape.v + '"/></svg></div></div>';
+      return el;
+    }
+    function count(){ return H() ? H().querySelectorAll(".nvLeaf:not(.nvRest):not(.nvGone)").length : 0; }
+    function remove(el){ try { el.getAnimations({ subtree: true }).forEach(function(a){ a.cancel(); }); } catch(e){} if (el.parentNode) el.parentNode.removeChild(el); }
+    function clear(all){
+      if (!H()) return;
+      H().querySelectorAll(all ? ".nvLeaf" : ".nvLeaf:not(.nvRest)").forEach(remove);
+    }
+    /* afloat: the sway and the flip ease out to lying flat, then it rocks and drifts off */
+    function land(el, size, x){
+      var sway = el.querySelector(".nvSway"), flip = el.querySelector(".nvFlip");
+      var st = getComputedStyle(sway).transform, ft = getComputedStyle(flip).transform;
+      sway.getAnimations().forEach(function(a){ a.cancel(); });
+      flip.getAnimations().forEach(function(a){ a.cancel(); });
+      el.classList.add("nvAfloat");
+      var r = -24 + Math.random() * 48, y = waterY(size);
+      var rest0 = "translateY(-1.5px) rotate(" + (r - 4) + "deg)", rest1 = "translateY(1.5px) rotate(" + (r + 4) + "deg)";
+      sway.animate([{ transform: st === "none" ? "none" : st }, { transform: rest0 }], { duration: 700, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" })
+        .onfinish = function(){ if (el.parentNode) sway.animate([{ transform: rest0 }, { transform: rest1 }], { duration: 5600, easing: "cubic-bezier(.37,0,.63,1)", iterations: Infinity, direction: "alternate" }); };
+      flip.animate([{ transform: ft === "none" ? "none" : ft }, { transform: "scaleY(.7)" }], { duration: 700, easing: "ease-out", fill: "forwards" });
+      var dx = -(70 + Math.random() * 60);
+      var drift = el.animate([{ transform: "translate(" + x + "px," + y + "px)", opacity: 1 },
+                              { transform: "translate(" + (x + dx * .7) + "px," + (y + 1) + "px)", opacity: 1, offset: .7 },
+                              { transform: "translate(" + (x + dx) + "px," + (y + 2) + "px)", opacity: 0 }],
+                             { duration: 22000 + Math.random() * 8000, easing: "linear", fill: "forwards" });
+      drift.onfinish = function(){ remove(el); };
+    }
+    /* one leaf. opts (the test hook and the screenshots): side "left"/"right", at 0–1 (how far
+       through its fall it starts; 1 = already on the water), shape / color (indexes) */
+    function spawn(opts){
+      opts = opts || {};
+      var h = H(); if (!h || !shown() || !moving()) return null;
+      h.querySelectorAll(".nvRest").forEach(remove);   // motion is back: the resting set was reduced motion's
+      if (count() >= MAX) return null;
+      var W = window.innerWidth, size = Math.round(34 + Math.random() * 12);
+      var side = opts.side || (Math.random() < .5 ? "left" : "right");
+      var amp = 8 + Math.random() * 12, lo = W * .01 + amp, hi = W * COL - size - amp;
+      var x = Math.round(lo + Math.random() * Math.max(0, hi - lo));
+      if (side === "right") x = W - x - size;
+      var el = build(size, SHAPES[opts.shape] || pick(SHAPES, [3, 3, 2, 1, 2]), COLORS[opts.color] || pick(COLORS, CW));
+      el.dataset.side = side;
+      h.appendChild(el);
+      el.addEventListener("pointerdown", function(e){ e.stopPropagation(); fling(el, side); });
+      var y0 = -size - 10, y1 = waterY(size), dur = 14000 + Math.random() * 7000;
+      var at = Math.max(0, Math.min(1, +opts.at || 0));
+      if (at >= 1){ land(el, size, x); return el; }
+      var fall = el.animate([{ transform: "translate(" + x + "px," + y0 + "px)" }, { transform: "translate(" + x + "px," + y1 + "px)" }],
+                            { duration: dur, easing: "cubic-bezier(.32,.12,.7,.96)", fill: "forwards" });
+      var sway = el.querySelector(".nvSway"), flip = el.querySelector(".nvFlip"), tilt = 18 + Math.random() * 16;
+      sway.animate([{ transform: "translateX(" + (-amp) + "px) rotate(" + (-tilt) + "deg)" }, { transform: "translateX(" + amp + "px) rotate(" + tilt + "deg)" }],
+                   { duration: 2600 + Math.random() * 1800, easing: "cubic-bezier(.45,0,.55,1)", iterations: Infinity, direction: "alternate", delay: -Math.random() * 2000 });
+      /* the tumble never goes fully edge-on (±62°): a leaf that reads as a line reads as nothing */
+      if (Math.random() < .45) flip.animate([{ transform: "rotateY(-62deg)" }, { transform: "rotateY(62deg)" }], { duration: 2400 + Math.random() * 2000, easing: "cubic-bezier(.45,0,.55,1)", iterations: Infinity, direction: "alternate", delay: -Math.random() * 2000 });
+      else flip.animate([{ transform: "rotateX(0deg)" }, { transform: "rotateX(38deg)" }], { duration: 1700 + Math.random() * 900, easing: "ease-in-out", iterations: Infinity, direction: "alternate" });
+      if (at > 0) fall.currentTime = at * dur;
+      fall.onfinish = function(){ if (el.parentNode && !el.classList.contains("nvGone")) land(el, size, x); };
+      return el;
+    }
+    /* a tap: it spins away out past the nearer edge, faster, and is gone */
+    function fling(el, side){
+      if (el.classList.contains("nvGone") || el.classList.contains("nvRest") || !moving()) return;
+      el.classList.add("nvGone");
+      var cur = getComputedStyle(el).transform;
+      el.getAnimations().forEach(function(a){ a.cancel(); });
+      var flip = el.querySelector(".nvFlip");
+      try { flip.getAnimations().forEach(function(a){ a.playbackRate = 4; }); } catch(e){}
+      var dx = (side === "left" ? -1 : 1) * (140 + Math.random() * 80), dy = -(50 + Math.random() * 60);
+      el.animate([{ transform: cur + " rotate(0deg)", opacity: 1 },
+                  { transform: cur + " translate(" + (dx * .55) + "px," + dy + "px) rotate(" + (side === "left" ? -300 : 300) + "deg)", opacity: 1, offset: .55 },
+                  { transform: cur + " translate(" + dx + "px," + (dy * .4) + "px) rotate(" + (side === "left" ? -620 : 620) + "deg)", opacity: 0 }],
+                 { duration: 1100, easing: "cubic-bezier(.2,.6,.4,1)", fill: "forwards" }).onfinish = function(){ remove(el); };
+    }
+    /* reduced motion: three leaves at rest on the water at the right edge (the left edge's water
+       is under the dock), still */
+    function rest(){
+      var h = H(); if (!h || h.querySelector(".nvRest")) return;
+      var W = window.innerWidth;
+      [[.855, 0, 3, 28, -18], [.905, 1, 1, 24, 22], [.952, 2, 0, 30, -6]].forEach(function(p){
+        var el = build(p[3], SHAPES[p[1]], COLORS[p[2]]);
+        el.classList.add("nvRest");
+        el.style.transform = "translate(" + Math.round(W * p[0]) + "px," + Math.round(waterY(p[3])) + "px)";
+        el.querySelector(".nvSway").style.transform = "rotate(" + p[4] + "deg)";
+        el.querySelector(".nvFlip").style.transform = "scaleY(.7)";
+        h.appendChild(el);
+      });
+    }
+    function step(){
+      if (!H()) return;
+      if (active() !== "november"){ clear(true); nextAt = 0; return; }
+      if (!moving()){ clear(false); rest(); nextAt = 0; return; }
+      H().querySelectorAll(".nvRest").forEach(remove);
+      if (!shown()){ clear(false); nextAt = 0; return; }
+      var t = Date.now();
+      if (!nextAt){ nextAt = t + FIRST + Math.random() * 4000; return; }
+      if (t < nextAt) return;
+      nextAt = t + GAP + Math.random() * SPAN;
+      spawn();
+      if (Math.random() < .25) setTimeout(function(){ if (shown() && moving()) spawn(); }, 1500 + Math.random() * 3000);
+    }
+    return {
+      init: function(){
+        clearInterval(tid); tid = setInterval(step, 1000);
+        document.addEventListener("deckhand:stage", function(e){ if (e.detail && e.detail.type) clear(false); });   // the stage takes the moving ones
+        window.addEventListener("resize", function(){ clear(true); });
+      },
+      step: step, spawn: spawn, clear: clear, count: count
+    };
+  })();
+  /* the gourds: a tap wobbles one on its base */
+  function wireGourds(){
+    document.querySelectorAll("#nvGourds .nvGourd").forEach(function(g){
+      g.addEventListener("pointerdown", function(e){
+        e.stopPropagation();
+        restart(g, "wob");
+        clearTimeout(g._t); g._t = setTimeout(function(){ g.classList.remove("wob"); }, 1000);
+      });
+    });
   }
   var FACES = 2;
   function restart(el, cls){ el.classList.remove(cls); void el.getBBox(); el.classList.add(cls); }
@@ -19486,11 +19962,15 @@ var Season = (function(){
       clearTimeout(endTid); endTid = setTimeout(land, DROP);
     });
   }
-  function wire(){ wirePumpkins(); wireSpider(); }
+  function wire(){ wirePumpkins(); wireSpider(); wireGourds(); Leaves.init(); }
   return {
     init: function(){ wire(); apply(); setInterval(apply, 60000); },
     apply: apply,
     active: active,
+    thanksgivingWeek: thanksgivingWeek,          // v7.56
+    lamp: lamp,                                  // v7.56: the lantern's week, 1–4 (0 outside November)
+    _leaf: function(opts){ return Leaves.spawn(opts); },   // v7.56 test hook: one leaf now
+    leaves: Leaves,                              // v7.56 (tests)
     prelight: function(){ prelitFor = null; prelight(); },
     FACES: FACES
   };

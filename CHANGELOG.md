@@ -2,6 +2,28 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.56.0 — 2026-10-31
+
+**November.** Croix: "Halloween is over so I need a fall theme. Not quite winter theming yet."
+October's sibling, on October's rules: decoration at the edges only, off the stage and the landing
+page, quiet under reduced motion, and Settings → Seasonal touches → Off takes it with October.
+
+- **Falling leaves.** Now and then — a leaf or two every 10–25 seconds, never more than six — a
+  maple, oak, aspen, willow or sweetgum leaf in rust, amber, gold or deep green drifts down the
+  board's outer edges, tumbling as it goes, and settles on the water to rock on the swell and float
+  off with the waves. They stay in the outer columns, so they never cross the clock or the bell
+  strip. Tap one and it spins away. With reduced motion nothing falls: three leaves rest on the water.
+- **A lantern on the boat.** The October streamer gives way to a small lantern hung on the mast,
+  dim the first week of November and a little brighter each week, brightest Thanksgiving week.
+- **Geese.** Once or twice a school day a V of geese crosses the sky far off, slowly, with one faint
+  honk if the sound is on. Never in a period's opening ten minutes or its last three, and never
+  with reduced motion.
+- **Lunch goes fall.** A slice of pumpkin pie with a dollop where the cookie was (still three
+  bites), a steaming mug of cider with a cinnamon stick where the milk was, and a rust tray.
+- **Thanksgiving week.** From the Monday of Thanksgiving week through the break, a bowl of gourds
+  sits on the sand where the pumpkins were (tap one and it wobbles), the lantern is at its
+  brightest, and the geese still fly every day. The Friday before the break gets a second V.
+
 ## 7.55.0 — 2026-10-31
 
 **The audit.** Croix: "run a full hardcore audit on the entire codebase… look for opportunities to
