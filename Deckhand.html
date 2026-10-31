@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.56.0",
+  "appVersion": "7.56.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -5108,7 +5108,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.56.0",
+  appVersion: "7.56.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -19823,7 +19823,7 @@ var Season = (function(){
       var h = H(); if (!h || !shown() || !moving()) return null;
       h.querySelectorAll(".nvRest").forEach(remove);   // motion is back: the resting set was reduced motion's
       if (count() >= MAX) return null;
-      var W = window.innerWidth, size = Math.round(34 + Math.random() * 12);
+      var W = window.innerWidth, size = Math.round(48 + Math.random() * 18);
       var side = opts.side || (Math.random() < .5 ? "left" : "right");
       var amp = 8 + Math.random() * 12, lo = W * .01 + amp, hi = W * COL - size - amp;
       var x = Math.round(lo + Math.random() * Math.max(0, hi - lo));
@@ -19866,7 +19866,7 @@ var Season = (function(){
     function rest(){
       var h = H(); if (!h || h.querySelector(".nvRest")) return;
       var W = window.innerWidth;
-      [[.855, 0, 3, 28, -18], [.905, 1, 1, 24, 22], [.952, 2, 0, 30, -6]].forEach(function(p){
+      [[.855, 0, 3, 40, -18], [.905, 1, 1, 34, 22], [.952, 2, 0, 42, -6]].forEach(function(p){
         var el = build(p[3], SHAPES[p[1]], COLORS[p[2]]);
         el.classList.add("nvRest");
         el.style.transform = "translate(" + Math.round(W * p[0]) + "px," + Math.round(waterY(p[3])) + "px)";

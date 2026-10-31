@@ -2,6 +2,10 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.56.1 — 2026-10-31
+
+- The leaves are bigger (48–66 px, from 34–46). Croix, shown the board: "they are small."
+
 ## 7.56.0 — 2026-10-31
 
 **November.** Croix: "Halloween is over so I need a fall theme. Not quite winter theming yet."
