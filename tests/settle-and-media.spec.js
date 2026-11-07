@@ -494,8 +494,8 @@ test.describe("embeds", () => {
       cats: [...document.querySelectorAll(".ytLib .menuLabel")].map(l => l.textContent),
       pills: document.querySelectorAll(".ytLib .pill").length
     }));
-    // v6.33: 8 categories (Math Antics + scores + pop/jazz joined the 5)
-    ok(libState.open && libState.cats.length === 8 && libState.pills >= 30,
+    // v7.60: 11 categories, 186 verified entries
+    ok(libState.open && libState.cats.length === 11 && libState.pills >= 150,
       "library wrong: " + JSON.stringify(libState));
     await page.click(".ytLib .pill");              // first entry
     const libPick = await page.evaluate(() => ({

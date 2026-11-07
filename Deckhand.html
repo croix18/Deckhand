@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.59.0",
+  "appVersion": "7.60.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -1585,6 +1585,9 @@
   }
   .ytLib[hidden]{display:none;}
   .ytLib .pill{text-align:left;}
+  /* v7.60: 186 entries — on the stage the list goes four across so a category fits a screen */
+  .wFull .ytLib{grid-template-columns:repeat(4, 1fr);}
+  .ytLib .menuLabel{grid-column:1 / -1;}
   .ytLibClose{grid-column:1 / -1; justify-self:end; background:var(--cream); color:var(--navy);}
   .ytRow{display:flex; gap:8px; align-items:center;}
   .ytIn{flex:1; min-width:0;}
@@ -5826,7 +5829,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.59.0",
+  appVersion: "7.60.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -14100,61 +14103,222 @@ function makeMusic(host, wcfg){
    every url below was found by live web search (Sep 20, 2026), never
    guessed. Math Antics entries are the OFFICIAL channel playlists
    (their PLUPEBWbAHUs… set), sorted to 7th-grade topics. */
+/* v7.60 (Croix: "give me a complete, extensive library of YouTube links ready to go from
+   everywhere. I want comprehensive."): 186 entries in 11 categories, EVERY id verified live
+   against YouTube's oEmbed endpoint on Nov 7 2026 (title and channel recorded in the research
+   notes). Official channels and 24/7 streams preferred; "(all)" entries are a channel's own
+   uploads playlist (UU + channel id) and open on its newest video. Three old picks that were
+   third-party re-lists (TED-Ed riddles, Koo Koo, a coffee-shop radio) were replaced with the
+   official ones. Think Like a Coder opens on Episode 1 with the playlist attached — the
+   playlist's own first item is the series TRAILER, which is the "preview" Croix saw. */
 var YT_LIB = [
   { cat: "Math Antics", items: [
-    { name: "Fractions",           url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszeG-AhgtaRybo0ylguyk6_" },
-    { name: "Percents",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszZIGUj0Hypsane5yYAyIUY" },
-    { name: "Ratios & proportions",url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsy8XFOyG-aloxtb-yKNSk8J" },
-    { name: "Integers",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszGTzPZNvOjc_qp-3rY4X6i" },
-    { name: "Algebra basics 1",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsy-ow8RdnlRokMT9UrHb2Kd" },
-    { name: "Algebra basics 2",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsym6gcZi7rfeysMRxIrnLrf" },
-    { name: "Geometry",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsxuIbsAS--B6cobarm2bty2" }
+    { name: "Fractions",                 url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszeG-AhgtaRybo0ylguyk6_" },
+    { name: "Percents",                  url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszZIGUj0Hypsane5yYAyIUY" },
+    { name: "Ratios & proportions",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsy8XFOyG-aloxtb-yKNSk8J" },
+    { name: "Integers",                  url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUszGTzPZNvOjc_qp-3rY4X6i" },
+    { name: "Algebra basics 1",          url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsy-ow8RdnlRokMT9UrHb2Kd" },
+    { name: "Algebra basics 2",          url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsym6gcZi7rfeysMRxIrnLrf" },
+    { name: "Geometry",                  url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUPEBWbAHUsxuIbsAS--B6cobarm2bty2" },
+    { name: "All Math Antics",           url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUBuMwlP7kHkNxdPAqtFSJTw" },
+    { name: "Order of operations",       url: "https://www.youtube-nocookie.com/embed/dAgfnK528RA" },
+    { name: "Negative numbers",          url: "https://www.youtube-nocookie.com/embed/OAoLCXpao6s" },
+    { name: "Absolute value",            url: "https://www.youtube-nocookie.com/embed/BrYy1bgh3Y0" },
+    { name: "Ratios and rates",          url: "https://www.youtube-nocookie.com/embed/RQ2nYUBVvqI" },
+    { name: "Proportions",               url: "https://www.youtube-nocookie.com/embed/USmit5zUGas" },
+    { name: "What are percentages?",     url: "https://www.youtube-nocookie.com/embed/JeVSmq1Nrpw" },
+    { name: "Scientific notation",       url: "https://www.youtube-nocookie.com/embed/bXkewQ7WEdI" },
+    { name: "Mean, median & mode",       url: "https://www.youtube-nocookie.com/embed/B1HEzNTGeZ4" },
+    { name: "Simplifying fractions",     url: "https://www.youtube-nocookie.com/embed/AtBUQH8Tkqc" },
+    { name: "Solving equations 1",       url: "https://www.youtube-nocookie.com/embed/l3XzepN03KQ" },
+    { name: "Coordinate plane",          url: "https://www.youtube-nocookie.com/embed/9Uc62CuQjc4" },
+    { name: "Basic linear functions",    url: "https://www.youtube-nocookie.com/embed/MXV65i9g1Xg" },
+    { name: "Angle basics",              url: "https://www.youtube-nocookie.com/embed/DGKwdHMiqCg" },
+    { name: "Circles: what is pi?",      url: "https://www.youtube-nocookie.com/embed/cC0fZ_lkFpQ" },
+    { name: "Circumference & area",      url: "https://www.youtube-nocookie.com/embed/O-cawByg2aA" },
+    { name: "Area",                      url: "https://www.youtube-nocookie.com/embed/xCdxURXMdFY" },
+    { name: "Volume",                    url: "https://www.youtube-nocookie.com/embed/qJwecTgce6c" },
+    { name: "Pythagorean theorem",       url: "https://www.youtube-nocookie.com/embed/WqhlG3Vakw8" }
+  ]},
+  { cat: "More math teachers", items: [
+    { name: "Khan Academy (all)",        url: "https://www.youtube-nocookie.com/embed/videoseries?list=UU4a-Gbdw7vOaccHmFo40b9g" },
+    { name: "Khan: Algebra",             url: "https://www.youtube-nocookie.com/embed/videoseries?list=PL7AF1C14AF1B05894" },
+    { name: "Mashup Math",               url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUtBtcQJ8_jsrjPzb8i1tOsA" },
+    { name: "Math with Mr. J",           url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUY-ywrKyfsSFF1tILNH1pNA" },
+    { name: "Eddie Woo",                 url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUq0EGvLTyy-LLT1oUSO_0FQ" },
+    { name: "Mario's Math Tutoring",     url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUlOR1BiPyOkkIAnv9Cmj4iw" },
+    { name: "OCT: Pre-algebra",          url: "https://www.youtube-nocookie.com/embed/videoseries?list=PL0o_zxa4K1BVoTlaXWFcFZ7fU3RvmFMMG" },
+    { name: "3B1B: Lockdown math",       url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLZHQObOWTQDP5CVelJJ1bNDouqrAhVPev" },
+    { name: "Stand-up Maths",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUSju5G2aFaWMqn-_0YBtq5A" },
+    { name: "Up and Atom",               url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUSIvk78tK2TiviLQn4fSHaw" }
   ]},
   { cat: "Study music", items: [
-    { name: "Lofi Girl radio",   url: "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk" },
-    { name: "Mood Melodies",     url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUR68jfDGAqtZM15vgb3epDg" },
-    { name: "Chillhop radio",    url: "https://www.youtube-nocookie.com/embed/5yx6BWlEVcY" },
-    { name: "Coffee shop radio", url: "https://www.youtube-nocookie.com/embed/blAFxjhg62k" }
+    { name: "Lofi Girl radio",           url: "https://www.youtube-nocookie.com/embed/X4VbdwhkE10" },
+    { name: "Lofi Girl sleep/chill",     url: "https://www.youtube-nocookie.com/embed/rUxyKA_-grg" },
+    { name: "Synthwave radio",           url: "https://www.youtube-nocookie.com/embed/4xDzrJKXOOY" },
+    { name: "Jazz lofi radio",           url: "https://www.youtube-nocookie.com/embed/E2vONfzoyRI" },
+    { name: "Peaceful piano radio",      url: "https://www.youtube-nocookie.com/embed/4oStw0r33so" },
+    { name: "Medieval lofi radio",       url: "https://www.youtube-nocookie.com/embed/IxPANmjPaek" },
+    { name: "1 A.M. study session",      url: "https://www.youtube-nocookie.com/embed/lTRiuFIWV54" },
+    { name: "Chillhop radio",            url: "https://www.youtube-nocookie.com/embed/5yx6BWlEVcY" },
+    { name: "Chillhop study radio",      url: "https://www.youtube-nocookie.com/embed/7NOSDKb0HlU" },
+    { name: "Chillhop (all)",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUOxqgCwgOqC2lMqC5PYz_Dg" },
+    { name: "College Music",             url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUWzZ5TIGoZ6o-KtbGCyhnhg" },
+    { name: "the bootleg boy",           url: "https://www.youtube-nocookie.com/embed/videoseries?list=UU0fiLCwTmAukotCXYnqfj0A" },
+    { name: "The Jazz Hop Caf\u00e9",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUi8wqezBudeAiTdKOX571ug" },
+    { name: "Jazz piano radio",          url: "https://www.youtube-nocookie.com/embed/Dx5qFachd3A" },
+    { name: "Relaxing jazz BGM",         url: "https://www.youtube-nocookie.com/embed/neV3EPgvZ3g" },
+    { name: "Happy morning cafe",        url: "https://www.youtube-nocookie.com/embed/GkqhHEAy1zw" },
+    { name: "Cafe jazz & bossa nova",    url: "https://www.youtube-nocookie.com/embed/K2Q6YO3Ez44" },
+    { name: "Cafe Music BGM (all)",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUJhjE7wbdYAae1G25m0tHAA" },
+    { name: "Mood Melodies",             url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUR68jfDGAqtZM15vgb3epDg" },
+    { name: "Soothing Relaxation",       url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUjzHeG1KWoonmf9d5KBvSiw" },
+    { name: "Flying (Peder Helland)",    url: "https://www.youtube-nocookie.com/embed/1ZYbU82GVz4" },
+    { name: "Piano & water sounds",      url: "https://www.youtube-nocookie.com/embed/77ZozI0rw7w" },
+    { name: "Rousseau piano",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUPZUQqtVDmcjm4NY5FkzqLA" }
   ]},
   { cat: "Movie & game scores", items: [
-    { name: "Disney piano (3 hr)",   url: "https://www.youtube-nocookie.com/embed/5DiMoehAeOU" },
-    { name: "Disney piano mix",      url: "https://www.youtube-nocookie.com/embed/GBexfwe-9j0" },
-    { name: "Zelda for studying",    url: "https://www.youtube-nocookie.com/embed/RxrXSixvYAQ" },
-    { name: "Minecraft (C418)",      url: "https://www.youtube-nocookie.com/embed/ENgujtcYrk8" },
-    { name: "Minecraft + rain",      url: "https://www.youtube-nocookie.com/embed/qLuc8kZty1A" }
+    { name: "Disney piano (3 hr)",       url: "https://www.youtube-nocookie.com/embed/5DiMoehAeOU" },
+    { name: "Disney piano mix",          url: "https://www.youtube-nocookie.com/embed/GBexfwe-9j0" },
+    { name: "kno Disney Piano (all)",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUunvH2-1iyfjlEVDA8fsBNA" },
+    { name: "Zelda for studying",        url: "https://www.youtube-nocookie.com/embed/RxrXSixvYAQ" },
+    { name: "Zelda & Chill",             url: "https://www.youtube-nocookie.com/embed/GdzrrWA8e7A" },
+    { name: "Zelda & Chill (series)",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLBsm_SagFMmefZzqPX4iD8FxlbQMI5eHs" },
+    { name: "GameChops (all)",           url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUDVKYPXwdYUQfgA05CkyFSg" },
+    { name: "Minecraft (C418)",          url: "https://www.youtube-nocookie.com/embed/ENgujtcYrk8" },
+    { name: "Minecraft + rain",          url: "https://www.youtube-nocookie.com/embed/qLuc8kZty1A" },
+    { name: "C418 official (all)",       url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUnsbQM9ZgyCvYdHVRlRr8dg" },
+    { name: "Stardew & Sleep",           url: "https://www.youtube-nocookie.com/embed/8c4SEg23ma0" },
+    { name: "ConcernedApe (Stardew)",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUlLilfnwQ_8LoGVpjo4SP3g" },
+    { name: "Hollow Knight lofi",        url: "https://www.youtube-nocookie.com/embed/NYViektxN7Y" },
+    { name: "Ghibli piano",              url: "https://www.youtube-nocookie.com/embed/v5RHMpe7Xbs" },
+    { name: "Ghibli covers (series)",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLLb6i1JpZ81BCfUpHg0CLFUMcNmwmwVBC" },
+    { name: "Ghibli jazz cafe",          url: "https://www.youtube-nocookie.com/embed/3jWRrafhO7M" },
+    { name: "Morning at Hogwarts",       url: "https://www.youtube-nocookie.com/embed/9D3r4mN31-k" },
+    { name: "Ambient Worlds (all)",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUfR8HhkbpDAwvYxrecNg4Mg" }
   ]},
   { cat: "Pop, jazz & beats", items: [
-    { name: "Classroom pop hits",    url: "https://www.youtube-nocookie.com/embed/mb6NyvfCMFI" },
-    { name: "Pop covers (clean)",    url: "https://www.youtube-nocookie.com/embed/X-yJhGcS7U4" },
-    { name: "Pop study mix",         url: "https://www.youtube-nocookie.com/embed/wDNT10n1zpY" },
-    { name: "Jazz lofi radio",       url: "https://www.youtube-nocookie.com/embed/E2vONfzoyRI" }
+    { name: "Classroom pop hits",        url: "https://www.youtube-nocookie.com/embed/mb6NyvfCMFI" },
+    { name: "Pop covers (clean)",        url: "https://www.youtube-nocookie.com/embed/X-yJhGcS7U4" },
+    { name: "Pop study mix",             url: "https://www.youtube-nocookie.com/embed/wDNT10n1zpY" },
+    { name: "KIDZ BOP (all)",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUKE0Xnj818IDaHvIcRiq0Bg" },
+    { name: "The Piano Guys",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUmKurapML4BF9Bjtj4RbvXw" },
+    { name: "Vitamin String Quartet",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUC9h6FtIb58ZQCRPJ2ZQtKg" }
   ]},
   { cat: "Classical", items: [
-    { name: "Best of Mozart",        url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_fm5s5Gm_0kIfA9weExAhDh" },
-    { name: "For concentration",     url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_d_wv2xLeNW-FriByGJuG3e" },
-    { name: "Reading & studying",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_dpTfQVYT_fxdl-byp1eQoG" },
-    { name: "Relaxing classical",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_fMi65fxIQfjHdeqbukMHRP" }
+    { name: "Best of Mozart",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_fm5s5Gm_0kIfA9weExAhDh" },
+    { name: "Best of Beethoven",         url: "https://www.youtube-nocookie.com/embed/W-fFHeTX70Q" },
+    { name: "Best of Chopin",            url: "https://www.youtube-nocookie.com/embed/wygy721nzRc" },
+    { name: "Best of Bach",              url: "https://www.youtube-nocookie.com/embed/6JQm5aSjX6g" },
+    { name: "Best of Schubert",          url: "https://www.youtube-nocookie.com/embed/FoUMsBQmGPY" },
+    { name: "Mozart vs Beethoven",       url: "https://www.youtube-nocookie.com/embed/Xu2pgTjxuKc" },
+    { name: "For concentration",         url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_d_wv2xLeNW-FriByGJuG3e" },
+    { name: "Reading & studying",        url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_dpTfQVYT_fxdl-byp1eQoG" },
+    { name: "Relaxing classical",        url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLcGkkXtask_fMi65fxIQfjHdeqbukMHRP" },
+    { name: "HALIDONMUSIC (all)",        url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUyOfqgtsQaM3S-VZnsYnHjQ" },
+    { name: "Classical Music Only",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUosLBx23zc-5OaEbAkl3QIg" },
+    { name: "Best of classical mix",     url: "https://www.youtube-nocookie.com/embed/jgpJVI3tDbY" },
+    { name: "Yo-Yo Ma: Bach Prelude",    url: "https://www.youtube-nocookie.com/embed/1prweT95Mo0" }
   ]},
   { cat: "Ambience", items: [
-    { name: "Rain in the woods", url: "https://www.youtube-nocookie.com/embed/9oc8Fa7tb8c" },
-    { name: "Rain & stream 4K",  url: "https://www.youtube-nocookie.com/embed/buqt6_CjtuI" },
-    { name: "Cozy fireplace",    url: "https://www.youtube-nocookie.com/embed/wp2GVCZgpPE" },
-    { name: "Ocean waves (10 hr)",  url: "https://www.youtube-nocookie.com/embed/cjqDNEN_4ro" },
-    { name: "Thunder & ocean",      url: "https://www.youtube-nocookie.com/embed/VcsEA0zl8LU" },
-    { name: "Birdsong & forest",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLQzmDP1HVzzbB9h1_Y1pNiZaBlquu3kKG" },
-    { name: "Brown noise",          url: "https://www.youtube-nocookie.com/embed/SwoL4Qi_FJk" }
+    { name: "Rain in the woods",         url: "https://www.youtube-nocookie.com/embed/9oc8Fa7tb8c" },
+    { name: "Rain & stream 4K",          url: "https://www.youtube-nocookie.com/embed/buqt6_CjtuI" },
+    { name: "Epic thunder & rain",       url: "https://www.youtube-nocookie.com/embed/q76bMs-NwRk" },
+    { name: "Rainstorm (Calm)",          url: "https://www.youtube-nocookie.com/embed/yIQd2Ya0Ziw" },
+    { name: "Gentle night rain",         url: "https://www.youtube-nocookie.com/embed/L_LUpnjgPso" },
+    { name: "Rain on window",            url: "https://www.youtube-nocookie.com/embed/mPZkdNFkNps" },
+    { name: "Thunder & ocean",           url: "https://www.youtube-nocookie.com/embed/VcsEA0zl8LU" },
+    { name: "Cozy fireplace",            url: "https://www.youtube-nocookie.com/embed/wp2GVCZgpPE" },
+    { name: "Fireplace ambience",        url: "https://www.youtube-nocookie.com/embed/WHPEKLQID4U" },
+    { name: "Ocean waves (10 hr)",       url: "https://www.youtube-nocookie.com/embed/cjqDNEN_4ro" },
+    { name: "Ocean waves relaxation",    url: "https://www.youtube-nocookie.com/embed/RqzGzwTY-6w" },
+    { name: "Birdsong & forest",         url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLQzmDP1HVzzbB9h1_Y1pNiZaBlquu3kKG" },
+    { name: "Brown noise",               url: "https://www.youtube-nocookie.com/embed/SwoL4Qi_FJk" },
+    { name: "Smoothed brown noise",      url: "https://www.youtube-nocookie.com/embed/nMfPqeZjc2c" },
+    { name: "White noise (10 hr)",       url: "https://www.youtube-nocookie.com/embed/ZXtimhT-ff4" },
+    { name: "Coffee shop sounds",        url: "https://www.youtube-nocookie.com/embed/gaGrHUekGrc" },
+    { name: "Busy coffee shop",          url: "https://www.youtube-nocookie.com/embed/h2zkV-l_TbY" },
+    { name: "Relaxing White Noise",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUbunYN0o9Yaid7zHaor_UHA" },
+    { name: "Nomadic Ambience",          url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUqRTj-Nu_8to3jIBlXptOtA" }
   ]},
   { cat: "Brain breaks", items: [
-    { name: "Koo Koo brain breaks", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLdC8ueW9VQ0gSrC8covABwp3ScaC5_kIo" },
-    { name: "EZ PZ dance-along",    url: "https://www.youtube-nocookie.com/embed/_w1Ufkyuh8U" },
-    { name: "Get yo body movin'",   url: "https://www.youtube-nocookie.com/embed/XXH0EAKzPcM" }
+    { name: "Koo Koo (all)",             url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUJfz4ZD1ADS08wFg70j0Niw" },
+    { name: "EZ PZ dance-along",         url: "https://www.youtube-nocookie.com/embed/_w1Ufkyuh8U" },
+    { name: "Get yo body movin'",        url: "https://www.youtube-nocookie.com/embed/XXH0EAKzPcM" },
+    { name: "Dinosaur Stomp",            url: "https://www.youtube-nocookie.com/embed/Imhi98dHa5w" },
+    { name: "Wiggle It",                 url: "https://www.youtube-nocookie.com/embed/dh-9k8XfLzY" },
+    { name: "Monster Moves",             url: "https://www.youtube-nocookie.com/embed/GxKb_VHCYdc" },
+    { name: "GoNoodle (all)",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=UU2YBT7HYqCbbvzu3kKZ3wnw" },
+    { name: "Banana Banana Meatball",    url: "https://www.youtube-nocookie.com/embed/BQ9q4U2P3ig" },
+    { name: "Peanut Butter in a Cup",    url: "https://www.youtube-nocookie.com/embed/wPCGfa44bF0" },
+    { name: "Can't Stop the Feeling",    url: "https://www.youtube-nocookie.com/embed/KhfkYzUwYFk" },
+    { name: "Fresh Prince theme",        url: "https://www.youtube-nocookie.com/embed/jPll94fI4i4" },
+    { name: "Fabio's Meatball Run",      url: "https://www.youtube-nocookie.com/embed/JU0ETGd5dgk" },
+    { name: "Boom Chicka Boom",          url: "https://www.youtube-nocookie.com/embed/1b6axyuaKcY" },
+    { name: "Jump!",                     url: "https://www.youtube-nocookie.com/embed/Ki8haFw_YlA" },
+    { name: "Bring It Down (calm)",      url: "https://www.youtube-nocookie.com/embed/bRkILioT_NA" },
+    { name: "Melting (calm)",            url: "https://www.youtube-nocookie.com/embed/fTzXFPh6CPI" },
+    { name: "Scientific Method song",    url: "https://www.youtube-nocookie.com/embed/DChofjUH488" },
+    { name: "KIDZ BOP brain break",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=PL38HD4ys7ltkDroiK3OrVQ6QqEZ9jEjOk" },
+    { name: "Cosmic Kids Yoga (all)",    url: "https://www.youtube-nocookie.com/embed/videoseries?list=UU5uIZ2KOZZeQDQo_Gsi_qbQ" },
+    { name: "Cosmic Kids: Frozen",       url: "https://www.youtube-nocookie.com/embed/xlg052EKMtk" },
+    { name: "Jack Hartmann (all)",       url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUVcQH8A634mauPrGbWs7QlQ" }
   ]},
   { cat: "Watch & learn", items: [
-    { name: "TED-Ed riddles",   url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLUptLdhc0cdHEQTMrdI9t4GR6wM_nXLnA" },
-    { name: "TED-Ed: math in real life", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLE3376FF44087B17B" },
-    { name: "TED-Ed: think like a coder", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLJicmE8fK0EgogMqDYMgcADT1j5b911or" },
-    { name: "Veritasium maths", url: "https://www.youtube-nocookie.com/embed/videoseries?list=PL0q2jaibc2Q1SSDGbaab-dI2TaHS6_OaP" },
-    { name: "Numberphile",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLt5AfwLFPxWIUYlCb5ip9f_s4qm1zi8kc" }
+    { name: "TED-Ed riddles",            url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLJicmE8fK0EiFRt1Hm5a_7SJFaikIFW30" },
+    { name: "TED-Ed: math in life",      url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLE3376FF44087B17B" },
+    { name: "TED-Ed: Think Like a Coder", url: "https://www.youtube-nocookie.com/embed/KFVdHDMcepw?list=PLJicmE8fK0EgogMqDYMgcADT1j5b911or" },
+    { name: "Prisoner hat riddle",       url: "https://www.youtube-nocookie.com/embed/N5vJSNXPEwA" },
+    { name: "Einstein's riddle",         url: "https://www.youtube-nocookie.com/embed/1rDVz_Fb6HQ" },
+    { name: "Green-eyed logic puzzle",   url: "https://www.youtube-nocookie.com/embed/98TQv5IAtY8" },
+    { name: "Counterfeit coin riddle",   url: "https://www.youtube-nocookie.com/embed/tE2dZLDJSjA" },
+    { name: "Locker riddle",             url: "https://www.youtube-nocookie.com/embed/c18GjbnZXMw" },
+    { name: "How big is infinity?",      url: "https://www.youtube-nocookie.com/embed/UPA3bwVVzGI" },
+    { name: "Why can't you \u00f7 by 0?", url: "https://www.youtube-nocookie.com/embed/NKmGVE85GUU" },
+    { name: "Infinite Hotel paradox",    url: "https://www.youtube-nocookie.com/embed/Uj3_KqkI9Zo" },
+    { name: "What's an algorithm?",      url: "https://www.youtube-nocookie.com/embed/6hfOvs8pY1k" },
+    { name: "Veritasium maths",          url: "https://www.youtube-nocookie.com/embed/videoseries?list=PL0q2jaibc2Q1SSDGbaab-dI2TaHS6_OaP" },
+    { name: "Pattern never repeats",     url: "https://www.youtube-nocookie.com/embed/48sCx-wBs34" },
+    { name: "Math's fundamental flaw",   url: "https://www.youtube-nocookie.com/embed/HeQX2HjkcNo" },
+    { name: "Secret of syncing",         url: "https://www.youtube-nocookie.com/embed/t-_VPRCtiUg" },
+    { name: "Numberphile",               url: "https://www.youtube-nocookie.com/embed/videoseries?list=PLt5AfwLFPxWIUYlCb5ip9f_s4qm1zi8kc" },
+    { name: "Monty Hall problem",        url: "https://www.youtube-nocookie.com/embed/4Lb-6rxZxx0" },
+    { name: "Infinity is bigger",        url: "https://www.youtube-nocookie.com/embed/elvOZm0d4H0" },
+    { name: "Fibonacci mystery",         url: "https://www.youtube-nocookie.com/embed/Nu-lW-Ifyec" },
+    { name: "Banach\u2013Tarski paradox", url: "https://www.youtube-nocookie.com/embed/s86-Z-CbaHA" },
+    { name: "What is random?",           url: "https://www.youtube-nocookie.com/embed/9rIy0xY99a0" },
+    { name: "Mark Rober (all)",          url: "https://www.youtube-nocookie.com/embed/videoseries?list=UUY1kMZp36IQSyNx_9h4mpCg" },
+    { name: "Squirrel maze 1.0",         url: "https://www.youtube-nocookie.com/embed/hFZFjoX2cGg" },
+    { name: "Glitter bomb 1.0",          url: "https://www.youtube-nocookie.com/embed/xoxhDk-hwuo" },
+    { name: "Backwards brain bicycle",   url: "https://www.youtube-nocookie.com/embed/MFzDaBzBlL0" },
+    { name: "Crazy pool vortex",         url: "https://www.youtube-nocookie.com/embed/pnbJEg9r1o8" }
+  ]},
+  { cat: "Timers", items: [
+    { name: "1 min: fireworks",          url: "https://www.youtube-nocookie.com/embed/cHvucVAXJHQ" },
+    { name: "2 min: volcano",            url: "https://www.youtube-nocookie.com/embed/SqUcyBRYrfs" },
+    { name: "2 min: confetti bomb",      url: "https://www.youtube-nocookie.com/embed/fBJ9qwehpRc" },
+    { name: "5 min: roller coaster",     url: "https://www.youtube-nocookie.com/embed/UdHIvoqtTYc" },
+    { name: "5 min: Mario coaster",      url: "https://www.youtube-nocookie.com/embed/Vpp_LYC-8_s" },
+    { name: "5 min: Baby Yoda",          url: "https://www.youtube-nocookie.com/embed/jwikl_-BZaU" },
+    { name: "5 min: music timer",        url: "https://www.youtube-nocookie.com/embed/xTczn5RUgnk" },
+    { name: "5 min: electric",           url: "https://www.youtube-nocookie.com/embed/PQsYfitDdA0" },
+    { name: "10 min: roller coaster",    url: "https://www.youtube-nocookie.com/embed/-5ajUAyLUOg" },
+    { name: "10 min: calm paint",        url: "https://www.youtube-nocookie.com/embed/ZwdyAfCJ5I8" },
+    { name: "10 min: groovy",            url: "https://www.youtube-nocookie.com/embed/l7qLNhvWc9s" },
+    { name: "15 min: aquarium piano",    url: "https://www.youtube-nocookie.com/embed/qeb_Ui1DuJE" },
+    { name: "The Final Countdown",       url: "https://www.youtube-nocookie.com/embed/9jK-NcRmVcw" }
+  ]},
+  { cat: "Seasonal", items: [
+    { name: "5 min: fall timer",         url: "https://www.youtube-nocookie.com/embed/Urb32ujQ-Ps" },
+    { name: "10 min: Thanksgiving",      url: "https://www.youtube-nocookie.com/embed/ucIuS0lAJSo" },
+    { name: "15 min: turkey timer",      url: "https://www.youtube-nocookie.com/embed/-U2VPmIbjfI" },
+    { name: "Autumn riverside jazz",     url: "https://www.youtube-nocookie.com/embed/rJ08KiRN7pk" },
+    { name: "Autumn coffee shop",        url: "https://www.youtube-nocookie.com/embed/q9MDBbQVrag" },
+    { name: "Veterans Day: fun facts",   url: "https://www.youtube-nocookie.com/embed/mWD4Oy6fKlo" },
+    { name: "History of Veterans Day",   url: "https://www.youtube-nocookie.com/embed/ymCa1eB_qLA" },
+    { name: "Veterans Day by numbers",   url: "https://www.youtube-nocookie.com/embed/_XNNqpnGVkQ" },
+    { name: "Why Veterans Day?",         url: "https://www.youtube-nocookie.com/embed/U4ZjoJCQvXA" },
+    { name: "15 min: winter snowman",    url: "https://www.youtube-nocookie.com/embed/6u6hWFb8-z4" }
   ]}
 ];
 function makeYT(host, wcfg){

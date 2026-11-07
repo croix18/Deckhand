@@ -2,6 +2,20 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.60.0 — 2026-11-07
+
+**The library, comprehensive.** Croix: "The think like a coder link is a preview. While we're on
+it, can you give me a complete, extensive library of YouTube links ready to go from everywhere. I
+want comprehensive." The YouTube card's Library grows from 39 entries in 8 categories to 186 in 11
+— Math Antics (every playlist plus 18 single lessons on 7th-grade topics), More math teachers, Study
+music, Movie & game scores, Pop/jazz/beats, Classical, Ambience, Brain breaks, Watch & learn, Timers
+(1–15 minutes, and The Final Countdown), Seasonal (fall and Thanksgiving timers, autumn coffee-shop
+jazz, Veterans Day explainers, one winter timer). Every id was verified live against YouTube's
+oEmbed endpoint; official channels and 24/7 streams preferred; three third-party re-lists (TED-Ed
+riddles, Koo Koo, a coffee-shop radio) replaced with the official sources. The "preview" was the
+Think Like a Coder playlist opening on its trailer: it now opens on Episode 1 with the playlist
+attached. On the stage the library lists four across.
+
 ## 7.59.0 — 2026-11-07
 
 **♪ Keep playing.** Croix: "Is there a way I can get the YouTube video to keep playing even when I
