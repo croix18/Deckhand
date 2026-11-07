@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.59.0 — 2026-11-07
+
+**♪ Keep playing.** Croix: "Is there a way I can get the YouTube video to keep playing even when I
+collapse it. For music, it's not really helpful to have the video taking up screen space." A
+YouTube card has a ♪ Keep playing chip beside Library and Tab (off by default, remembered per card).
+On, minimizing the card leaves its player loaded: the music goes on from the dock chip, the ♪ Now
+Playing pill names it and a tap on the pill stops it, and the chip brings the card back without a
+reload. Home still silences everything, and a card that was minimized at boot still loads nothing
+until it is brought back. Off, minimize goes quiet as it has since 7.18. Two tests.
+
 ## 7.58.2 — 2026-11-07
 
 **The sea in front.** Croix: "My serpent was also behind the scarecrow." The water, the boat and

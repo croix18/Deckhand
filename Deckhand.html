@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.58.2",
+  "appVersion": "7.59.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -5826,7 +5826,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.58.2",
+  appVersion: "7.59.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -6146,6 +6146,7 @@ function sanitize(c){
         };
         wc.url = normYt(w.url);
         wc.stageOnly = bool(w.stageOnly, false);          // v7.1
+        wc.bg = bool(w.bg, false);                        // v7.59: keep playing when minimized
         wc.stations = (Array.isArray(w.stations) ? w.stations : []).filter(isObj)
           .map(function(s2){
             return { name: str(s2.name, "").trim().slice(0, 20) || "Station",
@@ -14158,6 +14159,7 @@ var YT_LIB = [
 ];
 function makeYT(host, wcfg){
   if (typeof wcfg.url !== "string") wcfg.url = "";
+  if (typeof wcfg.bg !== "boolean") wcfg.bg = false;   // v7.59
   if (!Array.isArray(wcfg.stations)){
     wcfg.stations = [{ name: "Lofi Girl",
       url: "https://www.youtube-nocookie.com/embed/jfKfPfyJRdk" }];
@@ -14196,7 +14198,7 @@ function makeYT(host, wcfg){
   var ytGone = false;
   function ytLoaded(){ var s0 = frame.getAttribute("src"); return !!s0 && s0 !== "about:blank"; }
   function report(){
-    try { NowPlaying.report(host, !ytGone && !wcfg.min && ytLoaded(), wcfg.label || "YouTube"); } catch(e){}
+    try { NowPlaying.report(host, !ytGone && (!wcfg.min || wcfg.bg) && ytLoaded(), wcfg.label || "YouTube"); } catch(e){}   // v7.59: a minimized card that keeps playing is on the list — the ♪ pill is its stop
   }
   function onStop(){
     var seen = true; try { seen = NowPlaying.onScreen(host); } catch(e){}
@@ -14264,6 +14266,14 @@ function makeYT(host, wcfg){
     if (!wcfg.url){ showNote("Load a station first."); return; }
     try { window.open(watchURL(wcfg.url), "_blank"); } catch(e){}
   });
+  /* v7.59: ♪ Keep playing — the music keeps going from the dock when the card is minimized */
+  var bgBtn = document.createElement("button");
+  bgBtn.type = "button"; bgBtn.className = "chip ytBg";
+  bgBtn.textContent = "\u266A Keep playing";
+  bgBtn.title = "Keep playing when the card is minimized (the \u266A pill stops it)";
+  function paintBg(){ bgBtn.setAttribute("aria-pressed", wcfg.bg ? "true" : "false"); }
+  wireButton(bgBtn, function(){ wcfg.bg = !wcfg.bg; paintBg(); report(); showNote(wcfg.bg ? "Minimize keeps the music going. Tap the \u266A pill to stop it." : "Minimize goes quiet, as before."); });
+  paintBg();
   var libBtn = document.createElement("button");
   libBtn.type = "button"; libBtn.className = "chip ytLibBtn";
   libBtn.textContent = "⊞ Library";
@@ -14280,6 +14290,7 @@ function makeYT(host, wcfg){
     chipsRow.innerHTML = "";
     chipsRow.appendChild(libBtn);
     chipsRow.appendChild(openBtn);
+    chipsRow.appendChild(bgBtn);                 // v7.59
     wcfg.stations.forEach(function(st, i){
       var b = document.createElement("button");
       b.type = "button"; b.className = "chip ytSt";
@@ -14371,7 +14382,12 @@ function makeYT(host, wcfg){
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     rebuild: renderStations, resync: function(){},
-    hide: onHome, show: onBoard,                 // v7.18: minimize / bring back
+    /* v7.59 (Croix: "Is there a way I can get the YouTube video to keep playing even when I collapse
+       it. For music, it's not really helpful to have the video taking up screen space."): with ♪ Keep
+       playing on, minimizing leaves the frame loaded — the dock chip is the card, the ♪ pill is the
+       stop. Home still silences it; a card that was minimized at boot still loads nothing by itself. */
+    hide: function(){ if (wcfg.bg){ report(); return; } onHome(); },
+    show: onBoard,                               // v7.18: minimize / bring back
     destroy: function(){
       /* a removed card must go QUIET — the iframe outliving the widget
          would keep singing from nowhere */
