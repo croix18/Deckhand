@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.58.1",
+  "appVersion": "7.58.2",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -2592,7 +2592,7 @@
   body[data-sea="windy"]{--h1:7; --h2:3; --p1:9deg; --p2:4deg; --swell:1.4; --chop:1.6; --foam:1; --flut:6deg; --flutT:.38s;}
 
   /* ---- the travelling layers ---- */
-  .wvLayer{position:fixed; left:0; bottom:0; width:160vw; height:88px; z-index:0; pointer-events:none;
+  .wvLayer{position:fixed; left:0; bottom:0; width:160vw; height:88px; z-index:2; pointer-events:none;   /* v7.58.2: with the sea */
            transform-origin:50% 73.3px;}       /* the mean waterline (y=100 of 120) — amplitude scales about it */
   #wv1{--lam:-25%; --ss:var(--swell);}          /* λ = 40vw = 400 of 1600 → 25% of the layer */
   #wv2{--lam:-10%; --ss:var(--chop);}           /* λ = 16vw */
@@ -2610,7 +2610,7 @@
   @keyframes foamBreak{0%{opacity:0;} 20%{opacity:var(--foam);} 45%{opacity:calc(var(--foam) * .5);} 60%,100%{opacity:0;}}
 
   /* ---- the boat ---- */
-  #boat{position:fixed; bottom:6px; left:calc(max(42vw, 300px) - 19px); width:38px; height:38px; z-index:0;   /* the MAST (x=20 of 40) sits at 42vw — the wave troughs' reference */
+  #boat{position:fixed; bottom:6px; left:calc(max(42vw, 300px) - 19px); width:38px; height:38px; z-index:2;   /* v7.58.2: with the sea */   /* the MAST (x=20 of 40) sits at 42vw — the wave troughs' reference */
         pointer-events:auto;                    /* the boat ANSWERS a tap (Sea.summon) and a long press (Sea.earned) */
         touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
   #boat .btSvg{width:38px; height:38px; overflow:visible; display:block;}
@@ -2722,7 +2722,12 @@
   @keyframes glLook{0%,40%{transform:scaleX(1);} 42%,58%{transform:scaleX(-1);} 60%,100%{transform:scaleX(1);}}
 
   /* ---- lanes & the things ---- */
-  .seaThing{position:fixed; z-index:0; pointer-events:none; visibility:hidden; --ls:1; transform-origin:50% 100%;}
+  /* v7.58.2 (Croix: "My serpent was also behind the scarecrow"): the water and everything on it ride at z 2 —
+     above the canvas card's bottom edge (the acts are fitted to the strip under it anyway) and above the
+     pieces that STAND on the dune (scarecrow, squirrel, turkey, z 2 earlier in the DOM), so nothing in the sea
+     passes behind them. The pieces that sit at the water's edge in front of it — the pumpkins, the gourd
+     bowl — stay in front at z 3 (Wilson still slips behind the pumpkins). */
+  .seaThing{position:fixed; z-index:2; pointer-events:none; visibility:hidden; --ls:1; transform-origin:50% 100%;}
   .seaThing.go{visibility:visible; will-change:transform;}
   .seaThing.far{--ls:.62;}
   .seaThing.near{--ls:1.4;}
@@ -3080,7 +3085,7 @@
   /* ---- the pumpkins on the sand ---- */
   #ocPumpkins{
     position:fixed; right:6vw; bottom:36px; width:clamp(190px, 17vw, 340px); height:auto;   /* feet on the dry sand, the puddle reaching the wet */
-    z-index:2; display:none; overflow:visible; pointer-events:none;   /* v7.11.5: the box sits over the canvas corner — only the pumpkins take taps */
+    z-index:3; display:none; overflow:visible; pointer-events:none;   /* v7.11.5: the box sits over the canvas corner — only the pumpkins take taps (v7.58.2: z 3, in front of the water) */
   }
   body.october:not(.landing):not(.focusMode) #ocPumpkins{display:block;}
   .ocPumpkin{cursor:pointer; pointer-events:auto;}
@@ -3614,7 +3619,7 @@
 
   /* ---- Thanksgiving week: a bowl of gourds on the sand, where the vine was ---- */
   #nvGourds{position:fixed; right:7vw; bottom:34px; width:clamp(150px, 11vw, 230px); height:auto;
-            z-index:2; display:none; overflow:visible; pointer-events:none;}
+            z-index:3; display:none; overflow:visible; pointer-events:none;}   /* v7.58.2: in front of the water, like the pumpkins */
   body.november.nvThanks:not(.landing):not(.focusMode) #nvGourds{display:block;}
   body.november.nvThanks #nvGourds{z-index:3; right:7.5vw; bottom:27px;}   /* v7.58: the bowl sits a little lower, in FRONT of the scarecrow's left stalks */
   .nvGourd{cursor:pointer; pointer-events:auto; transform-box:fill-box; transform-origin:50% 100%;}
@@ -3851,7 +3856,7 @@
   /* v7.58 (review: "the fog is invisible"): it lies OVER the front waves (z 1, above the wave
      layers, under the sand pieces and the dock), #F5EBD6 at .85, 130 px — 3.4 × the boat — with
      three soft lobes drifting left on the waves' wind; the boat and the halo show through as it thins */
-  #sea-fog{left:0; bottom:0; width:100vw; height:130px; z-index:1;}
+  #sea-fog{left:0; bottom:0; width:100vw; height:130px; z-index:3;}   /* v7.58.2: over the water stack (z 2) — it lies on everything in the sea */
   #sea-fog .fgBank{position:absolute; left:-6vw; bottom:0; width:112vw; height:100%;}
   .fgLobe{position:absolute; bottom:6px; width:38vw; height:118px; border-radius:50%;
           background:radial-gradient(ellipse at 50% 60%, rgba(245,235,214,.85) 0, rgba(245,235,214,.6) 40%, rgba(245,235,214,0) 70%);}
@@ -5821,7 +5826,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.58.1",
+  appVersion: "7.58.2",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",

@@ -2,6 +2,13 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.58.2 — 2026-11-07
+
+**The sea in front.** Croix: "My serpent was also behind the scarecrow." The water, the boat and
+every act now ride at z 2, above the pieces that stand on the dune; the pumpkins and the gourd bowl,
+which sit at the water's edge, stay in front at z 3 (Wilson still slips behind the pumpkins), and the
+fog lies over all of it.
+
 ## 7.58.1 — 2026-11-07
 
 **Leaves in front.** Croix, from the panel: "The leaves are falling behind the scarecrow." The beach
