@@ -31,7 +31,7 @@ test("v7.2: Ink — draw over the board, Done clears it (with Undo) and the boar
   await page.mouse.move(400, 400); await page.mouse.down();
   for (let i = 1; i <= 20; i++) await page.mouse.move(400 + i * 20, 400 + Math.sin(i / 3) * 40);
   await page.mouse.up();
-  await page.click('#inkBar [data-color="#FF7F6A"]');
+  await page.click('#inkBar [data-color="#D7263D"]');   // v7.57: the coral pen is gone (coral is the alarms'); red took its place
   await page.click('#inkBar [data-size="18"]');
   await page.mouse.move(500, 700); await page.mouse.down(); await page.mouse.move(900, 690); await page.mouse.up();
   ok((await page.evaluate(() => window.Deckhand.ink.count())) === 2, "strokes not recorded");
@@ -39,7 +39,7 @@ test("v7.2: Ink — draw over the board, Done clears it (with Undo) and the boar
     const c = document.getElementById("ink"), k = c.width / innerWidth;
     return [...c.getContext("2d").getImageData(Math.round(700 * k), Math.round(695 * k), 1, 1).data];
   });
-  ok(px[3] > 0 && px[0] > 200, "coral stroke not painted: " + px);
+  ok(px[3] > 0 && px[0] > 200, "red stroke not painted: " + px);
   // Done (v7.15): the drawing clears, the palette folds, taps reach the board again; Undo brings the drawing back
   await page.click("#inkDone");
   await expect(page.locator("body")).not.toHaveClass(/inking/);

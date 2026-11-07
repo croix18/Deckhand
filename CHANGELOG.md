@@ -2,6 +2,26 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.57.0 — 2026-11-07
+
+**The pen grows up.** Croix: "more colors, markers, pen options for my drawing feature when I have
+my embed slides out. Shapes: line, arrow, rays, rectangles, circles, triangles, a fill toggle. A
+lasso tool to move or resize anything drawn."
+
+- **Ten pen colors and three highlighters.** Navy, black, red, orange, green, blue, teal, purple,
+  pink and white; yellow, green and pink highlighters (the rounded squares). Coral is gone from the
+  pens — it is the alarms' color — and red takes its place.
+- **Pen, marker, eraser, lasso** and four sizes. The marker is broad and flat, like a chisel tip.
+- **Shapes.** Line, arrow, ray (a dot at the start, an arrowhead going on forever), rectangle,
+  circle and triangle — drag from corner to corner. **Fill** gives the closed shapes a light wash of
+  their color under the outline. Hold Shift for a square, a circle or a 45° line.
+- **The lasso.** Loop round anything you drew; drag inside the dashed box to move it, drag a corner
+  to resize it. Tap a color to recolor it, press Delete to remove it, Escape to let go.
+- **Undo is a real history** — moves, resizes, recolors, deletes and Clear all come back, sixty
+  steps deep. Done still clears the drawing with five seconds of Undo.
+- The bar still fits: two rows on the bottom-right, a column on the left that goes three wide on a
+  laptop-height screen, and still the see-through pop-up over staged slides.
+
 ## 7.56.1 — 2026-10-31
 
 - The leaves are bigger (48–66 px, from 34–46). Croix, shown the board: "they are small."

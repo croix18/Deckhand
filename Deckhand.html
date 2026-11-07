@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.56.1",
+  "appVersion": "7.57.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -452,6 +452,19 @@
     border:3px solid var(--white); box-shadow:0 0 0 1px var(--grid);}
   .inkSwatch[aria-pressed="true"]{box-shadow:0 0 0 3px var(--navy);}
   .inkDot{display:inline-block; border-radius:50%; background:var(--navy);}
+  /* v7.57: more pens, a marker, shapes and a lasso. On the bottom-right the groups are two rows
+     deep (colors 7 × 2, pen tools and sizes 2 × 2, shapes 4 × 2), so the bar stays one band; the
+     highlighters are rounded squares beside the round pens */
+  #inkBar .inkGroup{display:grid; grid-auto-flow:row; gap:0;}
+  #inkBar .inkGroup.inkColors{grid-template-columns:repeat(7, auto);}
+  #inkBar .inkGroup.inkTools, #inkBar .inkGroup.inkSizes{grid-template-columns:repeat(2, auto);}
+  #inkBar .inkGroup.inkShapes{grid-template-columns:repeat(4, auto);}
+  #inkBar .inkGroup.inkEdit{grid-template-columns:auto;}
+  #inkBar .inkGroup.inkEdit{gap:2px;}
+  .inkTool.inkIcon{min-width:44px; padding:6px;}
+  .inkTool.inkIcon svg{display:block; width:20px; height:20px;}
+  .inkSwatch.inkHi{border-radius:9px;}
+  #inkBar{max-height:calc(100vh - 24px); overflow:auto; overscroll-behavior:contain;}
   .inkDone{
     min-height:44px; padding:10px 20px; border:0; border-radius:12px; cursor:pointer;
     background:var(--navy); color:var(--white); font:inherit; font-weight:900; font-size:15px;
@@ -474,9 +487,17 @@
   .inkSideBtn{font-size:20px;}
   body.inkLeft #inkBar{right:auto; bottom:auto; left:14px; top:0; bottom:0; margin:auto 0; height:max-content;
     flex-direction:column; align-items:stretch; padding:10px 8px; transform-origin:0 50%;}
-  body.inkLeft #inkBar .inkGroup{display:grid; grid-template-columns:repeat(2, auto); justify-content:center; gap:2px;}
+  body.inkLeft #inkBar .inkGroup{display:grid; grid-auto-flow:row; grid-template-columns:repeat(2, auto); justify-content:center; justify-items:center; gap:2px;}
   body.inkLeft #inkBar .inkGroup .inkTool:not(.inkSwatch){padding:6px 8px;}
-  body.inkLeft #inkBar .inkGroup:nth-of-type(2), body.inkLeft #inkBar .inkGroup:nth-of-type(3){grid-template-columns:1fr; justify-items:center;}
+  /* v7.57: the column is taller now — on a laptop-height screen (768) it goes three wide with
+     smaller swatches, so it still fits top to bottom (the max-height + scroll is a safety net) */
+  @media (max-height: 940px){
+    body.inkLeft #inkBar{gap:5px; padding:8px 6px;}
+    body.inkLeft #inkBar .inkGroup{grid-template-columns:repeat(3, auto); gap:1px; padding:2px;}
+    body.inkLeft #inkBar .inkSwatch{width:30px; min-width:30px; height:30px; min-height:30px; margin:4px;}
+    body.inkLeft #inkBar .inkTool:not(.inkSwatch){min-width:40px; min-height:40px;}
+    body.inkLeft #inkBar .inkDone{min-height:40px; padding:8px 14px;}
+  }
   body.inkLeft.focusMode #inkBar{left:12px; right:auto;}
   body.inkLeft #inkBlob{right:auto; bottom:auto; left:12px; top:var(--rInk, calc(50% - 50px));}
   body.inkLeft #zoomBlob{right:auto; bottom:auto; left:12px; top:var(--rZoom, calc(50% + 6px));}
@@ -5032,23 +5053,48 @@
   <button type="button" class="zmIn" aria-label="Zoom in">+</button>
   <button type="button" class="zmDone">Done</button>
 </div>
+<!-- v7.57 (Croix: "more colors, markers, pen options … Shapes: line, arrow, rays, rectangles, circles,
+     triangles, a fill toggle. A lasso tool to move or resize anything drawn."): ten pen colors and three
+     highlighters; pen · marker · eraser · lasso; four sizes; six shapes and a fill toggle -->
 <div id="inkBar" role="toolbar" aria-label="Draw over the board" hidden>
-  <div class="inkGroup" aria-label="Pen color">
+  <div class="inkGroup inkColors" aria-label="Pen color">
     <button class="inkTool inkSwatch" type="button" data-color="#17324D" style="background:#17324D" aria-label="Navy pen" aria-pressed="true"></button>
-    <button class="inkTool inkSwatch" type="button" data-color="#FF7F6A" style="background:#FF7F6A" aria-label="Coral pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#111111" style="background:#111111" aria-label="Black pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#D7263D" style="background:#D7263D" aria-label="Red pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#F28C28" style="background:#F28C28" aria-label="Orange pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#2E9E5B" style="background:#2E9E5B" aria-label="Green pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#2F6FE4" style="background:#2F6FE4" aria-label="Blue pen" aria-pressed="false"></button>
     <button class="inkTool inkSwatch" type="button" data-color="#127A85" style="background:#127A85" aria-label="Teal pen" aria-pressed="false"></button>
     <button class="inkTool inkSwatch" type="button" data-color="#7E5FC5" style="background:#7E5FC5" aria-label="Purple pen" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch" type="button" data-color="#E0479E" style="background:#E0479E" aria-label="Pink pen" aria-pressed="false"></button>
     <button class="inkTool inkSwatch" type="button" data-color="#FFFFFF" style="background:#FFFFFF; box-shadow:0 0 0 2px var(--grid) inset" aria-label="White pen" aria-pressed="false"></button>
-    <button class="inkTool inkSwatch inkHi" type="button" data-color="#FFE45C" style="background:#FFE45C" aria-label="Yellow highlighter" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch inkHi" type="button" data-color="#FFE45C" style="background:#FFE45C" aria-label="Yellow highlighter" title="Yellow highlighter" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch inkHi" type="button" data-color="#9BF28C" style="background:#9BF28C" aria-label="Green highlighter" title="Green highlighter" aria-pressed="false"></button>
+    <button class="inkTool inkSwatch inkHi" type="button" data-color="#FF9BD6" style="background:#FF9BD6" aria-label="Pink highlighter" title="Pink highlighter" aria-pressed="false"></button>
   </div>
-  <div class="inkGroup" aria-label="Pen size">
-    <button class="inkTool" type="button" data-size="4" aria-label="Thin" aria-pressed="false"><span class="inkDot" style="width:6px;height:6px"></span></button>
-    <button class="inkTool" type="button" data-size="9" aria-label="Medium" aria-pressed="true"><span class="inkDot" style="width:11px;height:11px"></span></button>
+  <div class="inkGroup inkTools" aria-label="Pen">
+    <button class="inkTool inkIcon" type="button" data-tool="pen" aria-label="Pen" title="Pen" aria-pressed="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.2-4.8L16 4.4l3.6 3.6L8.8 18.8z"/><path d="M14 6.4l3.6 3.6"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="marker" aria-label="Marker" title="Marker" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 3.5l6 6-8 8-6-6z"/><path d="M6.5 11.5L3 18l3 3 6.5-3.5"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="erase" id="inkEraser" aria-label="Eraser" title="Eraser" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15.5l9.5-9.5 5 5L10 20.5H7.5z"/><path d="M9.5 11l5 5"/><path d="M12 20.5h8"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="lasso" aria-label="Lasso — circle what you drew to move or resize it" title="Lasso — circle what you drew to move or resize it" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="10" rx="8" ry="5.5" stroke-dasharray="3 3.2"/><path d="M8.5 15c-1.5 2.5.5 5 3 5"/></svg></button>
+  </div>
+  <div class="inkGroup inkSizes" aria-label="Pen size">
+    <button class="inkTool" type="button" data-size="3" aria-label="Fine" aria-pressed="false"><span class="inkDot" style="width:5px;height:5px"></span></button>
+    <button class="inkTool" type="button" data-size="6" aria-label="Thin" aria-pressed="false"><span class="inkDot" style="width:8px;height:8px"></span></button>
+    <button class="inkTool" type="button" data-size="10" aria-label="Medium" aria-pressed="true"><span class="inkDot" style="width:12px;height:12px"></span></button>
     <button class="inkTool" type="button" data-size="18" aria-label="Thick" aria-pressed="false"><span class="inkDot" style="width:18px;height:18px"></span></button>
   </div>
-  <div class="inkGroup">
-    <button class="inkTool" type="button" id="inkEraser" aria-label="Eraser" aria-pressed="false">Eraser</button>
-    <button class="inkTool" type="button" id="inkUndo" aria-label="Undo the last stroke">Undo</button>
+  <div class="inkGroup inkShapes" aria-label="Shapes">
+    <button class="inkTool inkIcon" type="button" data-tool="line" aria-label="Line" title="Line" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19L19 5"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="arrow" aria-label="Arrow" title="Arrow" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19L18 6"/><path d="M10.5 5.5H18.5V13.5"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="ray" aria-label="Ray" title="Ray" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="18.5" r="2.3" fill="currentColor"/><path d="M7.5 16.5L18 6"/><path d="M11 5.5h7.5V13"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="rect" aria-label="Rectangle" title="Rectangle" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="ellipse" aria-label="Circle" title="Circle" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></button>
+    <button class="inkTool inkIcon" type="button" data-tool="tri" aria-label="Triangle" title="Triangle" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5L20.5 19h-17z"/></svg></button>
+    <button class="inkTool inkIcon" type="button" id="inkFill" aria-label="Fill shapes" title="Fill shapes" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="2" fill="currentColor" fill-opacity=".35"/></svg></button>
+  </div>
+  <div class="inkGroup inkEdit">
+    <button class="inkTool" type="button" id="inkUndo" aria-label="Undo">Undo</button>
     <button class="inkTool" type="button" id="inkClear" aria-label="Clear the drawing">Clear</button>
   </div>
   <button class="inkTool inkSideBtn" type="button" id="inkSide" aria-label="Move the pen tools to the other side" title="Move to the other side">&#8644;</button>
@@ -5108,7 +5154,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.56.1",
+  appVersion: "7.57.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -18692,8 +18738,23 @@ var SaveState = (function(){
    only, like the sketch pad (a bitmap has no place in the config). */
 var Ink = (function(){
   var cv = $("ink"), bar = $("inkBar");
-  var ctx = null, strokes = [], cur = null, pid = null, armed = false;
-  var color = "#17324D", size = 9, erase = false;
+  /* v7.57 (Croix: "more colors, markers, pen options for my drawing feature when I have my embed
+     slides out. Shapes: line, arrow, rays, rectangles, circles, triangles, a fill toggle. A lasso
+     tool to move or resize anything drawn."): the flat stroke list is now a list of ITEMS —
+     {kind:"stroke", mode:"pen"|"marker"|"hi"|"erase", color, size, pts} and
+     {kind:"shape", shape:"line"|"arrow"|"ray"|"rect"|"ellipse"|"tri", color, size, fill, a, b}.
+     An item is never changed in place: a move, a resize or a recolor puts a new item in its slot,
+     so the Undo history can keep cheap shallow copies of the list. */
+  var ctx = null, items = [], cur = null, pid = null, armed = false;
+  var color = "#17324D", penColor = "#17324D", size = 10, tool = "pen", fill = false;
+  var HI = { "#FFE45C": 1, "#9BF28C": 1, "#FF9BD6": 1 };          // v7.57: the highlighter's own swatches
+  var SHAPES = { line: 1, arrow: 1, ray: 1, rect: 1, ellipse: 1, tri: 1 };
+  var TOOLS = { pen: 1, marker: 1, hi: 1, erase: 1, lasso: 1 };
+  var hist = [], HIST_MAX = 60;                 // v7.57: snapshots of the item list, newest last
+  var sel = null;                               // v7.57: { idx: [item indexes], box: {x,y,w,h} }
+  var lasso = null;                             // v7.57: the free-form loop being drawn
+  var drag = null;                              // v7.57: a move or a corner resize under way
+  var floating = null;                          // v7.57: the selection drawn live while it moves
   /* v7.6: the strokes already finished live on an offscreen copy, so a
      pointer move costs one new segment (or, for the translucent
      highlighter, one blit plus the current stroke) instead of every
@@ -18718,15 +18779,28 @@ var Ink = (function(){
     });
     rebuild();
   }
-  function setStyle(c, st){
-    c.globalCompositeOperation = st.erase ? "destination-out" : (st.hi ? "multiply" : "source-over");
-    c.strokeStyle = st.color;
-    c.globalAlpha = st.hi ? 0.45 : 1;
-    c.lineWidth = st.erase ? st.size * 3 : (st.hi ? st.size * 2.2 : st.size);
+  /* v7.57: the width an item paints at — the eraser and the highlighter as before; the marker a
+     broad flat nib */
+  function lw(it){
+    var m = it.mode;
+    return m === "erase" ? it.size * 3 : m === "hi" ? it.size * 2.2 : m === "marker" ? it.size * 1.8 : it.size;
+  }
+  function setStyle(c, it){
+    var m = it.mode;
+    c.globalCompositeOperation = m === "erase" ? "destination-out" : (m === "hi" ? "multiply" : "source-over");
+    c.strokeStyle = it.color; c.fillStyle = it.color;
+    c.globalAlpha = m === "hi" ? 0.45 : 1;
+    c.lineWidth = lw(it);
+    /* v7.57: the marker's chisel — square ends, mitred corners, so it reads flat and broad
+       beside the pen's round line */
+    if (m === "marker"){ c.lineCap = "square"; c.lineJoin = "miter"; c.miterLimit = 3; }
+    else { c.lineCap = "round"; c.lineJoin = "round"; }
   }
   function resetStyle(c){
     c.globalAlpha = 1;
     c.globalCompositeOperation = "source-over";
+    c.lineCap = "round"; c.lineJoin = "round";
+    if (c.setLineDash) c.setLineDash([]);
   }
   function mid(a, b){ return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
   /* the whole stroke: moveTo p0, a quadratic through each interior point
@@ -18746,6 +18820,57 @@ var Ink = (function(){
     c.stroke();
     resetStyle(c);
   }
+  /* v7.57: an arrowhead, a filled triangle whose tip is at `to`; returns where the shaft should
+     stop (the head's base), so a round cap never pokes past the point */
+  function headLen(it){ return Math.max(14, lw(it) * 3.2); }
+  function arrowHead(c, from, to, it){
+    var ang = Math.atan2(to.y - from.y, to.x - from.x), L = headLen(it), w = 0.5;
+    var dist = Math.sqrt((to.x - from.x) * (to.x - from.x) + (to.y - from.y) * (to.y - from.y));
+    if (dist < 1) return to;
+    L = Math.min(L, dist * 0.8);
+    c.beginPath();
+    c.moveTo(to.x, to.y);
+    c.lineTo(to.x - L * Math.cos(ang - w), to.y - L * Math.sin(ang - w));
+    c.lineTo(to.x - L * Math.cos(ang + w), to.y - L * Math.sin(ang + w));
+    c.closePath();
+    c.fill();
+    var back = L * Math.cos(w) * 0.85;
+    return { x: to.x - back * Math.cos(ang), y: to.y - back * Math.sin(ang) };
+  }
+  function boxOf(a, b){
+    return { x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), x1: Math.max(a.x, b.x), y1: Math.max(a.y, b.y) };
+  }
+  /* v7.57: the closed shapes' outline as a path (rect, ellipse, triangle: apex top-centre, base
+     along the bottom of the drag box) */
+  function closedPath(c, it){
+    var q = boxOf(it.a, it.b);
+    c.beginPath();
+    if (it.shape === "rect"){ c.rect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0); }
+    else if (it.shape === "ellipse"){
+      c.ellipse((q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2, Math.max(0.5, (q.x1 - q.x0) / 2), Math.max(0.5, (q.y1 - q.y0) / 2), 0, 0, Math.PI * 2);
+    } else {
+      c.moveTo((q.x0 + q.x1) / 2, q.y0); c.lineTo(q.x1, q.y1); c.lineTo(q.x0, q.y1); c.closePath();
+    }
+  }
+  function shapePath(c, it){
+    setStyle(c, it);
+    var a = it.a, b = it.b;
+    if (it.shape === "line"){
+      c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+    } else if (it.shape === "arrow" || it.shape === "ray"){
+      var end = arrowHead(c, a, b, it);
+      c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(end.x, end.y); c.stroke();
+      if (it.shape === "ray"){                   // a ray: its endpoint is a dot, its other end goes on forever
+        c.beginPath(); c.arc(a.x, a.y, Math.max(5, lw(it) * 1.3), 0, Math.PI * 2); c.fill();
+      }
+    } else {
+      closedPath(c, it);
+      if (it.fill){ c.globalAlpha = 0.28; c.fill(); c.globalAlpha = 1; }
+      c.stroke();
+    }
+    resetStyle(c);
+  }
+  function drawItem(c, it){ if (it.kind === "shape") shapePath(c, it); else strokePath(c, it); }
   /* only the piece of the current stroke that the newest point fixed —
      exactly the curve strokePath would draw for it, so the finished stroke
      lands on the same pixels. The tail to the last point waits for the
@@ -18771,39 +18896,170 @@ var Ink = (function(){
     c.clearRect(0, 0, cv.width, cv.height);
     c.restore();
   }
-  /* visible = the finished strokes + the one in progress */
+  /* ---- v7.57 geometry: points along an item, its box, moving and scaling it ---- */
+  function lerp(a, b, t){ return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+  function edge(out, a, b, n){ for (var i = 0; i < n; i++) out.push(lerp(a, b, i / n)); }
+  /* points that stand for the item: a stroke's own samples; a shape's outline, sampled */
+  function ptsOf(it){
+    if (it.kind !== "shape") return it.pts;
+    var out = [], a = it.a, b = it.b, i;
+    if (it.shape === "line" || it.shape === "arrow" || it.shape === "ray"){ edge(out, a, b, 12); out.push(b); return out; }
+    var q = boxOf(a, b), tl = { x: q.x0, y: q.y0 }, tr = { x: q.x1, y: q.y0 }, br = { x: q.x1, y: q.y1 }, bl = { x: q.x0, y: q.y1 };
+    if (it.shape === "rect"){ edge(out, tl, tr, 4); edge(out, tr, br, 4); edge(out, br, bl, 4); edge(out, bl, tl, 4); }
+    else if (it.shape === "ellipse"){
+      var cx = (q.x0 + q.x1) / 2, cy = (q.y0 + q.y1) / 2, rx = (q.x1 - q.x0) / 2, ry = (q.y1 - q.y0) / 2;
+      for (i = 0; i < 24; i++) out.push({ x: cx + rx * Math.cos(i / 24 * Math.PI * 2), y: cy + ry * Math.sin(i / 24 * Math.PI * 2) });
+    } else {
+      var ap = { x: (q.x0 + q.x1) / 2, y: q.y0 };
+      edge(out, ap, br, 5); edge(out, br, bl, 5); edge(out, bl, ap, 5);
+    }
+    return out;
+  }
+  function boundsOf(list){
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    list.forEach(function(it){
+      var pad = lw(it) / 2 + 2;
+      if (it.kind === "shape" && (it.shape === "arrow" || it.shape === "ray")) pad = Math.max(pad, headLen(it) * 0.5 + 2);
+      ptsOf(it).forEach(function(p){
+        x0 = Math.min(x0, p.x - pad); y0 = Math.min(y0, p.y - pad);
+        x1 = Math.max(x1, p.x + pad); y1 = Math.max(y1, p.y + pad);
+      });
+    });
+    if (x0 === Infinity) return null;
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+  function mapItem(it, f, k){
+    var o = {}, key;
+    for (key in it) if (Object.prototype.hasOwnProperty.call(it, key)) o[key] = it[key];
+    if (it.kind === "shape"){ o.a = f(it.a); o.b = f(it.b); }
+    else o.pts = it.pts.map(f);
+    if (k !== 1) o.size = Math.max(1, it.size * k);
+    return o;
+  }
+  function inPoly(p, poly){                     // ray casting
+    var inside = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++){
+      var a = poly[i], b = poly[j];
+      if (((a.y > p.y) !== (b.y > p.y)) && (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x)) inside = !inside;
+    }
+    return inside;
+  }
+  /* v7.57: the selection's frame — a dashed navy box (a white rule under it, so it shows on a dark
+     slide too) with a handle at each corner, drawn on the live canvas */
+  var HANDLE = 14, GRAB = 26;
+  function corners(b){ return [{ x: b.x, y: b.y }, { x: b.x + b.w, y: b.y }, { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }]; }
+  function drawSel(c){
+    var b = sel.box;
+    c.save();
+    c.lineWidth = 4; c.strokeStyle = "rgba(255,255,255,.85)";
+    c.strokeRect(b.x, b.y, b.w, b.h);
+    c.lineWidth = 2; c.strokeStyle = "#17324D"; c.setLineDash([8, 6]);
+    c.strokeRect(b.x, b.y, b.w, b.h);
+    c.setLineDash([]);
+    corners(b).forEach(function(p){
+      c.fillStyle = "#FFFFFF"; c.fillRect(p.x - HANDLE / 2, p.y - HANDLE / 2, HANDLE, HANDLE);
+      c.strokeRect(p.x - HANDLE / 2, p.y - HANDLE / 2, HANDLE, HANDLE);
+    });
+    c.restore();
+  }
+  function drawLasso(c){
+    if (!lasso || lasso.length < 2) return;
+    c.save();
+    c.beginPath(); c.moveTo(lasso[0].x, lasso[0].y);
+    for (var i = 1; i < lasso.length; i++) c.lineTo(lasso[i].x, lasso[i].y);
+    c.lineWidth = 4; c.strokeStyle = "rgba(255,255,255,.85)"; c.stroke();
+    c.lineWidth = 2; c.strokeStyle = "#17324D"; c.setLineDash([6, 6]); c.stroke();
+    c.restore();
+  }
+  /* visible = the finished strokes + the one in progress (+ v7.57: the selection riding over them,
+     the lasso loop, the selection's frame) */
   function present(){
     if (!ctx) return;
     clearOf(ctx);
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(base, 0, 0);
     ctx.restore();
-    if (cur) strokePath(ctx, cur);
+    if (floating) floating.forEach(function(it){ drawItem(ctx, it); });
+    if (cur) drawItem(ctx, cur);
+    drawLasso(ctx);
+    if (sel) drawSel(ctx);
   }
-  /* the offscreen copy from scratch: undo, clear, a resize */
-  function rebuild(){
+  /* the offscreen copy from scratch: undo, clear, a resize (v7.57: `skip` leaves out the items
+     a drag is carrying, which ride live over it) */
+  function rebuild(skip){
     if (!bctx) return;
     clearOf(bctx);
-    strokes.forEach(function(st){ strokePath(bctx, st); });
+    items.forEach(function(it, i){ if (!skip || !skip[i]) drawItem(bctx, it); });
     stats.full++;
     present();
   }
   /* a new point on the current stroke: the highlighter's translucent
      multiply would double up where segments overlap, so it repaints its
-     whole (single) stroke; pen and eraser add a segment */
+     whole (single) stroke; pen, marker and eraser add a segment (v7.57: a shape in progress is
+     one item — it just repaints) */
   function advance(){
     if (!ctx || !cur) return;
-    if (cur.hi) present(); else segment();
+    if (cur.kind === "shape" || cur.mode === "hi") present(); else segment();
   }
   function redraw(){ rebuild(); }
+  /* ---- v7.57 history ---- */
+  function snap(){ hist.push(items.slice()); if (hist.length > HIST_MAX) hist.shift(); }
+  function undo(){
+    if (!hist.length) return;
+    items = hist.pop(); sel = null; dropStroke(); redraw();
+  }
+  function dropSel(){ if (sel){ sel = null; present(); return true; } return false; }
+  function selected(){ return sel ? sel.idx.map(function(i){ return items[i]; }) : []; }
+  function deleteSel(){
+    if (!sel) return false;
+    var gone = {}; sel.idx.forEach(function(i){ gone[i] = 1; });
+    snap();
+    items = items.filter(function(it, i){ return !gone[i]; });
+    sel = null; redraw();
+    return true;
+  }
+  function editSel(fn){                         // a recolor or a fill toggle on what is selected
+    if (!sel) return false;
+    snap();
+    items = items.slice();
+    sel.idx.forEach(function(i){ var o = fn(items[i]); if (o) items[i] = o; });
+    redraw();
+    return true;
+  }
+  function withProp(it, k, v){ var o = mapItem(it, function(p){ return p; }, 1); o[k] = v; return o; }
   function paintBar(){
     bar.querySelectorAll("[data-color]").forEach(function(b){
-      b.setAttribute("aria-pressed", (!erase && b.dataset.color === color) ? "true" : "false");
+      b.setAttribute("aria-pressed", (tool !== "erase" && b.dataset.color === color) ? "true" : "false");
     });
     bar.querySelectorAll("[data-size]").forEach(function(b){
       b.setAttribute("aria-pressed", +b.dataset.size === size ? "true" : "false");
     });
-    $("inkEraser").setAttribute("aria-pressed", erase ? "true" : "false");
+    bar.querySelectorAll("[data-tool]").forEach(function(b){
+      b.setAttribute("aria-pressed", b.dataset.tool === tool ? "true" : "false");
+    });
+    var f = $("inkFill"); if (f) f.setAttribute("aria-pressed", fill ? "true" : "false");
+  }
+  /* v7.57: a tool by name. The highlighter has no button — its swatches are the tool; leaving it
+     for a pen tool takes back the last pen color */
+  function setTool(t){
+    if (!TOOLS[t] && !SHAPES[t]) return;
+    if (t !== "lasso") dropSel();
+    if (t !== "hi" && t !== "erase" && t !== "lasso" && HI[color]) color = penColor;
+    tool = t;
+    paintBar();
+  }
+  function pickColor(c){
+    if (sel && tool === "lasso"){                 // a selection takes the color and stays selected
+      editSel(function(it){ return it.mode === "erase" ? null : withProp(it, "color", c); });
+      color = c; if (!HI[c]) penColor = c;
+      return;
+    }
+    color = c;
+    if (HI[c]) tool = "hi";
+    else {
+      penColor = c;
+      if (tool === "hi" || tool === "erase" || tool === "lasso"){ dropSel(); tool = "pen"; }   // marker and shapes keep their tool
+    }
   }
   function side(){ document.body.classList.toggle("inkLeft", !cfg.ui || cfg.ui.inkSide !== "right"); }   // v7.28
   function arm(on){
@@ -18815,7 +19071,10 @@ var Ink = (function(){
       var b = $(id); if (b) b.setAttribute("aria-pressed", armed ? "true" : "false");
     });
     if (armed){ fit(); paintBar(); }
-    else if (cur || pid !== null){ endStroke(); }   // v7.55: a pointer still down is let go too
+    else {
+      if (cur || pid !== null){ endStroke(); }   // v7.55: a pointer still down is let go too
+      dropSel();                                 // v7.57
+    }
   }
   /* v7.15 (Croix, after class: "It was awkward to walk over, clear the screen, click done,
      collapse the bar, click back into the slides frame, to continue the lesson"): leaving the
@@ -18825,42 +19084,143 @@ var Ink = (function(){
      clicker moves the slide. */
   function finish(){
     if (!armed) return;
-    if (cur) endStroke();
-    var had = strokes.slice();
-    strokes = []; cur = null; redraw();
+    if (cur || pid !== null) endStroke();
+    var had = items.slice(), hh = hist.slice();
+    items = []; hist = []; sel = null; cur = null; redraw();
     arm(false);
     try { if (document.body.classList.contains("focusMode")) Canvas.dockMin(true); } catch(e){}
     try { Canvas.refocusDeck(); } catch(e){}
     if (had.length) Undo.show("Drawing cleared", function(){
-      strokes = had; redraw();
+      items = had; hist = hh; redraw();          // v7.57: its history comes back with it
       try { Canvas.refocusDeck(); } catch(e){}    // the Undo tap took the keys; give them back
     });
   }
+  /* v7.57: the pointer lifted — a stroke or a shape joins the list, a lasso picks, a drag lands */
   function endStroke(){
     if (cur){
-      strokes.push(cur);
-      if (bctx) strokePath(bctx, cur);           // joins the finished copy
+      var keep = true;
+      if (cur.kind === "shape" && Math.abs(cur.a.x - cur.b.x) < 4 && Math.abs(cur.a.y - cur.b.y) < 4) keep = false;   // a tap is not a shape
+      if (keep){
+        snap();
+        items.push(cur);
+        if (bctx) drawItem(bctx, cur);           // joins the finished copy
+      }
       cur = null;
     }
+    if (lasso){ pickLasso(lasso); lasso = null; }
+    if (drag){ landDrag(); }
+    if (pid !== null){ try { cv.releasePointerCapture(pid); } catch(_){} }
     pid = null;
     present();
+  }
+  function pickLasso(poly){
+    sel = null;
+    if (poly.length < 3) return;
+    var idx = [];
+    items.forEach(function(it, i){
+      var p = ptsOf(it), n = 0;
+      p.forEach(function(q){ if (inPoly(q, poly)) n++; });
+      if (p.length && n / p.length >= 0.6) idx.push(i);
+    });
+    if (idx.length) sel = { idx: idx, box: boundsOf(idx.map(function(i){ return items[i]; })) };
+  }
+  function landDrag(){
+    var d = drag; drag = null;
+    if (d.started && floating){
+      snap();
+      items = items.slice();
+      sel.idx.forEach(function(i, j){ items[i] = floating[j]; });
+      floating = null;                           // (the frame stays where the finger left it)
+      rebuild();
+    }
+    floating = null;
+  }
+  function pt(e){ return { x: e.clientX, y: e.clientY }; }
+  /* v7.57: Shift keeps a box square and a line on the nearest 45° */
+  function constrain(a, b, shape, shift){
+    if (!shift) return b;
+    var dx = b.x - a.x, dy = b.y - a.y;
+    if (shape === "rect" || shape === "ellipse" || shape === "tri"){
+      var m = Math.max(Math.abs(dx), Math.abs(dy));
+      return { x: a.x + (dx < 0 ? -m : m), y: a.y + (dy < 0 ? -m : m) };
+    }
+    var ang = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4), r = Math.sqrt(dx * dx + dy * dy);
+    return { x: a.x + r * Math.cos(ang), y: a.y + r * Math.sin(ang) };
   }
   function down(e){
     if (!armed || pid !== null) return;        // one finger draws; a second is ignored
     if (Alarm.isOn()) return;
     pid = e.pointerId;
     try { cv.setPointerCapture(pid); } catch(_){}
-    var hi = !erase && color === "#FFE45C";
-    cur = { color: color, size: size, erase: erase, hi: hi, pts: [{ x: e.clientX, y: e.clientY }] };
-    advance();
+    var p = pt(e);
+    if (tool === "lasso"){
+      if (sel){
+        var cs = corners(sel.box), hit = -1;
+        cs.forEach(function(c, i){ if (hit < 0 && Math.abs(c.x - p.x) <= GRAB && Math.abs(c.y - p.y) <= GRAB) hit = i; });
+        var b = sel.box;
+        if (hit >= 0){
+          drag = { kind: "size", from: p, corner: cs[hit], opp: cs[(hit + 2) % 4], box0: { x: b.x, y: b.y, w: b.w, h: b.h }, orig: selected(), started: false };
+        } else if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h){
+          drag = { kind: "move", from: p, box0: { x: b.x, y: b.y, w: b.w, h: b.h }, orig: selected(), started: false };
+        }
+      }
+      if (!drag){ sel = null; lasso = [p]; present(); }
+      e.preventDefault();
+      return;
+    }
+    if (sel) sel = null;
+    if (SHAPES[tool]){
+      cur = { kind: "shape", shape: tool, mode: "pen", color: color, size: size, fill: !!fill, a: p, b: { x: p.x, y: p.y } };
+      present();
+    } else {
+      cur = { kind: "stroke", mode: tool, color: color, size: size, pts: [p] };
+      advance();
+    }
     e.preventDefault();
   }
   function move(e){
-    if (!cur || e.pointerId !== pid) return;
+    if (pid === null || e.pointerId !== pid) return;
+    var p = pt(e);
+    if (drag){ moveDrag(p, e.shiftKey); return; }
+    if (lasso){
+      var l = lasso[lasso.length - 1];
+      if (Math.abs(l.x - p.x) + Math.abs(l.y - p.y) < 3) return;
+      lasso.push(p); present(); return;
+    }
+    if (!cur) return;
+    if (cur.kind === "shape"){ cur.b = constrain(cur.a, p, cur.shape, e.shiftKey); present(); return; }
     var last = cur.pts[cur.pts.length - 1];
-    if (Math.abs(last.x - e.clientX) + Math.abs(last.y - e.clientY) < 1.5) return;
-    cur.pts.push({ x: e.clientX, y: e.clientY });
+    if (Math.abs(last.x - p.x) + Math.abs(last.y - p.y) < 1.5) return;
+    cur.pts.push(p);
     advance();
+  }
+  function moveDrag(p, shift){
+    var d = drag;
+    if (!d.started){
+      if (Math.abs(p.x - d.from.x) + Math.abs(p.y - d.from.y) < 2) return;
+      d.started = true;
+      var skip = {}; sel.idx.forEach(function(i){ skip[i] = 1; });
+      floating = d.orig;
+      rebuild(skip);                             // the base without the selection, once per drag
+    }
+    var b0 = d.box0;
+    if (d.kind === "move"){
+      var dx = p.x - d.from.x, dy = p.y - d.from.y;
+      floating = d.orig.map(function(it){ return mapItem(it, function(q){ return { x: q.x + dx, y: q.y + dy }; }, 1); });
+      sel.box = { x: b0.x + dx, y: b0.y + dy, w: b0.w, h: b0.h };
+    } else {
+      /* scale about the opposite corner; never flipped, never smaller than a fingertip */
+      var o = d.opp, c0 = d.corner;
+      var sx = (p.x - o.x) / ((c0.x - o.x) || 1), sy = (p.y - o.y) / ((c0.y - o.y) || 1);
+      sx = Math.max(16 / Math.max(1, b0.w), sx); sy = Math.max(16 / Math.max(1, b0.h), sy);
+      if (shift){ sx = sy = Math.max(sx, sy); }
+      var k = Math.sqrt(sx * sy);
+      var f = function(q){ return { x: o.x + (q.x - o.x) * sx, y: o.y + (q.y - o.y) * sy }; };
+      floating = d.orig.map(function(it){ return mapItem(it, f, k); });
+      var p0 = f({ x: b0.x, y: b0.y }), p1 = f({ x: b0.x + b0.w, y: b0.y + b0.h });
+      sel.box = { x: Math.min(p0.x, p1.x), y: Math.min(p0.y, p1.y), w: Math.abs(p1.x - p0.x), h: Math.abs(p1.y - p0.y) };
+    }
+    present();
   }
   /* v7.55 (audit): `pid` was only let go inside endStroke, reached only with a stroke under way —
      Clear (or Ink.clear()) mid-stroke set cur = null, the up was then ignored and the pen was
@@ -18870,8 +19230,12 @@ var Ink = (function(){
     endStroke();
   }
   function dropStroke(){                         // a clear mid-stroke: the stroke goes, the pen stays live
-    cur = null;
+    cur = null; lasso = null; drag = null; floating = null;
     if (pid !== null){ try { cv.releasePointerCapture(pid); } catch(_){} pid = null; }
+  }
+  function clearAll(){
+    if (items.length) snap();
+    items = []; sel = null; dropStroke(); redraw();
   }
   return {
     init: function(){
@@ -18888,11 +19252,16 @@ var Ink = (function(){
       bar.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
       bar.addEventListener("click", function(e){
         var b = e.target.closest("button"); if (!b) return;
-        if (b.dataset.color){ color = b.dataset.color; erase = false; }
+        if (b.dataset.color){ pickColor(b.dataset.color); }
         else if (b.dataset.size){ size = +b.dataset.size; }
-        else if (b.id === "inkEraser"){ erase = !erase; }
-        else if (b.id === "inkUndo"){ strokes.pop(); redraw(); }
-        else if (b.id === "inkClear"){ strokes = []; dropStroke(); redraw(); }
+        else if (b.dataset.tool){ setTool(b.dataset.tool === "erase" && tool === "erase" ? "pen" : b.dataset.tool); }   // the eraser still toggles
+        else if (b.id === "inkFill"){
+          fill = !fill;
+          var f = fill;                          // v7.57: a selection's closed shapes take it too
+          editSel(function(it){ return it.kind === "shape" && !/^(line|arrow|ray)$/.test(it.shape) ? withProp(it, "fill", f) : null; });
+        }
+        else if (b.id === "inkUndo"){ undo(); }
+        else if (b.id === "inkClear"){ clearAll(); }
         else if (b.id === "inkDone"){ finish(); return; }
         else if (b.id === "inkSide"){ cfg.ui.inkSide = cfg.ui.inkSide === "right" ? "left" : "right"; side(); }   // v7.28
         paintBar();
@@ -18906,9 +19275,16 @@ var Ink = (function(){
     side: side,                                  // v7.28: re-read cfg.ui.inkSide
     arm: arm,
     isArmed: function(){ return armed; },
-    clear: function(){ strokes = []; dropStroke(); redraw(); },
-    count: function(){ return strokes.length; },  // test hook
-    stats: function(){ return { full: stats.full, seg: stats.seg }; }   // test hook (v7.6)
+    clear: clearAll,
+    deselect: dropSel,                           // v7.57: Escape lets go of a selection first
+    deleteSel: deleteSel,                        // v7.57: Delete / Backspace
+    count: function(){ return items.length; },   // test hook
+    stats: function(){ return { full: stats.full, seg: stats.seg }; },   // test hook (v7.6)
+    tool: function(){ return tool; },            // v7.57 test hooks
+    setTool: function(t){ setTool(t); },
+    items: function(){ return JSON.parse(JSON.stringify(items)); },
+    select: function(){ return sel ? { x: sel.box.x, y: sel.box.y, w: sel.box.w, h: sel.box.h, n: sel.idx.length } : null; },
+    undoDepth: function(){ return hist.length; }
   };
 })();
 
@@ -20053,6 +20429,11 @@ var Keys = (function(){
       Canvas.refocusDeck(true); e.preventDefault(); return;
     }
 
+    /* v7.57: with the pen out, Delete / Backspace take the lasso's selection away (Undo brings it back) */
+    if (Ink.isArmed() && (k === "Delete" || k === "Backspace")){
+      if (Ink.deleteSel()){ e.preventDefault(); return; }
+    }
+
     // 5. active digit entry (on the selected timer widget)
     if (sel && sel.entryActive()){
       if (sel.typeKey && sel.typeKey(k)){ e.preventDefault(); return; }   // v7.33: Mathle takes letters, Backspace, Enter
@@ -20074,7 +20455,7 @@ var Keys = (function(){
     // 7. global shortcuts (Space/R act on the selected widget)
     if (isButton && (k === " " || k === "Enter")) return;
     var lk = k.length === 1 ? k.toLowerCase() : k;
-    if (Ink.isArmed() && k === "Escape"){ Ink.finish(); e.preventDefault(); return; }
+    if (Ink.isArmed() && k === "Escape"){ if (!Ink.deselect()) Ink.finish(); e.preventDefault(); return; }   // v7.57: a selection goes first
     /* v7.15: the clicker ends the drawing — its first press clears the ink and hands the deck
        the keys, the next one moves the slide (a press can't be passed on into the deck's frame) */
     if (Ink.isArmed() && !Settings.isOpen() && isClickerKey(k)){
