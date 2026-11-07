@@ -2,6 +2,11 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.58.1 — 2026-11-07
+
+**Leaves in front.** Croix, from the panel: "The leaves are falling behind the scarecrow." The beach
+pieces stand in the leaves' outer column, so the leaf layer now rides one step above them.
+
 ## 7.58.0 — 2026-11-07
 
 **November 2.0.** Croix: "Now let's shore up the autumn/fall theming. The leaves are great, but

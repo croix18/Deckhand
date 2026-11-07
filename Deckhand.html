@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.58.0",
+  "appVersion": "7.58.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -3569,7 +3569,8 @@
   :root{--nov:#B5542A; --novDeep:#8A3B1F; --novAmber:#D98E2B; --novGold:#E6B35A; --novGreen:#4F6B3A;}
 
   /* ---- the leaves: Season places each one (its numbers are its own), the WAAPI moves it ---- */
-  #nvLeaves{position:fixed; inset:0; z-index:2; display:none; overflow:hidden; pointer-events:none;}   /* over the canvas (like the pumpkins), under the dock, the ink, the alarm */
+  #nvLeaves{position:fixed; inset:0; z-index:3; display:none; overflow:hidden; pointer-events:none;}   /* over the canvas (like the pumpkins), under the dock, the ink, the alarm.
+     v7.58.1 (Croix: "The leaves are falling behind the scarecrow"): the beach pieces stand in the leaves' outer column at z 2, so the leaves ride one above them and fall in FRONT */
   body.november:not(.landing):not(.focusMode) #nvLeaves{display:block;}
   .nvLeaf{position:absolute; top:0; left:0; pointer-events:auto; cursor:pointer; touch-action:manipulation;
           -webkit-tap-highlight-color:transparent; will-change:transform;}
@@ -5820,7 +5821,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.58.0",
+  appVersion: "7.58.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
