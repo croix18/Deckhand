@@ -2,6 +2,36 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.58.0 — 2026-11-07
+
+**November 2.0.** Croix: "Now let's shore up the autumn/fall theming. The leaves are great, but
+there's not much else." He took the whole slate. A short design spec first
+(`docs/reviews/november-2.0-design.md`), then every piece built to it, on October's rules: edges
+only, never on the stage, the landing page or a phone, still under reduced motion, and Settings →
+Seasonal touches → Off takes all of it.
+
+- **A bare branch in the clock's corner** (the web's slot). Five leaves hang on it and swing on
+  the wind; a few times an hour (more on a windy day) one shakes loose and becomes one of the
+  falling leaves, and the branch grows it back a few minutes later. Tap the branch: a gust.
+- **On the sand.** A scarecrow among three cornstalks with a crow on his arm and a hay bale at his
+  foot, at the right edge where October's pumpkins stood (in Thanksgiving week the gourd bowl sits
+  in front of him). He sways on the wind; on a windy day his hat brim lifts. Tap him and the crow
+  flaps off and comes back. To his left a squirrel scampers off every few minutes, digs, buries an acorn, sits up and flicks its tail (tap it to
+  make it dig). From the 15th the gull wears a knitted scarf.
+- **Five November acts for the sea.** A cream fog bank lying over the water at the day's first period (two
+  mornings in five, burning off over a minute and a half, the lantern glowing through); a raft of
+  ducks (the gull watches them go by); a loon that dives and comes up somewhere else, with one
+  quiet call if the sound is on; now and then a trawler coming home low in the water with gulls
+  behind it — ours goes to join them and comes back; and in an afternoon period's last stretch, a
+  campfire on the sand that burns down to embers over three minutes, marshmallows toasting.
+- **The calendar.** Veterans Day (the 11th, or the weekday it's observed): a small flag below the
+  lantern — the one red in the file. Feast week (the last school week before the break): a turkey
+  struts the sand left of the squirrel; tap him and he fans his tail and gobbles. The Friday before the break the lunch
+  tray has a whole pie and a second mug of cider.
+- **Windy days double the leaves** (half the gap, up to ten on the board).
+- **"Harvest moon"** joins the tape for November: warm and slow, a Rhodes, brushes, a little
+  crackle.
+
 ## 7.57.0 — 2026-11-07
 
 **The pen grows up.** Croix: "more colors, markers, pen options for my drawing feature when I have

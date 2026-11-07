@@ -300,8 +300,8 @@ test.describe("the sea", () => {
     await pg.waitForFunction(() => !!window.Deckhand);
     await launch(pg);
     const things = await pg.evaluate(() => [...document.querySelectorAll("#sea .seaThing")].map(t => t.id.replace("sea-", "")));
-    ok(things.sort().join() === "serpent,fish,turtle,school,paper,attack,whale,buoy,dolphins,bats,ghost,castaway,bones,geese".split(",").sort().join(),
-       "visitors: " + things.join());                      // v7.4: the bottle became a paper boat; v7.5: dolphins; v7.10: October's bats and ghost ship; v7.11: the castaway and the bone fish; v7.56: November's geese
+    ok(things.sort().join() === "serpent,fish,turtle,school,paper,attack,whale,buoy,dolphins,bats,ghost,castaway,bones,geese,fog,ducks,loon,trawler".split(",").sort().join(),
+       "visitors: " + things.join());                      // v7.4: the bottle became a paper boat; v7.5: dolphins; v7.10: October's bats and ghost ship; v7.11: the castaway and the bone fish; v7.56: November's geese; v7.58: the fog, ducks, loon and trawler (the campfire is on the sand, outside #sea)
     const sway = await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btSwell")).animationName);
     ok(/heave1/.test(sway) && /pitch1/.test(sway), "the boat does not ride the swell: " + sway);
     await pg.evaluate(() => window.Deckhand.sea("attack"));
