@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.60.0",
+  "appVersion": "7.60.1",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -5829,7 +5829,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.60.0",
+  appVersion: "7.60.1",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -19909,7 +19909,13 @@ var Ink = (function(){
       });
     });
     if (x0 === Infinity) return null;
-    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    /* v7.60.1 (Croix: "When I use the lasso tool, I have trouble grabbing a corner to move, increase
+       or decrease a selected item"): the frame stands off the ink by a finger's margin and is never
+       smaller than a hand — so a short stroke still has room inside to drag, and the corners sit
+       clear of what they frame */
+    var M = 18, MIN = 96, w = x1 - x0 + 2 * M, h = y1 - y0 + 2 * M, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    w = Math.max(w, MIN); h = Math.max(h, MIN);
+    return { x: cx - w / 2, y: cy - h / 2, w: w, h: h };
   }
   function mapItem(it, f, k){
     var o = {}, key;
@@ -19929,7 +19935,7 @@ var Ink = (function(){
   }
   /* v7.57: the selection's frame — a dashed navy box (a white rule under it, so it shows on a dark
      slide too) with a handle at each corner, drawn on the live canvas */
-  var HANDLE = 14, GRAB = 26;
+  var HANDLE = 22, GRAB = 44;                  // v7.60.1: finger-sized — the board is a touch panel
   function corners(b){ return [{ x: b.x, y: b.y }, { x: b.x + b.w, y: b.y }, { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }]; }
   function drawSel(c){
     var b = sel.box;
@@ -20143,7 +20149,7 @@ var Ink = (function(){
         var b = sel.box;
         if (hit >= 0){
           drag = { kind: "size", from: p, corner: cs[hit], opp: cs[(hit + 2) % 4], box0: { x: b.x, y: b.y, w: b.w, h: b.h }, orig: selected(), started: false };
-        } else if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h){
+        } else if (p.x >= b.x - 16 && p.x <= b.x + b.w + 16 && p.y >= b.y - 16 && p.y <= b.y + b.h + 16){   // v7.60.1: a near miss still moves
           drag = { kind: "move", from: p, box0: { x: b.x, y: b.y, w: b.w, h: b.h }, orig: selected(), started: false };
         }
       }

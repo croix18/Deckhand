@@ -2,6 +2,13 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.60.1 — 2026-11-08
+
+**A lasso you can grab.** Croix: "When I use the lasso tool, I have trouble grabbing a corner to
+move, increase or decrease a selected item." The selection frame stands 18 px off the ink and is
+never smaller than 96 px a side, so a short stroke still has room inside to drag; the corner handles
+are 22 px with a 44 px grab, finger-sized for the panel; a press just outside the frame still moves it.
+
 ## 7.60.0 — 2026-11-07
 
 **The library, comprehensive.** Croix: "The think like a coder link is a preview. While we're on
