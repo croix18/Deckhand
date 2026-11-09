@@ -2,6 +2,41 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.61.0 — 2026-11-08
+
+**Nib comes aboard.** Croix: "Is it possible to integrate nib into the drawing tools of deckhand?", then "Yes
+absolutely. That's an excellent idea. Do it!" and "Leave it all and bring the solver. Both done to absoluteness.
+Can you also change the symbol from the yellow question mark circle to just a blurry version of the answer." Nib
+1.6.3 (croix18/Nib, the Board's engine) is inside the file, put there by `tools/vendor_nib.py`.
+
+- **The Sketch Pad is a Nib pad.** It reads the math written on it, and a line that ends with "=" gets its
+  answer after the equals sign — blurred, so the class sees there is one, until you tap it. **Solve** turns that
+  on and off. **Nib ▾** shows the writing as written, tidied, in your own Replicator handwriting or typeset,
+  **Fix** (tap a symbol it misread and pick what it is; Nib remembers your shape), and **Copy LaTeX**. Every
+  tool it had stays: the five colors, three widths, the eraser (it rubs out only where it passes), Undo, Clear
+  with its Undo, R, every background and the number line's range, and the day's sketch across a scene switch,
+  answers shown and all (its Undo history too), and touch works as it did on the panel: every touch writes, one
+  finger at a time; a pen resting at the end of a line leaves a line. The paper still fills the card while the pad
+  is empty; once there is writing, the writing and the paper under it scale together when the card is resized or
+  put on the stage (they used to stretch apart), and writing in a wide card's margins stays in view.
+- **The pen over the slides gets Solve** (on the bar, on by default, remembered). Everything else on the bar is
+  as it was. What the pen and the marker write is read (the highlighter and the shapes are not); a line that
+  ends with "=" gets its answer after it, blurred until you tap it — the tap leaves no dot. The answers go with
+  the drawing: an eraser over the "=" takes the answer, an eraser over a shown answer blurs it again, Undo brings
+  either back, a lasso move carries it along (still shown, and back again with Undo), and Done clears it with
+  everything else — its Undo brings the drawing back with the answers as they were.
+- An independent review of this release found seven things before it shipped, all fixed: the pad turned a held
+  stroke into a shape, Undo of a lasso move left the answer behind, Undo went grey after Clear's Undo and after a
+  scene switch, a Fix was not kept for the day, a thin eraser's quick cut was not seen, a shown answer could not be
+  blurred again, and the views rewrote the writing mid-pause.
+- Eight tests (`tests/v761.spec.js`): the Sketch Pad reading, solving, the tap, Solve, a scene switch and Clear;
+  the views, Fix and Copy LaTeX; touch on the panel; the review's Sketch Pad and pen cases; the pen's Solve through
+  a tap, a lasso move and its Undo, the eraser, Undo, Done and a reload; what is read and what is not; and Export a
+  copy carrying the engine. The seven Sketch
+  Pad tests from 7.8, 7.13 and 7.55 pass unchanged.
+- `tools/push.sh` stages each path on its list that is there, one at a time: git refuses a whole `git add` over
+  one missing path (`hosting/` lives outside the repo, `CNAME` may not exist), so it staged nothing at all.
+
 ## 7.60.1 — 2026-11-08
 
 **A lasso you can grab.** Croix: "When I use the lasso tool, I have trouble grabbing a corner to

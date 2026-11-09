@@ -25,8 +25,12 @@ export GIT_CONFIG_VALUE_0="Authorization: Basic $B"
 
 # v7.5.1 (audit): stage an ALLOWLIST, never -A — a Seating Chart backup or a board photo
 # dropped into this folder would otherwise publish unchecked
-git add Deckhand.html index.html Deckhand_v6.html README.md CHANGELOG.md LICENSE .nojekyll .gitignore \
-        package.json package-lock.json playwright.config.js tests tools docs hosting .github archive screenshots webapp-test deckhand.webmanifest deckhand-sw.js icons CNAME 2>/dev/null || true
+# v7.61 (audit): one path at a time, and only those that are here — git refuses a whole `git add`
+# over one missing path (hosting/ lives outside the repo, CNAME may not exist), and staged nothing
+for P in Deckhand.html index.html Deckhand_v6.html README.md CHANGELOG.md LICENSE .nojekyll .gitignore \
+         package.json package-lock.json playwright.config.js tests tools docs hosting .github archive screenshots webapp-test deckhand.webmanifest deckhand-sw.js icons CNAME; do
+  [ -e "$P" ] && { git add -- "$P" 2>/dev/null || true; }
+done
 # v7.55 (audit): and once more on what is now staged (a tmp_ fixture, the staged tree)
 sh tools/check.sh || { echo "push.sh: refused after staging — unstage with: git reset"; exit 1; }
 UNTRACKED=$(git ls-files --others --exclude-standard | grep -v '^tests/tmp_' || true)

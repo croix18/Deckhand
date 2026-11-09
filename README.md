@@ -2,15 +2,18 @@
 
 A single-file classroom OS for Mr. Shaffer's 7th-grade math room at Windy Hill Middle
 School — clock, bell schedule, the settle-in moment at the bell, timers, agenda, picker, a
-sketch pad with math backgrounds, a probability kit (dice, coin, spinner, cards),
+sketch pad with math backgrounds that reads handwritten math and works out the answers, a pen
+over the slides that does the same, a probability kit (dice, coin, spinner, cards),
 YouTube/slides embeds, lofi tape, a small sea, and seasonal touches (October first). Built for a Promethean IR-touch
 panel driven by a managed Chromebox, opened either from Google Drive over `file://`
 or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.51.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
-in this one file. No build step, no install, no accounts.
+**`Deckhand.html`** — the current release (v7.61.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+in this one file. No build step, no install, no accounts. That includes **Nib** (croix18/Nib, the handwriting-to-math
+engine of the Board), which reads the Sketch Pad and the pen: `python3 tools/vendor_nib.py` puts in the engine the
+Windmill kit carries (`../Windmill/nib/nib.js`), or the one at the path given.
 
 Since v7.0 the board **saves itself on the device**: layout, bells, and class rosters
 autosave to the browser (localStorage, key `deckhand.config`) and come back on the next
