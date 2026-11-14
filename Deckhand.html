@@ -5316,6 +5316,11 @@
                 <label class="fCheck"><input type="checkbox" id="sSound"> Sound on</label>
                 <label class="fCheck"><input type="checkbox" id="sSeconds"> Show seconds on the clock</label>
               </div>
+            </div>
+            <div class="fGroup">
+              <div class="fSection">Drawing</div>
+              <label class="fCheck"><input type="checkbox" id="sScribble"> Scribble over writing to rub it out</label>
+              <div class="fHint">With the pen over the slides and on the Sketch Pad: go back and forth over what you drew and it goes, with Undo. A scribble over nothing stays, and the highlighter never rubs out.</div>
               <div class="fGrid c2">
                 <div class="fField">
                   <label class="fLabel" for="sVolume">Chime volume</label>
@@ -14733,6 +14738,7 @@ function sanitize(c){
             ? { x: Math.max(0, Math.min(1, u.npPos.x)), y: Math.max(0, Math.min(1, u.npPos.y)) } : null,   // v7.28: where the Now Playing pill sits
           inkSide: u.inkSide === "right" ? "right" : "left",    // v7.28: the pen tools' side
           inkSolve: bool(u.inkSolve, true),                     // v7.61: Nib works out what the pen writes over the slides
+          scribble: bool(u.scribble, true),                     // v7.62: a scribble over the drawing rubs it out (the pen, the Sketch Pad)
           slidesOff: typeof u.slidesOff === "string" && /^\d{4}-\d{2}-\d{2}$/.test(u.slidesOff) ? u.slidesOff : "",   // v7.45: the day the slides were turned off
           pickN: [1, 2, 3, 4, 5, 6].indexOf(u.pickN) !== -1 ? u.pickN : 1 },   // v7.53: how many names the quick-draw picks
     activeScene: activeScene,
@@ -23853,6 +23859,7 @@ function makeDraw(host, wcfg){
     if (wcfg.solve){ pad.setAttribute("solve", ""); pad.setAttribute("reveal", ""); }
     pad.style.height = "100%";
   }
+  if (cfg.ui && cfg.ui.scribble === false) pad.setAttribute("scribble", "false"); else pad.removeAttribute("scribble");   // v7.62 (a pad kept for the day too)
   host.querySelector(".dwWrap").insertBefore(pad, host.querySelector(".dwFixPop"));
   function P(){ return pad.pad || null; }        // the engine's pad, once the element is in the page
   /* the background layer follows the box and the page on it: a card resize repaints it */
@@ -24066,6 +24073,12 @@ function makeDraw(host, wcfg){
     if (fixing && pad.mode !== "fix"){ fixing = false; fixBtn.setAttribute("aria-pressed", "false"); closeFix(); }
   }
   pad.addEventListener("nib:change", onChange);
+  /* v7.62: scribbled out — a toast with Undo (the pad's own, while nothing has happened since) */
+  function onScribble(e){
+    var step = e.detail && e.detail.step;
+    Undo.show(e.detail && !e.detail.erased ? "Answer hidden again" : "Scribbled out", function(){ var q = P(); if (q) q.undoScribble(step); });
+  }
+  pad.addEventListener("nib:scribble", onScribble);
   /* the element sets its pad up as it joins the page — the card is in the page by now, but wait a beat if not */
   var tries = 0, startTid = null;
   function start(){
@@ -24100,6 +24113,7 @@ function makeDraw(host, wcfg){
       pad.removeEventListener("nib:camera", paintBg);
       pad.removeEventListener("nib:tap", onTap);
       pad.removeEventListener("nib:change", onChange);
+      pad.removeEventListener("nib:scribble", onScribble);
       if (P()){ setFix(false); park(); }        // the live pad waits in DayStore for the card to be built again
     }
   };
@@ -27168,7 +27182,7 @@ var Settings = (function(){
     name: $("sName"), def: $("sDefault"), bar: $("sBar"), sound: $("sSound"),
     auto: $("sAuto"), anchor: $("sAnchor"), anchorWeek: $("sAnchorWeek"),
     strip: $("sStrip"), count: $("sCount"), countSecs: $("sCountSecs"), timerStyle: $("sTimerStyle"),
-    volume: $("sVolume"), seconds: $("sSeconds"), next: $("sNext"),
+    volume: $("sVolume"), seconds: $("sSeconds"), next: $("sNext"), scribble: $("sScribble"),
     motion: $("sMotion"),
     seaWeather: $("sSeaWeather"), season: $("sSeason"),
     warn: $("sWarn"), warnChime: $("sWarnChime"), flash: $("sFlash"), flashMin: $("sFlashMin"), ccOn: $("sCcOn"), ccMin: $("sCcMin"),
@@ -27325,6 +27339,7 @@ var Settings = (function(){
     f.timerMusic.checked = !!cfg.timer.music;
     f.volume.value = Math.round((cfg.sound.volume || 0) * 100);
     f.seconds.checked = !!cfg.clock.showSeconds;
+    f.scribble.checked = cfg.ui.scribble !== false;   // v7.62
     f.motion.value = cfg.ui.motion || "auto";
     f.seaWeather.value = cfg.ui.seaWeather || "varies";
     f.season.value = cfg.ui.season === "off" ? "off" : "auto";
@@ -27656,6 +27671,8 @@ var Settings = (function(){
     };
     cfg.sound.volume = vol / 100;
     cfg.clock.showSeconds = f.seconds.checked;
+    cfg.ui.scribble = !!f.scribble.checked;           // v7.62
+    try { document.querySelectorAll("nib-pad.dwPad").forEach(function(el){ if (cfg.ui.scribble) el.removeAttribute("scribble"); else el.setAttribute("scribble", "false"); }); } catch(e){}
     cfg.ui.motion = ["auto","on","off"].indexOf(f.motion.value) !== -1
       ? f.motion.value : "auto";
     applyWaveMotion();                     // the boat reacts on Apply, live
@@ -28337,6 +28354,12 @@ var Ink = (function(){
   var nibHost = new WeakMap(), nibCut = new WeakMap();   // an item → the point list(s) Nib reads for it (kept, so Nib knows it again)
   var nibLast = new WeakMap();                  // an item → the lists Nib was last given for it
   var nibHid = new WeakMap();                   // an eraser stroke → the shown answers it put back out of focus
+  /* v7.62 (Croix: "Scribble out to erase", then "I've experienced other apps that claim scribble to erase works and it
+     sucks. I want nib and by extension deckhand to work super well."): a pen or marker stroke scribbled back and forth
+     over the drawing rubs out what it lies over and is not kept — Nib decides (Nib.scribble: the same test as the
+     Board's and the Sketch Pad's) — as one step of Undo, with Undo on the toast too; over nothing it is ink */
+  var scribHid = new WeakMap();                 // the history step a scribble made → the shown answers it hid
+  var fade = null, fadeRaf = 0;                 // what a scribble just took, and the scribble, fading away
   /* v7.6: the strokes already finished live on an offscreen copy, so a
      pointer move costs one new segment (or, for the translucent
      highlighter, one blit plus the current stroke) instead of every
@@ -28568,6 +28591,13 @@ var Ink = (function(){
     ctx.drawImage(base, 0, 0);
     ctx.restore();
     if (floating) floating.forEach(function(it){ drawItem(ctx, it); });
+    if (fade){                                   // v7.62: what a scribble took, going
+      var fk = 1 - (performance.now() - fade.t0) / 320;
+      if (fk > 0){
+        fade.list.forEach(function(it){ drawItem(ctx, fadeOf(it, 0.6 * fk * fk)); });
+        if (!fadeRaf) fadeRaf = requestAnimationFrame(function(){ fadeRaf = 0; present(); });
+      } else fade = null;
+    }
     if (cur) drawItem(ctx, cur);
     drawLasso(ctx);
     if (sel) drawSel(ctx);
@@ -28733,6 +28763,75 @@ var Ink = (function(){
     if (nibEl){ if (nibOn) nibEl.setAttribute("solve", ""); else nibEl.removeAttribute("solve"); }
     nibSync();
   }
+  /* ---- v7.62 scribbled out ---- */
+  function scribbleOn(){ return !(cfg.ui && cfg.ui.scribble === false) && !!(window.Nib && Nib.scribble); }
+  function outlineOf(it){                        // a shape by its outline, in CSS px; closed for the rect, ellipse, triangle
+    var q = boxOf(it.a, it.b), pts = [], k;
+    if (it.shape === "rect") pts = [[q.x0, q.y0], [q.x1, q.y0], [q.x1, q.y1], [q.x0, q.y1], [q.x0, q.y0]];
+    else if (it.shape === "ellipse"){
+      var cx = (q.x0 + q.x1) / 2, cy = (q.y0 + q.y1) / 2, rx = (q.x1 - q.x0) / 2, ry = (q.y1 - q.y0) / 2;
+      for (k = 0; k <= 48; k++) pts.push([cx + rx * Math.cos(2 * Math.PI * k / 48), cy + ry * Math.sin(2 * Math.PI * k / 48)]);
+    } else if (it.shape === "tri") pts = [[(q.x0 + q.x1) / 2, q.y0], [q.x1, q.y1], [q.x0, q.y1], [(q.x0 + q.x1) / 2, q.y0]];
+    else pts = [[it.a.x, it.a.y], [it.b.x, it.b.y]];
+    return { pts: pts, closed: it.shape === "rect" || it.shape === "ellipse" || it.shape === "tri" };
+  }
+  /* the stroke just lifted: a scribble over the drawing? Then what it lies over goes (the pen's and the marker's strokes
+     as they show — without what an eraser rubbed out — and the shapes; never the highlighter: that is shading), with a
+     shown answer under it back out of focus, as one step of Undo. False: it is ink. */
+  function scribbleOut(st){
+    if (!scribbleOn() || st.kind !== "stroke" || (st.mode !== "pen" && st.mode !== "marker") || st.pts.length < 8) return false;
+    var sc = null;
+    try { sc = Nib.scribble.of(st.pts.map(function(p){ return [p.x, p.y]; }), 1); } catch(e){ sc = null; }
+    if (!sc) return false;
+    /* a symbol goes whole: Nib's last reading of the drawing groups the strokes it read */
+    var np = nibPad(), symOf = new Map();
+    try { if (np && nibOn) np.symbolStrokes().forEach(function(list, k){ list.forEach(function(a){ symOf.set(a, k); }); }); } catch(e){}
+    var units = [], later = [];
+    for (var i = items.length - 1; i >= 0; i--){
+      var it = items[i];
+      if (it.kind === "stroke"){
+        if (it.mode === "erase"){ later.push(it); continue; }
+        if (it.mode !== "pen" && it.mode !== "marker" || !it.pts.length) continue;
+        nibOf(it, later).forEach(function(a){ units.push({ pts: a, group: symOf.has(a) ? "s" + symOf.get(a) : "i" + items.indexOf(it), item: it }); });
+      } else if (it.kind === "shape"){
+        var o = outlineOf(it);
+        units.push({ pts: o.pts, closed: o.closed, group: "i" + i, item: it });
+      }
+    }
+    var er = null;
+    try { er = Nib.scribble.erase(sc, units, 1); } catch(e){ er = null; }
+    var gone = [];
+    if (er) er.erase.forEach(function(k){ var it = units[k].item; if (gone.indexOf(it) < 0) gone.push(it); });
+    /* an answer shown by a tap, under the scribble, goes back out of focus (as the eraser puts it) */
+    var keys = [];
+    try {
+      if (np && nibOn && np.plan) np.plan.items.forEach(function(a){
+        if (!a.answer || a.hidden || !a.revealKey || !a.box || keys.indexOf(a.revealKey) >= 0) return;
+        var b = a.box, grid = [];
+        for (var j = 0; j <= 4; j++) for (var k = 0; k <= 4; k++) grid.push([b[0] + (b[2] - b[0]) * (j % 2 ? 4 - k : k) / 4, b[1] + (b[3] - b[1]) * j / 4]);
+        if (Nib.scribble.covers(sc, grid, 1).share >= 0.5) keys.push(a.revealKey);
+      });
+    } catch(e){}
+    if (!gone.length && !keys.length) return false;
+    snap();
+    var step = hist[hist.length - 1];
+    if (keys.length){ scribHid.set(step, keys); keys.forEach(function(k){ np.hideAnswer(k); }); }
+    items = items.filter(function(it){ return gone.indexOf(it) < 0; });
+    sel = null;
+    fade = { list: gone.concat([st]), t0: performance.now() };
+    rebuild();
+    nibSync();
+    Undo.show(gone.length ? "Scribbled out" : "Answer hidden again", function(){ if (hist[hist.length - 1] === step) undo(); });
+    return true;
+  }
+  /* what a scribble took fades (a copy of each in its color, see-through) */
+  function fadeOf(it, a){
+    var c = /^#([0-9a-f]{6})$/i.exec(it.color || ""), n = c ? parseInt(c[1], 16) : 0x17324d;
+    var o = mapItem(it, function(p){ return p; }, 1);
+    o.color = "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a.toFixed(3) + ")";
+    if (o.mode === "marker") o.mode = "pen";     // (the marker's chisel would square the faded ends)
+    return o;
+  }
   /* ---- v7.57 history ---- */
   function snap(){ hist.push(items.slice()); if (hist.length > HIST_MAX) hist.shift(); }
   function undo(){
@@ -28741,6 +28840,8 @@ var Ink = (function(){
     items = hist.pop(); sel = null; dropStroke(); redraw();
     nibSync();                                   // v7.61
     nibUnhide(was);
+    var np = nibPad();                           // v7.62: the answers a scribble hid, shown again
+    if (np && scribHid.has(items)){ scribHid.get(items).forEach(function(k){ try { np.showAnswer(k); } catch(e){} }); scribHid.delete(items); }
   }
   function dropSel(){ if (sel){ sel = null; present(); return true; } return false; }
   function selected(){ return sel ? sel.idx.map(function(i){ return items[i]; }) : []; }
@@ -28839,6 +28940,7 @@ var Ink = (function(){
     if (cur){
       var keep = true;
       if (cur.kind === "shape" && Math.abs(cur.a.x - cur.b.x) < 4 && Math.abs(cur.a.y - cur.b.y) < 4) keep = false;   // a tap is not a shape
+      if (keep && scribbleOut(cur)){ cur = null; keep = false; }   // v7.62: scribbled out — what it lay over went, and the scribble with it
       if (keep){
         snap();
         items.push(cur);
