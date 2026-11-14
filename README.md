@@ -10,7 +10,7 @@ or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.61.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.61.1; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts. That includes **Nib** (croix18/Nib, the handwriting-to-math
 engine of the Board), which reads the Sketch Pad and the pen: `python3 tools/vendor_nib.py` puts in the engine the
 Windmill kit carries (`../Windmill/nib/nib.js`), or the one at the path given.

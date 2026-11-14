@@ -2,6 +2,15 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.61.1 — 2026-11-13
+
+**Nib 1.6.4 inside.** Croix, at the Promethean board with the Nib Board: "The default pen or marker
+worked well. The highlighter broke. It made a dot and didn't track." The engine kept each stroke's
+drawing from the first frame it drew it in and never checked that the stroke had grown since, so the
+Board's highlighter (drawn whole on every frame) stayed a dot, and a stroke the Board redrew while it
+was being written came out short once the pen lifted. The Sketch Pad has no highlighter, but it runs
+the same engine, so it takes 1.6.4 as it is. Nothing else changes.
+
 ## 7.61.0 — 2026-11-08
 
 **Nib comes aboard.** Croix: "Is it possible to integrate nib into the drawing tools of deckhand?", then "Yes
