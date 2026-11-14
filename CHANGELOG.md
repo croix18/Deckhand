@@ -2,6 +2,33 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.63.0 — 2026-11-14
+
+**The warm-up in one tap.** Croix: "I didn't have a warm up ready and I tried to use deckhand and cadence to
+generate one and it epically failed. Can you integrate the two better so that this is an easier process for
+me?" — "Too many steps to set up", "Hard to use on the panel", "Hard to see when all the questions were out and
+only one at a time is too slow".
+
+- **+ Add → Warm-up** (Media row), the Cadence card's **Warm-up** button, or **W**: the Cadence card (added if
+  there is none, brought back if minimized) opens Cadence's warm-up board — four questions at once, full-frame —
+  on the stage, for the class in the room by the bell and today's date. Over staged slides too: the slides are
+  put away with a tab in the stage bar that brings them back.
+- A second warm-up later in the day changes only the address's hash: Cadence switches class without reloading.
+- The card's saved link never changes; Refresh shows the warm-up again.
+- **On the website** Deckhand finds Cadence by itself in the folder beside its own (`/teacher/deckhand/` →
+  `/teacher/cadence/`); as a file it is still `cadence.html` beside Deckhand.
+- **Pacing for Cadence**: on the website Deckhand reads the course calendars (`/m7/schedule.json`,
+  `/a7/schedule.json`) and leaves what has been taught for Cadence (`cadence.pacing` in the browser), after
+  start-up and again when it is over six hours old. Nothing on file://.
+- **Today's lesson, locked and loaded.** Croix: "While at it, can you have deckhand have the relevant slides
+  locked and loaded so I don't have to do the whole html process every time." On the website the Slides card
+  shows the site's slides page for the class in the room — before school and between classes it already holds
+  the next class's — by the course calendars' periods and each day's slides. On a test or review day (or a class
+  with no course) the card shows its own deck, and its empty state says why ("No slides today: Unit 10 Test —
+  day 1"). The ✎ row's **Today's lesson** box turns it on or off; new cards and cards holding the site's own
+  slides pages start on, a card with a Google Slides deck starts off. Today's address is never saved.
+- Warm-up's address names the course of the class too (`&c=on` / `&c=acc`).
+
 ## 7.62.0 — 2026-11-14
 
 **Scribble out to erase.** Croix: "Scribble out to erase", then "I've experienced other apps that claim

@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.62.0",
+  "appVersion": "7.63.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -727,6 +727,14 @@
   body.locked .wEdit{display:none;}
   /* v7.28: ↻ refresh on a Slides card — like ✎, but it stays when the board is locked (it changes nothing) */
   .wReload{background:none; border:none; cursor:pointer; color:inherit; opacity:.65; font:inherit; padding:2px 8px; line-height:1;}
+  /* v7.63: Warm-up on the Cadence card's strip — an icon with its word (the one action the card is for) */
+  .wWarm{background:none; border:none; cursor:pointer; color:inherit; opacity:.8; font:inherit; font-weight:900; font-size:11px;
+    letter-spacing:.1em; text-transform:uppercase; display:inline-flex; align-items:center; gap:6px; line-height:1;
+    min-height:44px; margin:-7px 8px -7px 0; padding:0 10px; border-radius:999px;}
+  @media (hover:hover){ .wWarm:hover{opacity:1;} }
+  .card.widget .strip:has(.wWarm)::before{left:28px; margin-left:0;}   /* the grab mark moves left, clear of the word */
+  .wWarm:focus-visible{outline:3px solid var(--navy); outline-offset:-6px;}
+  body.locked .wWarm{display:none;}
   @media (hover:hover){ .wReload:hover{opacity:1;} }
   /* 44px effective touch targets for the strip icons (they measured
      27×20 — 43% of the minimum, INSIDE a drag surface where a missed
@@ -2096,6 +2104,10 @@
   }
   .embPP input{width:15px; height:15px; accent-color:var(--teal);}
   .embPer{max-width:9em;}
+  /* v7.63: Today's lesson — the reason line in the empty state, and the address shown, not edited */
+  .embWhy{margin-top:1.4cqh; font-weight:700; color:var(--teal); opacity:.8; font-size:clamp(11px, 2cqw, 15px); max-width:720px;}
+  .embWhy[hidden], .embTodayLbl[hidden]{display:none;}
+  .embToday .embIn{background:var(--cream); color:var(--teal);}
   .embPer[hidden]{display:none;}
 
   /* Next Bell widget: a draining ring synced to the bell schedule */
@@ -4108,6 +4120,7 @@
     <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 8.5h3.2a2 2 0 0 1 0 4H9.5zM9.5 12.5h3.8a2 2 0 0 1 0 4H9.5zM9.5 8.5v8"/></symbol>
     <symbol id="i-spin" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 5v8l5.7 5.6M12 13l-8-.5M12 13l6 5.3M12 2.5l-2 2.5h4z"/></symbol>
     <symbol id="i-cadence" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M17 15l2 2 3-4"/></symbol>
+    <symbol id="i-warmup" viewBox="0 0 24 24"><path d="M3 18.5h18M7 18.5a5 5 0 0 1 10 0"/><path d="M12 6v3M5.6 9.1l2 2M18.4 9.1l-2 2M2.5 14.5h2.5M19 14.5h2.5"/></symbol>
     <symbol id="i-mathle" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/></symbol>
     <symbol id="i-ccard" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 10h10M7 14h6"/></symbol>
     <symbol id="i-talk" viewBox="0 0 24 24"><path d="M3.5 5.5h10a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8l-3.5 3v-3h-1a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2z"/><path d="M17.5 9.5h2a2 2 0 0 1 2 2v3.5a2 2 0 0 1-2 2h-.5v2.5l-3-2.5h-3"/></symbol>
@@ -4756,6 +4769,7 @@
       <button class="tile" id="addEmbedBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-slides"/></svg><span class="tName">Slides / Embed</span><span class="tDesc">Slides or a web page</span></button>
       <button class="tile" id="addYtBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-youtube"/></svg><span class="tName">YouTube</span><span class="tDesc">A video on the board</span></button>
       <button class="tile" id="addCadenceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-cadence"/></svg><span class="tName">Cadence</span><span class="tDesc">The bellwork generator</span></button>
+      <button class="tile" id="addWarmupBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-warmup"/></svg><span class="tName">Warm-up</span><span class="tDesc">Four questions at once</span></button>
       <div class="menuLabel">Math</div>
       <button class="tile" id="addDrawBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-sketch"/></svg><span class="tName">Sketch Pad</span><span class="tDesc">Grid, number line, plane</span></button>
       <button class="tile" id="addDiceBtn" type="button"><svg class="tIcon" aria-hidden="true"><use href="#i-dice"/></svg><span class="tName">Dice</span><span class="tDesc">Roll 1&ndash;3, keep a tally</span></button>
@@ -15065,7 +15079,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.62.0",
+  appVersion: "7.63.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -15288,6 +15302,7 @@ function sanitize(c){
             if (/^https?:\/\//i.test(vv)) wc.decks[kk] = vv;
           });
         }
+        wc.today = typeof w.today === "boolean" ? w.today : embTodayDefault(wc);   // v7.63: Today's lesson
       }
       if (ty === "meter"){
         wc.limit = Math.round(numIn(w.limit, 10, 100, 60));
@@ -18437,7 +18452,7 @@ function makeCadence(host, wcfg){
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody embBody">' +
       '<div class="embEmpty cdEmpty" hidden><b>Cadence</b>' +
-        '<div class="embHint">Put <code>cadence.html</code> in the same folder as Deckhand (or at the same web address) and it opens here. Or set a link with \u270E.</div></div>' +
+        '<div class="embHint">Put <code>cadence.html</code> in the same folder as Deckhand (on a website: a <code>cadence/</code> folder beside Deckhand\u2019s) and it opens here. Or set a link with \u270E.</div></div>' +
       '<iframe class="embFrame cdFrame" title="Cadence" allow="fullscreen *; clipboard-write *" hidden></iframe>' +
       '<div class="cdRow" hidden>' +
         '<input class="embIn cdIn" type="url" maxlength="500" spellcheck="false" placeholder="Link to cadence.html (blank = the file beside Deckhand)">' +
@@ -18447,33 +18462,52 @@ function makeCadence(host, wcfg){
   var q = function(s){ return host.querySelector(s); };
   var frame = q(".cdFrame"), row = q(".cdRow"), input = q(".cdIn"), empty = q(".cdEmpty");
   var rowOpen = false;
+  var warmHash = "";                             // v7.63: the warm-up board's hash — in memory only, never in wcfg
   var pencil = document.createElement("button");
   pencil.type = "button"; pencil.className = "wEdit"; pencil.setAttribute("aria-label", "Change the link");
   pencil.innerHTML = '<svg class="wIcon"><use href="#i-pencil"/></svg>';
   var stripEl = host.querySelector(".strip");
   stripEl.insertBefore(pencil, stripEl.querySelector(".wFocus"));
   wireButton(pencil, function(){ rowOpen = !rowOpen; row.hidden = !rowOpen; if (rowOpen){ input.value = wcfg.url; input.focus(); } });
+  /* v7.63 (Croix: "Too many steps to set up"): Warm-up — this card shows Cadence's warm-up board, on the stage */
+  var warmBtn = document.createElement("button");
+  warmBtn.type = "button"; warmBtn.className = "wWarm"; warmBtn.setAttribute("aria-label", "Warm-up: four questions on the stage");
+  warmBtn.innerHTML = '<svg class="wIcon"><use href="#i-warmup"/></svg><span>Warm-up</span>';
+  stripEl.insertBefore(warmBtn, pencil);
+  wireButton(warmBtn, function(){ try { Warmup.open(host); } catch(e){} });
+  /* v7.63: on a website Deckhand is a folder's index (/teacher/deckhand/) and Cadence is the folder
+     beside it (/teacher/cadence/); as a file (or Deckhand.html over http) it is cadence.html beside it */
   function autoURL(){
     try {
-      if (location.protocol === "https:" || location.protocol === "http:" || location.protocol === "file:") return new URL("cadence.html", location.href).href;
+      var pr = location.protocol;
+      if ((pr === "https:" || pr === "http:") && /\/$/.test(location.pathname)) return new URL("../cadence/", location.href).href;
+      if (pr === "https:" || pr === "http:" || pr === "file:") return new URL("cadence.html", location.href).href;
     } catch(e){}
     return "";
   }
   function target(){ return wcfg.url || autoURL(); }
-  function render(){
+  /* what the frame shows: the card's address, with the warm-up's hash when one was asked for */
+  function shown(){
     var u = target();
+    return u && warmHash ? u.split("#")[0] + warmHash : u;
+  }
+  function render(){
+    var u = shown();
     empty.hidden = !!u; frame.hidden = !u;
+    /* same page, new hash: assigning the whole address is a fragment navigation (Cadence hears
+       hashchange, nothing reloads); an unloaded frame (Home, minimized) loads it */
     if (u && frame.getAttribute("src") !== u) frame.src = u;
     if (!u) frame.removeAttribute("src");
   }
   function applyInput(){
     var v = input.value.trim();
     if (v && !/^(https:\/\/|file:\/\/\/)[^\s"'<>]{1,500}$/.test(v)) return;   // https or a file, nothing else
+    if (v !== wcfg.url) warmHash = "";           // v7.63: a new link starts plain
     wcfg.url = v; render();
   }
   input.addEventListener("blur", applyInput);
   input.addEventListener("keydown", function(e){ e.stopPropagation(); if (e.key === "Enter" || e.key === "Escape") input.blur(); });
-  wireButton(q(".cdGo"), function(){ applyInput(); var u = target(); if (u){ frame.src = "about:blank"; setTimeout(function(){ frame.src = u; }, 100); } });
+  wireButton(q(".cdGo"), function(){ applyInput(); var u = shown(); if (u){ frame.src = "about:blank"; setTimeout(function(){ frame.src = u; }, 100); } });
   function onHome(){ frame.removeAttribute("src"); }
   function onBoard(){ if (!wcfg.min) render(); }
   document.addEventListener("deckhand:home", onHome);
@@ -18486,7 +18520,15 @@ function makeCadence(host, wcfg){
     canEnter: function(){ return false; },
     entryActive: function(){ return false; },
     hide: onHome, show: render,
-    reload: function(){ var u = target(); if (u && !frame.hidden){ frame.src = "about:blank"; setTimeout(function(){ frame.src = u; }, 100); return true; } return false; },
+    reload: function(){ var u = shown(); if (u && !frame.hidden){ frame.src = "about:blank"; setTimeout(function(){ frame.src = u; }, 100); return true; } return false; },
+    /* v7.63: point the frame at the warm-up board (hash "#warmup&…"); the saved link is untouched.
+       Returns the address the card shows ("" when Cadence's address is unknown). */
+    warmup: function(hash){
+      warmHash = typeof hash === "string" && /^#[^\s"'<>]{0,300}$/.test(hash) ? hash : "";
+      if (!wcfg.min) render();                   // a minimized card loads it when it comes back
+      return shown();
+    },
+    address: function(){ return target(); },     // v7.63 (tests): the card's own address
     rebuild: render, resync: function(){},
     destroy: function(){
       document.removeEventListener("deckhand:home", onHome);
@@ -24959,11 +25001,24 @@ function embedURL(u){
   if (onHttps && /^http:\/\//i.test(u) && !/^http:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?:[:\/?#]|$)/i.test(u)) u = "https://" + u.slice(7);
   return u;
 }
+/* v7.63: "Today's lesson" starts on for a card with no deck at all, or whose decks are all the site's own
+   slides pages (same origin, /<course>/slides/… — he has been pasting those by hand); a card holding
+   another deck (Google Slides) is left alone until it is turned on */
+function embTodayDefault(w){
+  var ds = [];
+  if (w && typeof w.url === "string" && w.url) ds.push(w.url);
+  if (w && isObj(w.decks)) Object.keys(w.decks).forEach(function(k){ if (typeof w.decks[k] === "string" && w.decks[k]) ds.push(w.decks[k]); });
+  if (!ds.length) return true;
+  return ds.every(function(u){
+    try { var x = new URL(u); return x.origin === location.origin && /^\/[a-z0-9]+\/slides\//.test(x.pathname); } catch(e){ return false; }
+  });
+}
 function makeEmbed(host, wcfg){
   if (typeof wcfg.url !== "string") wcfg.url = "";
   if (typeof wcfg.perPeriod !== "boolean") wcfg.perPeriod = false;
   if (typeof wcfg.period !== "string") wcfg.period = "";
   if (!isObj(wcfg.decks)) wcfg.decks = {};
+  if (typeof wcfg.today !== "boolean") wcfg.today = embTodayDefault(wcfg);   // v7.63
   host.insertAdjacentHTML("beforeend",
     '<div class="wBody embBody">' +
       '<div class="embEmpty">' +
@@ -24976,6 +25031,7 @@ function makeEmbed(host, wcfg){
         '<div class="embHint">The edit link works; File &rarr; Share &rarr; Publish to web gives the cleanest player. ' +
         'YouTube, PhET, GeoGebra and Desmos links work too.</div>' +
         '<div class="chips embSaved" role="group" aria-label="Saved decks"></div>' +
+        '<div class="embWhy" hidden></div>' +
       '</div>' +
       /* v7.1: `allow` with a * allowlist — `allowfullscreen` alone only
          delegates to the frame's OWN origin, and a YouTube player nested
@@ -24984,6 +25040,8 @@ function makeEmbed(host, wcfg){
       '<iframe class="embFrame" title="Embedded slides" allow="fullscreen *; autoplay *; encrypted-media *; picture-in-picture *" hidden></iframe>' +
       '<div class="embKeys" hidden>&#9000; Keys are in the slides &mdash; tap the board background to give them back to Deckhand</div>' +
       '<div class="embRow">' +
+        '<label class="embPP embTodayLbl" title="The site\u2019s slides for the class in the room" hidden>' +
+          '<input type="checkbox" class="embTodayCk"> Today\u2019s lesson</label>' +
         '<label class="embPP" title="A different deck for each class, following the bells">' +
           '<input type="checkbox" class="embPPck"> Per-period</label>' +
         '<select class="pkSel embPer" hidden aria-label="Deck period"></select>' +
@@ -25013,6 +25071,8 @@ function makeEmbed(host, wcfg){
   var row = q(".embRow"), row2 = q(".embRow2");
   var bigIn = q(".embBigIn"), shelfCk = q(".embShelfCk");
   var emptyTitle = q(".embEmpty b");
+  var todayCk = q(".embTodayCk"), todayLbl = q(".embTodayLbl"), why = q(".embWhy");   // v7.63
+  var todayLive = false;                         // v7.63: the frame shows the site's slides for today (never saved)
   if (!Array.isArray(wcfg.saved)) wcfg.saved = [];
   if (typeof wcfg.stageOnly !== "boolean") wcfg.stageOnly = false;
   /* the link row hides once a deck is loaded (Croix: "couldn't get the
@@ -25034,9 +25094,9 @@ function makeEmbed(host, wcfg){
     rowOpen = !rowOpen;
     paintRow();
     if (rowOpen){
-      input.value = activeURL();                 // fresh draft for the CURRENT deck
+      input.value = shownURL();                  // fresh draft for the CURRENT deck (v7.63: today's lesson, read-only)
       draftFor = wcfg.perPeriod ? resolvedPeriod() : null;
-      input.focus();
+      if (!todayLive) input.focus();             // v7.63: nothing to type into while today's lesson is up
     }
   });
   function paintRow(){
@@ -25083,6 +25143,7 @@ function makeEmbed(host, wcfg){
     });
   }
   function loadURL(u){
+    if (todayLive){ wcfg.today = false; todayLive = false; input.readOnly = false; }   // v7.63: a deck picked by hand takes over from today's lesson
     input.value = u;
     draftFor = wcfg.perPeriod ? resolvedPeriod() : null;
     applyInput();
@@ -25123,16 +25184,39 @@ function makeEmbed(host, wcfg){
     });
     perSel.value = labels.indexOf(wcfg.period) !== -1 ? wcfg.period : "";
   }
+  /* v7.63 (Croix: "have deckhand have the relevant slides locked and loaded"): Today's lesson — the
+     site's slides page for the class in the room (the same period the per-period decks follow, so
+     before school and in passing it already holds the NEXT class's), from Pacing's calendars. Null
+     when off or when the site has nothing for that class today; {url: ""} when the day has no slides. */
+  function todayInfo(){
+    if (!wcfg.today) return null;
+    var L = null;
+    try { L = Pacing.lessonFor(resolvedPeriod(), dateKey(now())); } catch(e){ return null; }
+    if (!L) return null;
+    return { url: L.url ? embedURL(L.url) : "", label: L.label || "", kind: L.kind || "" };
+  }
+  function shownURL(){ var t = todayInfo(); return (t && t.url) || activeURL(); }
   var draftFor = null;                               // the period this input text belongs to
   function syncInput(){
     if (document.activeElement === input) return;    // never clobber a draft
+    input.readOnly = todayLive;                      // v7.63: today's address is shown, not edited
+    if (todayLive){ input.value = lastShown || ""; draftFor = null; return; }
     input.value = activeURL();
     draftFor = wcfg.perPeriod ? resolvedPeriod() : null;
   }
   var lastShown = null;
   function render(){
-    var u = activeURL();
+    var t = todayInfo();                         // v7.63
+    todayLive = !!(t && t.url);
+    var u = todayLive ? t.url : activeURL();
     lastShown = u;
+    var hasL = false; try { hasL = Pacing.hasLessons(); } catch(e){}
+    todayLbl.hidden = !hasL;                     // only where the site's calendars are (http/https with a copy)
+    todayCk.checked = !!wcfg.today;
+    host.classList.toggle("embToday", todayLive);
+    /* the empty state says why today's lesson isn't up — the day's own label (textContent only) */
+    var whyText = !todayLive && t && !t.url ? (t.label ? "No slides today: " + t.label : "No slides today") : "";
+    why.textContent = whyText; why.hidden = !whyText;
     ppCk.checked = wcfg.perPeriod;
     perSel.hidden = !wcfg.perPeriod;
     if (u){
@@ -25167,6 +25251,7 @@ function makeEmbed(host, wcfg){
   }
   function applyInput(){
     if (Alarm.isOn()) return;                    // the alarm's focus steal is not a commit
+    if (todayLive){ input.value = lastShown || ""; return; }   // v7.63: today's deck is never written into the config
     var u = embedURL(input.value);
     if (!u && input.value.trim()){
       /* keep-last-good: garbage never erases a working deck — but SAY
@@ -25260,6 +25345,12 @@ function makeEmbed(host, wcfg){
     wcfg.stageOnly = this.checked;
     try { Canvas.syncShelf(host._entry); } catch(e){}
   });
+  todayCk.addEventListener("change", function(){   // v7.63: off returns to the saved decks
+    this.blur();
+    wcfg.today = this.checked;
+    render();
+    syncInput();
+  });
   ppCk.addEventListener("change", function(){
     this.blur();                                  // v7.11.5: a focused checkbox took the next Space
     wcfg.perPeriod = this.checked;
@@ -25282,13 +25373,16 @@ function makeEmbed(host, wcfg){
     syncInput();
   });
   /* follow the bells: when the auto-resolved period changes, swap decks */
+  /* v7.63: and today's lesson follows the bells and the date (the address compared first, so a
+     tick never reloads the deck — or resets a slide the teacher moved to) */
   var tickTid = setInterval(function(){
     fillPer();
-    if (wcfg.perPeriod && !wcfg.period && activeURL() !== lastShown){
+    if (shownURL() !== lastShown){
       render();
       syncInput();
     }
   }, 5000);
+  function onLessons(){ render(); syncInput(); }   // v7.63: Pacing wrote new calendars
   input.addEventListener("blur", applyInput);
   input.addEventListener("keydown", function(e){
     if (Alarm.isOn()) return;                    // never shield the alarm stage
@@ -25305,7 +25399,7 @@ function makeEmbed(host, wcfg){
      deck fresh; on a staged card the clicker gets the keys back once it's in. */
   var reloadTid = null;
   function reload(){
-    var u = activeURL();                         // the deck actually SHOWING — never the stale single-mode url
+    var u = shownURL();                          // the deck actually SHOWING — never the stale single-mode url (v7.63: or today's lesson)
     if (!u || frame.hidden) return false;
     host.classList.add("embReloading");
     frame.src = "about:blank";
@@ -25352,6 +25446,7 @@ function makeEmbed(host, wcfg){
   window.addEventListener("focus", onWinFocus);
   document.addEventListener("deckhand:home", onHome);
   document.addEventListener("deckhand:board", onBoard);
+  document.addEventListener("deckhand:lessons", onLessons);
   fillPer();
   render();
   syncInput();
@@ -25365,17 +25460,19 @@ function makeEmbed(host, wcfg){
     reload: reload,                              // v7.28: ↻ on the card and the stage bar
     edit: function(){                            // v7.52: the stage's "Change the link" — the ✎ row, opened from outside
       rowOpen = true; paintRow();
-      input.value = activeURL();
+      input.value = shownURL();
       draftFor = wcfg.perPeriod ? resolvedPeriod() : null;
-      try { input.focus(); input.select(); } catch(e){}
+      if (!todayLive){ try { input.focus(); input.select(); } catch(e){} }
     },
     rebuild: render,
     resync: function(){},
+    today: function(){ return todayLive ? lastShown : null; },   // v7.63 (tests): today's lesson, when it is up
     destroy: function(){                         // scene switch unloads the iframe
       window.removeEventListener("blur", onWinBlur);
       window.removeEventListener("focus", onWinFocus);
       document.removeEventListener("deckhand:home", onHome);
       document.removeEventListener("deckhand:board", onBoard);
+      document.removeEventListener("deckhand:lessons", onLessons);
       if (pillTid !== null) clearInterval(pillTid);
       clearInterval(tickTid);
       frame.removeAttribute("src");
@@ -27135,7 +27232,7 @@ var Canvas = (function(){
     }
   }
   function addWidget(type, opts){
-    if (cfg.ui.locked) return null;
+    if (cfg.ui.locked && !(opts && opts.force)) return null;   // v7.63: Warm-up adds its Cadence card on a locked board too
     /* v6.16: adding while a deck is ⛶-focused no longer collapses the
        stage (Croix pulled a sketch pad out mid-lesson and "it crashed
        out of full screen"). The new widget spawns FLOATING over the
@@ -27253,6 +27350,27 @@ var Canvas = (function(){
      (en.float — config untouched, so it works while LOCKED and never
      dirties the board); with none, one is created floating in the deck's
      lower-right corner WITHOUT collapsing focus. */
+  /* v7.63 (Croix: "Too many steps to set up", "Hard to use on the panel"): the warm-up in one tap —
+     the given Cadence card, else the scene's first one (brought back if minimized), else a new one;
+     pointed at the warm-up board (hash) and put on the stage, as its Stage chip does. A card that was
+     on the stage is put away (minimized): its tab in the stage bar brings it back. */
+  function warmupStage(hash, el){
+    var en = el && el._entry && el._entry.type === "cadence" ? el._entry : null;
+    if (!en) en = entries.filter(function(e2){ return e2.type === "cadence" && e2.api && e2.api.warmup; })[0] || null;
+    var prev = focusedEntry, added = false;
+    if (prev && prev !== en && prev.type !== "clock") minimize(prev);
+    if (!en){
+      en = addWidget("cadence", { force: true });
+      if (!en) return { full: true };            // the scene holds twelve cards
+      added = true;
+    }
+    var url = "";
+    try { url = en.api.warmup(hash); } catch(e){}
+    if (en.cfg && en.cfg.min) restore(en, true); // its frame loads with the hash as it comes back
+    if (focusedEntry !== en) setFocus(en);       // (setFocus on the staged card would take it off)
+    hideAddMenu();
+    return { en: en, url: url, added: added };
+  }
   /* v7.55 (audit): a timer card whose factory threw has no startSeconds — counting it made the
      presets a silent no-op */
   function liveTimer(e){ return e.type === "timer" && e.api && typeof e.api.startSeconds === "function"; }
@@ -27776,6 +27894,8 @@ var Canvas = (function(){
           addWidget(pair[1]); hideAddMenu();
         });
       });
+      /* v7.63: + Add → Warm-up (Cadence's four questions, on the stage; over staged slides too) */
+      wireButton($("addWarmupBtn"), function(){ hideAddMenu(); try { Warmup.open(); } catch(e){} });
       wireButton($("moreBtn"), toggleMoreMenu);
       wireButton($("slidesBtn"), function(){
         var off = !slidesOffToday();
@@ -27898,6 +28018,8 @@ var Canvas = (function(){
     minimize: function(el){ if (el && el._entry) minimize(el._entry); },   // v7.18 (tests)
     zoom: function(){ return { s: zm.s, x: zm.x, y: zm.y, on: !!zm.en }; },   // v7.21 (tests)
     restore: function(el){ if (el && el._entry) restore(el._entry); },
+    warmupStage: warmupStage,                    // v7.63: the Warm-up module's hands on the board
+    focused: function(){ return focusedEntry ? focusedEntry.el : null; },   // v7.63 (tests)
     refocusDeck: refocusDeck,          // alarm dismiss hands keys back
     deckStaged: function(){ return !!deckFrame(); },   // v7.42: the clicker's road
     holdKeys: function(ms){ keysHold = Math.max(keysHold, Date.now() + (ms || 0)); },
@@ -31380,9 +31502,233 @@ var Keys = (function(){
     else if (lk === "m"){ Sound.toggle(); }
     else if (lk === "s"){ Canvas.cycleSel(); }
     else if (lk === "h"){ Landing.show(); }
+    else if (lk === "w"){ Warmup.open(); }      // v7.63: the warm-up on the stage
     else if (k === "Escape"){ if (!Canvas.closeMenus()) Canvas.unfocus(); }
   }
   return { init: function(){ document.addEventListener("keydown", onKey); } };
+})();
+
+/* ================= v7.63 PACING for Cadence =================
+   Cadence's warm-up board picks its questions from what has been taught, which it reads from
+   localStorage["cadence.pacing"] (Cadence and Deckhand share the website's origin). Deckhand writes
+   it from the course calendars the site publishes. Only over http(s); on file:// nothing is fetched
+   or written (Cadence falls back to the lesson it remembers). No UI, no toasts, never throws.
+   Shape: {v:1, at:"<ISO>", courses:{on:{src:"m7", asOf, days:[{d:"YYYY-MM-DD", codes:["10.5"]}]}, acc:{…}}}
+   v7.63 (Croix: "While at it, can you have deckhand have the relevant slides locked and loaded so I don't
+   have to do the whole html process every time."): from the same calendars Deckhand keeps what IT needs —
+   which periods each course has and each day's slides page — in its own key, localStorage["deckhand.lessons"]:
+   {v:1, at, courses:{on:{src:"m7", periods:[2,4,5], days:[{d, kind, label, slides|null}]}, acc:{…}}}.
+   The Slides card's "Today's lesson" reads it (lessonFor); Warm-up's hash names the course (courseFor). */
+var Pacing = (function(){
+  /* the paths Croix's site publishes each course's calendar at (same origin, relative);
+     "on" / "acc" are Cadence's class ids (7th on-level, 7th accelerated) */
+  var SOURCES = [{ course: "on", src: "m7", url: "/m7/schedule.json" },
+                 { course: "acc", src: "a7", url: "/a7/schedule.json" }];
+  var KEY = "cadence.pacing", LKEY = "deckhand.lessons", STALE_MS = 6 * 3600000, TIMEOUT_MS = 4000;
+  var inflight = null;
+  /* a day's slides page, relative to the course's folder: a plain relative path, never "..", a leading
+     "/", a scheme or a query — it is joined to "/<src>/" on this origin and nowhere else */
+  var SLIDES = /^[A-Za-z0-9][A-Za-z0-9._+\/-]{0,80}\/?$/;
+  var DAY = /^\d{4}-\d{2}-\d{2}$/, LESSON = /^\d{1,2}\.\d{1,2}$/;
+  function web(){ return location.protocol === "http:" || location.protocol === "https:"; }
+  function isDay(x){                             // a real calendar day (2026-02-30 is not one)
+    if (typeof x !== "string" || !DAY.test(x)) return false;
+    var y = +x.slice(0, 4), m = +x.slice(5, 7), d = +x.slice(8, 10), t = new Date(y, m - 1, d);
+    return t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d;
+  }
+  function read(){
+    try {
+      var o = JSON.parse(localStorage.getItem(KEY));
+      return o && typeof o === "object" && o.v === 1 && o.courses && typeof o.courses === "object" ? o : null;
+    } catch(e){ return null; }
+  }
+  /* the site's lesson code → Cadence's lesson ids: "10.05" → ["10.5"], "10.09+10" → ["10.9","10.10"],
+     "5.08+09" → ["5.8","5.9"]; a later part is "LL" (the first part's unit) or "U.LL" */
+  function codes(code){
+    if (typeof code !== "string") return [];
+    var parts = code.trim().split("+"), out = [], unit = null;
+    for (var i = 0; i < parts.length; i++){
+      var pt = parts[i].trim(), m = /^(\d{1,3})\.(\d{1,3})$/.exec(pt), id = null;
+      if (m){ id = (+m[1]) + "." + (+m[2]); if (i === 0) unit = +m[1]; }
+      else if (i > 0 && unit !== null && (m = /^(\d{1,3})$/.exec(pt))) id = unit + "." + (+m[1]);
+      if (i === 0 && unit === null) return [];    // the first part names the unit, or nothing does
+      if (id && LESSON.test(id) && out.indexOf(id) === -1) out.push(id);
+    }
+    return out;
+  }
+  function calendar(j, src){                      // is this the course's calendar?
+    return !!(j && typeof j === "object" && Array.isArray(j.days) && !(typeof j.course === "string" && j.course !== src));
+  }
+  /* v7.63: what the Slides card needs — every dated day (its kind, its label, its slides page) and the periods */
+  function lessons(j, src){
+    if (!calendar(j, src)) return null;
+    var periods = [];
+    (Array.isArray(j.periods) ? j.periods : []).forEach(function(n){
+      if (typeof n === "number" && Math.floor(n) === n && n >= 0 && n <= 12 && periods.indexOf(n) === -1) periods.push(n);
+    });
+    var days = [];
+    j.days.slice(0, 1000).forEach(function(x){
+      if (!x || !isDay(x.date)) return;
+      var sl = typeof x.slides === "string" && SLIDES.test(x.slides) && x.slides.indexOf("..") === -1 ? x.slides : null;
+      days.push({ d: x.date, kind: typeof x.kind === "string" ? x.kind.slice(0, 20) : "",
+                  label: typeof x.label === "string" ? x.label.trim().slice(0, 120) : "", slides: sl });
+    });
+    days.sort(function(a, b){ return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+    return { src: src, periods: periods, days: days };
+  }
+  function parse(j, src){
+    if (!calendar(j, src)) return null;
+    var days = [];
+    j.days.slice(0, 1000).forEach(function(x){
+      if (!x || x.kind !== "lesson" || typeof x.code !== "string" || !isDay(x.date)) return;
+      var c = codes(x.code);
+      if (c.length) days.push({ d: x.date, codes: c });
+    });
+    days.sort(function(a, b){ return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+    return { src: src, asOf: isDay(j.asOf) ? j.asOf : "", days: days };
+  }
+  function fetchOne(s){
+    return new Promise(function(res){
+      var tid = null;
+      try {
+        var ctl = typeof AbortController === "function" ? new AbortController() : null;
+        tid = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch(e){} res(null); }, TIMEOUT_MS);
+        fetch(s.url, { cache: "no-cache", credentials: "same-origin", mode: "same-origin", redirect: "error",
+                       signal: ctl ? ctl.signal : undefined })
+          .then(function(r){ return r && r.ok ? r.json() : null; })
+          .then(function(j){ clearTimeout(tid); res(calendar(j, s.src) ? j : null); }, function(){ clearTimeout(tid); res(null); });
+      } catch(e){ clearTimeout(tid); res(null); }
+    });
+  }
+  /* fetch both calendars; a course that failed keeps its stored entry; nothing loaded = nothing written */
+  function refresh(){
+    if (!web()) return Promise.resolve(false);
+    if (inflight) return inflight;
+    inflight = Promise.all(SOURCES.map(fetchOne)).then(function(got){
+      if (!got.some(Boolean)) return false;
+      var prev = read(), prevL = readLessons(), courses = {}, lc = {}, at = new Date().toISOString();
+      SOURCES.forEach(function(s, i){
+        var c = got[i] && parse(got[i], s.src), l = got[i] && lessons(got[i], s.src);
+        if (c) courses[s.course] = c;
+        else if (prev && prev.courses[s.course]) courses[s.course] = prev.courses[s.course];
+        if (l) lc[s.course] = l;
+        else if (prevL && prevL.courses[s.course]) lc[s.course] = prevL.courses[s.course];
+      });
+      localStorage.setItem(KEY, JSON.stringify({ v: 1, at: at, courses: courses }));
+      try { localStorage.setItem(LKEY, JSON.stringify({ v: 1, at: at, courses: lc })); } catch(e){}
+      lcache = null;
+      try { document.dispatchEvent(new CustomEvent("deckhand:lessons")); } catch(e){}   // the Slides cards look again
+      return true;
+    }).catch(function(){ return false; }).then(function(v){ inflight = null; return v; });
+    return inflight;
+  }
+  /* v7.63: the lessons copy, parsed once per write */
+  var lcache = null, lraw = null;
+  function readLessons(){
+    try {
+      var raw = localStorage.getItem(LKEY);
+      if (raw === lraw && lcache) return lcache;
+      lraw = raw; lcache = null;
+      var o = JSON.parse(raw);
+      if (o && typeof o === "object" && o.v === 1 && o.courses && typeof o.courses === "object") lcache = o;
+      return lcache;
+    } catch(e){ return null; }
+  }
+  /* the course a class belongs to: the period label's number ("3rd Period", "3rd", "Period 3" → 3) in a
+     course's periods (from the site's calendar — nothing here knows his periods) */
+  function courseFor(label){
+    try {
+      if (typeof label !== "string") return null;
+      var m = /(\d{1,2})/.exec(label); if (!m) return null;
+      var n = +m[1], L = readLessons(); if (!L) return null;
+      for (var i = 0; i < SOURCES.length; i++){
+        var c = L.courses[SOURCES[i].course];
+        if (c && Array.isArray(c.periods) && c.periods.indexOf(n) !== -1) return { course: SOURCES[i].course, src: SOURCES[i].src };
+      }
+    } catch(e){}
+    return null;
+  }
+  /* that class's lesson on a day: {course, src, label, kind, url|null} (url = the site's slides page on THIS
+     origin, under /<src>/), or null when the class has no course or the calendar has no such day */
+  function lessonFor(label, dk){
+    try {
+      if (!web()) return null;
+      var c = courseFor(label); if (!c) return null;
+      var co = readLessons().courses[c.course], day = null;
+      for (var i = 0; i < co.days.length; i++) if (co.days[i] && co.days[i].d === dk){ day = co.days[i]; break; }
+      if (!day) return null;
+      var url = null, sl = day.slides;
+      if (typeof sl === "string" && SLIDES.test(sl) && sl.indexOf("..") === -1 && /^[a-z0-9]{1,12}$/.test(c.src)){
+        var u = new URL(sl, location.origin + "/" + c.src + "/");
+        if (u.origin === location.origin && u.pathname.indexOf("/" + c.src + "/") === 0) url = u.href;
+      }
+      return { course: c.course, src: c.src, label: typeof day.label === "string" ? day.label.slice(0, 120) : "",
+               kind: typeof day.kind === "string" ? day.kind : "", url: url };
+    } catch(e){ return null; }
+  }
+  function hasLessons(){ return web() && !!readLessons(); }
+  /* Warm-up asks: a stale copy (over 6 h) is refreshed behind the board; with no copy at all the
+     warm-up waits on the refresh (a moment, at most) — returns that promise, else null */
+  function wanted(){
+    try {
+      if (!web()) return null;
+      var cur = read(), at = cur ? Date.parse(cur.at) : NaN;
+      if (cur && at > Date.now() - STALE_MS && at <= Date.now() + 60000) return null;
+      var p = refresh();
+      return cur ? null : p;
+    } catch(e){ return null; }
+  }
+  return {
+    init: function(){ if (web()) setTimeout(function(){ try { refresh(); } catch(e){} }, 1500); },   // after boot, never in its way
+    refresh: refresh, wanted: wanted, read: read, codes: codes, parse: parse,
+    lessons: lessons, readLessons: readLessons, courseFor: courseFor, lessonFor: lessonFor, hasLessons: hasLessons,   // v7.63
+    SOURCES: SOURCES
+  };
+})();
+
+/* ================= v7.63 WARM-UP =================
+   Croix: "I didn't have a warm up ready and I tried to use deckhand and cadence to generate one and it
+   epically failed. Can you integrate the two better so that this is an easier process for me?" — "Too
+   many steps to set up", "Hard to use on the panel", "Hard to see when all the questions were out and
+   only one at a time is too slow". One tap (+ Add → Warm-up, the Cadence card's Warm-up, or W): the
+   Cadence card shows Cadence's warm-up board — four spaced-retrieval questions at once, full-frame —
+   on the stage. The contract is the hash: "#warmup&p=<period label>&d=<YYYY-MM-DD>&v=1" (p omitted
+   when no class is in the room by the bell). Cadence listens to hashchange, so a second warm-up on the
+   same card changes the hash and nothing reloads. The card's saved link is never touched. */
+var Warmup = (function(){
+  var WAIT_MS = 1200;                            // the most a first-ever warm-up waits on the calendars
+  /* the class in the room by the bell (during passing, the one arriving) — not the next class of a
+     later day or after school, and not Lunch */
+  function period(){
+    var st;
+    try { st = Bell.statusAt(now()); } catch(e){ return null; }
+    var label = st && st.type === "in" ? st.label : st && st.type === "passing" ? st.next : null;
+    if (typeof label !== "string" || !label || /^lunch$/i.test(label)) return null;
+    return label;
+  }
+  function hash(){
+    var p = period(), c = null;
+    try { c = p ? Pacing.courseFor(p) : null; } catch(e){}
+    return "#warmup" + (p ? "&p=" + encodeURIComponent(p) : "") + (c ? "&c=" + encodeURIComponent(c.course) : "") +
+           "&d=" + dateKey(now()) + "&v=1";
+  }
+  function go(card){
+    try { if (document.body.classList.contains("landing")) el.launchBtn.click(); } catch(e){}
+    var r = Canvas.warmupStage(hash(), card || null);
+    if (r.full) Undo.show("This scene is full — remove a card to add Cadence", null);
+    else if (!r.url) Undo.show("Cadence’s link is needed: unlock, then ✎ on the Cadence card", null);
+    return r;
+  }
+  function open(card){
+    var wait = null;
+    try { wait = Pacing.wanted(); } catch(e){}
+    if (!wait) return go(card);
+    var done = false;
+    var tid = setTimeout(function(){ if (!done){ done = true; go(card); } }, WAIT_MS);
+    wait.then(function(){ if (!done){ done = true; clearTimeout(tid); go(card); } });
+    return null;
+  }
+  return { open: open, hash: hash, period: period };
 })();
 
 /* ================= v7.19 the web app =================
@@ -31437,7 +31783,7 @@ var Awake = (function(){
    cards are built, so the picker and the comment cards open knowing their class */
 var rostersAuto = null;
 try { rostersAuto = Settings.autoRosters(); } catch(e){ try { console.error("Deckhand: class lists not read", e); } catch(_){} }
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, WrapSong, Awake, Ink, Keys, SaveState].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, WrapSong, Awake, Ink, Keys, SaveState, Pacing].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -31490,6 +31836,9 @@ window.Deckhand = {
   ccardPop: CcardPop,                           // v7.35: the quick-draw comment cards (tests)
   ccToday: CcToday,                             // v7.40: today's marks (tests)
   pickPop: PickPop,                             // v7.41: the quick-draw name picker (tests)
+  warmup: function(){ return Warmup.open(); },  // v7.63: the warm-up on the stage (tests)
+  warmupModule: Warmup,                         // v7.63: hash() / period() (tests)
+  pacing: Pacing,                               // v7.63: the calendars for Cadence (tests)
   boardList: BoardList,                         // v7.46: who is at the board (tests)
   wrapSong: WrapSong,                           // v7.51: the wrap-up song (tests)
   blobTips: BlobTips,

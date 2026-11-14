@@ -10,7 +10,7 @@ or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.62.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.63.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts. That includes **Nib** (croix18/Nib, the handwriting-to-math
 engine of the Board), which reads the Sketch Pad and the pen: `python3 tools/vendor_nib.py` puts in the engine the
 Windmill kit carries (`../Windmill/nib/nib.js`), or the one at the path given.
@@ -26,6 +26,15 @@ Since v7.7 the board is one chrome bar: the date lives on the clock, the settle-
 moment of the clock (Settings → Bells), the teacher's buttons sit under the dock's ⋮,
 and on a day the week rotation already decided, the landing page is skipped (Home / H
 brings it back).
+
+Since v7.63, on the website (mrshaffer.org/teacher/deckhand/) the board reads the course
+calendars the site publishes (`/m7/schedule.json`, `/a7/schedule.json`). Croix: "While at
+it, can you have deckhand have the relevant slides locked and loaded so I don't have to do
+the whole html process every time." The Slides card's **Today's lesson** shows the site's
+slides page for the class in the room (the next class's, before school and between classes),
+and **Warm-up** (+ Add, the Cadence card, or W) puts Cadence's four-question warm-up on the
+stage — Cadence is found in `../cadence/` and told what has been taught
+(`cadence.pacing`). On `file://` none of this fetches anything; the cards work as before.
 
 `docs/HANDOFF.md` is the project memory — every version's story, the design rules, the
 known constraints (YouTube Error 153 over `file://`, the iframe drag shield,
@@ -58,7 +67,7 @@ Chart backup…** takes its exported JSON anywhere. Apply to keep.
 
 ## Tests
 
-`tests/` — a Playwright suite (`@playwright/test`), 325 tests split by feature, each in
+`tests/` — a Playwright suite (`@playwright/test`), 380 tests split by feature, each in
 its own fresh browser context, run in parallel.
 
 ```sh
