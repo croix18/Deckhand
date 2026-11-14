@@ -5820,9 +5820,9 @@
   <button type="button" id="verNudgeKeep" aria-label="Dismiss">&times;</button>
 </div>
 
-<!-- nib:begin Nib 1.6.5: handwritten maths to LaTeX, croix18/Nib dist/nib.js; put here by tools/vendor_nib.py, never edit it by hand -->
+<!-- nib:begin Nib 1.6.6: handwritten maths to LaTeX, croix18/Nib dist/nib.js; put here by tools/vendor_nib.py, never edit it by hand -->
 <script id="nib-engine">
-/*! Nib 1.6.5 — handwritten maths to LaTeX in the browser. One file, no dependencies, works offline.
+/*! Nib 1.6.6 — handwritten maths to LaTeX in the browser. One file, no dependencies, works offline.
  *  <nib-pad> element · Nib.attach(el) · Nib.recognize(strokes) · Nib.neaten / Nib.typeset / Nib.solve (answers and equations) — see README.md / docs/HANDOFF.md
  *  Symbol models trained on CROHME (research data).
  *  Typeset view: the KaTeX_Main, KaTeX_Math and KaTeX_Size1 fonts, embedded unchanged.
@@ -11270,7 +11270,7 @@ function pdfMake(pages, meta) {
   if (title) info += ' /Title ' + pdfText(title);
   if (M.author) info += ' /Author ' + pdfText(M.author);
   if (M.subject) info += ' /Subject ' + pdfText(M.subject);
-  obj(3, info + ' /Creator (Nib Board) /Producer (Nib 1.6.5) /CreationDate (' + pdfDate(date) + ') >>');
+  obj(3, info + ' /Creator (Nib Board) /Producer (Nib 1.6.6) /CreationDate (' + pdfDate(date) + ') >>');
 
   for (let i = 0; i < pages.length; i++) {
     const P = pages[i] || {}, n = 4 + 3 * i, jpeg = pdfBytes(P.jpeg), sof = jpeg && pdfJpegSize(jpeg);
@@ -11511,7 +11511,8 @@ function storeImagesDurable() { return storeOpen().then(db => !!db && storeMem.s
 // scribbleOf(pts, z) — is it a scribble, by its shape alone? (z: screen px per unit)
 //   - a zig-zag: five legs or more back and forth along one line, each at least half the longest, nearly all of its
 //     turns sharp (it goes back the way it came: the round turns of an 8, an m, a ∞ or a cursive word are not), the
-//     path long and close-packed for its size (L² / hull area ≥ 25: a W or an M is not), the legs at least 12 px;
+//     path long and close-packed for its size (L² / hull area ≥ 20, and ≥ 25 with only five legs: a W or an M written
+//     over a symbol is not), the legs at least 12 px;
 //   - a coil: loops that cross each other five times or more, packed as tight (L² / area ≥ 45) and filling what they
 //     span (a circle gone round three times to ring an answer is not: its middle is empty), at least 20 px across.
 //
@@ -11790,10 +11791,6 @@ function scribbleOf(pts, z) {
     if (scrSharp(pts, L.turns, L.R) < 0.7) continue;
     if (scrBent(pts, L.turns) > 1.3) continue;                        // its legs run straight: not a curve gone over again
     // and they move on: not a Z, an N or a W gone over again and again (its legs come back on each other)
-    let gapAlong = 0;
-    { const ms = [], cut = [0].concat(L.turns, [pts.length - 1]), pr = [-ax[1], ax[0]];
-      for (let k = 0; k + 1 < cut.length; k++) { let t = 0, c = 0; for (let i = cut[k]; i <= cut[k + 1]; i++) { t += pts[i][0] * pr[0] + pts[i][1] * pr[1]; c++; } ms.push(t / c); }
-      const dd = []; for (let k = 1; k < ms.length; k++) dd.push(Math.abs(ms[k] - ms[k - 1])); dd.sort((x, y) => x - y); gapAlong = dd.length ? dd[dd.length >> 1] : 0; }
     if (scrRepeats(pts, L.turns, 2.5 / z) >= 0.4) continue;
     sc = { kind: 'zigzag', legs: L.n, reach: L.R, axis: ax, turns: L.turns.map(i => [pts[i][0], pts[i][1]]) };
   }
@@ -11815,7 +11812,7 @@ function scribbleOf(pts, z) {
   if (!sc) return null;
   dists = reach();
   sc.gap = gap;
-  // round and round: it covers only what it passes over (a ring round an answer passes over nothing)
+  // round and round: it covers only what it passes over (a ring around an answer passes over nothing)
   sc.loopy = scrLoopy(pts, len, z);
   // what it covers: what is inside it and no farther from its path than nearly all of the inside is (its passes need
   // not be even)
@@ -11939,7 +11936,7 @@ function scribbleErase(sc, items, z) {
   // round an answer, however flat): that takes nothing
   if (sc.loopy && !near.some(s => !s.fixed && !s.scr && scrPasses(sc, s.pts, z))) { out.why = 'round it'; return out; }
   // (round and round over writing, what it takes it goes over: a stroke its loops cross, or pass along away from its
-  // ends — a ring round a minus touches it at an end — or whose box they go into; not a stroke inside a ring that
+  // ends — a ring around a minus touches it at an end — or whose box they go into; not a stroke inside a ring that
   // clipped its neighbour)
   const mid = pts => { const L = scrLen(pts), out = []; let d = 0; for (let i = 0; i < pts.length; i++) { if (i) d += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (d >= 0.15 * L && d <= 0.85 * L) out.push(pts[i]); } return out.length ? out : pts; };
   const into = s => { if (!sc.loopy || scrCrossings2(sc, s.pts, z) >= 1 || scrPasses(sc, mid(s.pts), z)) return true; const w = s.b[2] - s.b[0], h = s.b[3] - s.b[1]; return scrEnters(sc, [s.b[0] + 0.15 * w, s.b[1] + 0.15 * h - 1 / z, s.b[2] - 0.15 * w, s.b[3] - 0.15 * h + 1 / z]); };
@@ -12131,6 +12128,9 @@ const PAD_DEFAULTS = {
 // Writing in different places on a board: strokes near each other belong together — neighbors on a line (within
 // 1.5 writing heights across, 0.6 up or down) or stacked (fractions, steps of working: within 1.6 heights down and
 // overlapping across). Returns groups of stroke indices in reading order.
+// when an input event happened, on the page's clock: its own time stamp (a pen lifted and set down again 40 ms apart is
+// 40 ms apart even when the page was busy drawing in between and heard the second touch later), else now
+function evTime(e, now) { const t = e && e.timeStamp; return t > 0 && t <= now + 1 ? t : now; }
 function clustersOf(strokes) {
   const n = strokes.length;
   if (!n) return [];
@@ -12477,7 +12477,7 @@ class Pad {
     const m = this.mode;
     // mode 'fix': a tap is sent on as nib:tap (the Board's Fix picks the symbol under it); writing still writes
     const mode = eraser || m === 'erase' ? 'erase' : ['select', 'shape', 'text', 'laser'].includes(m) ? m : 'draw';
-    const P = { id: e.pointerId, type, mode, eraser, fix: m === 'fix' && !eraser, t0: now, last: now, cur: null, erased: [], ops: [], hid: [], at: null, r: 0, base: 0, chip: null, w: this._contact(e),
+    const P = { id: e.pointerId, type, mode, eraser, fix: m === 'fix' && !eraser, t0: now, te: evTime(e, now), last: now, cur: null, erased: [], ops: [], hid: [], at: null, r: 0, base: 0, chip: null, w: this._contact(e),
       tool: Object.assign({}, this.tool) };
     this.ptrs.set(e.pointerId, P);
     this.why = P.mode + (eraser ? ' (eraser end)' : '');
@@ -12782,7 +12782,7 @@ class Pad {
     // a fast finger)
     const scribbly = !P.snap && this.o.scribble !== false && (!T.kind || T.kind === 'pen' || T.kind === 'marker');
     if (scribbly && (this._scribbleOut(el, info) || this._scribbleJoin(el, info, P, T))) return;
-    if (scribbly) this._lifted.set(el, { t0: P.t0, t1: now, type: P.type, kind: T.kind || 'pen', color: T.color || null, size: T.size || null });
+    if (scribbly) this._lifted.set(el, { t0: P.te != null ? P.te : P.t0, t1: evTime(e, now), type: P.type, kind: T.kind || 'pen', color: T.color || null, size: T.size || null });
     this.strokes.push(el);
     this._push({ add: el });
     this._changed();
@@ -12959,13 +12959,14 @@ class Pad {
     return true;
   }
   // A scribble the board heard as several strokes — a pen that left the glass for a moment at a turn, a touch frame that
-  // lost a fast finger: the strokes just before this one, each lifted at most 150 ms before the next went down, and
-  // where it went down (no farther than the pen could go in that moment), with the same pen and nothing done between,
-  // are tried with it as one stroke — the longest chain first, three pieces before it at most. False: it is ink.
+  // lost a fast finger: the strokes just before this one, each lifted at most 150 ms before the next went down (by the
+  // events' own times, so a page busy drawing in between does not stretch the gap), and where it went down (no farther
+  // than the pen could go in that moment), with the same pen and nothing done between, are tried with it as one stroke
+  // — the longest chain first, three pieces before it at most. False: it is ink.
   _scribbleJoin(el, E, P, T) {
     if (typeof scribbleOf !== 'function' || this.o.layer || !el.length) return false;
     const z = this.cam.z, chain = [];
-    let next = el, down = P.t0, k = this.strokes.length - 1, h = this.history.length - 1;
+    let next = el, down = P.te != null ? P.te : P.t0, k = this.strokes.length - 1, h = this.history.length - 1;
     while (chain.length < 3 && k >= 0 && h >= 0) {
       const st = this.strokes[k], L = this._lifted.get(st), H = this.history[h];
       if (!L || !H || H.add !== st || L.type !== P.type || L.kind !== (T.kind || 'pen') || L.color !== (T.color || null) || L.size !== (T.size || null)) break;
@@ -14960,7 +14961,7 @@ Recognizer.prototype.recognizeAsync = function (strokes, options) {
 };
 
 const Nib = {
-  version: '1.6.5',
+  version: '1.6.6',
   recognize(strokes, options) { return defaultRecognizer().recognize(strokes, options); },
   recognizeAsync(strokes, options) { return defaultRecognizer().recognizeAsync(strokes, options); },
   classify(strokes, options) { return defaultRecognizer().classify(strokes, options); },
@@ -29139,6 +29140,10 @@ var Ink = (function(){
   var fade = null, fadeRaf = 0;                 // what a scribble just took, and the scribble, fading away
   var lifted = new WeakMap();                   // a pen or marker stroke → {t0, t1, seq}: when it went down and up, and
   var commits = 0, curT0 = 0;                   //   which change it was (a scribble heard in pieces is put back together)
+  var liftT = 0;                                //   when the pen last lifted, by its pointerup's own time (v7.62)
+  /* when an input event happened: its own time stamp, on the page's clock — a pen lifted and set down again 40 ms apart
+     is 40 ms apart even when the page was busy drawing in between and heard the second touch later; else now */
+  function evTime(e){ var now = performance.now(), t = e && e.timeStamp; return t > 0 && t <= now + 1 ? t : now; }
   /* v7.6: the strokes already finished live on an offscreen copy, so a
      pointer move costs one new segment (or, for the translucent
      highlighter, one blit plus the current stroke) instead of every
@@ -29754,7 +29759,7 @@ var Ink = (function(){
       if (keep){
         snap();
         items.push(cur);
-        if (cur.kind === "stroke" && (cur.mode === "pen" || cur.mode === "marker")) lifted.set(cur, { t0: curT0, t1: performance.now(), seq: commits });   // v7.62
+        if (cur.kind === "stroke" && (cur.mode === "pen" || cur.mode === "marker")) lifted.set(cur, { t0: curT0, t1: liftT || performance.now(), seq: commits });   // v7.62
         if (bctx) drawItem(bctx, cur);           // joins the finished copy
         if (cur.kind === "stroke" && cur.mode === "erase") nibHideUnder(cur);   // v7.61 (before Nib reads the cut)
       }
@@ -29837,7 +29842,7 @@ var Ink = (function(){
       present();
     } else {
       cur = { kind: "stroke", mode: tool, color: color, size: size, pts: [p] };
-      curT0 = performance.now();                 // v7.62
+      curT0 = evTime(e);                         // v7.62: when the pen came down (its own time)
       advance();
     }
     e.preventDefault();
@@ -29900,7 +29905,9 @@ var Ink = (function(){
         return;
       }
     }
+    liftT = evTime(e);                           // v7.62: when the pen lifted (its own time)
     endStroke();
+    liftT = 0;
   }
   function dropStroke(){                         // a clear mid-stroke: the stroke goes, the pen stays live
     cur = null; lasso = null; drag = null; floating = null;

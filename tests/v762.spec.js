@@ -137,17 +137,24 @@ test.describe("v7.62 scribble out", () => {
     await page.click("#inkDone");
   });
 
-  test("v7.62: a scribble the panel heard in pieces (the pen off the glass for a moment at a turn) is one scribble — over the slides and on the Sketch Pad: the pieces together rub out what they lie over, as one step of Undo; pieces 400 ms apart are ink", async ({ page, dh }) => {
-    /* the strokes, `gap` ms between one's lift and the next's touch */
-    const pieces = async (list, gap) => {
+  test("v7.62: a scribble the panel heard in pieces (the pen off the glass for a moment at a turn) is one scribble — over the slides and on the Sketch Pad: the pieces together rub out what they lie over, as one step of Undo, even when the page was busy and heard the second touch late; pieces 400 ms apart are ink", async ({ page, dh }) => {
+    /* the strokes as the panel sends them, `gap` ms between one's lift and the next's touch: pointer events straight to
+       the canvas, so the gap is the gap (no round trips of the test's own between them); `busy`: the page busy that long
+       before it hears the next touch (a full board drawn again on a slow computer) — the touch still happened `gap` ms
+       after the lift, and its event says so */
+    const pieces = (sel, list, gap, busy) => page.evaluate(async ([sel, list, gap, busy]) => {
+      const cv = document.querySelector(sel), sleep = t => new Promise(r => setTimeout(r, t));
+      const ev = (type, p) => new PointerEvent("pointer" + type, { pointerId: 9, pointerType: "pen", clientX: p[0], clientY: p[1], bubbles: true, cancelable: true,
+        isPrimary: true, button: type === "down" ? 0 : -1, buttons: type === "up" ? 0 : 1, width: 1, height: 1, pressure: 0.5 });
       for (let i = 0; i < list.length; i++){
-        if (i) await page.waitForTimeout(gap);
-        const s = list[i];
-        await page.mouse.move(s[0][0], s[0][1]); await page.mouse.down();
-        for (const p of s.slice(1)) await page.mouse.move(p[0], p[1]);
-        await page.mouse.up();
+        if (i) await sleep(gap);
+        const s = list[i], down = ev("down", s[0]);
+        if (i && busy){ const t = performance.now(); while (performance.now() - t < busy){ /* busy */ } }
+        cv.dispatchEvent(down);
+        for (const p of s.slice(1)){ await sleep(8); cv.dispatchEvent(ev("move", p)); }
+        cv.dispatchEvent(ev("up", s[s.length - 1]));
       }
-    };
+    }, [sel, list, gap, busy || 0]);
     await dh.openAt("#t=2026-10-21T10:30");
     await dh.launch();
     await page.click("#inkBtn");
@@ -157,17 +164,20 @@ test.describe("v7.62 scribble out", () => {
     await strokes(page, prob);
     await settledOn(page, "ink"); await page.waitForTimeout(200);
     const Z = zig(boxOf(three), 8, "h", 12), A = Z.slice(0, 25), B = Z.slice(26);   // four legs each, a sample lost between
-    await pieces([A], 0);
+    await pieces("#ink", [A], 0);
     ok((await count()) === prob.length + 1, "four legs on their own rubbed something out");
     await page.click("#inkUndo");
     const d0 = await depth();
-    await pieces([A, B], 30);
+    await pieces("#ink", [A, B], 30);
     ok((await count()) === prob.length - three.length, "in two pieces 30 ms apart, the 3 did not go (or a piece stayed): " + await count());
     ok((await depth()) === d0 + 1, "not one step of Undo: " + (await depth() - d0));
     ok(/Scribbled out/.test(await toast(page)), "no toast: " + await toast(page));
     await page.click("#inkUndo");
     ok((await count()) === prob.length && (await depth()) === d0, "Undo did not put the board back as it was before the scribble began");
-    await pieces([A, B], 400);
+    await pieces("#ink", [A, B], 30, 250);
+    ok((await count()) === prob.length - three.length, "the pen down 30 ms after it lifted, heard 250 ms late (the page busy), was not one scribble: " + await count());
+    await page.click("#inkUndo");
+    await pieces("#ink", [A, B], 400);
     ok((await count()) === prob.length + 2, "pieces 400 ms apart were not two strokes of ink");
     await page.click("#inkUndo"); await page.click("#inkUndo");
     await page.click("#inkDone");
@@ -179,12 +189,15 @@ test.describe("v7.62 scribble out", () => {
     const n = () => page.evaluate(() => document.querySelector(".w-draw .dwPad").pad.strokes.length);
     const G2 = glyphs("12+3", b.x + 60, b.y + 80, 1.2), prob2 = [].concat(...G2), three2 = G2[3];
     await strokes(page, prob2);
-    const Z2 = zig(boxOf(three2), 8, "h", 12);
+    const Z2 = zig(boxOf(three2), 8, "h", 12), A2 = Z2.slice(0, 25), B2 = Z2.slice(26), pad = ".w-draw .dwPad canvas";
     await page.waitForTimeout(200);
-    await pieces([Z2.slice(0, 25), Z2.slice(26)], 30);
+    await pieces(pad, [A2, B2], 30);
     ok((await n()) === prob2.length - three2.length, "the Sketch Pad: in two pieces, the 3 did not go (or a piece stayed): " + await n());
     await page.click(".w-draw .dwUndo");
     ok((await n()) === prob2.length, "the Sketch Pad's Undo did not put back the board as it was before the scribble began: " + await n());
+    await pieces(pad, [A2, B2], 30, 250);
+    ok((await n()) === prob2.length - three2.length, "the Sketch Pad: heard 250 ms late (the page busy), the two pieces were not one scribble: " + await n());
+    await page.click(".w-draw .dwUndo");
   });
 
   test("v7.62: the Sketch Pad — a scribble rubs out, as one step of the pad's Undo, with Undo on the toast; Settings › Drawing off makes it ink", async ({ page, dh }) => {

@@ -6,7 +6,7 @@ The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
 **Scribble out to erase.** Croix: "Scribble out to erase", then "I've experienced other apps that claim
 scribble to erase works and it sucks. I want nib and by extension deckhand to work super well. Double check
-and harden it to make sure it's up to my standards." Nib 1.6.5 inside; Nib decides, the same test as the
+and harden it to make sure it's up to my standards." Nib 1.6.6 inside; Nib decides, the same test as the
 Nib Board's.
 
 - **With the pen or the marker** — over the slides and on the Sketch Pad — scribble back and forth (or
@@ -19,7 +19,8 @@ Nib Board's.
   answer, a strike-through, a cancel slash, a box, an underline, a check or a star is ink. A shown answer
   under a scribble goes back out of focus.
 - **A scribble the panel hears in pieces** — the pen off the glass for a moment at a turn, the touch frame
-  losing a fast finger — counts as one.
+  losing a fast finger — counts as one, timed by the pen's own events, so a busy moment on the Chromebox
+  does not split it into ink.
 - **Settings › Drawing**: "Scribble over writing to rub it out" turns it off.
 - **Answers keep their look** (Croix: "I like that nib adapts as I go, but I don't like it to constantly
   update the previous answers"): an answer is drawn with your own digits as Nib has them when it appears,
