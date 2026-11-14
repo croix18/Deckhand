@@ -2,6 +2,29 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.62.0 — 2026-11-14
+
+**Scribble out to erase.** Croix: "Scribble out to erase", then "I've experienced other apps that claim
+scribble to erase works and it sucks. I want nib and by extension deckhand to work super well. Double check
+and harden it to make sure it's up to my standards." Nib 1.6.5 inside; Nib decides, the same test as the
+Nib Board's.
+
+- **With the pen or the marker** — over the slides and on the Sketch Pad — scribble back and forth (or
+  round and round) over what you drew and it goes, the scribble with it. A toast says **Scribbled out**
+  with **Undo**; the bar's Undo (or the pad's) brings it back in one step.
+- **Only what it lies over goes**: a number under it goes whole, what it only clips stays, and a scribble
+  that falls a little short of a number's edges still takes it when nothing else is under it.
+- **Never a rub-out**: a scribble over clear space is ink; the highlighter never rubs out (it shades);
+  filling in a dot on a number line, or shading a bar or a space between lines, is shading; a ring around an
+  answer, a strike-through, a cancel slash, a box, an underline, a check or a star is ink. A shown answer
+  under a scribble goes back out of focus.
+- **A scribble the panel hears in pieces** — the pen off the glass for a moment at a turn, the touch frame
+  losing a fast finger — counts as one.
+- **Settings › Drawing**: "Scribble over writing to rub it out" turns it off.
+- **Answers keep their look** (Croix: "I like that nib adapts as I go, but I don't like it to constantly
+  update the previous answers"): an answer is drawn with your own digits as Nib has them when it appears,
+  and keeps that look; what Nib learns after shows in the answers that come after.
+
 ## 7.61.1 — 2026-11-13
 
 **Nib 1.6.4 inside.** Croix, at the Promethean board with the Nib Board: "The default pen or marker

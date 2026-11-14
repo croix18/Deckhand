@@ -3,7 +3,7 @@
  * make sure it's up to my standards."). A pen or marker stroke scribbled back and forth over the drawing — over the
  * slides or on the Sketch Pad — rubs out what it lies over and is not kept, as one step of Undo, with Undo on the toast
  * too. Nib decides (the same test as the Board's): a scribble over nothing is ink, the highlighter shades, a dot filled
- * in on a number line stays, a ring round an answer stays, and Settings › Drawing turns it off. */
+ * in on a number line stays, a ring around an answer stays, and Settings › Drawing turns it off. */
 const { test, expect, ok } = require("./helpers");
 
 /* handwriting made of lines and arcs (no student wrote it): digits, +, = — about 60 px tall at scale 1 */
@@ -16,6 +16,7 @@ const GLYPH = {
   3: x => [arc(x, Y + 15, 15, 15, Math.PI * 1.15, Math.PI * 2.5).concat(arc(x, Y + 44, 17, 16, Math.PI * 1.5, Math.PI * 2.85).slice(1))],
   0: x => [arc(x, Y + H / 2, 16, H / 2, -Math.PI / 2, Math.PI * 1.5, 24)],
   4: x => [seg([[x + 6, Y], [x - 16, Y + 40], [x + 18, Y + 40]]), seg([[x + 8, Y + 18], [x + 8, Y + H]])],
+  5: x => [seg([[x + 16, Y], [x - 12, Y], [x - 14, Y + 26]]).concat(arc(x, Y + 42, 17, 18, Math.PI * 1.35, Math.PI * 2.8).slice(1))],
   "+": x => [seg([[x - 18, Y + 30], [x + 18, Y + 30]]), seg([[x, Y + 12], [x, Y + 48]])],
   "=": x => [seg([[x - 18, Y + 22], [x + 18, Y + 22]]), seg([[x - 18, Y + 38], [x + 18, Y + 38]])],
 };
@@ -47,7 +48,7 @@ const settledOn = (page, which) => page.waitForFunction(which => {
 }, which, { timeout: 30000 });
 
 test.describe("v7.62 scribble out", () => {
-  test("v7.62: over the slides, a scribble over the 3 of 12+3= rubs it out and is not kept — one step of Undo, a toast with Undo; over nothing it is ink; the highlighter shades; a ring round the answer stays; Settings › Drawing turns it off", async ({ page, dh }) => {
+  test("v7.62: over the slides, a scribble over the 3 of 12+3= rubs it out and is not kept — one step of Undo, a toast with Undo; over nothing it is ink; the highlighter shades; a ring around the answer stays; Settings › Drawing turns it off", async ({ page, dh }) => {
     await dh.openAt("#t=2026-10-21T10:30");
     await dh.launch();
     await page.click("#inkBtn");
@@ -87,13 +88,13 @@ test.describe("v7.62 scribble out", () => {
     ok((await count()) === prob.length + 1, "the highlighter rubbed out");
     await page.click("#inkUndo");
     await page.click('#inkBar [data-color="#17324D"]');
-    // a ring round the answer, three times: ink
+    // a ring around the answer, three times: ink
     const ab = await page.evaluate(() => { const P = window.Deckhand.ink.nib().pad, it = P.plan && P.plan.items.find(q => q.answer); return it ? it.box : null; });
     ok(!!ab, "no answer to ring");
     if (ab){
       const c = [(ab[0] + ab[2]) / 2, (ab[1] + ab[3]) / 2], r = Math.max(ab[2] - ab[0], ab[3] - ab[1]) * 0.7 + 14;
       await strokes(page, [Array.from({ length: 145 }, (_, k) => { const a = 2 * Math.PI * k / 48; return [c[0] + (r + k * 0.06) * Math.cos(a), c[1] + (r + k * 0.06) * 0.75 * Math.sin(a)]; })]);
-      ok((await count()) === prob.length + 1, "a ring round the answer rubbed something out");
+      ok((await count()) === prob.length + 1, "a ring around the answer rubbed something out");
       await page.click("#inkUndo");
     }
     // Settings › Drawing: off, a scribble is ink
@@ -217,5 +218,52 @@ test.describe("v7.62 scribble out", () => {
     ok(await page.evaluate(() => document.querySelector(".w-draw .dwPad").getAttribute("scribble")) === "false", "the Sketch Pad did not take the setting");
     await strokes(page, [zig(boxOf(three), 9, "h", 12)]);
     ok((await n()) === prob.length + 1, "with scribble off, the Sketch Pad's scribble rubbed out");
+  });
+
+  /* an answer keeps the look it was first drawn with (Croix: "I like that nib adapts as I go, but I don't like it to
+     constantly update the previous answers"): 2+3= first, with no 5 on the board (its 5 is Nib's own), then 5+0= (a 5
+     of the board's) and 1+4= — the answer of 1+4= is drawn with the board's 5, and the first answer keeps its own */
+  test("v7.62: an answer keeps its look — over the slides and on the Sketch Pad, the first answer's 5 stays as it was drawn when the board learns a 5, and the answers after take the board's 5", async ({ page, dh }) => {
+    /* each answer: its line's key, how high it sits, and a signature of the ink its symbols are drawn with (relative
+       to its box, so the same glyph is the same signature wherever the answer sits) */
+    const looks = which => page.evaluate(which => {
+      const P = (which === "ink" ? window.Deckhand.ink.nib() : document.querySelector(".w-draw .dwPad")).pad, out = {};
+      for (const it of (P.plan && P.plan.items) || []){
+        if (!it.answer) continue;
+        const paths = [].concat(...(it.parts || []).filter(pt => pt.paths).map(pt => pt.paths)), b = it.box, w = Math.max(b[2] - b[0], b[3] - b[1], 1e-9);
+        const sig = paths.map(p => p.map(q => Math.round((q[0] - b[0]) / w * 50) + ":" + Math.round((q[1] - b[1]) / w * 50)).join(" ")).join("/");
+        if (!sig) continue;
+        const o = out[it.revealKey] = out[it.revealKey] || { y: b[1], sig: "" };
+        o.sig += (o.sig ? "|" : "") + it.label + "=" + sig; o.y = Math.min(o.y, b[1]);
+      }
+      return out;
+    }, which);
+    const answersOn = (which, n) => page.waitForFunction(([which, n]) => {
+      const el = which === "ink" ? window.Deckhand.ink.nib() : document.querySelector(".w-draw .dwPad"), P = el && el.pad;
+      return !!(P && P.plan && !P.anim && new Set(P.plan.items.filter(i => i.answer).map(i => i.revealKey)).size >= n);
+    }, [which, n], { timeout: 30000 });
+    const check = async (which, at) => {
+      await strokes(page, written("2+3=", at[0], at[1]));
+      await settledOn(page, which); await answersOn(which, 1); await page.waitForTimeout(300);
+      const a1 = await looks(which), k1 = Object.keys(a1)[0];
+      ok(Object.keys(a1).length === 1 && /\|5$/.test(k1), which + ": no answer 5 for 2+3=: " + JSON.stringify(Object.keys(a1)));
+      await strokes(page, written("5+0=", at[0], at[1] + at[2]));
+      await strokes(page, written("1+4=", at[0], at[1] + 2 * at[2]));
+      await settledOn(page, which); await answersOn(which, 3); await page.waitForTimeout(300);
+      const a3 = await looks(which), keys = Object.keys(a3).sort((x, y) => a3[x].y - a3[y].y);
+      ok(keys.length === 3 && keys[0] === k1, which + ": the three answers, the first on top: " + JSON.stringify(keys));
+      ok(a3[k1] && a3[k1].sig === a1[k1].sig, which + ": the first answer's 5 changed when the board learned a 5");
+      ok(keys[2] && /\|5$/.test(keys[2]) && a3[keys[2]].sig !== a1[k1].sig, which + ": the answer of 1+4= is not drawn with the board's 5");
+    };
+    await dh.openAt("#t=2026-10-21T10:30");
+    await dh.launch();
+    await page.click("#inkBtn");
+    await check("ink", [420, 150, 120]);
+    await page.click("#inkDone");
+    await dh.addW("addDrawBtn"); await page.keyboard.press("Escape");
+    await page.evaluate(() => { const w = window.Deckhand.config.scenes[0].widgets.find(x => x.type === "draw"); [w.x, w.y, w.w, w.h] = [1, 2, 60, 80]; window.Deckhand.canvas.loadScene(); });
+    await page.waitForTimeout(300);
+    const b = await page.locator(".w-draw .dwPad canvas").boundingBox();
+    await check("pad", [b.x + 60, b.y + 50, Math.min(120, (b.height - 120) / 3)]);
   });
 });
