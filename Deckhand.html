@@ -28360,6 +28360,8 @@ var Ink = (function(){
      Board's and the Sketch Pad's) — as one step of Undo, with Undo on the toast too; over nothing it is ink */
   var scribHid = new WeakMap();                 // the history step a scribble made → the shown answers it hid
   var fade = null, fadeRaf = 0;                 // what a scribble just took, and the scribble, fading away
+  var lifted = new WeakMap();                   // a pen or marker stroke → {t0, t1, seq}: when it went down and up, and
+  var commits = 0, curT0 = 0;                   //   which change it was (a scribble heard in pieces is put back together)
   /* v7.6: the strokes already finished live on an offscreen copy, so a
      pointer move costs one new segment (or, for the translucent
      highlighter, one blit plus the current stroke) instead of every
@@ -28778,8 +28780,9 @@ var Ink = (function(){
   /* the stroke just lifted: a scribble over the drawing? Then what it lies over goes (the pen's and the marker's strokes
      as they show — without what an eraser rubbed out — and the shapes; never the highlighter: that is shading), with a
      shown answer under it back out of focus, as one step of Undo. False: it is ink. */
-  function scribbleOut(st){
+  function scribbleOut(st, pieces){              // pieces: the strokes it began as (scribbleJoin) — they go with it
     if (!scribbleOn() || st.kind !== "stroke" || (st.mode !== "pen" && st.mode !== "marker") || st.pts.length < 8) return false;
+    pieces = pieces || [];
     var sc = null;
     try { sc = Nib.scribble.of(st.pts.map(function(p){ return [p.x, p.y]; }), 1); } catch(e){ sc = null; }
     if (!sc) return false;
@@ -28789,6 +28792,7 @@ var Ink = (function(){
     var units = [], later = [];
     for (var i = items.length - 1; i >= 0; i--){
       var it = items[i];
+      if (pieces.indexOf(it) >= 0) continue;
       if (it.kind === "stroke"){
         if (it.mode === "erase"){ later.push(it); continue; }
         if (it.mode !== "pen" && it.mode !== "marker" || !it.pts.length) continue;
@@ -28813,6 +28817,10 @@ var Ink = (function(){
       });
     } catch(e){}
     if (!gone.length && !keys.length) return false;
+    if (pieces.length){                          // the pieces were the last things done: back to before the first one
+      items = hist[hist.length - pieces.length];
+      hist.length -= pieces.length;
+    }
     snap();
     var step = hist[hist.length - 1];
     if (keys.length){ scribHid.set(step, keys); keys.forEach(function(k){ np.hideAnswer(k); }); }
@@ -28824,6 +28832,31 @@ var Ink = (function(){
     Undo.show(gone.length ? "Scribbled out" : "Answer hidden again", function(){ if (hist[hist.length - 1] === step) undo(); });
     return true;
   }
+  /* v7.62: a scribble the panel heard in pieces — a pen that left the glass for a moment at a turn, a touch frame that
+     lost a fast finger: the strokes just before this one (each lifted at most 150 ms before the next went down, and
+     where it went down — no farther than the pen could go in that moment — in the same pen, the last things done) are
+     tried with it as one stroke, the longest chain first (three pieces before it at most). False: it is ink. */
+  function scribbleJoin(st){
+    if (!scribbleOn() || st.kind !== "stroke" || (st.mode !== "pen" && st.mode !== "marker") || !st.pts.length) return false;
+    var chain = [], next = st, down = curT0, k = items.length - 1;
+    while (chain.length < 3 && k >= 0){
+      var it = items[k], L = lifted.get(it);
+      if (!L || L.seq !== commits - chain.length || it.kind !== "stroke" || it.mode !== st.mode || it.color !== st.color || it.size !== st.size) break;
+      var gap = down - L.t1;
+      if (!(gap >= 0 && gap <= 150)) break;
+      var len = 0;
+      for (var i = 1; i < it.pts.length; i++) len += Math.hypot(it.pts[i].x - it.pts[i - 1].x, it.pts[i].y - it.pts[i - 1].y);
+      var a = it.pts[it.pts.length - 1], b = next.pts[0], v = len / Math.max(L.t1 - L.t0, 1);
+      if (Math.hypot(b.x - a.x, b.y - a.y) > Math.min(80, Math.max(24, 2 * v * gap))) break;
+      chain.unshift(it); next = it; down = L.t0; k--;
+    }
+    for (var n = chain.length; n >= 1; n--){
+      var pieces = chain.slice(chain.length - n), pts = [];
+      pieces.forEach(function(q){ pts = pts.concat(q.pts); });
+      if (scribbleOut({ kind: "stroke", mode: st.mode, color: st.color, size: st.size, pts: pts.concat(st.pts) }, pieces)) return true;
+    }
+    return false;
+  }
   /* what a scribble took fades (a copy of each in its color, see-through) */
   function fadeOf(it, a){
     var c = /^#([0-9a-f]{6})$/i.exec(it.color || ""), n = c ? parseInt(c[1], 16) : 0x17324d;
@@ -28833,7 +28866,7 @@ var Ink = (function(){
     return o;
   }
   /* ---- v7.57 history ---- */
-  function snap(){ hist.push(items.slice()); if (hist.length > HIST_MAX) hist.shift(); }
+  function snap(){ hist.push(items.slice()); if (hist.length > HIST_MAX) hist.shift(); commits++; }
   function undo(){
     if (!hist.length) return;
     var was = items;
@@ -28940,10 +28973,11 @@ var Ink = (function(){
     if (cur){
       var keep = true;
       if (cur.kind === "shape" && Math.abs(cur.a.x - cur.b.x) < 4 && Math.abs(cur.a.y - cur.b.y) < 4) keep = false;   // a tap is not a shape
-      if (keep && scribbleOut(cur)){ cur = null; keep = false; }   // v7.62: scribbled out — what it lay over went, and the scribble with it
+      if (keep && (scribbleOut(cur) || scribbleJoin(cur))){ cur = null; keep = false; }   // v7.62: scribbled out — what it lay over went, and the scribble with it
       if (keep){
         snap();
         items.push(cur);
+        if (cur.kind === "stroke" && (cur.mode === "pen" || cur.mode === "marker")) lifted.set(cur, { t0: curT0, t1: performance.now(), seq: commits });   // v7.62
         if (bctx) drawItem(bctx, cur);           // joins the finished copy
         if (cur.kind === "stroke" && cur.mode === "erase") nibHideUnder(cur);   // v7.61 (before Nib reads the cut)
       }
@@ -29026,6 +29060,7 @@ var Ink = (function(){
       present();
     } else {
       cur = { kind: "stroke", mode: tool, color: color, size: size, pts: [p] };
+      curT0 = performance.now();                 // v7.62
       advance();
     }
     e.preventDefault();
