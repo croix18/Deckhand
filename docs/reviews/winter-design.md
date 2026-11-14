@@ -4,7 +4,7 @@ Croix, Nov 13: "Can you get started on building winter." He chose to build it in
 then carry it to Steward, the ESE teacher's fork. This is the design pass. Nothing in `Deckhand.html`
 changes until he approves it. The motion spec is `winter-animation.md`. The drawings are
 `winter-proofs.html` / `.png`, and `winter-proofs-8m.png` is the same sheet at one third (the 8 m
-check). The four board composites in the sheet are the real `Deckhand.html`, opened at winter dates with
+check). The six board composites in the sheet are the real `Deckhand.html` (7.62.0), opened at winter dates with
 the `#t=` override the tests use, photographed by `tools/proofs/winter.js`, with the winter drawings
 laid over them.
 
@@ -13,6 +13,13 @@ format (`november-2.0-design.md`). I read HANDOFF's seasonal entries (v7.10–7.
 version log's sound decisions, `SEA.md`, and the Season, Leaves, Fall and Sea code (`Season.active`,
 `apply`, `Leaves.step/spawn/fling/rest`, the `Fall` tick, `ACTS`, `inSeason`, `seasonWeight`,
 `geeseTimes`, `fogMorning`) so that winter plugs into the existing system rather than adding a new one.
+
+**Revised Nov 14, after Croix's review of the proofs:** "I like the freeze and thaw idea. The freeze
+looks like the web. I want the freeze to be a bit bigger as it ices over then thaws out. Also can you
+make perfect snowflakes instead of imperfect ones. And I don't see the lights." The frost is redrawn as
+real frost and fitted to the clock card's measured free corner (C1); the snowflakes are perfect (C2);
+the countdown lights moved from the boat to the beach (C3b); and the scarf caper moved to the last full
+week of January (C3, C5).
 
 **The verdict in one line:** winter needs one thing October and November didn't have, which is time.
 It is up for three months, so it has to change while it is up. The design is a world that gets colder
@@ -25,7 +32,8 @@ and melts into a puddle with a sprout in it at the end of February.
 ## The register and the palette
 
 The register is the sea's and October's. Creatures are solid navy silhouettes with one paleturq eye,
-tapers everywhere and nothing symmetric. Made things (the snowman, the floes, the lights) have no navy
+tapers everywhere and nothing symmetric (the snowflakes are the exception: Croix asked for perfect
+ones, C2). Made things (the snowman, the floes, the lights) have no navy
 outline, but snow has one thing they don't: **white on the white card is invisible**. So every white
 thing gets a 1.1 px teal edge, the way the gull's white body carries a navy one. Everything is judged
 at board size and again at one third. When two motions land on one element, they go on two nested
@@ -53,10 +61,10 @@ period), seeded like `geeseTimes`. Taps are small and change nothing that matter
 | | dates (2026–27) | why |
 |---|---|---|
 | **Starts** | **Tue Dec 1** | November clears itself on December 1 (`active()` returns null today). Winter takes the slot the same morning. The board is never plain between the two seasons. |
-| **December: the cold comes in** | Dec 1 → the last school day before break (**Fri Dec 18**) | The building month. Frost and icicles grow week by week, the first ground snow comes, a snowman is built on the beach in stages, and the boat's lights come on one bulb a school day. It all completes on the last day. |
+| **December: the cold comes in** | Dec 1 → the last school day before break (**Fri Dec 18**) | The building month. Frost and icicles grow week by week, the first ground snow comes, a snowman is built on the beach in stages, and the countdown lights on the beach come on one bulb a school day. It all completes on the last day. |
 | **Winter break** | **Dec 19 → Sun Jan 3** | The weeks of Dec 21 and Dec 28 are already in `bell.skipWeeks` (Lake County's seed), so the board knows them. If the board is up over break (Croix working), it **holds the last school day's world**: the finished snowman, all nine bulbs, flurries. There are no bells, so only the free-time scheduler plays. Nothing is staged for an empty room. The solstice (Dec 21) falls inside the break, so the lantern is at its brightest here. |
-| **January: deep winter** | **Mon Jan 4** → Sun Feb 14 | The first day back, the lights are down and a new visitor arrives (the seal greets every period that day). This is the cold peak: full frost, the dune white, snowfall periods at their most frequent, the squall on windy snowfall periods, the narwhals. In MLK week (Jan 18–21) the scarf caper happens. |
-| **February: the thaw** | Mon Feb 15 → Sun Feb 28 | It is Florida. The frost recedes, the icicles shorten and drip, the snow days thin out, and the snowman leans (week of Feb 15), slumps (week of Feb 22) and is a puddle on the last school day of February (**Fri Feb 26**). The turtle is back. |
+| **January: deep winter** | **Mon Jan 4** → Sun Feb 14 | The first day back, the lights are down and a new visitor arrives (the seal greets every period that day). This is the cold peak: the frost peaks Jan 11–29 and starts to thaw on Feb 1, the dune is white, snowfall periods are at their most frequent, the squall comes on windy snowfall periods, and the narwhals pass. In the last full week of January (Jan 25–28) the scarf caper happens. |
+| **February: the thaw** | Mon Feb 15 → Sun Feb 28 | It is Florida. The frost keeps shrinking to a rim, the icicles shorten and drip, the snow days thin out, and the snowman leans (week of Feb 15), slumps (week of Feb 22) and is a puddle on the last school day of February (**Fri Feb 26**). The turtle is back. |
 | **Ends** | **Mon Mar 1** | `active()` returns null and the board is plain (or spring, if one is ever built). |
 
 **Why three months, and why it ends with February.** Meteorological winter is December to February,
@@ -71,8 +79,8 @@ no two months are the same board.
 `n(d)`: weekdays after `d`, up to the Friday before the first December skip Monday, not counting days
 in a skip week. In 2026, Dec 4 → 10, Dec 7 → 9, Dec 9 → 7, Dec 14 → 4, Dec 18 → 0. If `skipWeeks` has
 no December entry (another district, a changed config), the break is taken as starting on the Monday
-of the week holding Dec 24. Deckhand knows whole weeks off, not single days off, so MLK Day and
-Presidents' Day count as school days. That is harmless here, because the board is dark on those days.
+of the week holding Dec 24. Deckhand knows whole weeks off, not single days off, so a Monday holiday counts as a school day.
+That is harmless here, because the board is dark that day.
 
 ---
 
@@ -95,51 +103,79 @@ about 26 px above the waterline. Things **on the water** are the boat's size or 
 must be "the boat's size, not massive next to the sailboat"). Things **on the sand** are nearer the
 room and stand at the scarecrow's scale, which Croix accepted in November.
 
-### C1. The clock card's corner: frost and icicles
+### C1. The clock card's corner: the frost
 
-This piece takes the web's and the branch's slot (`top:0; right:0`, `clamp(110px, 24cqmin, 200px)`,
-under the handle band while editing, hidden on `.stLive` and the stage).
+Croix, Nov 14: "The freeze looks like the web. I want the freeze to be a bit bigger as it ices over
+then thaws out." The first pass grew six fronds out of one corner, with branches at 60° and a radial
+haze: October's web, in teal. It is redrawn as real window frost, and it is now the season's clock.
 
-**Frost.** Frost ferns grow in from the card's corner, the way frost grows on a window. The card is a
-pane of glass. Six fronds start from the corner and the two edges beside it, each with side branches
-at ±60° (ice grows on hexagonal angles). From the third week they also have sub-branches. They are
-teal hairlines at .42 / .34 / .26 ink (1.1 / .85 / .7 px, `non-scaling-stroke`) over a pale-turquoise
-radial haze in the very corner. The haze is what reaches the back of the room: at one third, the
-corner reads as an icy tint with lines in it, the way the web read as a gray haze. The fronds are
-**generated by rules, not drawn** (October's web method, `corner()` in the proof sheet). Seeded, so
-every board grows the same frost.
+**What it is.** Four things, all generated by rules (seeded, so every board grows the same frost), none
+of them radiating from a point:
 
-**Icicles.** Six hang from a white snow lip along the top edge. The lip is white with a teal edge and
-a pale-turquoise underside, so it shows on the white card. The icicles are pale-turquoise fill with a
-teal edge, a white highlight down the lit (left) side, one or two ripples, a slight bend, and lengths
-of 6 to 40 units. The long ones hang left of the ⛶ stage chip so they never crowd it.
+- **Frost ferns.** Feathery dendrites, each from its own point along the card's top edge or its right
+  edge (one every 26–42 px), growing inward with a slight lean and curl. Each has barbs on both sides
+  at 60°, longest a third of the way out (a feather's plume). From mid-December they have sub-barbs,
+  and about half the long ferns fork once. Ferns from the two edges overlap in the corner, where real
+  frost is densest. Teal hairlines at .42 / .34 / .26 ink.
+- **Rime.** A band of tiny crystals along both edges, up to 20 px deep: three-line stars and single
+  needles, 3–7 px, teal at .3. It is the grain a frosted pane has at its frame.
+- **The frosted haze.** Four layers of pale turquoise at .24, each hugging the edges, one inside the
+  next, so the haze is densest at the frame and thins inward. The haze is what carries to the back of
+  the room.
+- **Icicles** under a white snow lip along the top edge, from just left of the stage chip to the end
+  of the frost: pale turquoise with a teal edge and a white highlight, 8–50 px long, longest near the
+  corner.
 
-**By date** (`body[data-wn-frost]`, 1–4, with the icicles' lengths following):
+**How big: fitted to the free corner.** The frost's envelope is fitted, at layout time, to the part of
+the clock card at least **28 px from every line of the face** (the date line, the digits, the period
+line, the bar, the strip, the pill) and **12 px from every control** (the ⛶ stage chip, which gets a
+clear ring). Measured on 7.62.0 (`tools/proofs/winter.js capture` reads the face's boxes):
 
-| Dec, n ≥ 10 | Dec, n 5–9 | Dec, n ≤ 4, and the break | Jan 1 → Feb 14 | Feb 15–21 | Feb 22 → last weekday | last weekday of Feb → Feb 28 |
-|---|---|---|---|---|---|---|
-| f1 (.46) | f2 (.7) | f3 (.88) | f4 (full) | f3, drips ×3 | f2, icicles at half, drips ×5 | f1, icicles at a third, dripping |
+| board | the free corner | the peak |
+|---|---|---|
+| 1920 × 1080 | a strip 539 px wide right of the face (its right edge at x 1325), plus a band 123 px deep above the date line (its top at y 175) | **485 px in from the right edge, running 598 px down it, and 113 px deep along 783 px of the top edge**; about 4.5× the area of the branch's 200 px box |
+| 1280 × 800 | only the strip: 219 px wide (the date line sits 23 px under the card's top, so there is no band above it) | a 197 px strip running 424 px down the right edge, no top band |
 
-**Calm/windy.** Ice does not sway. On a calm or breezy day an icicle drips a few times an hour (seeded:
-2–4 an hour in the cold months, 10–14 in the thaw). On a windy day, snow sifts off the lip a couple of
-times an hour: a small white puff blows left, and a flake is spawned at the lip with `Snow.from()`. That
-is the branch's let-go mechanism; the corner sheds snow the way the branch shed leaves.
+The rule: the side lobe is 0.9 of the free strip's width (at most 520 px) and runs 0.62 of the card's
+height. The top band is 0.92 of the free band's depth (at most 130 px; none if the band is under 20 px)
+and runs 0.42 of the card's width. The fit is redone on resize and at each bell, because a wider period
+pill or a "Passing → 2nd" line moves the face's edge. The frost is regenerated, never scaled. Unlocked,
+the envelope starts under the 30 px handle band, as the web's and the branch's boxes did.
 
-**Tap: a warm breath.** A round clear spot opens in the frost where the finger touched (a white disc
-of about 24 px with a pale ring at its melting edge). The longest icicle drips twice. The frost grows
-back over the spot across 45 s. This is the window-frost game every kid has played with their breath:
-one gesture, a visible result, and nothing that matters changes.
+**The freeze and the thaw** (`body[data-wn-frost]`; `s` is the envelope's size):
 
-**Reduced motion.** The frost and icicles still, at their stage, with no drips. A tap still clears the
-spot (state, no motion), and the spot is gone 45 s later.
+| | dates | s | what the room sees |
+|---|---|---|---|
+| F1 | Dec 1–4 | .2 | first frost: rime and short ferns along both edges near the corner |
+| F2 | Dec 7–11 | .35 | the ferns lengthen; the first icicles |
+| F3 | Dec 14 → the break | .5 | a frosted corner: plumes with sub-barbs, a row of icicles |
+| F4 | Jan 4–8 | .75 | it has grown over the break |
+| **peak** | **Jan 11–29** | **1** | **the free corner frosted over** |
+| T1 | Feb 1–12 | .72 | the thaw: shrinking, the icicles dripping |
+| T2 | Feb 15–19 | .45 | dripping faster |
+| T3 | Feb 22–28 | .22 | a rim along the edges, short icicles dripping |
+| | Mar 1 | 0 | gone |
 
-**Never.** Over the date line or the digits. On a live settle-in card. On the stage.
+**Calm/windy.** Frost and ice do not sway. The icicles drip a few times an hour (seeded: 2–4 an hour
+through January, 10–14 an hour in the thaw). On a windy day, snow sifts off the lip a couple of times an
+hour: a small puff blows left, and a flake is spawned at the lip with `Snow.from()` (the branch's
+let-go mechanism).
 
-**Steward.** The corner is inside a card's area, so on Steward boards the frost and icicles leave the
-cards entirely. The icicles hang from the **top edge of the screen**, in the free margin above the
-cards, never longer than the margin minus 6 px (18 px at 1920 with a 24 px margin). The frost haze sits
-in a screen corner only if that corner's 64 px square is clear of every card area. Otherwise there is
-no frost on that board.
+**Tap: a warm breath.** A round clear spot about 50 px across opens in the frost where the finger
+touched, with a pale ring at its melting edge. The nearest icicle drips twice, and the frost grows back
+over the spot across 45 s. It is the window-frost game every kid has played with their breath.
+
+**Reduced motion.** The frost at its stage, still, with no drips. A tap still clears the spot (a state,
+no motion), and the spot is gone 45 s later.
+
+**Never.** Within 28 px of the date line, the digits or any line of the face; within 12 px of a
+control; on a live settle-in card; on the stage.
+
+**Steward.** Steward's clock card is smaller, its board denser, and a card's area is off-limits there,
+so **Steward's clock card gets no frost on its face.** Steward's frost is the screen's own frame: the
+same generator run along the screen's top and right edges inside the free margin (rime and short ferns
+no deeper than the margin minus 6 px: 18 px at 1920 with a 24 px margin), icicles from the screen's top
+edge, and the haze only in a screen corner whose 64 px square is clear of every card area.
 
 ### C2. The air: snowfall
 
@@ -148,9 +184,11 @@ November stays untouched. It uses the same outer 15% columns each side (sway and
 every box stays left of 18% and right of 82%), the same tick, the same rates and caps, the same windy
 doubling and the same tap.
 
-**The flakes.** There are four crystal kinds. Each one is generated by rules (six arms with side
-branches at 60°), and on every flake one arm is **broken short**. A snowflake is six-fold, but in this
-register nothing is symmetric, and "no two alike" is the true thing about snow:
+**The flakes are perfect.** Croix, Nov 14: "Can you make perfect snowflakes instead of imperfect
+ones." Each is built from one half-arm, mirrored across its axis into a whole arm, and the arm turned
+six times by exactly 60°, so every flake is six-fold and mirror-symmetric by construction. The seed
+varies the design from flake to flake (its branch lengths), never from arm to arm. The register's
+"nothing symmetric" is for creatures; a snowflake is a crystal. Four kinds:
 
 - the *dendrite* (tapered arms, three pairs of branches);
 - the *fern* (fine arms, six pairs of short branches: the lacy one, kept for "the first snowflake");
@@ -258,7 +296,8 @@ overlaps the clock card's empty bottom-right corner.
 
 He stands complete through January. Then:
 
-- **Caper** (Mon–Thu of MLK week, Jan 18–21, 2027): his scarf is gone. Friday it is back (C5).
+- **Caper** (Mon–Thu of the last full week of January, Jan 25–28, 2027): his scarf is gone. On Friday
+  the 29th it is back (C5).
 - **The thaw:**
   - M1 (Feb 15–21): he leans 4°, the carrot droops, the head settles, drops fall from the carrot's tip
     and the right stick, and the patch shrinks into a turq-light slush puddle.
@@ -301,6 +340,42 @@ stage was drawn to survive that size: at 31 px he is three white balls with a te
 rust band and an amber point. The face is gone at that size, which is right. The visit scales with
 him. See the Steward row on the proof sheet.
 
+### C3b. The countdown lights, on the beach (December)
+
+Croix: "I don't see the lights." He's right: at true size the boat is 38 px, and nine bulbs on its
+forestay can be at most 2.3 px across. Nobody in the room can see them. The countdown moves to the
+beach.
+
+**Option A (recommended): a string on the beach.** Four navy posts, 30 px tall, stand on the dune from
+just right of the boat toward the snowman (at 46%, 59%, 72% and 86% of the width), each with a cap of
+snow. A wire sags between them in three scallops, and nine bulbs hang from it, three to a scallop. Each
+bulb is about 10 × 16 px with its socket and hangs a few degrees off true:
+
+- **lit**: warm amber glass, a yellow core, a soft 17 px halo;
+- **unlit**: dark glass with a white highlight.
+
+A cord comes out from behind the dock and runs along the sand, behind the boat, to the first post: the
+lights are plugged in at the dock. The string stands on the sand at z 2 like the snowman, behind the
+water and the boat. Its post tops sit at about y 1000 at 1080p, below the clock card's shadow (which
+ends at 996).
+
+**The story is the same.** The string goes up on Dec 7 (nine school days left), all dark. One more bulb
+lights each school day, from the dock end toward the snowman, and all nine are lit on the last day
+before break, reaching him on the day he is finished. Over break it stays lit. **On the first day back
+it is down.** The boat keeps its lantern glow, so it still feels lit.
+
+**Motion.** Lit bulbs breathe on their own periods; one is loose and flickers once a minute; on a windy
+day the bulbs swing a few degrees on their sockets. A tap on a bulb makes it flicker twice and come
+back. Under reduced motion they are lit and still.
+
+**Option B, for comparison: the boat's own string,** at the biggest bulbs nine can be (2.4 units, 2.3
+px). The proof sheet shows A and B side by side at true size on December 18 (§2). Lit, B is a faint
+warm line on the stay from the front row and nothing from anywhere else.
+
+**Steward.** The string at 0.6× on its 76 px of free sand: bulbs 9 px, posts 18 px, the whole string
+30 px tall, keeping 6 px under every card's area. It still reads, and the snowman stands beside it at
+0.32×.
+
 ### C4. The boat and its gull
 
 - **The lantern stays.** November's lantern hangs on all winter and tracks the night's length:
@@ -311,14 +386,8 @@ him. See the Steward row on the proof sheet.
   
   The solstice is in the break, so the lantern is at its fullest when the nights are longest. It is
   `body[data-nv-lamp]` as it is today, set by Season through the winter too.
-- **The string of lights (December).** Nine bulbs hang along the forestay from the masthead to the
-  bow. They are amber bodies with lit-yellow cores and a small glow; yellow alone vanishes on the
-  cream sky. The string **goes up on the day nine school days remain** (Dec 7, all dark). One more
-  bulb lights each school day after, from the bow up, and all nine are lit on the last day before
-  break: a countdown to break the kids can read from their seats. Over break it stays lit. **On the
-  first day back the string is down.** Lit bulbs breathe on their own periods, and one is loose and
-  flickers once a minute. At 38 px the string is a dotted warm line on the stay. A front-row detail,
-  like the lantern.
+- **No lights on the boat.** The countdown moved to the beach (C3b): nine bulbs on the forestay could
+  be at most 2.3 px across. The boat keeps its lantern glow.
 - **Snow on the deck.** On a snowfall period, one white line along the top of the navy hull, fading in
   over ten minutes. It is the boat's clearest winter tell at 38 px: white on navy.
 - **The gull.** Its November scarf (on since Nov 15) **stays on all winter**. On snowfall periods it
@@ -388,11 +457,11 @@ It exits behind the dock. The fog was November's weather. This is January's.
 **What the regulars do.** October's principle holds: the sea is theirs, and the strongest way to keep
 its dignity is for the residents to be unimpressed. With four exceptions:
 
-- **The serpent and the scarf caper.** On the Monday of MLK week the snowman's scarf is gone. All that
+- **The serpent and the scarf caper.** On Monday, January 25, the snowman's scarf is gone. All that
   week, Mon–Thu, the serpent wears it: the rust knit wrapped behind its head, the cream-barred ends
   streaming as it glides. It wears it in the attack too (a monster that strikes the boat wearing a
   stolen scarf is the joke, and the strike keeps all its menace). The serpent's weight is ×2 that week,
-  and it may greet a class as it sits down. On Friday the scarf is back on the snowman. The kids love
+  and it may greet a class as it sits down. On Friday the 29th the scarf is back on the snowman. The kids love
   the sea monster, and this gives it the season's best beat.
 - **The whale's breath shows.** In winter its puff and shot are bigger and whiter and hang 1.6× as
   long before they thin, drifting left: a cold day.
@@ -435,17 +504,17 @@ honk's gates (H).
 
 1. **"The cold comes in."** December 1: frost creeps into the clock's corner and the first snowflake of
    the year falls down the right side of the board. The next week a snowball is sitting on the beach
-   with a track behind it and bird prints beside it, and a string of dark bulbs is up on the boat. One
+   with a track behind it and bird prints beside it, and a string of dark bulbs is up on the beach. One
    bulb lights each school day. The snowball becomes a body, then a head. On the last day before
    break it snows all day, every bulb is lit, the snowman has a carrot, a scarf and a hat, and in
    first period the gull is sitting on his head. The gull's scarf and the snowman's scarf match. So do
    their hats.
 2. **"Deep winter."** Back from break, the lights are down and there is a seal: it comes up by the
    boat, looks at everyone, and rides off on a piece of ice. Narwhals pass. Some periods it snows, and
-   some windy afternoons a squall swallows the boat. In MLK week the snowman's scarf disappears, and
-   the serpent swims by wearing it. On Friday it's back.
-3. **"The thaw."** In the middle of February the frost shrinks, the icicles drip, and the snowman
-   starts to lean. The next week he has slumped and lost an arm. On the last school day of February
+   some windy afternoons a squall swallows the boat. In the last week of January the snowman's scarf disappears,
+   and the serpent swims by wearing it. On Friday it's back.
+3. **"The thaw."** In February the frost shrinks back and the icicles drip, and in the middle of the month the
+   snowman starts to lean. The next week he has slumped and lost an arm. On the last school day of February
    there is a puddle with a hat in it, a carrot and some coal, and a little green sprout. The turtle
    is back. On Monday it is March.
 
@@ -461,11 +530,12 @@ Steward's rule: nothing seasonal may sit over a card's area, which is the box pl
 
 | piece | in Steward |
 |---|---|
-| frost and icicles | off the cards; icicles from the screen's top edge in the free margin (≤ margin − 6 px); frost haze only in a card-free 64 px screen corner |
+| frost | Steward's clock card gets none on its face (a card's area); the same frost along the screen's top and right edges in the free margin (≤ margin − 6 px), icicles from the screen's top edge, the haze only in a card-free 64 px screen corner |
 | snowfall | under the canvas (z 0), behind every card; crystals ×.7; cap 4 / 7; untappable |
 | dune cap | unchanged (it is the sand band) |
 | snowman | 0.32× (31 × 43 px) at the right edge on the free sand; every stage reads at that size; the visit scales with him |
-| boat, gull, lights, lantern | unchanged (no card overlap) |
+| the countdown string | 0.6× on the free sand: bulbs 9 px, posts 18 px, 30 px tall, 6 px under the cards' areas |
+| boat, gull, lantern | unchanged (no card overlap) |
 | floes, seal, narwhal, tusking | unchanged in the water band; the narwhal's salute held to 12°, so the tusk tip stays under the free band's top |
 | the squall | its band capped at 70 px |
 | serpent's scarf, whale's breath, lunch, tape | unchanged |
@@ -497,24 +567,30 @@ Steward's rule: nothing seasonal may sit over a card's area, which is the box pl
 
 `winter-proofs.png`, in order:
 
-1. The **lineup at true size**: the boat, the seal on its floe, the floes, the narwhal, the serpent in
-   the scarf, the snowman and the flakes, each labeled with its board pixels.
-2. The **boat ×6** in four states, each with a true-size copy beside it.
-3. The **flakes ×3**, plus at true size on the card, the grid and the water.
-4. The **corner** at board size through f1–f4, the ×2 with a drip and a breath spot, and the thaw.
-5. The **snowman's calendar** at board size (S0–S3, the visit, the caper, M1–M3) and the **Steward
+1. The **lineup at true size**: the boat, the countdown string, the seal on its floe, the floes, the
+   narwhal, the serpent in the scarf, the snowman and the flakes, each labeled with its board pixels.
+2. **The lights, A against B, at true size** on Dec 18, side by side; A's bulbs lit and dark ×3; A in
+   Steward at 0.6×.
+3. The **boat ×6** in four states, each with a true-size copy beside it.
+4. The **flakes ×3**, perfect, plus at true size on the card, the grid and the water.
+5. **The frost, every stage at board size**: F1–F3, F4 with a breath spot, the peak with the measured
+   free corner drawn in, T1–T3.
+6. The **snowman's calendar** at board size (S0–S3, the visit, the caper, M1–M3) and the **Steward
    row at 0.32×**.
-6. The **sea's visitors** in close-up.
-7. **Four composites** on the real board:
+7. The **sea's visitors** in close-up.
+8. **Six composites** on the real board (7.62.0):
    - Dec 9, an ordinary December day;
-   - Jan 13, windy with snow and the squall;
-   - Jan 20, the caper;
-   - Feb 26, the thaw's end.
+   - Dec 18, the last day before break: all nine lit, the snowman finished, the gull on his head;
+   - Jan 13, the frost's peak, windy with snow and the squall;
+   - Jan 27, the caper;
+   - Feb 26, the thaw's end;
+   - the peak on a 1280 × 800 board.
 
 At one third (`-8m.png`):
 
 - The flakes read as teal-edged stars in the outer columns.
-- The corner reads as an icy tint with icicles.
+- The frost reads as a frosted window corner, not a web, and its growth reads stage to stage.
+- The beach string reads as a row of warm lights.
 - The dune's white cap is the strongest signal on the board.
 - The snowman reads as a white figure with a teal hat and a rust band.
 - The serpent's scarf reads as a rust streak.
@@ -523,7 +599,7 @@ Weak points:
 
 - **The squall is soft at one third.** It reads as the sea going pale, which is what a squall looks
   like. If it reads too faint on the panel, raise the haze to .85 before adding streaks.
-- **The lights and the gull's hat are front-row details**, as the lantern and the scarf were.
+- **The gull's hat is a front-row detail**, as the scarf was.
 
 ---
 
@@ -535,14 +611,17 @@ Weak points:
    the first day back; Groundhog Day (Feb 2); Valentine's Day (Feb 12, the Friday); Lunar New Year.
 3. **The snowman melts.** He leans, slumps and is a puddle with a sprout on Feb 26 (my pick). The
    alternative: he stands to the end and is simply gone on March 1.
-4. **The scarf caper.** In MLK week the serpent wears the snowman's scarf, in the attack too. Yes or
-   no.
+4. **The scarf caper.** In the last full week of January (Jan 25–28) the serpent wears the snowman's
+   scarf, in the attack too. Yes or no.
 5. **Names.** The snowman and the seal are unnamed here. Croix can name them or let a class vote.
 6. **Theme sounds.** None (my recommendation), or one soft seal bark at the haul-out under November's
    gates.
-7. **The lights' countdown.** A bulb a school day to break. Yes or no, and warm or colored (2).
+7. **The lights.** Option A, the countdown string on the beach (my pick), or option B on the boat; the
+   sheet shows both at true size (§2). Warm or colored (2).
 8. **Flake size.** The leaves' scale (44–62 px, my pick, because of "they are small"), or smaller.
 9. **Over break.** Hold the last school day's world (my pick), or go plain until January 4.
+10. **The frost's size.** The peak fills the free corner (C1). If it is too much on the panel, the same
+    rule at 0.7 of the corner is one number.
 
 ---
 
@@ -550,7 +629,7 @@ Weak points:
 
 - **`Season.active()`** returns `"winter"` for months 11, 0 and 1. `apply()` toggles `body.winter`
   and sets the date state:
-  - `data-wn-frost` (1–4), `data-wn-sm` (S0–S3, caper, M1–M3), `data-wn-cap`, `data-wn-bulbs` (0–9 or
+  - `data-wn-frost` (the stage), `data-wn-sm` (S0–S3, caper, M1–M3), `data-wn-cap`, `data-wn-bulbs` (0–9 or
     absent);
   - `wnCaper`, `wnFirstBack`, `wnLastDay`;
   - `data-nv-lamp` (4/3/2), as today.
@@ -561,7 +640,9 @@ Weak points:
 - **`Snow`** is a sibling of `Leaves` (same skeleton: `step`, `spawn(opts)`, `from(x, y, …)`, `fling`,
   `rest`, `cap`). It reads `windy()` and `body.wnSnowing`.
 - **A `Winter` sub-module** beside `Fall`, on one 1 s tick, owns:
-  - the corner (`corner.times(date)` for drips and sifts, `breath(x, y)`);
+  - the frost (`frost.fit()` from the face's boxes on build, resize and each bell; `frost.times(date)`
+    for drips and sifts; `breath(x, y)`);
+  - the beach string (`#wnLights`, its bulbs from `data-wn-bulbs`);
   - the snowman (`tap()`, `stage()`);
   - the visit clock (`visit.times(date)`).
 - **The sea.**
@@ -573,7 +654,7 @@ Weak points:
   - The serpent's and the attack's head groups gain `g.wnSerpScarf`, shown under `body.wnCaper`.
   - The whale's blow gets a winter variant.
 - **Tests:**
-  - the date helpers against 2026–27 (Dec 7 → n 9, Dec 18 → 0, Jan 18–21 caper, Feb 26 the last
+  - the date helpers against 2026–27 (Dec 7 → n 9, Dec 18 → 0, Jan 25–28 caper, Feb 26 the last
     weekday);
   - `plan()` purity and the cap;
   - the snow cap of 6/10;

@@ -17,23 +17,24 @@ const FR = path.join(ROOT, "docs/reviews/winter-frames");
 const SHEET = path.join(ROOT, "docs/reviews/winter-proofs.html");
 const FRAMES = [
   { name: "dec09", hash: "#t=2026-12-09T10:40", sea: "breezy" },   // an ordinary December day (week 2)
-  { name: "jan13", hash: "#t=2027-01-13T13:20", sea: "windy" },    // a January day with wind and snow (the squall)
-  { name: "jan20", hash: "#t=2027-01-20T09:50", sea: "breezy" },   // the caper week
-  { name: "feb26", hash: "#t=2027-02-26T14:10", sea: "calm" }      // the last school day of February
+  { name: "dec18", hash: "#t=2026-12-18T09:40", sea: "breezy" },   // the last school day before break, period 1
+  { name: "jan13", hash: "#t=2027-01-13T13:20", sea: "windy" },    // a January day with wind and snow (the squall), the frost at its peak
+  { name: "jan27", hash: "#t=2027-01-27T09:50", sea: "breezy" },   // the caper week (Jan 25–28)
+  { name: "feb26", hash: "#t=2027-02-26T14:10", sea: "calm" },     // the last school day of February
+  { name: "m1280", hash: "#t=2027-01-13T13:20", sea: "breezy", w: 1280, h: 800 }   // the peak frost's fit on a 1280 × 800 board
 ];
-
 async function capture(){
   fs.mkdirSync(FR, { recursive: true });
   const br = await chromium.launch();
   const geo = {};
   for (const f of FRAMES){
-    const ctx = await br.newContext({ viewport: { width: 1920, height: 1080 }, reducedMotion: "no-preference" });
+    const ctx = await br.newContext({ viewport: { width: f.w || 1920, height: f.h || 1080 }, reducedMotion: "no-preference" });
     const page = await ctx.newPage();
     await page.goto(APP + f.hash);
     await page.waitForFunction(() => !!window.Deckhand);
     if (await page.evaluate(() => document.body.classList.contains("landing"))) await page.click("#launchBtn");
     await page.waitForTimeout(400);
-    await page.addStyleTag({ content: "#greetToast{display:none !important} #dateline .sim{display:none !important}" });   // the boot toast and the coral SIM tag the #t= override shows
+    await page.addStyleTag({ content: "#greetToast{display:none !important} #dateline .sim{display:none !important} #boat .btGull{visibility:hidden !important}" });   // the gull is the sheet's own (it moves to the snowman on Dec 18)   // the boot toast and the coral SIM tag the #t= override shows
     if (!(await page.evaluate(() => document.body.classList.contains("locked")))) await page.click("#lockBtn");   // teaching mode: no handle band
     await page.evaluate(sea => {
       window.Deckhand.config.ui.motion = "on";
@@ -60,13 +61,27 @@ async function capture(){
       const m = { a: (pts[1][0] - pts[0][0]) / 40, b: (pts[1][1] - pts[0][1]) / 40,
                   c: (pts[2][0] - pts[0][0]) / 40, d: (pts[2][1] - pts[0][1]) / 40, e: pts[0][0], f: pts[0][1] };
       const clock = document.querySelector(".w-clock");
-      return { boat: m, clock: r(clock), waves: r(document.getElementById("waves")), dock: r(document.getElementById("dock")),
-               fs: r(document.getElementById("fsBtn")), face: r(document.getElementById("clockFace")),
+      /* the clock card's free corner: every visible text/bar box in the face (the content) and every control
+         on the card; the frost must keep 28 px from the content and 12 px from a control */
+      const vis = el => { const b = el.getBoundingClientRect(), s = getComputedStyle(el); return b.width > 0 && b.height > 0 && s.visibility !== "hidden" && s.display !== "none" && +s.opacity > .05; };
+      const face = document.getElementById("clockFace"), content = [];
+      face.querySelectorAll("*").forEach(el => { if (!vis(el) || el.closest("svg")) return;
+        const own = Array.from(el.childNodes).some(n => n.nodeType === 3 && n.textContent.trim()); const leaf = !el.children.length;
+        if (own || leaf) content.push(Object.assign({ k: (el.id ? "#" + el.id : "") + "." + String(el.className).split(" ")[0] }, r(el))); });
+      const controls = [];
+      clock.querySelectorAll("button, a, input, select, [role=button], [class*=chip], [class*=Chip], [class*=stage], [class*=Stage]").forEach(el => {
+        if (vis(el) && !el.closest("#clockFace")) controls.push(Object.assign({ k: (el.id ? "#" + el.id : "") + "." + String(el.className).split(" ")[0] }, r(el))); });
+      const C = r(clock), right = C.x + C.w, top = C.y;
+      const cR = Math.max.apply(null, content.map(b => b.x + b.w)), cT = Math.min.apply(null, content.map(b => b.y));
+      const free = { uMax: Math.round(right - (cR + 28)), vTop: Math.round(cT - 28 - top), contentRight: Math.round(cR), contentTop: Math.round(cT),
+                     cardH: Math.round(C.h), cardW: Math.round(C.w) };
+      return { boat: m, clock: C, waves: r(document.getElementById("waves")), dock: r(document.getElementById("dock")),
+               fs: r(document.getElementById("fsBtn")), face: r(face), content: content, controls: controls, free: free,
                W: innerWidth, H: innerHeight };
     });
     await page.screenshot({ path: path.join(FR, f.name + ".png") });
     geo[f.name] = Object.assign({ hash: f.hash, sea: f.sea }, g);
-    console.log(f.name, JSON.stringify(g));
+    console.log(f.name, JSON.stringify(g.free), "controls:", JSON.stringify(g.controls.map(c => [c.k, Math.round(c.x), Math.round(c.y), Math.round(c.w), Math.round(c.h)])));
     await ctx.close();
   }
   fs.writeFileSync(path.join(FR, "geometry.js"), "/* written by tools/proofs/winter.js capture */\nwindow.GEO = " + JSON.stringify(geo, null, 1) + ";\n");

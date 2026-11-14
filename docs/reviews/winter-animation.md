@@ -38,9 +38,10 @@ Winter's peak is a windy snowfall period with a visitor on the water. That is:
 | what | animated things | layers |
 |---|---|---|
 | snowfall at its cap (10) | 3–4 WAAPI animations each (fall, sway, spin, sometimes tilt) = ≤ 40 | each flake its own ≤ 62 px layer (`will-change: transform`, as the leaves) |
-| the boat | the existing heave/pitch/drift, plus 9 bulbs breathing (opacity) | the boat's own |
+| the boat | the existing heave/pitch/drift, the lantern | the boat's own |
+| the beach string | 9 bulbs breathing (opacity), a swing when windy | one svg on the sand |
 | one visitor (the seal is the heaviest) | ≤ 12 SVG children | the act's box |
-| the corner | ≤ 2 (a drip, a breath) | static paths; a 140-unit svg |
+| the frost | ≤ 2 (a drip, a breath) | static paths, generated once per stage and per fit |
 | the snowman | ≤ 3 (the scarf ends, a puff, a tap) | a 100 × 140 svg |
 
 That is the leaves' windy budget, which already ships, plus less than a November act.
@@ -117,12 +118,14 @@ clears them all.
 and 95.2% of the width, rotated −18°, 22° and −6° (the leaves' numbers), on the snowman's patch once
 he exists. Taps do nothing.
 
-### B2. The corner: frost, icicles, drips, a breath
+### B2. The frost: the freeze, the thaw, drips and a breath
 
-**Markup ask.** In `svg#wnCorner.wnCorner` (the branch's box rules, after `#nvBranch`), the pieces
-are:
+**Markup ask.** In `svg#wnFrost.wnFrost`, after `#nvBranch` in the clock card: positioned at the card's
+top-right, sized to the fitted envelope (design C1), `z-index:4` like the web, under the handle band
+while editing. The pieces are:
 
-- `g.wnFrost[data-stage]`: the generated frost, one group per stage, crossfaded;
+- `g.wnFrostStage`: the generated frost for the stage (ferns, rime, the haze's four layers),
+  regenerated at the day's first tick and on every re-fit, crossfaded;
 - `g.wnIcicles`;
 - `path.wnLip`;
 - `ellipse.wnDrip` at the longest icicle's tip, with `transform-box:view-box` and its origin at the
@@ -147,7 +150,7 @@ There is a fat transparent hit path over the frost and the icicles, like `.nvBra
 
 ```css
 .wnDrip{transform-box:view-box; transform-origin:var(--tx) var(--ty); opacity:0;}
-body.waveMotion .wnCorner .wnDrip.go{animation:wnDrip 3.3s linear both;}
+body.waveMotion .wnFrost .wnDrip.go{animation:wnDrip 3.3s linear both;}
 @keyframes wnDrip{0%{transform:translateY(0) scale(0); opacity:1; animation-timing-function:cubic-bezier(.2,.7,.4,1);}
   72.7%{transform:translateY(0) scale(1); animation-timing-function:ease-in-out;}                        /* 2.4: full */
   90.9%{transform:translateY(0) scale(1,1.08); animation-timing-function:cubic-bezier(.55,0,1,.45);}    /* 3.0: lets go */
@@ -160,7 +163,7 @@ Then:
 
 | t | the eye sees | why |
 |---|---|---|
-| 0–.28 | a clear spot opens, about 24 px across, its pale ring spreading to the edge | a breath on glass is fast |
+| 0–.28 | a clear spot opens, about 50 px across, its pale ring spreading to the edge | a breath on glass is fast |
 | .2 / .6 | the longest icicle drips twice | the warmth reaches the ice |
 | .28–6.3 | the spot holds | the room sees what happened |
 | 6.3–51.3 | the frost grows back: the disc thins and its ring closes in | slow, so a class that tapped it at the bell still sees the mark at the warm-up's end |
@@ -182,7 +185,9 @@ fade, 1.2 s, `cubic-bezier(.2,.6,.4,1)`. At .3 s, `Snow.from(x, y)` spawns a fla
 the right column (the branch's `Leaves.from` mechanism).
 
 **A stage change** (the day's first tick): the new frost group fades in over 4 s while the old one
-fades out. The icicles' lengths swap with it. That is the branch's 4 s regrow.
+fades out. The icicles' lengths swap with it. That is the branch's 4 s regrow. The stages run F1
+(Dec 1) to the peak (Jan 11–29) and back down to T3 (Feb 22–28), each a size `s` of the fitted
+envelope (design C1). The freeze and the thaw happen between days, never in front of a class.
 
 ### B3. The snowman
 
@@ -280,10 +285,10 @@ off the masthead on its own keyframes, and its slot in the director is its own (
 On the last school day before break the visit is forced into period 1, 60 s after the greeting. It is
 the reveal.
 
-### B4. The boat and the gull
+### B4. The countdown string, the boat and the gull
 
-**The lights.** Each lit bulb is `g.wnLit` (its glow and its core together), so one animation per bulb
-covers both:
+**The countdown string** (on the beach, `#wnLights`, design C3b). Each lit bulb is `g.wnLit` (its halo,
+its glass and its core together), so one animation per bulb covers all three:
 
 ```css
 body.waveMotion .wnLit{animation:wnBulb 3.7s var(--sine) infinite alternate;}
@@ -296,8 +301,10 @@ body.waveMotion .wnLit:nth-child(6){animation:wnLoose 60s linear infinite;}   /*
 
 The periods are unequal, so the string never breathes in unison. That is October's candle lesson: a
 string pulsing together says "screen". The loose bulb dips three times in 320 ms once a minute: a
-character detail. The count of lit bulbs changes at the day's first tick, with no animation. Under
-reduced motion they are lit and still.
+character detail. The count of lit bulbs changes at the day's first tick, with no animation. On a windy
+day each bulb swings ±4° about its socket on the chop's clock (`calc(var(--T2) / 2)`, alternate, a
+delay per bulb). A tap on a bulb dips it twice in 240 ms and brings it back. Under reduced motion they
+are lit and still.
 
 **Snow on the deck.** `.wnDeck{opacity:0; transition:opacity 600s linear}`; `body.wnSnowing .wnDeck
 {opacity:1}`. Ten minutes in, the deck is white.
@@ -674,7 +681,7 @@ clock set to a winter date. Times are from `.go` (or the tap).
   - windy: every flake lands left of where it started.
   
   A landing at 0 / .3 / .6 / .9 s (the melt and the ring). A tap at 0 / .25 / .55 / 1.1 s.
-- **The corner.**
+- **The frost.**
   - A drip at 2.4 / 3.0 / 3.24 s: at 3.24 the drop is over 1.3× as tall as it is wide.
   - A breath at 0 / .28 / 6.3 / 30 / 51.3 s: whole frost again at the end.
   - A windy sift at .3 s: the spawned flake in the right column.
@@ -695,7 +702,8 @@ clock set to a winter date. Times are from `.go` (or the tap).
 - **Tusking.** 12.8 (the X), 13.6 and 13.72 (a tap), 17.8.
 - **The squall.** 5, 12 (the boat inside it, heeled, the gull hunkered), 25, 32 (snow on the sails),
   39.
-- **The lights.** A 10 s strip at 4 fps: the cores uncorrelated. Then bulb 6 at its minute.
+- **The lights.** On the beach: a 10 s strip at 4 fps (the bulbs uncorrelated), bulb 6 at its minute,
+  a windy swing, and the count against the date (Dec 7 → 0, Dec 9 → 2, Dec 18 → 9).
 - **The caper.** The serpent at 3, 9 (the scarf going under with the head) and 18. The ends always
   trail behind the head.
 - **Budget.** DevTools → Rendering → Paint flashing with ten flakes, the seal and the lights on.
@@ -709,11 +717,11 @@ clock set to a winter date. Times are from `.go` (or the tap).
 1. **Season:** `active()` → `"winter"`, the pure date helpers (`winterPhase`, `breakStart`,
    `schoolDaysLeft`, `caperWeek`, `lastFebWeekday`), and `apply()`'s classes and data attributes.
 2. **The drawings**, from the proof sheet's functions:
-   - `flake()` and `corner()`, which generate at build time;
+   - `flake()` and `frost()`, which generate at build time (the frost fitted to the face);
    - `snowman()`, `floe()`, `sealOnFloe()`, `narwhal()` and the serpent's scarf, as static markup
      with the wrappers named above.
 3. **`Snow`**, `Leaves`' sibling, with B1's numbers.
 4. **The `Winter` sub-module** (the corner, the snowman, the visit clock), with B2 and B3.
-5. **The boat's additions** (B4).
+5. **The beach string and the boat's additions** (B4).
 6. **The `ACTS` rows and `plan()`'s winter rules** (C), then B5–B10.
 7. **The frames in D**, before anyone trusts any of it.

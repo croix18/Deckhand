@@ -77,6 +77,15 @@ svg{overflow:visible; display:block}
 .ring{fill:none; stroke:#fff; stroke-width:1.4; opacity:.9}
 .puff{fill:#fff} .puffU{fill:var(--teal); stroke:var(--teal); stroke-width:1.3; opacity:.4}
 .ssEye{fill:var(--paleturq)} .ssMouth{fill:none; stroke:var(--paleturq); stroke-width:1; stroke-linecap:round}
+.frHaze{fill:var(--paleturq); opacity:.24}
+.frRime{fill:none; stroke:var(--teal); stroke-opacity:.3; stroke-width:.75; stroke-linecap:round; vector-effect:non-scaling-stroke}
+.frBound{fill:none; stroke:var(--navy); stroke-width:1.4; stroke-dasharray:6 5; opacity:.55}
+.frEnv{fill:none; stroke:var(--teal); stroke-width:1.4; stroke-dasharray:3 4; opacity:.7}
+/* the countdown string on the beach (option A) */
+.blPost{fill:var(--navy); opacity:.88} .blCap{fill:#fff} .blWire{fill:none; stroke:var(--navy); stroke-opacity:.8; stroke-linecap:round}
+.blCord{fill:none; stroke:var(--navy); stroke-opacity:.7; stroke-width:1.2; stroke-linecap:round}
+.blSocket{fill:var(--navy)} .blGlass{fill:var(--novAmber)} .blCore{fill:var(--lit)} .blDark{fill:var(--navy); opacity:.62}
+.blGlint{fill:none; stroke:#fff; stroke-opacity:.85; stroke-linecap:round}
 </style></head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -85,6 +94,7 @@ svg{overflow:visible; display:block}
   <radialGradient id="wnBreathG"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".7" stop-color="#fff" stop-opacity=".92"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
   <linearGradient id="wnSqG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4FAFA" stop-opacity="0"/><stop offset=".35" stop-color="#F4FAFA" stop-opacity=".62"/><stop offset="1" stop-color="#EEF7F7" stop-opacity=".7"/></linearGradient>
   <linearGradient id="wnSqEdge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="1"/></linearGradient>
+  <radialGradient id="blHaloG"><stop offset="0" stop-color="#FFE45C" stop-opacity=".62"/><stop offset=".45" stop-color="#FFE45C" stop-opacity=".26"/><stop offset="1" stop-color="#FFE45C" stop-opacity="0"/></radialGradient>
   <mask id="wnSqMask" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#wnSqEdge)"/></mask>
 </defs></svg>
 
@@ -92,18 +102,19 @@ svg{overflow:visible; display:block}
 <p class="cap">For <b>docs/reviews/winter-design.md</b> and <b>winter-animation.md</b>. Every piece is drawn in the board's own palette (no new colour: snow is the board's white, its shadows are pale turquoise, ice is the sea's own; the warm notes are November's rust and amber and October's lit yellow). Section 1 is at TRUE size with the boat; the close-ups say their scale; the four composites at the end are the real Deckhand.html, photographed at winter dates with its own clock override, with the winter drawings laid over it. <b>winter-proofs-8m.png</b> is this sheet at one third: the 8 m check.</p>
 
 <section id="s1-lineup"><h2>1 · At true size, with the boat (1080p board pixels)</h2><div id="lineup"></div>
-<p class="note">On the water, everything is <b>the boat's size</b> or smaller (the boat's box is 38 px, its hull 30): the seal on its floe 52 px (near lane, Wilson's spot), the pancake floes 18–44 px, the narwhal 60 px in the far lane behind it. On the sand, things are nearer the room and stand at the scarecrow's scale: the snowman 96 × 134 px at the right edge. Flakes fall at the leaves' scale (44–62 px; Croix found 34–46 px leaves "small"), with 8–12 px flecks between.</p></section>
-
-<section id="s2-boat"><h2>2 · The boat in winter (× 6)</h2><div class="row" id="boats" style="align-items:flex-start"></div></section>
-<section id="s3-flakes"><h2>3 · Snowflakes: four crystals and a fleck, each one hand-broken (× 3, and at true size on the card, the grid and the water)</h2><div class="row" id="flakes"></div></section>
-<section id="s4-corner"><h2>4 · The clock card's corner: frost and icicles (board size 200 px, the branch's box; then × 2)</h2><div class="row" id="corners"></div></section>
-<section id="s5-snowman"><h2>5 · The snowman's winter (board size, 96 px wide), and Steward's 0.32×</h2><div class="row" id="snowmen"></div><div class="row" id="steward" style="margin-top:18px"></div></section>
-<section id="s6-sea"><h2>6 · The sea's winter visitors (close-ups) and the serpent's borrowed scarf</h2><div class="row" id="sea"></div></section>
-<section id="c1-dec09"><h2>Composite 1 · Wednesday, December 9 — an ordinary December day (week 2, breezy)</h2><div id="b-dec09"></div>
-<p class="note" id="n-dec09"></p></section>
-<section id="c2-jan13"><h2>Composite 2 · Wednesday, January 13 — a windy snowfall period, the squall crossing the boat</h2><div id="b-jan13"></div><p class="note" id="n-jan13"></p></section>
-<section id="c3-jan20"><h2>Composite 3 · Wednesday, January 20 — the caper week: the snowman's scarf is gone, and the serpent is wearing it</h2><div id="b-jan20"></div><p class="note" id="n-jan20"></p></section>
-<section id="c4-feb26"><h2>Composite 4 · Friday, February 26 — the last school day of February: the thaw's end</h2><div id="b-feb26"></div><p class="note" id="n-feb26"></p></section>
+<p class="note">On the water, everything is <b>the boat's size</b> or smaller (the boat's box is 38 px, its hull 30): the seal on its floe 52 px (near lane, Wilson's spot), the pancake floes 18–44 px, the narwhal 60 px in the far lane. On the sand, things are nearer the room: the snowman 96 × 134 px at the right edge, and the countdown string (option A) on four 30 px posts with 14 × 16 px bulbs. Flakes fall at the leaves' scale (44–62 px; Croix found 34–46 px leaves "small"), with 8–12 px flecks between.</p></section>
+<section id="s2-lights"><h2>2 · The countdown lights at TRUE size, December 18 (all nine lit): A, the string on the beach (recommended) · B, the boat's own string at the biggest bulbs it can carry</h2><div class="row" id="lightsAB"></div><div class="row" id="lightsMore" style="margin-top:18px"></div></section>
+<section id="s3-boat"><h2>3 · The boat in winter (× 6, and true size)</h2><div class="row" id="boats" style="align-items:flex-start"></div></section>
+<section id="s4-flakes"><h2>4 · Snowflakes: four perfect crystals and a fleck, each built from one arm, mirrored, turned six times (× 3, and at true size on the card, the grid and the water)</h2><div class="row" id="flakes"></div></section>
+<section id="s5-frost"><h2>5 · The frost, every stage at board size (1920 × 1080, the clock card's top-right): it ices over to a peak in mid-January, then thaws</h2><div class="row" id="frosts"></div></section>
+<section id="s6-snowman"><h2>6 · The snowman's winter (board size, 96 px wide), and Steward's 0.32×</h2><div class="row" id="snowmen"></div><div class="row" id="steward" style="margin-top:18px"></div></section>
+<section id="s7-sea"><h2>7 · The sea's winter visitors (close-ups) and the serpent's borrowed scarf</h2><div class="row" id="sea"></div></section>
+<section id="c1-dec09"><h2>Composite 1 · Wednesday, December 9 — an ordinary December day (week 2, breezy)</h2><div id="b-dec09"></div><p class="note" id="n-dec09"></p></section>
+<section id="c2-dec18"><h2>Composite 2 · Friday, December 18, the day's first class — the last day before break: all nine lit, the snowman finished, the gull on his head</h2><div id="b-dec18"></div><p class="note" id="n-dec18"></p></section>
+<section id="c3-jan13"><h2>Composite 3 · Wednesday, January 13 — the frost at its peak; a windy snowfall period, the squall crossing the boat</h2><div id="b-jan13"></div><p class="note" id="n-jan13"></p></section>
+<section id="c4-jan27"><h2>Composite 4 · Wednesday, January 27 — the caper week (Jan 25–28): the snowman's scarf is gone, and the serpent is wearing it</h2><div id="b-jan27"></div><p class="note" id="n-jan27"></p></section>
+<section id="c5-feb26"><h2>Composite 5 · Friday, February 26 — the last school day of February: the thaw's end</h2><div id="b-feb26"></div><p class="note" id="n-feb26"></p></section>
+<section id="c6-m1280"><h2>Composite 6 · the same peak on a 1280 × 800 board (January 13)</h2><div id="b-m1280"></div><p class="note" id="n-m1280"></p></section>
 
 <script src="winter-frames/geometry.js"></script>
 <script>
@@ -131,14 +142,14 @@ function lantern(lamp){
   return '<g class="nvLantern"><path class="nvLampBail" d="M20.5,7.4 H23.2 V8.6"/><circle cx="23.2" cy="11.2" r="8.5" fill="url(#nvLampGlowG)" opacity="' + r1(lamp * .95) + '" transform="translate(23.2 11.2) scale(' + r1(.7 + lamp * .45) + ') translate(-23.2 -11.2)"/>' +
     '<path class="nvLampFrame" d="M21.5,9.7 L22.5,8.5 H23.9 L24.9,9.7 Z"/><rect class="nvLampPane" x="21.7" y="9.6" width="3" height="3.3" rx=".5"/><ellipse class="nvLampFlame" cx="23.2" cy="11.35" rx=".8" ry="1.2" opacity="' + r1(.25 + lamp * .75) + '"/><path class="nvLampFrame" d="M21.4,12.7 H25 V13.5 H21.4 Z"/></g>';
 }
-/* the string of lights: nine bulbs hung on the forestay, lit from the bow up (n = how many) */
-function lights(n){
-  var s = '<g class="wnLights">', i, t, x, y, lit;
+/* option B: the countdown on the boat's forestay — nine bulbs, lit from the bow up; big = the biggest bulbs nine can be */
+function lights(n, big){
+  var s = '<g class="wnLights">', i, t, x, y, lit, t0 = big ? .14 : .22, dt = big ? .1 : .09, rx = big ? 1.2 : .74, ry = big ? 1.42 : .98, gr = big ? 3.4 : 2.5, cr = big ? .66 : .42;
   for (i = 0; i < 9; i++){
-    t = .22 + i * .09; x = 20.6 + 15 * t; y = 4 + 20.6 * t + .95; lit = i >= 9 - n;
-    if (lit) s += '<circle cx="' + r1(x) + '" cy="' + r1(y) + '" r="2.5" fill="url(#wnBulbG)"/>';
-    s += '<ellipse class="wnBulb' + (lit ? "" : " off") + '" cx="' + r1(x) + '" cy="' + r1(y) + '" rx=".74" ry=".98"/>';
-    if (lit) s += '<circle class="wnCore" cx="' + r1(x) + '" cy="' + r1(y + .15) + '" r=".42"/>';
+    t = t0 + i * dt; x = 20.6 + 15 * t; y = 4 + 20.6 * t + ry; lit = i >= 9 - n;
+    if (lit) s += '<circle cx="' + r1(x) + '" cy="' + r1(y) + '" r="' + gr + '" fill="url(#wnBulbG)"/>';
+    s += '<ellipse class="wnBulb' + (lit ? "" : " off") + '" cx="' + r1(x) + '" cy="' + r1(y) + '" rx="' + rx + '" ry="' + ry + '"/>';
+    if (lit) s += '<circle class="wnCore" cx="' + r1(x) + '" cy="' + r1(y + .15) + '" r="' + cr + '"/>';
   }
   return s + '</g>';
 }
@@ -153,46 +164,46 @@ function boatWinter(o){   // only the winter additions (for laying over the real
   var s = "";
   if (o.lamp) s += lantern(o.lamp);
   if (o.deck) s += '<path class="wnDeck" d="M6.2,26.5 L36.4,24.9"/>';
-  if (o.lights != null && o.lights >= 0) s += lights(o.lights);
+  if (o.lights != null && o.lights >= 0) s += lights(o.lights, o.big);
   if (o.gull !== false) s += gull(o);
   return s;
 }
 function boat(o){ o = o || {};
   return boatBase() + (o.lamp ? lantern(o.lamp) : "") + '<path class="btHull" d="M5,26.8 L37,25 Q34.6,31 29.5,34.8 L11.5,34.8 Q7,33 5,26.8 Z"/><path class="btStripe" d="M7.2,29 L34.4,28.2"/>' +
-    (o.deck ? '<path class="wnDeck" d="M6.2,26.5 L36.4,24.9"/>' : "") + (o.lights != null && o.lights >= 0 ? lights(o.lights) : "") + (o.gull !== false ? gull(o) : ""); }
+    (o.deck ? '<path class="wnDeck" d="M6.2,26.5 L36.4,24.9"/>' : "") + (o.lights != null && o.lights >= 0 ? lights(o.lights, o.big) : "") + (o.gull !== false ? gull(o) : ""); }
 
-/* ===== snowflakes: six arms, rules not drawings — and one arm on every flake broken short ===== */
+/* ===== snowflakes: PERFECT (Croix, Nov 14: "make perfect snowflakes instead of imperfect ones"). Each is ONE
+   half-arm (the o >= 0 side), mirrored across the arm's axis into a whole arm, and the arm turned six times by
+   exactly 60°: six-fold and mirror-symmetric by construction. The seed varies the design from flake to flake,
+   never from arm to arm. ===== */
 function flake(kind, seed){
-  var R = rng(seed), broken = Math.floor(R() * 6), polys = [], ridge = "", k, a, ca, sa, brk, L, P;
-  for (k = 0; k < 6; k++){
-    a = -Math.PI / 2 + k * Math.PI / 3 + (R() - .5) * .06; ca = Math.cos(a); sa = Math.sin(a);
-    P = (function(ca, sa){ return function(r, o){ return [20 + ca * r - sa * o, 20 + sa * r + ca * o]; }; })(ca, sa);
-    brk = k === broken ? .62 : 1;
-    if (kind === "dendrite"){
-      L = 17 * (.93 + R() * .1) * brk;
-      polys.push([P(1, -1.5), P(L, -.5), P(L + 1.5, 0), P(L, .5), P(1, 1.5)]);
-      [[.34, 6.4], [.58, 5], [.8, 2.8]].forEach(function(b){ var r0 = 17 * b[0], len = b[1] * (.8 + R() * .4); if (r0 > L - 2) return;
-        [-1, 1].forEach(function(sd){ polys.push([P(r0 - .8, sd * .4), P(r0 + len * .5, sd * len * .866), P(r0 + 1, sd * .4)]); }); });
-      ridge += "M" + P2(P(2.5, 0)) + " L" + P2(P(L - 1.2, 0));
-    } else if (kind === "fern"){
-      L = 17.5 * (.94 + R() * .08) * brk;
-      polys.push([P(2.6, -1.1), P(L, -.35), P(L + 1, 0), P(L, .35), P(2.6, 1.1)]);
-      [[.24, 4.2], [.36, 5], [.48, 4.6], [.6, 3.8], [.72, 2.9], [.84, 1.8]].forEach(function(b, j){ var r0 = 17.5 * b[0], len = b[1] * (.82 + R() * .36); if (r0 > L - 1.6) return;
-        [-1, 1].forEach(function(sd){ polys.push([P(r0 - .5, sd * .3), P(r0 + len * .5, sd * len * .866), P(r0 + .6, sd * .3)]); }); });
-    } else if (kind === "plate"){   // a broad-armed stellar plate: six paddles round a hexagonal hub, sector chevrons
-      L = 16.6 * (.94 + R() * .08) * brk;
-      polys.push([P(2.5, -2), P(9, -2.9), P(L - 2.6, -2.2), P(L, 0), P(L - 2.6, 2.2), P(9, 2.9), P(2.5, 2)]);
-      ridge += "M" + P2(P(3.5, 0)) + " L" + P2(P(L - 2.4, 0)) + " M" + P2(P(7.8, -2)) + " L" + P2(P(9.8, 0)) + " L" + P2(P(7.8, 2));
-      if (L > 13) ridge += " M" + P2(P(11.8, -1.7)) + " L" + P2(P(13.4, 0)) + " L" + P2(P(11.8, 1.7));
-    } else {   // tipped: arms ending in small hexagonal plates, one pair of side spikes
-      L = 12.4 * (.95 + R() * .08) * brk;
-      polys.push([P(2, -1.15), P(L, -.8), P(L, .8), P(2, 1.15)]);
-      if (L > 9) [-1, 1].forEach(function(sd){ polys.push([P(6.4, sd * .5), P(8.6, sd * 3.3), P(8.4, sd * .5)]); });
-      if (brk === 1){ var c = P(14.6, 0), hx = []; for (var m = 0; m < 6; m++){ var ha = a + m * Math.PI / 3; hx.push([c[0] + Math.cos(ha) * 2.7, c[1] + Math.sin(ha) * 2.7]); } polys.push(hx); }
-      ridge += "M" + P2(P(3, 0)) + " L" + P2(P(L + (brk === 1 ? 1.6 : 0), 0));
-    }
+  var R = rng(seed), half = [], ridgeHalf = [], ridgeAxis = [], hub = 0, j = function(v, f){ return v * (1 - f / 2 + R() * f); }, L;
+  if (kind === "dendrite"){
+    L = j(17.4, .08); half.push([[1, 0], [1, 1.5], [L, .5], [L + 1.5, 0]]);
+    [[.34, j(6.4, .3)], [.58, j(5, .3)], [.8, j(2.8, .3)]].forEach(function(b){ var r0 = 17 * b[0], len = b[1]; if (r0 > L - 2) return; half.push([[r0 - .8, .4], [r0 + len * .5, len * .866], [r0 + 1, .4]]); });
+    ridgeAxis.push([[2.5, 0], [L - 1.2, 0]]);
+  } else if (kind === "fern"){
+    L = j(17.6, .06); half.push([[2.6, 0], [2.6, 1.1], [L, .35], [L + 1, 0]]); hub = 3.3;
+    [[.24, j(4.2, .3)], [.36, j(5, .3)], [.48, j(4.6, .3)], [.6, j(3.8, .3)], [.72, j(2.9, .3)], [.84, j(1.8, .3)]].forEach(function(b){ var r0 = 17.5 * b[0], len = b[1]; if (r0 > L - 1.6) return; half.push([[r0 - .5, .3], [r0 + len * .5, len * .866], [r0 + .6, .3]]); });
+  } else if (kind === "plate"){   // a broad-armed stellar plate: six paddles round a hexagonal hub, sector chevrons
+    L = j(16.6, .06); half.push([[2.5, 0], [2.5, 2], [9, 2.9], [L - 2.6, 2.2], [L, 0]]); hub = 4.2;
+    ridgeAxis.push([[3.5, 0], [L - 2.4, 0]]); ridgeHalf.push([[7.8, 2], [9.8, 0]]); if (L > 13) ridgeHalf.push([[11.8, 1.7], [13.4, 0]]);
+  } else {   // tipped: arms ending in small hexagonal plates, one pair of side spikes
+    L = j(12.4, .06); half.push([[2, 0], [2, 1.15], [L, .8], [L, 0]]); hub = 3.3;
+    half.push([[6.4, .5], [8.6, 3.3], [8.4, .5]]);
+    var tip = []; for (var m = 0; m <= 3; m++){ var ha = m * Math.PI / 3; tip.push([14.6 + Math.cos(ha) * 2.7, Math.sin(ha) * 2.7]); } half.push(tip.concat([[14.6, 0]]));
+    ridgeAxis.push([[3, 0], [L + 1.6, 0]]);
   }
-  if (kind !== "dendrite"){ var hub = []; for (var q = 0; q < 6; q++){ var qa = -Math.PI / 2 + q * Math.PI / 3 + .52; hub.push([20 + Math.cos(qa) * 3.3, 20 + Math.sin(qa) * 3.3]); } polys.push(hub); }
+  var mirror = function(pg){ return pg.map(function(p){ return [p[0], -p[1]]; }); };
+  var arm = []; half.forEach(function(pg){ arm.push(pg); arm.push(mirror(pg)); });
+  var rh = []; ridgeHalf.forEach(function(ln){ rh.push(ln); rh.push(mirror(ln)); });
+  var polys = [], ridge = "";
+  for (var k = 0; k < 6; k++){
+    var a = -Math.PI / 2 + k * Math.PI / 3, ca = Math.cos(a), sa = Math.sin(a), T = function(p){ return [20 + ca * p[0] - sa * p[1], 20 + sa * p[0] + ca * p[1]]; };
+    arm.forEach(function(pg){ polys.push(pg.map(T)); });
+    ridgeAxis.concat(rh).forEach(function(ln){ ridge += "M" + ln.map(function(p){ return P2(T(p)); }).join(" L") + " "; });
+  }
+  if (hub){ var hx = []; for (var q = 0; q < 6; q++){ var qa = -Math.PI / 2 + q * Math.PI / 3 + Math.PI / 6; hx.push([20 + Math.cos(qa) * hub, 20 + Math.sin(qa) * hub]); } polys.push(hx); }
   var d = polys.map(poly).join(" ");
   return '<g class="fk"><path class="fkU" d="' + d + '"/><path class="fkF" d="' + d + '"/><path class="fkR" d="' + ridge + '"/></g>';
 }
@@ -203,50 +214,98 @@ function fleckAt(x, y, d){   // a fleck is a tiny six-armed star (a ringed dot r
   for (k = 0; k < 6; k++){ a = k * Math.PI / 3 + .3; t += poly([[x - Math.sin(a) * w, y + Math.cos(a) * w], [x + Math.cos(a) * r, y + Math.sin(a) * r], [x + Math.sin(a) * w, y - Math.cos(a) * w]]) + " "; }
   return '<g><path class="fkU" style="stroke-width:1.2" d="' + t + '"/><path class="fkF" d="' + t + '"/></g>'; }
 
-/* ===== the corner: frost ferns grown from the corner by rules (60° branching, like ice), icicles, a snow lip ===== */
-function corner(stage, o){
-  o = o || {};
-  var id = "cn" + (++UID), k = [0, .46, .7, .88, 1][stage], R = rng(11), main = "", br = "", tw = "";
-  var fronds = [{ x: 141, y: -1, a: 134, L: 96 }, { x: 122, y: 0, a: 114, L: 70 }, { x: 96, y: 0, a: 101, L: 48 }, { x: 141, y: 24, a: 158, L: 70 }, { x: 141, y: 56, a: 172, L: 42 }, { x: 70, y: 0, a: 94, L: 26 }];
-  fronds.forEach(function(f){
-    var L = f.L * k; if (L < 5) return;
-    var x = f.x, y = f.y, a = f.a * Math.PI / 180, step = 3, n = Math.round(L / step), pts = [[x, y, a]], curl = (R() - .5) * .03, i;
-    for (i = 1; i <= n; i++){ a += curl + (R() - .5) * .05; x += Math.cos(a) * step; y += Math.sin(a) * step; pts.push([x, y, a]); }
-    main += "M" + pts.map(P2).join(" L");
-    for (i = 1; i < n - 1; i++){
-      var p = pts[i], u = i / n, side = i % 2 ? 1 : -1;
-      var len = L * .3 * Math.sin(Math.PI * Math.min(1, .15 + u * 1.15)) * (.7 + R() * .6);
-      if (len < 2.2) continue;
-      var ba = p[2] + side * Math.PI / 3, bx = p[0] + Math.cos(ba) * len, by = p[1] + Math.sin(ba) * len;
-      br += "M" + P2(p) + " L" + r1(bx) + "," + r1(by);
-      if (stage >= 3 && len > 5) for (var j = 1; j <= 2; j++){ var q = j / 3, sx = p[0] + (bx - p[0]) * q, sy = p[1] + (by - p[1]) * q, tl = len * .34 * (1 - q * .4), ta = ba + (j % 2 ? 1 : -1) * Math.PI / 3;
-        tw += "M" + r1(sx) + "," + r1(sy) + " L" + r1(sx + Math.cos(ta) * tl) + "," + r1(sy + Math.sin(ta) * tl); }
-    }
-  });
-  /* icicles: [x, length at full, base width, bend]; the long ones away from the stage chip */
-  var I = [[40, 16, 4.8, -1], [53, 30, 6.4, 1.2], [65, 10, 3.8, 0], [80, 40, 7.4, -1.6], [99, 11, 4.4, .8], [117, 6, 3.4, 0]], ic = "", hi = "", tipx = 0, tipy = 0;
-  var ik = o.ice != null ? o.ice : k;
-  I.forEach(function(c, n){
-    var x = c[0], L = c[1] * ik, w = c[2] * Math.max(.62, ik), b = c[3] * ik, h = w / 2; if (L < 2.5) return;
-    var y0 = 3, tx = x + b;
-    ic += "M" + r1(x - h) + "," + y0 + " C" + r1(x - h) + "," + r1(y0 + L * .22) + " " + r1(x - h * .62 + b * .2) + "," + r1(y0 + L * .36) + " " + r1(x - h * .72 + b * .3) + "," + r1(y0 + L * .48) +
-          " C" + r1(x - h * .5 + b * .55) + "," + r1(y0 + L * .62) + " " + r1(x - h * .3 + b * .8) + "," + r1(y0 + L * .82) + " " + r1(tx) + "," + r1(y0 + L) +
-          " C" + r1(x + h * .3 + b * .7) + "," + r1(y0 + L * .72) + " " + r1(x + h * .55 + b * .35) + "," + r1(y0 + L * .44) + " " + r1(x + h * .66) + "," + r1(y0 + L * .3) +
-          " C" + r1(x + h * .85) + "," + r1(y0 + L * .16) + " " + r1(x + h) + "," + r1(y0 + L * .08) + " " + r1(x + h) + "," + y0 + " Z ";
-    hi += "M" + r1(x - h * .42) + "," + (y0 + 1.5) + " C" + r1(x - h * .4 + b * .2) + "," + r1(y0 + L * .3) + " " + r1(x - h * .3 + b * .4) + "," + r1(y0 + L * .45) + " " + r1(x - h * .15 + b * .55) + "," + r1(y0 + L * .62) + " ";
-    if (n === 3){ tipx = tx; tipy = y0 + L; }
-  });
-  var lip = "M26,0 L141,0 L141,3.6 C133,4.8 127,2.9 119,3.9 C109,5.1 101,3.1 91,4.3 C81,5.5 71,3.3 61,4.5 C51,5.7 43,3.5 35,3.7 C30,3.8 26.4,2.2 26,0 Z";
-  var s = '<defs><clipPath id="' + id + 'c"><path d="M0,0 H128 Q140,0 140,12 V140 H0 Z"/></clipPath>' +
-          '<radialGradient id="' + id + 'h" gradientUnits="userSpaceOnUse" cx="140" cy="0" r="' + r1(108 * Math.max(.45, k)) + '"><stop offset="0" stop-color="#D8F6F1" stop-opacity=".95"/><stop offset=".55" stop-color="#D8F6F1" stop-opacity=".45"/><stop offset="1" stop-color="#D8F6F1" stop-opacity="0"/></radialGradient></defs>' +
-          '<g clip-path="url(#' + id + 'c)"><rect width="140" height="140" fill="url(#' + id + 'h)"/>' +
-          '<path class="frTw" d="' + tw + '"/><path class="frBr" d="' + br + '"/><path class="frMain" d="' + main + '"/>';
-  if (o.breath) s += '<circle cx="' + o.breath[0] + '" cy="' + o.breath[1] + '" r="17" fill="url(#wnBreathG)"/><circle cx="' + o.breath[0] + '" cy="' + o.breath[1] + '" r="14.5" fill="none" stroke="#D8F6F1" stroke-width="1.2" opacity=".9"/>';
-  if (stage > 0) s += '<path class="icLipU" d="' + lip + '"/><path class="icU" d="' + ic + '"/><path class="icLip" d="' + lip + '"/><path class="icLipShade" d="M28,3.4 C40,4.4 50,6 61,4.9 C71,3.9 81,6 91,4.8 C101,3.7 109,5.6 119,4.4 C127,3.5 133,5.2 140,4.1"/>' +
-                   '<path class="icF" d="' + ic + '"/><path class="icHi" d="' + hi + '"/>';
-  if (o.drip && stage > 0) s += '<ellipse class="smDrop" cx="' + r1(tipx) + '" cy="' + r1(tipy + 1.3) + '" rx="1.25" ry="1.5"/><path class="smDrop" d="M' + r1(tipx) + ',' + r1(tipy + 13) + ' c-1.1,1.6 -1.4,2.6 -1.4,3.3 a1.4,1.4 0 0 0 2.8,0 c0,-.7 -.3,-1.7 -1.4,-3.3 Z"/>';
-  return s + '</g>';
+/* ===== the frost (Croix, Nov 14: "The freeze looks like the web. I want the freeze to be a bit bigger as it ices
+   over then thaws out"). Real window frost, in board pixels: feathery frost-fern dendrites, each from its OWN point on
+   the card's top or right edge (no spokes from one point, no arcs), a band of rime crystals along both edges, a pale
+   frosted haze in layers that hug the edges, and icicles under a snow lip along the top edge. Its envelope is FITTED to
+   the clock card's measured free corner (GEO.free: 28 px off every line of the face, a 12 px ring round every control);
+   s is the stage, 0–1, the peak 1. ===== */
+function frostEnv(G){
+  var f = G.free, C = G.clock;
+  return { right: C.x + C.w, top: C.y, x0: C.x, bottom: C.y + C.h, Smax: Math.max(0, Math.min(520, .9 * f.uMax)), Vlen: Math.min(620, .62 * C.h),
+           Tmax: f.vTop >= 20 ? Math.min(130, .92 * f.vTop) : 0, Ulen: Math.min(800, .42 * C.w), chip: G.controls && G.controls[0] };
 }
+function frostShape(E, s){   // the stage's envelope: S deep along the right edge for V, T deep along the top edge for U
+  var S = E.Smax * s, V = E.Vlen * (.3 + .7 * s), T = E.Tmax * Math.min(1, .3 + .7 * s), U = T > 0 ? Math.max(E.Ulen * (.3 + .7 * s), S) : S;
+  var sideD = function(v, sf){ var t = v / V; return t >= 1 ? 0 : S * sf * Math.pow(1 - Math.pow(t, 1.6), .8); };
+  var sideInv = function(u, sf){ var Ss = S * sf; return (u >= Ss || Ss <= 0) ? 0 : V * Math.pow(1 - Math.pow(u / Ss, 1.25), .625); };
+  var topD = function(u, sf){ var t = u / U; return (t >= 1 || T <= 0) ? 0 : T * sf * Math.pow(1 - t * t, .7); };
+  var vb = function(u, sf){ return Math.max(topD(u, sf), sideInv(u, sf)); };
+  var env = function(sf){ var pts = [[E.right, E.top], [E.right, E.top + V]], u, Um = Math.max(U, S * sf);
+    for (u = 0; u <= Um; u += 6) pts.push([E.right - u, E.top + vb(u, sf)]);
+    pts.push([E.right - Um, E.top]); return "M" + pts.map(P2).join(" L") + " Z"; };
+  return { S: S, V: V, T: T, U: U, sideD: sideD, topD: topD, vb: vb, env: env };
+}
+function frost(G, s, o){
+  o = o || {};
+  if (!s) return "";
+  var E = frostEnv(G), F = frostShape(E, s), R = rng(o.seed || 23), id = "fr" + (++UID), dense = s >= .45;
+  var X = function(u){ return E.right - u; }, Y = function(v){ return E.top + v; };
+  var chip = E.chip, ccx = chip ? chip.x + chip.w / 2 : 0, ccy = chip ? chip.y + chip.h / 2 : 0, cr = chip ? chip.w / 2 + 12 : 0;
+  var stem = "", br = "", tw = "", rime = "";
+  function fern(x, y, ang, L, depth){
+    var sp = 4, n = Math.max(3, Math.round(L / sp)), pts = [[x, y, ang]], a = ang, curl = (R() - .5) * .014, i;
+    for (i = 1; i <= n; i++){ a += curl + (R() - .5) * .045; x += Math.cos(a) * sp; y += Math.sin(a) * sp; pts.push([x, y, a]); }
+    stem += "M" + pts.map(P2).join(" L") + " ";
+    var every = Math.max(1, Math.round((3 + L / 45) * .42));
+    for (i = 2; i < n; i += every){
+      var p = pts[i], u = i / n, plume = Math.sin(Math.PI * Math.min(1, .12 + u * 1.1)) * (1 - .3 * u), bl = L * .2 * plume * (.75 + R() * .5);
+      if (bl < 2.5) continue;
+      [-1, 1].forEach(function(sd, q){ if (q && R() < .25) return;
+        var ba = p[2] + sd * Math.PI / 3, bx = p[0] + Math.cos(ba) * bl, by = p[1] + Math.sin(ba) * bl;
+        br += "M" + P2(p) + " L" + r1(bx) + "," + r1(by) + " ";
+        if (dense && bl > 9) for (var k = 1; k <= 3; k++){ var qf = k / 4, sx = p[0] + (bx - p[0]) * qf, sy = p[1] + (by - p[1]) * qf, tl = bl * .3 * (1 - qf * .5), ta = ba + (k % 2 ? 1 : -1) * Math.PI / 3;
+          tw += "M" + r1(sx) + "," + r1(sy) + " L" + r1(sx + Math.cos(ta) * tl) + "," + r1(sy + Math.sin(ta) * tl) + " "; }
+      });
+    }
+    if (depth < 1 && L > 70 && R() < .55){ var fp = pts[Math.round(n * (.35 + R() * .2))]; fern(fp[0], fp[1], fp[2] + (R() < .5 ? -1 : 1) * Math.PI / 3, L * .45, depth + 1); }
+  }
+  var nearChip = function(x, y){ return chip && Math.hypot(x - ccx, y - ccy) < cr + 4; };
+  var u, v;
+  for (u = 10; u < F.U - 8; u += 26 + R() * 16){ var D = F.vb(u, 1); if (D < 14 || nearChip(X(u), Y(2))) continue; fern(X(u), Y(0), Math.PI / 2 + (R() - .5) * .75, D * (.55 + R() * .4), 0); }
+  for (v = 10; v < F.V - 8; v += 26 + R() * 16){ var Dw = Math.min(F.sideD(v, 1), F.S); if (Dw < 14 || nearChip(X(2), Y(v))) continue; fern(X(0), Y(v), Math.PI + (R() - .5) * .75, Dw * (.55 + R() * .4), 0); }
+  var nR = Math.round((F.U + F.V) * .6 * s);
+  for (var r = 0; r < nR; r++){
+    var onTop = R() < F.U / (F.U + F.V), cx, cy;
+    if (onTop){ cx = X(R() * F.U); cy = Y(R() * R() * 20); } else { cx = X(R() * R() * 20); cy = Y(R() * F.V); }
+    var rr = 1.4 + R() * 2.6, a0 = R() * Math.PI / 3;
+    if (R() < .55){ for (var m = 0; m < 3; m++){ var aa = a0 + m * Math.PI / 3; rime += "M" + r1(cx - Math.cos(aa) * rr) + "," + r1(cy - Math.sin(aa) * rr) + " L" + r1(cx + Math.cos(aa) * rr) + "," + r1(cy + Math.sin(aa) * rr) + " "; } }
+    else rime += "M" + r1(cx) + "," + r1(cy) + " l" + r1(Math.cos(a0) * rr * 1.6) + "," + r1(Math.sin(a0) * rr * 1.6) + " ";
+  }
+  /* the snow lip and the icicles along the top edge, left of the stage chip */
+  var u0 = chip ? (E.right - chip.x) + 14 : 20, uEnd = Math.min(F.U * .88, E.Ulen), ic = "", hi = "", drips = "", lipPts = [];
+  if (uEnd > u0 + 20){
+    for (u = u0 - 6; u <= uEnd + 10; u += 10) lipPts.push([X(u), Y(3.6 + Math.sin(u / 23) * 1.4 + (R() - .5) * 1.2)]);
+    for (u = u0 + 10; u <= uEnd; u += 34 + R() * 30){
+      var L = (8 + 42 * Math.pow(Math.max(0, 1 - u / (E.Ulen * 1.05)), 1.1) * (.45 + R() * .55)) * s; if (L < 4) continue;
+      var w = (4.2 + R() * 4) * Math.max(.6, s), b = (R() - .5) * 3 * s, x = X(u), h = w / 2, y0 = Y(3), tx = x + b;
+      ic += "M" + r1(x - h) + "," + r1(y0) + " C" + r1(x - h) + "," + r1(y0 + L * .22) + " " + r1(x - h * .62 + b * .2) + "," + r1(y0 + L * .36) + " " + r1(x - h * .72 + b * .3) + "," + r1(y0 + L * .48) +
+            " C" + r1(x - h * .5 + b * .55) + "," + r1(y0 + L * .62) + " " + r1(x - h * .3 + b * .8) + "," + r1(y0 + L * .82) + " " + r1(tx) + "," + r1(y0 + L) +
+            " C" + r1(x + h * .3 + b * .7) + "," + r1(y0 + L * .72) + " " + r1(x + h * .55 + b * .35) + "," + r1(y0 + L * .44) + " " + r1(x + h * .66) + "," + r1(y0 + L * .3) +
+            " C" + r1(x + h * .85) + "," + r1(y0 + L * .16) + " " + r1(x + h) + "," + r1(y0 + L * .08) + " " + r1(x + h) + "," + r1(y0) + " Z ";
+      hi += "M" + r1(x - h * .42) + "," + r1(y0 + 1.5) + " C" + r1(x - h * .4 + b * .2) + "," + r1(y0 + L * .3) + " " + r1(x - h * .3 + b * .4) + "," + r1(y0 + L * .45) + " " + r1(x - h * .15 + b * .55) + "," + r1(y0 + L * .62) + " ";
+      if (o.drip && R() < .55) drips += '<ellipse class="smDrop" cx="' + r1(tx) + '" cy="' + r1(y0 + L + 2) + '" rx="1.9" ry="2.3"/><path class="smDrop" d="M' + r1(tx) + ',' + r1(y0 + L + 16 + R() * 10) + ' c-1.6,2.3 -2,3.6 -2,4.6 a2,2 0 0 0 4,0 c0,-1 -.4,-2.3 -2,-4.6 Z"/>';
+    }
+  }
+  var lip = lipPts.length ? "M" + r1(X(u0 - 6)) + "," + r1(Y(0)) + " L" + lipPts.map(P2).join(" L") + " L" + r1(X(uEnd + 10)) + "," + r1(Y(0)) + " Z" : "";
+  var hole = chip ? " M" + r1(ccx - cr) + "," + r1(ccy) + " a" + r1(cr) + "," + r1(cr) + " 0 1 0 " + r1(2 * cr) + ",0 a" + r1(cr) + "," + r1(cr) + " 0 1 0 " + r1(-2 * cr) + ",0 Z" : "";
+  var out = '<defs><clipPath id="' + id + 'e"><path d="' + F.env(1) + '"/></clipPath><clipPath id="' + id + 'c"><rect x="' + E.x0 + '" y="' + E.top + '" width="' + (E.right - E.x0) + '" height="' + (E.bottom - E.top) + '" rx="18"/></clipPath>' +
+            '<clipPath id="' + id + 'h"><path clip-rule="evenodd" d="M' + (E.x0 - 20) + ',' + (E.top - 20) + ' H' + (E.right + 20) + ' V' + (E.bottom + 20) + ' H' + (E.x0 - 20) + ' Z' + hole + '"/></clipPath></defs>' +
+            '<g clip-path="url(#' + id + 'c)"><g clip-path="url(#' + id + 'h)">' +
+            [1, .74, .5, .28].map(function(sf){ return '<path class="frHaze" d="' + F.env(sf) + '"/>'; }).join("") +
+            '<g clip-path="url(#' + id + 'e)"><path class="frTw" d="' + tw + '"/><path class="frBr" d="' + br + '"/><path class="frMain" d="' + stem + '"/><path class="frRime" d="' + rime + '"/></g>';
+  if (o.breath) out += '<circle cx="' + o.breath[0] + '" cy="' + o.breath[1] + '" r="26" fill="url(#wnBreathG)"/><circle cx="' + o.breath[0] + '" cy="' + o.breath[1] + '" r="22" fill="none" stroke="#D8F6F1" stroke-width="1.6"/>';
+  if (lip) out += '<path class="icLipU" d="' + lip + '"/><path class="icU" d="' + ic + '"/><path class="icLip" d="' + lip + '"/><path class="icF" d="' + ic + '"/><path class="icHi" d="' + hi + '"/>' + drips;
+  out += '</g></g>';
+  if (o.bound){   /* the measured free corner, and the peak's envelope */
+    var f = G.free, xb = f.contentRight + 28, yb = f.contentTop - 28;
+    out += '<path class="frBound" d="M' + E.x0 + ',' + yb + ' H' + xb + ' V' + E.bottom + '"/><path class="frEnv" d="' + F.env(1) + '"/>' +
+           '<text class="lbl" x="' + (xb + 10) + '" y="' + r1(E.top + F.V - 30) + '">the peak: ' + Math.round(F.S) + ' px in from the right edge, ' + Math.round(F.V) + ' px down it; ' + Math.round(F.T) + ' px deep along ' + Math.round(F.U) + ' px of the top</text>' +
+           '<text class="lbl" x="' + (xb + 10) + '" y="' + r1(E.top + F.V - 14) + '">dashed navy: 28 px off the face (its top ' + f.contentTop + ', its right ' + f.contentRight + '); a 12 px ring round the stage chip</text>';
+  }
+  return out;
+}
+
 
 /* ===== the snowman (100 × 140 box, ground y 131; light from the upper left, as the board's shadows fall) ===== */
 var SM = {
@@ -414,107 +473,189 @@ function duneCap(cov, seed){
   return '<path fill="#fff" d="M' + top.concat(bot).map(P2).join(" L") + ' Z"/><path fill="#D8F6F1" d="M' + sh.map(P2).join(" L") + ' Z"/>';
 }
 
+/* ===== option A: the countdown string on the beach. Four navy posts on the dune (snow on their caps), a wire
+   sagging between them in scallops, nine bulbs (14 × 16 px at 1080p) hanging from it, lit from the dock end; the
+   cord comes out from behind the dock and runs along the sand, behind the boat, to the first post. ===== */
+var DUNE = [[[0, 55], [240, 25], [480, 85], [720, 55]], [[720, 55], [960, 25], [1200, 85], [1440, 55]], [[1440, 55], [1680, 25], [1820, 70], [1920, 50]]];
+function duneY(G, x){   // the dune's crest in board px, from #waves' own path (stretched with the window)
+  var xd = x * 1920 / G.waves.w, seg = DUNE[xd < 720 ? 0 : xd < 1440 ? 1 : 2], lo = 0, hi = 1, t, m, xx, i;
+  for (i = 0; i < 30; i++){ t = (lo + hi) / 2; m = 1 - t; xx = m*m*m*seg[0][0] + 3*m*m*t*seg[1][0] + 3*m*t*t*seg[2][0] + t*t*t*seg[3][0]; if (xx < xd) lo = t; else hi = t; }
+  t = (lo + hi) / 2; m = 1 - t;
+  return G.waves.y + (m*m*m*seg[0][1] + 3*m*m*t*seg[1][1] + 3*m*t*t*seg[2][1] + t*t*t*seg[3][1]) * G.waves.h / 120;
+}
+function bulb(x, y, lit, k, rot){
+  var tear = function(cx, top, w, h){ return "M" + r1(cx) + "," + r1(top) + " C" + r1(cx + w * .62) + "," + r1(top + h * .12) + " " + r1(cx + w * .5) + "," + r1(top + h * .7) + " " + r1(cx) + "," + r1(top + h) +
+    " C" + r1(cx - w * .5) + "," + r1(top + h * .7) + " " + r1(cx - w * .62) + "," + r1(top + h * .12) + " " + r1(cx) + "," + r1(top) + " Z"; };
+  var g = '<g transform="rotate(' + rot + ' ' + r1(x) + ' ' + r1(y) + ')">';
+  if (lit) g += '<circle cx="' + r1(x) + '" cy="' + r1(y + 10 * k) + '" r="' + r1(17 * k) + '" fill="url(#blHaloG)"/>';
+  g += '<rect class="blSocket" x="' + r1(x - 2.3 * k) + '" y="' + r1(y - .5 * k) + '" width="' + r1(4.6 * k) + '" height="' + r1(4.6 * k) + '" rx="' + r1(k) + '"/>';
+  g += '<path class="' + (lit ? "blGlass" : "blDark") + '" d="' + tear(x, y + 3.6 * k, 10 * k, 12.4 * k) + '"/>';
+  if (lit) g += '<path class="blCore" d="' + tear(x, y + 6.4 * k, 5 * k, 7.2 * k) + '"/>';
+  g += '<path class="blGlint" style="stroke-width:' + r1(1.1 * k) + '" d="M' + r1(x - 2.2 * k) + ',' + r1(y + 7 * k) + ' q' + r1(-.8 * k) + ',' + r1(2.4 * k) + ' ' + r1(.2 * k) + ',' + r1(4.6 * k) + '"/>';
+  return g + '</g>';
+}
+function beachLights(G, n, o){
+  o = o || {};
+  var k = o.k || 1, W = G.W || 1920, posts = (o.posts || [.458, .59, .722, .855]).map(function(f){ return f * W; });
+  var ground = o.ground || function(x){ return duneY(G, x) + 5 * k; };
+  var R = rng(31), ph = 30 * k, sag = 24 * k, s = "", wire = "", bulbs = [], tops = [];
+  posts.forEach(function(x){ var g = ground(x), lean = (R() - .5) * 5; tops.push([x + Math.sin(lean * Math.PI / 180) * ph, g - ph, x, g, lean]); });
+  if (!o.noCord && G.dock){ var d0 = G.dock.x + G.dock.w - 10, g0 = ground(d0) + 4 * k, p0 = tops[0];
+    s += '<path class="blCord" d="M' + r1(d0) + ',' + r1(g0) + ' C' + r1(d0 + 90) + ',' + r1(g0 + 3) + ' ' + r1(p0[2] - 120) + ',' + r1(p0[3] + 4) + ' ' + r1(p0[2] - 3 * k) + ',' + r1(p0[3] - 1) + ' L' + r1(p0[0] - 2 * k) + ',' + r1(p0[1] + 3 * k) + '"' + (o.cordClip ? ' clip-path="url(#' + o.cordClip + ')"' : '') + '/>'; }
+  for (var i = 0; i < tops.length - 1; i++){
+    var a = tops[i], b = tops[i + 1], cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2 + 2 * sag;
+    wire += "M" + r1(a[0]) + "," + r1(a[1]) + " Q" + r1(cx) + "," + r1(cy) + " " + r1(b[0]) + "," + r1(b[1]) + " ";
+    [.25, .5, .75].forEach(function(t){ bulbs.push([(1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * cx + t * t * b[0], (1 - t) * (1 - t) * a[1] + 2 * (1 - t) * t * cy + t * t * b[1]]); });
+  }
+  tops.forEach(function(p){ s += '<g transform="rotate(' + r1(p[4]) + ' ' + r1(p[2]) + ' ' + r1(p[3]) + ')"><rect class="blPost" x="' + r1(p[2] - 1.7 * k) + '" y="' + r1(p[3] - ph) + '" width="' + r1(3.4 * k) + '" height="' + r1(ph + 4 * k) + '" rx="' + r1(k) + '"/>' +
+    '<path class="blCap" d="M' + r1(p[2] - 3 * k) + ',' + r1(p[3] - ph + .6 * k) + ' q' + r1(3 * k) + ',' + r1(-4.4 * k) + ' ' + r1(6 * k) + ',0 z"/></g>'; });
+  s += '<path class="blWire" style="stroke-width:' + r1(1.3 * k) + '" d="' + wire + '"/>';
+  bulbs.forEach(function(p, i){ s += bulb(p[0], p[1], i < n, k, i % 2 ? 7 : -6); });
+  return '<g class="beachLights">' + s + '</g>';
+}
+
+/* ===== shared: a window onto a board frame (1:1, or scaled), with an overlay in that board's pixels ===== */
+function windowOf(name, x0, y0, w, h, inner, scale){
+  var G = GEO[name], sc = scale || 1;
+  return '<div style="position:relative;width:' + r1(w * sc) + 'px;height:' + r1(h * sc) + 'px;overflow:hidden;border-radius:6px">' +
+    '<div style="position:absolute;left:0;top:0;width:' + w + 'px;height:' + h + 'px;transform-origin:0 0;transform:scale(' + sc + ');overflow:hidden">' +
+    '<div style="position:absolute;left:' + (-x0) + 'px;top:' + (-y0) + 'px;width:' + G.W + 'px;height:' + G.H + 'px">' +
+    '<img src="winter-frames/' + name + '.png" style="position:absolute;left:0;top:0;width:' + G.W + 'px;height:' + G.H + 'px" alt="">' +
+    '<svg viewBox="0 0 ' + G.W + ' ' + G.H + '" width="' + G.W + '" height="' + G.H + '" style="position:absolute;left:0;top:0">' + inner + '</svg></div></div></div>';
+}
+function capAt(G, cov){ return nest(0, G.waves.y, G.W, G.waves.h, "0 0 1920 120", duneCap(cov, 5), 'preserveAspectRatio="none"'); }
+function boatAt(G, o){ var m = G.boat; return '<g transform="matrix(' + [m.a, m.b, m.c, m.d, m.e, m.f].map(function(v){ return r1(v * 100) / 100; }).join(" ") + ')">' + boatWinter(o) + '</g>'; }
+function boatBox(G){ var m = G.boat, xs = [], ys = []; [[-15, -17], [45, -17], [-15, 42], [45, 42]].forEach(function(p){ xs.push(m.a * p[0] + m.c * p[1] + m.e); ys.push(m.b * p[0] + m.d * p[1] + m.f); });
+  return [Math.min.apply(null, xs), Math.min.apply(null, ys), Math.max.apply(null, xs), Math.max.apply(null, ys)]; }
+function snowmanAt(G, stage, o){ var W = G.W, H = G.H, w = Math.max(68, Math.min(Math.min(.05 * W, .089 * H), 112)), sc = w / 100;
+  return nest(W - .04 * W - w, H - 34 - 131 * sc, w, 140 * sc, "0 0 100 140", snowman(stage, o || {})); }
+
 /* ===== 1 · the lineup at true size ===== */
 (function(){
-  var H = 340, by = H - 6 - 38, s = '<div class="grid" style="position:relative;width:1920px;height:' + H + 'px;border-radius:6px;box-shadow:6px 8px 0 #D8C5A0;overflow:hidden">' + sea(1920, 88);
+  var H = 340, by = H - 6 - 38, Gl = { W: 1920, H: H, waves: { x: 0, y: H - 88, w: 1920, h: 88 } };
+  var s = '<div class="grid" style="position:relative;width:1920px;height:' + H + 'px;border-radius:6px;box-shadow:6px 8px 0 #D8C5A0;overflow:hidden">' + sea(1920, 88);
   var o = '<svg class="ov" viewBox="0 0 1920 ' + H + '" width="1920" height="' + H + '" style="position:absolute;left:0;top:0">';
-  o += nest(468, 302, 59.5, 17.9, "0 0 120 36", narwhal("puff"));                                   // far lane, behind
-  o += nest(1176, H - 9 - 45.3, 136, 45.3, "0 0 132 44", '<defs><clipPath id="lsc"><rect x="-10" y="-10" width="160" height="44.4"/></clipPath></defs><g clip-path="url(#lsc)">' + serpent(true) + '</g>');
-  o += nest(787, by, 38, 38, "0 0 40 40", boat({ lamp: 1, lights: 9, hat: true }));
-  o += nest(842, H - 6 - 26, 52, 26, "0 0 64 32", sealOnFloe("lie"));                             // near, Wilson's spot
+  o += nest(1747, H - 34 - 125.8, 96, 134.4, "0 0 100 140", snowman("S3", { fresh: true }));
+  o += beachLights(Gl, 9, { noCord: true });
+  o += nest(560, 302, 59.5, 17.9, "0 0 120 36", narwhal("puff"));
+  o += nest(300, H - 9 - 45.3, 136, 45.3, "0 0 132 44", '<defs><clipPath id="lsc"><rect x="-10" y="-10" width="160" height="44.4"/></clipPath></defs><g clip-path="url(#lsc)">' + serpent(true) + '</g>');
+  o += nest(787, by, 38, 38, "0 0 40 40", boat({ lamp: 1, hat: true }));
+  o += nest(842, H - 6 - 26, 52, 26, "0 0 64 32", sealOnFloe("lie"));
   o += floe(44, 960, H - 4 - 15.4, 3) + floe(28, 1012, H - 2 - 9.8, 8) + floe(18, 1046, H - 3 - 6.3, 13);
-  o += nest(1747, H - 34 - 126.7, 96, 134.4, "0 0 100 140", snowman("S3", { fresh: true }));
-  o += flakeAt(1430, 132, 62, "fern", 21, 4) + flakeAt(1530, 210, 52, "dendrite", 5, -7) + flakeAt(1612, 92, 44, "plate", 9, 12) + flakeAt(1350, 228, 48, "tipped", 17, 0) + fleckAt(1480, 60, 10) + fleckAt(1660, 176, 8) + fleckAt(1395, 300, 12);
+  o += flakeAt(1430, 92, 62, "fern", 21, 0) + flakeAt(1530, 170, 52, "dendrite", 5, 0) + flakeAt(1612, 62, 44, "plate", 9, 0) + flakeAt(1350, 178, 48, "tipped", 17, 0) + fleckAt(1480, 40, 10) + fleckAt(1660, 146, 8) + fleckAt(1395, 236, 12);
   var L = function(x, y, t){ return '<text class="lbl" x="' + x + '" y="' + y + '">' + t + '</text>'; };
-  o += L(440, 290, "narwhal, far · 60 px") + L(700, 270, "the boat · 38 px box") + L(850, 296, "seal on its floe · 52 px (near)") + L(960, 318, "floes · 44 / 28 / 18") +
-       L(1150, 270, "the serpent in the scarf · 136 px") + L(1700, 168, "snowman · 96 × 134") + L(1336, 30, "flakes 44–62 px · flecks 8–12 px");
+  o += L(300, 270, "the serpent in the scarf · 136 px") + L(540, 294, "narwhal, far · 60 px") + L(700, 236, "the boat · 38 px box") + L(850, 330, "seal on its floe · 52 px (near)") +
+       L(1000, 215, "A · the countdown string: posts 30 px, bulbs 14 × 16 px") + L(1700, 168, "snowman · 96 × 134") + L(1336, 20, "flakes 44–62 px · flecks 8–12 px");
   document.getElementById("lineup").innerHTML = s + o + '</svg></div>';
 })();
 
-/* ===== 2 · the boat ===== */
+/* ===== 2 · the lights, A against B, at true size ===== */
+(function(){
+  var G = GEO.dec18; if (!G) return;
+  var bb = boatBox(G), clip = '<defs><clipPath id="nbL"><path clip-rule="evenodd" d="M0,0 H' + G.W + ' V' + G.H + ' H0 Z M' + r1(bb[0]) + ',' + r1(bb[1]) + ' H' + r1(bb[2]) + ' V' + r1(bb[3]) + ' H' + r1(bb[0]) + ' Z"/></clipPath></defs>';
+  var A = clip + capAt(G, 1) + beachLights(G, 9, { cordClip: "nbL" }) + boatAt(G, { lamp: 1, gull: false });
+  var B = capAt(G, 1) + boatAt(G, { lamp: 1, lights: 9, big: true, gull: false });
+  var cell = function(t, body, p){ return '<div class="cell cream"><h3>' + t + '</h3>' + body + '<p style="max-width:900px">' + p + '</p></div>'; };
+  document.getElementById("lightsAB").innerHTML =
+    cell("A · the string on the beach (recommended) · true size", windowOf("dec18", 760, 950, 900, 125, A), "Nine 14 × 16 px bulbs on a wire between four posts on the dune, sagging in scallops, plugged in at the dock (the cord runs along the sand behind the boat). Up dark on Dec 7, one more lit each school day from the dock end, all nine on the last day before break, down the first day back. From the back row: a row of warm lights on the beach. The boat keeps its lantern.") +
+    cell("B · the boat's own string, the biggest bulbs nine can be · true size", windowOf("dec18", 600, 950, 900, 125, B), "Nine bulbs on a 25-unit forestay can be at most 2.4 units across: 2.3 px on the boat's 38 px. Lit, they are a faint warm line on the stay from the front row and nothing from anywhere else.");
+  var D = capAt(G, 1) + beachLights(G, 5, { noCord: true });
+  var st = '<div style="position:relative;width:960px;height:76px;background:#E6D5B8;border-radius:6px;overflow:hidden"><div style="position:absolute;left:0;right:0;bottom:0;height:18px;background:#BFEFEA"></div>' +
+    '<svg viewBox="700 0 960 76" width="960" height="76" style="position:absolute;left:0;top:0"><path d="M700,6 H1660" stroke="#17324D" stroke-width="1.2" stroke-dasharray="5 5" opacity=".45" fill="none"/>' +
+    beachLights({ W: 1920, waves: { x: 0, y: 0, w: 1920, h: 76 } }, 9, { k: .6, noCord: true, ground: function(){ return 54; } }) +
+    nest(1612, 54 - 131 * .307, 30.7, 43, "0 0 100 140", snowman("S3")) + '</svg></div>';
+  document.getElementById("lightsMore").innerHTML =
+    cell("A · lit and dark (× 3)", windowOf("dec18", 1110, 986, 300, 62, D, 3), "December 14, five lit: the fourth and fifth bulbs lit (amber glass, a yellow core, a soft halo), the sixth still dark (dark glass, a highlight). Each bulb hangs a few degrees off true.") +
+    cell("A in Steward · 0.6× on its 76 px of free sand", st, "Bulbs 9 px, posts 18 px: the whole string is 30 px tall and keeps 6 px under the cards' areas (dashed). The snowman beside it at 0.32×.");
+})();
+
+/* ===== 3 · the boat ===== */
 (function(){
   var cells = [
-    ["December 8 · the first bulb", { lamp: 1, lights: 1 }, "The string goes up dark on December 7, when nine school days are left; one bulb lights each school day after, from the bow up; all nine on the last day before break. Amber bodies (yellow alone vanishes on cream), lit-yellow cores, a small glow."],
-    ["December 18 · all nine", { lamp: 1, lights: 9 }, "The last school day: the string full, the lantern full (November's, kept: brightest at the solstice)."],
-    ["A snowfall period", { lamp: .75, deck: true, hat: true }, "Snow on the deck (one white line on the navy hull) and the gull's bobble hat — the same teal hat as the snowman's. The scarf has stayed on since November 15."],
-    ["January · the lights are down", { lamp: .75 }, "Taken down on the first day back. The lantern dims a step a month as the nights shorten: full in December, .75 in January, .5 in February."]
+    ["B · the biggest string the boat can carry", { lamp: 1, lights: 9, big: true }, "Option B, for comparison: nine bulbs at the largest they can be on the forestay. At true size (below) it is a dotted line."],
+    ["December · the lantern stays", { lamp: 1 }, "November's lantern hangs on all winter: brightest in December (the solstice is in the break), a step dimmer each month as the nights shorten."],
+    ["A snowfall period", { lamp: .75, deck: true, hat: true }, "Snow on the deck (one white line on the navy hull) and the gull's bobble hat, the same teal hat as the snowman's. The scarf has stayed on since November 15."],
+    ["February", { lamp: .5 }, "The lantern at its dimmest; on March 1 it goes."]
   ];
   document.getElementById("boats").innerHTML = cells.map(function(c){ return '<div class="cell cream"><h3>' + c[0] + '</h3>' + svg("-6 -16 52 56", 312, 336, boat(c[1])) + '<div style="display:flex;gap:10px;align-items:flex-end;margin-top:6px">' + svg("-6 -16 52 56", 52, 56, boat(c[1])) + '<span style="font-size:11px;color:#127A85">true size</span></div><p>' + c[2] + '</p></div>'; }).join("");
 })();
 
-/* ===== 3 · flakes ===== */
+/* ===== 4 · flakes ===== */
 (function(){
   var html = KINDS.map(function(k, i){ return '<div class="cell"><h3>' + k + '</h3><div style="display:flex;gap:10px">' + svg("0 0 40 40", 150, 150, flake(k, 3 + i * 7)) + svg("0 0 40 40", 150, 150, flake(k, 40 + i * 5)) + '</div></div>'; }).join("");
   var bg = function(cls, title){ var s = '<div class="cell ' + cls + '" style="width:300px"><h3>' + title + '</h3><svg viewBox="0 0 280 120" width="280" height="120">';
-    s += flakeAt(40, 50, 62, "fern", 21, 4) + flakeAt(110, 70, 52, "dendrite", 5, -7) + flakeAt(170, 44, 44, "plate", 9, 12) + flakeAt(232, 66, 48, "tipped", 17, 0) + fleckAt(76, 102, 10) + fleckAt(200, 104, 8) + fleckAt(140, 18, 12);
+    s += flakeAt(40, 50, 62, "fern", 21, 0) + flakeAt(110, 70, 52, "dendrite", 5, 0) + flakeAt(170, 44, 44, "plate", 9, 0) + flakeAt(232, 66, 48, "tipped", 17, 0) + fleckAt(76, 102, 10) + fleckAt(200, 104, 8) + fleckAt(140, 18, 12);
     return s + '</svg></div>'; };
   html += bg("", "true size · on the white card") + bg("grid", "true size · on the grid") + bg("water", "true size · over the water");
   document.getElementById("flakes").innerHTML = html;
 })();
 
-/* ===== 4 · the corner ===== */
+/* ===== 5 · the frost, every stage at board size ===== */
 (function(){
-  var card = function(inner, w){ return '<div style="position:relative;width:' + w + 'px;height:' + w + 'px;background:#fff;border-radius:0 18px 0 0;box-shadow:6px 8px 0 #D8C5A0;overflow:hidden">' + inner + '</div>'; };
-  var chip = '<div style="position:absolute;right:8px;top:8px;width:44px;height:44px;border-radius:50%;background:rgba(23,50,77,.08)"></div>';
-  var stages = [[1, "Dec 1–4 · f1"], [2, "Dec 7–11 · f2"], [3, "Dec 14 → break · f3"], [4, "Jan 1 → Feb 14 · f4"]];
-  var html = stages.map(function(s){ return '<div class="cell cream"><h3>' + s[1] + '</h3>' + card(chip + svg("0 0 140 140", 200, 200, corner(s[0]), 'style="position:absolute;right:0;top:0"'), 200) + '</div>'; }).join("");
-  html += '<div class="cell cream"><h3>× 2 · f4, a drip, and a tap (a warm breath clears a spot)</h3>' + card(svg("0 0 140 140", 400, 400, corner(4, { drip: true, breath: [96, 64] }), 'style="position:absolute;right:0;top:0"'), 400) + '</div>';
-  html += '<div class="cell cream"><h3>The thaw · Feb 22–26 · f2, short icicles, dripping</h3>' + card(chip + svg("0 0 140 140", 200, 200, corner(2, { drip: true, ice: .5 }), 'style="position:absolute;right:0;top:0"'), 200) + '</div>';
-  document.getElementById("corners").innerHTML = html;
+  var G = GEO.jan13; if (!G) return;
+  var E = frostEnv(G), x0 = Math.round(E.right - 862), y0 = Math.round(E.top - 8), w = 872, h = 640;
+  var st = [["Dec 1–4 · first frost along the edges", .2, {}], ["Dec 7–11", .35, {}], ["Dec 14 → the break", .5, {}], ["Jan 4–8 · and a tap: a warm breath clears a spot", .75, { breath: [E.right - 150, E.top + 180] }],
+            ["Jan 11–29 · the peak, fitted to the measured free corner", 1, { bound: true }], ["Feb 1–12 · the thaw begins: shrinking, dripping", .72, { drip: true }], ["Feb 15–19", .45, { drip: true }], ["Feb 22–28 · the last of it (gone March 1)", .22, { drip: true }]];
+  document.getElementById("frosts").innerHTML = st.map(function(c){ return '<div class="cell cream"><h3>' + c[0] + '</h3>' + windowOf("jan13", x0, y0, w, h, frost(G, c[1], c[2])) + '</div>'; }).join("");
 })();
 
-/* ===== 5 · the snowman's calendar ===== */
+/* ===== 6 · the snowman's calendar ===== */
 (function(){
   var st = [["S0", "Dec 1–4", "first frost; nothing on the sand yet"], ["S1", "Dec 7–11", "a rolled snowball and its track"], ["S2", "Dec 14–17", "stacked: coal eyes, smile, buttons, sticks"], ["S3", "Dec 18 →", "the carrot, the scarf, the hat: done"],
-            ["S3v", "Dec 18 · period 1", "the gull on his hat: the builder"], ["caper", "Jan 18–21", "the scarf is gone"], ["M1", "Feb 15–19", "leaning, dripping, slush"], ["M2", "Feb 22–25", "slumped; an arm has fallen"], ["M3", "Feb 26–28", "a hat, a carrot, a sprout"]];
+            ["S3v", "Dec 18 · period 1", "the gull on his hat: the builder"], ["caper", "Jan 25–28", "the scarf is gone"], ["M1", "Feb 15–19", "leaning, dripping, slush"], ["M2", "Feb 22–25", "slumped; an arm has fallen"], ["M3", "Feb 26–28", "a hat, a carrot, a sprout"]];
   var one = function(k, scale){ var stage = k === "S3v" ? "S3" : k, o = k === "S3v" ? { visit: true } : {}, w = 96 * scale, h = 140 * .96 * scale;
     return '<div style="position:relative;width:' + (w + 30 * scale) + 'px;height:' + (h + 8) + 'px;margin:0 auto">' + svg("0 0 100 140", w, h, snowman(stage, o), 'style="position:absolute;left:' + (24 * scale) + 'px;top:0"') + '</div>'; };
   document.getElementById("snowmen").innerHTML = st.map(function(s){ return '<div class="cell sand" style="width:196px"><h3>' + s[1] + '</h3>' + one(s[0], 1) + '<p>' + s[2] + '</p></div>'; }).join("");
-  /* Steward: 0.32× at 1920, on the ~76 px of free sand under the cards */
   var row = '<div class="cell sand"><h3>Steward · 0.32× on 76 px of free sand (with the boat at its own size)</h3><div style="display:flex;gap:14px;align-items:flex-end;height:76px">';
   ["S1", "S2", "S3", "caper", "M1", "M2", "M3"].forEach(function(k){ row += svg("0 0 100 140", 30.7, 43, snowman(k)); });
-  row += svg("-6 -16 52 56", 52, 56, boat({ lamp: .75, hat: true, deck: true })) + '</div><p style="max-width:600px">At 31 × 43 px the snowman is three white balls with a teal edge, a teal hat, a rust band and an amber point — each stage still reads. The face is gone at this size, as it should be.</p></div>';
+  row += svg("-6 -16 52 56", 52, 56, boat({ lamp: .75, hat: true, deck: true })) + '</div><p style="max-width:600px">At 31 × 43 px the snowman is three white balls with a teal edge, a teal hat, a rust band and an amber point: each stage still reads. The face is gone at this size, as it should be.</p></div>';
   document.getElementById("steward").innerHTML = row;
 })();
 
-/* ===== 6 · the sea's visitors ===== */
+/* ===== 7 · the sea's visitors ===== */
 (function(){
   var cell = function(t, body, p, cls){ return '<div class="cell ' + (cls || "water") + '"><h3>' + t + '</h3>' + body + (p ? '<p>' + p + '</p>' : "") + '</div>'; };
   var wb = function(vb, w, h, b){ return '<div style="background:linear-gradient(#F8F2E4 0 70%, #BFEFEA 70%)">' + svg(vb, w, h, b) + '</div>'; };
   var html = "";
   html += cell("The seal · surfaces and looks (× 5)", wb("-2 -2 24 22", 120, 110, sealHead(-14)), "Bottling beside the boat: head up, the curious tilt toward the boat.", "cream");
   html += cell("Hauled out on its floe (× 5)", wb("0 0 64 32", 320, 160, sealOnFloe("lie")), "Lying on pancake ice: front and rear halves overlap at the middle.", "cream");
-  html += cell("The banana pose (× 5)", wb("0 0 64 32", 320, 160, sealOnFloe("banana")), "Head and tail up together — what a cold seal really does.", "cream");
+  html += cell("The banana pose (× 5)", wb("0 0 64 32", 320, 160, sealOnFloe("banana")), "Head and tail up together: what a cold seal really does.", "cream");
   html += cell("Windy: the floe tips (× 5)", wb("0 0 64 32", 320, 160, sealOnFloe("slide", -14)), "The floe tips left; the seal slides off the low side head-first; the floe drifts on, empty.", "cream");
   html += cell("The narwhal · the tusk first, then a breath (× 3)", wb("-4 -4 128 40", 384, 120, narwhal("puff")), "Far lane: a 60 px animal behind a 38 px boat. The breath is white and lingers: a cold day.", "cream");
   html += cell("The salute, then the dive (× 3)", wb("-4 -4 128 40", 384, 120, narwhal("salute")) + wb("-4 -4 128 40", 384, 120, narwhal("dive")), "", "cream");
-  html += cell("Tusking · the rare (× 2.4)", wb("40 -4 86 38", 400, 177, tusking()), "Two meet and cross tusks: an X over the water is the whole picture.", "cream");
+  html += cell("Tusking · the rare (× 4.6)", wb("40 -4 86 38", 400, 177, tusking()), "Two meet and cross tusks: an X over the water is the whole picture.", "cream");
   html += cell("Pancake floes (× 4)", wb("0 0 120 30", 480, 120, floe(40, 4, 4, 3) + floe(28, 52, 8, 8) + floe(18, 88, 10, 13)), "Flotsam: they drift right, with the buoy and Wilson.", "cream");
-  html += cell("The serpent in the snowman's scarf (× 2.5)", wb("-4 -4 140 50", 350, 125, serpent(true)), "The caper week: the rust knit with the cream bars, the ends streaming behind the head as it glides left.", "cream");
+  html += cell("The serpent in the snowman's scarf (× 2.5)", wb("-4 -4 140 50", 350, 125, serpent(true)), "The caper week (Jan 25–28): the rust knit with the cream bars, the ends streaming behind the head as it glides left.", "cream");
   document.getElementById("sea").innerHTML = html;
 })();
 
-/* ===== the composites: the real board at a winter date, the winter drawings over it ===== */
+/* ===== the composites: the real board (7.62.0) at a winter date, the winter drawings over it ===== */
 function composite(name, o){
   var G = window.GEO && window.GEO[name];
   if (!G){ document.getElementById("b-" + name).innerHTML = '<p class="note">(no frame: run tools/proofs/winter.js capture)</p>'; return; }
-  var d = G.dock, m = G.boat, s = '<svg class="ov" viewBox="0 0 1920 1080" width="1920" height="1080"><defs><clipPath id="nd-' + name + '"><path clip-rule="evenodd" d="M0,0 H1920 V1080 H0 Z M' + (d.x - 6) + ',' + (d.y - 6) + ' h' + (d.w + 12) + ' v' + (d.h + 14) + ' h' + (-(d.w + 12)) + ' Z"/></clipPath></defs><g clip-path="url(#nd-' + name + ')">';
-  s += nest(0, G.waves.y, 1920, G.waves.h, "0 0 1920 120", duneCap(o.cap, 5), 'preserveAspectRatio="none"');
-  s += nest(G.clock.x + G.clock.w - 200, G.clock.y, 200, 200, "0 0 140 140", corner(o.frost, o.corner || {}));
-  if (o.snowman) s += nest(1920 - 76.8 - 96, 1046 - 126.7, 96, 134.4, "0 0 100 140", snowman(o.snowman, o.sm || {}));
+  var W = G.W, H = G.H, d = G.dock, bb = boatBox(G);
+  var s = '<svg class="ov" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '"><defs><clipPath id="nd-' + name + '"><path clip-rule="evenodd" d="M0,0 H' + W + ' V' + H + ' H0 Z M' + (d.x - 6) + ',' + (d.y - 6) + ' h' + (d.w + 12) + ' v' + (d.h + 14) + ' h' + (-(d.w + 12)) + ' Z"/></clipPath>' +
+    '<clipPath id="nb-' + name + '"><path clip-rule="evenodd" d="M0,0 H' + W + ' V' + H + ' H0 Z M' + r1(bb[0]) + ',' + r1(bb[1]) + ' H' + r1(bb[2]) + ' V' + r1(bb[3]) + ' H' + r1(bb[0]) + ' Z"/></clipPath></defs><g clip-path="url(#nd-' + name + ')">';
+  s += capAt(G, o.cap) + frost(G, o.frost, o.fo || {});
+  if (o.snowman) s += snowmanAt(G, o.snowman, o.sm);
+  if (o.beach != null) s += beachLights(G, o.beach, { cordClip: "nb-" + name });
   if (o.act) s += o.act(G);
-  s += '<g transform="matrix(' + [m.a, m.b, m.c, m.d, m.e, m.f].map(function(v){ return r1(v * 100) / 100; }).join(" ") + ')">' + boatWinter(o.boat) + '</g>';
+  s += boatAt(G, o.boat);
   (o.flakes || []).forEach(function(f, i){ s += f.length === 3 ? fleckAt(f[0], f[1], f[2]) : flakeAt(f[0], f[1], f[2], KINDS[(i + f[3]) % 4], 30 + i * 7, f[4] || 0); });
-  if (o.after) s += o.after(G);
   s += '</g></svg>';
-  document.getElementById("b-" + name).innerHTML = '<div class="board"><img src="winter-frames/' + name + '.png" alt="">' + s + '</div>';
+  document.getElementById("b-" + name).innerHTML = '<div class="board" style="width:' + W + 'px;height:' + H + 'px"><img src="winter-frames/' + name + '.png" alt="" style="width:' + W + 'px;height:' + H + 'px">' + s + '</div>';
   document.getElementById("n-" + name).innerHTML = o.note;
 }
-composite("dec09", { cap: .55, frost: 2, snowman: "S1", boat: { lamp: 1, lights: 2 },
+var SNOW10 = [[64, 160, 50, 0, 20], [196, 330, 58, 1, -14], [112, 520, 46, 2, 30], [232, 700, 54, 3, 8], [78, 870, 44, 0, -22], [1668, 330, 56, 1, 18], [1846, 470, 50, 2, -6], [1724, 640, 62, 3, 26], [1810, 800, 48, 0, -18], [1660, 880, 44, 1, 10],
+              [150, 240, 10], [40, 640, 9], [260, 520, 11], [1760, 400, 9], [1880, 690, 10], [1700, 760, 8]];
+composite("dec09", { cap: .55, frost: .35, snowman: "S1", beach: 2, boat: { lamp: 1 },
   act: function(G){ return floe(44, 930, 1080 - 4 - 15.4, 3) + floe(28, 982, 1080 - 2 - 9.8, 8) + floe(18, 1016, 1080 - 3 - 6.3, 13); },
-  flakes: [[118, 250, 54, 0, 8], [214, 600, 46, 1, -10], [96, 860, 58, 2, 3], [1702, 330, 50, 3, 0], [1822, 560, 60, 0, 14], [1690, 790, 46, 1, -4], [168, 420, 9], [1852, 360, 8]],
-  note: "<b>Over the real board</b> (Deckhand.html at #t=2026-12-09T10:40, locked, breezy, motion paused): the frost at its second week in the clock card's corner (the branch's box, above the date line and far from the digits); flurries in the outer 15% columns at the leaves' rate (six on the board, never in the 31–69% the digits use); the first ground snow on the dune's crests; a snowball rolled up the sand at the right edge, its track behind it, gull prints beside it; the boat's string up with two of nine bulbs lit (seven school days to break); a raft of pancake floes drifting right in the near lane." });
-composite("jan13", { cap: 1, frost: 4, snowman: "S3", sm: { fresh: true }, boat: { lamp: .75, hat: true, deck: true },
+  flakes: [[118, 250, 54, 0, 8], [214, 600, 46, 1, -10], [96, 860, 58, 2, 3], [1702, 690, 50, 3, 0], [1822, 560, 60, 0, 14], [1690, 860, 46, 1, -4], [168, 420, 9], [1852, 760, 8]],
+  note: "<b>Over the real board</b> (Deckhand 7.62.0 at #t=2026-12-09T10:40, locked, breezy, motion paused): the frost in its second week, growing in along the clock card's top and right edges; flurries in the outer 15% columns at the leaves' rate (never in the 31–69% the digits use); the first ground snow on the dune's crests; a snowball rolled up the sand at the right edge, its track behind it, gull prints beside it; <b>the countdown string on the beach</b> with two of nine bulbs lit (seven school days to break), its cord running from the dock along the sand behind the boat; the boat keeps November's lantern; pancake floes drifting right in the near lane." });
+composite("dec18", { cap: 1, frost: .5, snowman: "S3", sm: { visit: true, fresh: true }, beach: 9, boat: { lamp: 1, deck: true, gull: false },
+  flakes: [[64, 160, 50, 0, 0], [196, 330, 58, 1, 0], [112, 520, 46, 2, 0], [232, 700, 54, 3, 0], [78, 870, 44, 0, 0], [1668, 560, 56, 1, 0], [1846, 420, 50, 2, 0], [1724, 700, 62, 3, 0], [1810, 820, 48, 0, 0], [1700, 330, 44, 1, 0], [150, 240, 10], [40, 640, 9], [1760, 470, 9], [1880, 650, 10]],
+  note: "<b>The last school day before break</b>, the day's first class (6th period on this Black-week Friday; #t=2026-12-18T09:40): all nine bulbs lit, the string reaching the snowman; the snowman finished (the carrot, the scarf, the hat) and <b>the gull sitting on his hat</b>, so the masthead is empty; it snows all day (every period is a snowfall period): ten flakes falling straight, fresh snow on his hat and sticks, snow on the boat's deck; the frost at its December stage." });
+composite("jan13", { cap: 1, frost: 1, snowman: "S3", sm: { fresh: true }, boat: { lamp: .75, hat: true, deck: true },
   act: function(G){
     var s = '<defs><linearGradient id="sqV" x1="0" y1="972" x2="0" y2="1080" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#E9F8F5" stop-opacity="0"/><stop offset=".3" stop-color="#E9F8F5" stop-opacity=".72"/><stop offset="1" stop-color="#DDF3EF" stop-opacity=".82"/></linearGradient>' +
             '<linearGradient id="sqH" x1="560" y1="0" x2="800" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient>' +
@@ -525,15 +666,16 @@ composite("jan13", { cap: 1, frost: 4, snowman: "S3", sm: { fresh: true }, boat:
     for (i = 0; i < 340; i++){ x = 560 + R() * 1380; y = 984 + R() * 100; l = 7 + R() * 10;
       s += '<path d="M' + r1(x) + ',' + r1(y) + ' l' + r1(-l * .82) + ',' + r1(l * .5) + '" stroke="#fff" stroke-width="' + r1(1.6 + R() * 1.4) + '" stroke-linecap="round" opacity="' + r1(.7 + R() * .3) + '"/>'; }
     return s + '</g>'; },
-  flakes: [[64, 160, 50, 0, 20], [196, 330, 58, 1, -14], [112, 520, 46, 2, 30], [232, 700, 54, 3, 8], [78, 870, 44, 0, -22], [1668, 270, 56, 1, 18], [1846, 430, 50, 2, -6], [1724, 610, 62, 3, 26], [1810, 800, 48, 0, -18], [1660, 880, 44, 1, 10],
-           [150, 240, 10], [40, 640, 9], [260, 520, 11], [1760, 360, 9], [1880, 650, 10], [1700, 740, 8]],
-  note: "<b>Windy and snowing</b> (#t=2027-01-13T13:20, windy weather: the boat heeled 11°): the frost at full, the dune white, fresh snow on the snowman's hat and sticks; ten flakes (the windy cap) driven left in both columns; the gull in its bobble hat and snow on the deck. <b>The squall</b> (January's weather act: only in a windy snowfall period, once at most, in its middle third) is crossing right to left over the water: a soft-topped band of driven snow over the boat and the front waves, under the dock; while it passes, the columns snow their hardest and the boat heels and collects snow on its sails." });
-composite("jan20", { cap: 1, frost: 4, snowman: "caper", boat: { lamp: .75 },
+  flakes: SNOW10,
+  note: "<b>The frost at its peak</b> (Jan 11–29), fitted to the clock card's measured free corner: 485 px in from the right edge and 598 px down it, 113 px deep along 783 px of the top edge, 28 px clear of the date line and every line of the face and a 12 px ring round the stage chip (the dashed lines in section 5). <b>Windy and snowing</b> (windy weather: the boat heeled 11°): the dune white, fresh snow on the snowman, ten flakes (the windy cap), the gull in its bobble hat, snow on the deck. <b>The squall</b> (January's weather act: only in a windy snowfall period, once at most, in its middle third) is crossing right to left over the water; while it passes, the columns snow their hardest and the boat heels and collects snow on its sails." });
+composite("jan27", { cap: 1, frost: 1, snowman: "caper", boat: { lamp: .75 },
   act: function(G){ return nest(1072, 1080 - 9 - 45.3, 136, 45.3, "0 0 132 44", '<defs><clipPath id="jsc"><rect x="-10" y="-10" width="160" height="44.4"/></clipPath></defs><g clip-path="url(#jsc)">' + serpent(true) + '</g>'); },
-  flakes: [[150, 380, 54, 1, 6], [1760, 420, 50, 2, -8], [1840, 700, 46, 3, 12], [210, 760, 9], [1700, 560, 8]],
-  note: "<b>The caper</b> (#t=2027-01-20T09:50, breezy): the snowman stands with a bare neck — the rust scarf is gone since Monday — and the serpent glides by behind the boat wearing it, the cream-barred ends streaming. All week the serpent is weighted ×2 and may greet a class as it sits down; on Friday the scarf is back on the snowman." });
-composite("feb26", { cap: 0, frost: 1, corner: { drip: true, ice: .3 }, snowman: "M3", boat: { lamp: .5 },
-  flakes: [],
-  note: "<b>The thaw's end</b> (#t=2027-02-26T14:10, calm): no snow falls; the frost has shrunk back into the corner and its last icicles drip; the dune is sand again; where the snowman stood there is a puddle with his hat on a mound, the carrot, the coal, the sticks, the scarf — and a teal sprout. Every period greets with the turtle, back from the south. On March 1 all of it is gone." });
+  flakes: [[150, 380, 54, 1, 0], [1760, 760, 50, 2, 0], [1840, 640, 46, 3, 0], [210, 760, 9], [1700, 700, 8]],
+  note: "<b>The caper</b> (#t=2027-01-27T09:50, breezy): the snowman has stood with a bare neck since Monday the 25th, and the serpent glides by behind the boat wearing his rust scarf, the cream-barred ends streaming. All week (Mon–Thu) the serpent is weighted ×2 and may greet a class as it sits down; on Friday the 29th the scarf is back on the snowman. The frost is still at its peak." });
+composite("feb26", { cap: 0, frost: .22, fo: { drip: true }, snowman: "M3", boat: { lamp: .5 }, flakes: [],
+  note: "<b>The thaw's end</b> (#t=2027-02-26T14:10, calm): no snow falls; the frost has shrunk back to a rim along the card's edges, its short icicles dripping; the dune is sand again; where the snowman stood there is a puddle with his hat on a mound, the carrot, the coal, the sticks, the scarf, and a teal sprout. Every period greets with the turtle, back from the south. On March 1 all of it is gone." });
+composite("m1280", { cap: 1, frost: 1, snowman: "S3", boat: { lamp: .75 },
+  flakes: [[96, 200, 50, 0, 0], [150, 430, 46, 1, 0], [80, 620, 54, 2, 0], [1170, 540, 48, 3, 0], [1215, 680, 44, 0, 0], [130, 320, 9]],
+  note: "<b>1280 × 800</b> (#t=2027-01-13T13:20): here the date line sits 23 px under the card's top, so the free corner is only the strip right of the face (219 px wide, 28 px off the content). The peak fits itself to it: a 197 px strip running 424 px down the right edge, no top band, the stage chip ringed. <b>Steward's smaller clock card gets no frost on its face</b> (a card's area is off-limits there): its winter is the screen's frost rim and icicles in the free margin (design doc, C1)." });
 </script>
 </body></html>
