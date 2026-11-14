@@ -1,0 +1,539 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Winter — proofs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- The proposed winter drawings for Deckhand (docs/reviews/winter-design.md, winter-animation.md).
+     Every piece is drawn ONCE by a function below and reused: the true-size lineup, the close-ups,
+     the snowman's calendar, and the four board composites, which lay the drawings over the real
+     Deckhand.html photographed at winter dates (tools/proofs/winter.js capture → winter-frames/).
+     Render: node tools/proofs/winter.js render  → winter-proofs.png and winter-proofs-8m.png. -->
+<style>
+:root{--cream:#F8F2E4; --grid:#EADFC6; --sand:#E6D5B8; --shadow:#D8C5A0; --turq:#40E0D0; --paleturq:#D8F6F1;
+      --teal:#127A85; --navy:#17324D; --white:#fff; --turq-light:#BFEFEA; --turq-mid:#8FE5DC;
+      --nov:#B5542A; --novAmber:#D98E2B; --lit:#FFE45C;}
+*{box-sizing:border-box}
+body{font-family:"DM Sans",system-ui,sans-serif; background:var(--cream); color:var(--navy); margin:0; padding:20px; width:1960px;}
+h1{font-size:22px; margin:0 0 4px; font-weight:900} .cap{font-size:13px; color:var(--teal); margin:0 0 6px; max-width:1500px; line-height:1.45}
+section{margin:0 0 26px}
+section > h2{font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--teal); margin:0 0 8px; font-weight:700}
+.row{display:flex; gap:18px; align-items:flex-end; flex-wrap:wrap}
+.cell{background:#fff; border-radius:14px; padding:12px 14px; box-shadow:6px 8px 0 var(--shadow)}
+.cell.sand{background:var(--sand)} .cell.cream{background:var(--cream); border:1px solid var(--grid)} .cell.water{background:var(--turq-light)}
+.cell h3{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); margin:0 0 6px; font-weight:700}
+.cell p{font-size:11.5px; margin:6px 0 0; max-width:340px; line-height:1.4; color:var(--navy)}
+.lbl{font-size:11px; fill:var(--teal); font-family:"DM Sans",system-ui,sans-serif; font-weight:700}
+svg{overflow:visible; display:block}
+.board{position:relative; width:1920px; height:1080px; box-shadow:6px 8px 0 var(--shadow); border-radius:6px; overflow:hidden}
+.board img{position:absolute; left:0; top:0; width:1920px; height:1080px}
+.board svg.ov{position:absolute; left:0; top:0}
+.note{font-size:13px; margin:8px 0 0; max-width:1900px; line-height:1.45}
+.note b{color:var(--teal)}
+.grid{background-image:linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size:48px 48px; background-color:var(--cream)}
+
+/* ---- the boat (Deckhand's own classes, copied) ---- */
+.btHull{fill:var(--navy)} .btSail{fill:var(--turq)} .btSail2{fill:var(--paleturq)}
+.btStay{fill:none; stroke:var(--navy); stroke-width:.9; stroke-linecap:round}
+.btMastFix{stroke:var(--navy); stroke-width:1.3; stroke-linecap:round}
+.btBurgee{fill:var(--navy)} .btStripe{stroke:var(--paleturq); stroke-width:.9; opacity:.9}
+.btWake path{fill:none; stroke:#fff; stroke-width:1.5; stroke-linecap:round; opacity:.8}
+.btGull path, .btGull circle{fill:var(--navy)}
+.glBody{fill:#fff !important; stroke:var(--navy); stroke-width:1.1; vector-effect:non-scaling-stroke}
+.glLegs{fill:none !important; stroke:var(--navy); stroke-width:.8}
+.btGull .nvScarfKnit{fill:var(--nov)} .btGull .nvScarfBar{fill:var(--cream)}
+.nvLampFrame{fill:var(--navy)} .nvLampBail{fill:none; stroke:var(--navy); stroke-width:.7; stroke-linecap:round; stroke-linejoin:round}
+.nvLampPane{fill:var(--novAmber)} .nvLampFlame{fill:var(--lit)}
+/* winter on the boat */
+.btGull .wnHat{fill:var(--teal)} .btGull .wnHatCuff{fill:var(--navy); opacity:.35} .btGull .wnPom{fill:var(--cream); stroke:var(--navy); stroke-width:.4}
+.wnBulb{fill:var(--novAmber)} .wnBulb.off{fill:var(--navy); opacity:.42} .wnCore{fill:var(--lit)}
+.wnDeck{stroke:#fff; stroke-width:1.15; stroke-linecap:round}
+
+/* ---- snow, ice, the snowman ---- */
+.smSnow{fill:#fff} .smShade{fill:var(--paleturq)} .smShade2{fill:var(--turq-light)}
+.smEdge{stroke:var(--teal); stroke-opacity:.62; stroke-width:1.15; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.smCoal{fill:var(--navy)} .smCarrot{fill:var(--novAmber)} .smCarrotLine{fill:none; stroke:var(--navy); stroke-opacity:.45; stroke-width:.6}
+.smStick{fill:var(--navy); opacity:.85} .smTwig{fill:none; stroke:var(--navy); stroke-opacity:.85; stroke-width:1.2; stroke-linecap:round}
+.smScarf{fill:var(--nov)} .smBar{fill:var(--cream)} .smFringe{fill:none; stroke:var(--nov); stroke-width:.7; stroke-linecap:round}
+.smHat{fill:var(--teal)} .smRib{fill:none; stroke:var(--navy); stroke-opacity:.3; stroke-width:.8} .smPom{fill:var(--cream)}
+.smTrack{fill:var(--sand)} .smPuddle{fill:var(--turq-light)} .smGlint{fill:none; stroke:#fff; stroke-width:1.2; stroke-linecap:round}
+.smPrint{fill:none; stroke:var(--navy); stroke-opacity:.38; stroke-width:.75; stroke-linecap:round}
+.smDrop{fill:var(--paleturq); stroke:var(--teal); stroke-opacity:.65; stroke-width:.7; vector-effect:non-scaling-stroke}
+.smSprout{fill:var(--teal)} .smSproutStem{fill:none; stroke:var(--teal); stroke-width:1.4; stroke-linecap:round}
+.smCapW{fill:none; stroke:#fff; stroke-width:1.6; stroke-linecap:round}
+/* flakes */
+.fkU{fill:var(--teal); stroke:var(--teal); stroke-width:1.6; stroke-linejoin:round; opacity:.6}
+.fkF{fill:#fff} .fkR{fill:none; stroke:var(--turq-mid); stroke-width:.6; stroke-linecap:round}
+.fleck{fill:#fff; stroke:var(--teal); stroke-opacity:.45; stroke-width:1}
+/* the corner: frost and icicles */
+.frMain{fill:none; stroke:var(--teal); stroke-opacity:.42; stroke-width:1.1; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.frBr{fill:none; stroke:var(--teal); stroke-opacity:.34; stroke-width:.85; stroke-linecap:round; vector-effect:non-scaling-stroke}
+.frTw{fill:none; stroke:var(--teal); stroke-opacity:.26; stroke-width:.7; stroke-linecap:round; vector-effect:non-scaling-stroke}
+.icU{fill:var(--teal); stroke:var(--teal); stroke-width:1.5; stroke-linejoin:round; opacity:.55}
+.icF{fill:var(--paleturq)} .icHi{fill:none; stroke:#fff; stroke-width:1.1; stroke-linecap:round}
+.icLip{fill:#fff} .icLipU{fill:var(--teal); stroke:var(--teal); stroke-width:1.4; opacity:.5} .icLipShade{fill:none; stroke:var(--paleturq); stroke-width:1.8}
+/* the sea's winter visitors */
+.navy{fill:var(--navy)} .pt{fill:var(--paleturq)} .ptS{fill:none; stroke:var(--paleturq); stroke-width:.45; stroke-linecap:round}
+.flTop{fill:#fff} .flSide{fill:var(--paleturq)} .flRim{fill:none; stroke:var(--paleturq); stroke-width:.6}
+.flU{fill:var(--teal); stroke:var(--teal); stroke-width:1.4; stroke-linejoin:round; opacity:.55}
+.water{fill:var(--turq-light)} .waterMid{fill:var(--turq-mid)}
+.ring{fill:none; stroke:#fff; stroke-width:1.4; opacity:.9}
+.puff{fill:#fff} .puffU{fill:var(--teal); stroke:var(--teal); stroke-width:1.3; opacity:.4}
+.ssEye{fill:var(--paleturq)} .ssMouth{fill:none; stroke:var(--paleturq); stroke-width:1; stroke-linecap:round}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <radialGradient id="nvLampGlowG"><stop offset="0" stop-color="#FFE45C" stop-opacity=".95"/><stop offset=".35" stop-color="#F2C35A" stop-opacity=".55"/><stop offset="1" stop-color="#E6B35A" stop-opacity="0"/></radialGradient>
+  <radialGradient id="wnBulbG"><stop offset="0" stop-color="#FFE45C" stop-opacity=".9"/><stop offset=".5" stop-color="#FFE45C" stop-opacity=".35"/><stop offset="1" stop-color="#FFE45C" stop-opacity="0"/></radialGradient>
+  <radialGradient id="wnBreathG"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".7" stop-color="#fff" stop-opacity=".92"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="wnSqG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4FAFA" stop-opacity="0"/><stop offset=".35" stop-color="#F4FAFA" stop-opacity=".62"/><stop offset="1" stop-color="#EEF7F7" stop-opacity=".7"/></linearGradient>
+  <linearGradient id="wnSqEdge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="1"/></linearGradient>
+  <mask id="wnSqMask" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#wnSqEdge)"/></mask>
+</defs></svg>
+
+<h1>Winter — proposed drawings (Nov 13, 2026)</h1>
+<p class="cap">For <b>docs/reviews/winter-design.md</b> and <b>winter-animation.md</b>. Every piece is drawn in the board's own palette (no new colour: snow is the board's white, its shadows are pale turquoise, ice is the sea's own; the warm notes are November's rust and amber and October's lit yellow). Section 1 is at TRUE size with the boat; the close-ups say their scale; the four composites at the end are the real Deckhand.html, photographed at winter dates with its own clock override, with the winter drawings laid over it. <b>winter-proofs-8m.png</b> is this sheet at one third: the 8 m check.</p>
+
+<section id="s1-lineup"><h2>1 · At true size, with the boat (1080p board pixels)</h2><div id="lineup"></div>
+<p class="note">On the water, everything is <b>the boat's size</b> or smaller (the boat's box is 38 px, its hull 30): the seal on its floe 52 px (near lane, Wilson's spot), the pancake floes 18–44 px, the narwhal 60 px in the far lane behind it. On the sand, things are nearer the room and stand at the scarecrow's scale: the snowman 96 × 134 px at the right edge. Flakes fall at the leaves' scale (44–62 px; Croix found 34–46 px leaves "small"), with 8–12 px flecks between.</p></section>
+
+<section id="s2-boat"><h2>2 · The boat in winter (× 6)</h2><div class="row" id="boats" style="align-items:flex-start"></div></section>
+<section id="s3-flakes"><h2>3 · Snowflakes: four crystals and a fleck, each one hand-broken (× 3, and at true size on the card, the grid and the water)</h2><div class="row" id="flakes"></div></section>
+<section id="s4-corner"><h2>4 · The clock card's corner: frost and icicles (board size 200 px, the branch's box; then × 2)</h2><div class="row" id="corners"></div></section>
+<section id="s5-snowman"><h2>5 · The snowman's winter (board size, 96 px wide), and Steward's 0.32×</h2><div class="row" id="snowmen"></div><div class="row" id="steward" style="margin-top:18px"></div></section>
+<section id="s6-sea"><h2>6 · The sea's winter visitors (close-ups) and the serpent's borrowed scarf</h2><div class="row" id="sea"></div></section>
+<section id="c1-dec09"><h2>Composite 1 · Wednesday, December 9 — an ordinary December day (week 2, breezy)</h2><div id="b-dec09"></div>
+<p class="note" id="n-dec09"></p></section>
+<section id="c2-jan13"><h2>Composite 2 · Wednesday, January 13 — a windy snowfall period, the squall crossing the boat</h2><div id="b-jan13"></div><p class="note" id="n-jan13"></p></section>
+<section id="c3-jan20"><h2>Composite 3 · Wednesday, January 20 — the caper week: the snowman's scarf is gone, and the serpent is wearing it</h2><div id="b-jan20"></div><p class="note" id="n-jan20"></p></section>
+<section id="c4-feb26"><h2>Composite 4 · Friday, February 26 — the last school day of February: the thaw's end</h2><div id="b-feb26"></div><p class="note" id="n-feb26"></p></section>
+
+<script src="winter-frames/geometry.js"></script>
+<script>
+/* ===== helpers ===== */
+function rng(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function r1(n){ return Math.round(n * 10) / 10; }
+function P2(p){ return r1(p[0]) + "," + r1(p[1]); }
+function poly(ps){ return "M" + ps.map(P2).join(" L") + " Z"; }
+function svg(vb, w, h, body, extra){ return '<svg viewBox="' + vb + '" width="' + w + '" height="' + h + '" ' + (extra || "") + '>' + body + '</svg>'; }
+function nest(x, y, w, h, vb, body, extra){ return '<svg x="' + r1(x) + '" y="' + r1(y) + '" width="' + r1(w) + '" height="' + r1(h) + '" viewBox="' + vb + '" overflow="visible" ' + (extra || "") + '>' + body + '</svg>'; }
+var UID = 0;
+
+/* ===== the boat (40-unit box, Deckhand's markup) with winter's additions ===== */
+var GULL_PERCH = '<path class="glLegs" d="M-.6,-3.4 L-.8,0 M1.8,-3.4 L1.8,0"/>' +
+  '<path class="glBody" d="M-11,-6.2 L-6,-7.4 C-3,-9.6 2,-10 4.4,-9.6 C4.2,-11.8 5.4,-13.2 7.2,-13.2 C8.8,-13.2 9.6,-12.2 9.8,-11.2 L9.6,-10.2 C8.8,-9.2 8.2,-8.6 8.2,-7.6 C8,-5 5,-3.2 .5,-3.2 C-3.5,-3.2 -6.4,-4.4 -8,-5.4 Z"/>' +
+  '<path d="M-12.4,-6.4 C-7,-9.4 0,-9.6 5,-8 C4,-5.8 0,-4.6 -4,-4.8 C-7,-5 -10,-5.8 -12.4,-6.4 Z"/>' +
+  '<path d="M9.7,-11.6 L13,-10.8 L9.6,-10.1 Z"/><circle cx="7.6" cy="-11.8" r=".7"/>';
+var GULL_SCARF = '<g class="nvScarf"><path class="nvScarfKnit" d="M4.8,-9.4 L-1.6,-10.8 L-1.4,-9.4 L4.6,-8.4 Z"/><path class="nvScarfKnit" d="M5,-8.8 L-.4,-7.4 L0,-6.2 L5.2,-8 Z"/><path class="nvScarfBar" d="M1.4,-10.1 L.6,-10.3 L.8,-9 L1.6,-8.9 Z M2.2,-7.9 L1.4,-7.6 L1.8,-6.6 L2.6,-7 Z"/>' +
+  '<path class="nvScarfKnit" d="M4.2,-10.2 C5.6,-11 7.6,-11.2 8.9,-10.3 L8.6,-8.5 C7.3,-9.2 5.6,-9 4.4,-8.3 Z"/><path class="nvScarfBar" d="M6,-10.7 L6.8,-10.8 L6.7,-8.9 L5.9,-8.8 Z"/></g>';
+/* winter: the bobble hat, the snowman's own (teal, a cream pom tipped back) — the gull's tell */
+var GULL_HAT = '<g class="wnGullHat"><path class="wnHat" d="M4.8,-12.7 C4.6,-15.2 5.9,-16.5 7.3,-16.5 C8.7,-16.5 9.9,-15.2 9.7,-12.7 Z"/>' +
+  '<path class="wnHatCuff" d="M4.5,-13.4 C6.3,-13.9 8.3,-13.9 10,-13.4 L10,-12.4 C8.3,-12.9 6.3,-12.9 4.5,-12.4 Z"/><circle class="wnPom" cx="5.9" cy="-16.9" r="1.2"/></g>';
+function gull(o){ return '<g class="btGull"><g transform="translate(20,2.6) scale(.8)"><g class="glPerch">' + GULL_PERCH + (o.scarf !== false ? GULL_SCARF : "") + (o.hat ? GULL_HAT : "") + '</g></g></g>'; }
+function lantern(lamp){
+  return '<g class="nvLantern"><path class="nvLampBail" d="M20.5,7.4 H23.2 V8.6"/><circle cx="23.2" cy="11.2" r="8.5" fill="url(#nvLampGlowG)" opacity="' + r1(lamp * .95) + '" transform="translate(23.2 11.2) scale(' + r1(.7 + lamp * .45) + ') translate(-23.2 -11.2)"/>' +
+    '<path class="nvLampFrame" d="M21.5,9.7 L22.5,8.5 H23.9 L24.9,9.7 Z"/><rect class="nvLampPane" x="21.7" y="9.6" width="3" height="3.3" rx=".5"/><ellipse class="nvLampFlame" cx="23.2" cy="11.35" rx=".8" ry="1.2" opacity="' + r1(.25 + lamp * .75) + '"/><path class="nvLampFrame" d="M21.4,12.7 H25 V13.5 H21.4 Z"/></g>';
+}
+/* the string of lights: nine bulbs hung on the forestay, lit from the bow up (n = how many) */
+function lights(n){
+  var s = '<g class="wnLights">', i, t, x, y, lit;
+  for (i = 0; i < 9; i++){
+    t = .22 + i * .09; x = 20.6 + 15 * t; y = 4 + 20.6 * t + .95; lit = i >= 9 - n;
+    if (lit) s += '<circle cx="' + r1(x) + '" cy="' + r1(y) + '" r="2.5" fill="url(#wnBulbG)"/>';
+    s += '<ellipse class="wnBulb' + (lit ? "" : " off") + '" cx="' + r1(x) + '" cy="' + r1(y) + '" rx=".74" ry=".98"/>';
+    if (lit) s += '<circle class="wnCore" cx="' + r1(x) + '" cy="' + r1(y + .15) + '" r=".42"/>';
+  }
+  return s + '</g>';
+}
+function boatBase(){
+  return '<g class="btWake"><path d="M-3,33 Q1,30.6 5,33"/><path d="M35,32.4 Q39,30 43,32.6"/></g>' +
+    '<path class="btStay" d="M20.6,4 L35.6,24.6"/><path class="btSail" d="M20,4 V23.5 H8.5 Q12,13 20,4 Z"/>' +
+    '<path class="btSail2" d="M21.4,7.4 L34,23.8 L22.6,23.8 Q24,15.5 21.4,7.4 Z"/><path class="btMastFix" d="M20,3 V27"/>' +
+    '<path class="btBurgee" d="M20,2.6 L24.6,3.9 L20,5.2 Z"/>';
+}
+function boatWinter(o){   // only the winter additions (for laying over the real boat)
+  o = o || {};
+  var s = "";
+  if (o.lamp) s += lantern(o.lamp);
+  if (o.deck) s += '<path class="wnDeck" d="M6.2,26.5 L36.4,24.9"/>';
+  if (o.lights != null && o.lights >= 0) s += lights(o.lights);
+  if (o.gull !== false) s += gull(o);
+  return s;
+}
+function boat(o){ o = o || {};
+  return boatBase() + (o.lamp ? lantern(o.lamp) : "") + '<path class="btHull" d="M5,26.8 L37,25 Q34.6,31 29.5,34.8 L11.5,34.8 Q7,33 5,26.8 Z"/><path class="btStripe" d="M7.2,29 L34.4,28.2"/>' +
+    (o.deck ? '<path class="wnDeck" d="M6.2,26.5 L36.4,24.9"/>' : "") + (o.lights != null && o.lights >= 0 ? lights(o.lights) : "") + (o.gull !== false ? gull(o) : ""); }
+
+/* ===== snowflakes: six arms, rules not drawings — and one arm on every flake broken short ===== */
+function flake(kind, seed){
+  var R = rng(seed), broken = Math.floor(R() * 6), polys = [], ridge = "", k, a, ca, sa, brk, L, P;
+  for (k = 0; k < 6; k++){
+    a = -Math.PI / 2 + k * Math.PI / 3 + (R() - .5) * .06; ca = Math.cos(a); sa = Math.sin(a);
+    P = (function(ca, sa){ return function(r, o){ return [20 + ca * r - sa * o, 20 + sa * r + ca * o]; }; })(ca, sa);
+    brk = k === broken ? .62 : 1;
+    if (kind === "dendrite"){
+      L = 17 * (.93 + R() * .1) * brk;
+      polys.push([P(1, -1.5), P(L, -.5), P(L + 1.5, 0), P(L, .5), P(1, 1.5)]);
+      [[.34, 6.4], [.58, 5], [.8, 2.8]].forEach(function(b){ var r0 = 17 * b[0], len = b[1] * (.8 + R() * .4); if (r0 > L - 2) return;
+        [-1, 1].forEach(function(sd){ polys.push([P(r0 - .8, sd * .4), P(r0 + len * .5, sd * len * .866), P(r0 + 1, sd * .4)]); }); });
+      ridge += "M" + P2(P(2.5, 0)) + " L" + P2(P(L - 1.2, 0));
+    } else if (kind === "fern"){
+      L = 17.5 * (.94 + R() * .08) * brk;
+      polys.push([P(2.6, -1.1), P(L, -.35), P(L + 1, 0), P(L, .35), P(2.6, 1.1)]);
+      [[.24, 4.2], [.36, 5], [.48, 4.6], [.6, 3.8], [.72, 2.9], [.84, 1.8]].forEach(function(b, j){ var r0 = 17.5 * b[0], len = b[1] * (.82 + R() * .36); if (r0 > L - 1.6) return;
+        [-1, 1].forEach(function(sd){ polys.push([P(r0 - .5, sd * .3), P(r0 + len * .5, sd * len * .866), P(r0 + .6, sd * .3)]); }); });
+    } else if (kind === "plate"){   // a broad-armed stellar plate: six paddles round a hexagonal hub, sector chevrons
+      L = 16.6 * (.94 + R() * .08) * brk;
+      polys.push([P(2.5, -2), P(9, -2.9), P(L - 2.6, -2.2), P(L, 0), P(L - 2.6, 2.2), P(9, 2.9), P(2.5, 2)]);
+      ridge += "M" + P2(P(3.5, 0)) + " L" + P2(P(L - 2.4, 0)) + " M" + P2(P(7.8, -2)) + " L" + P2(P(9.8, 0)) + " L" + P2(P(7.8, 2));
+      if (L > 13) ridge += " M" + P2(P(11.8, -1.7)) + " L" + P2(P(13.4, 0)) + " L" + P2(P(11.8, 1.7));
+    } else {   // tipped: arms ending in small hexagonal plates, one pair of side spikes
+      L = 12.4 * (.95 + R() * .08) * brk;
+      polys.push([P(2, -1.15), P(L, -.8), P(L, .8), P(2, 1.15)]);
+      if (L > 9) [-1, 1].forEach(function(sd){ polys.push([P(6.4, sd * .5), P(8.6, sd * 3.3), P(8.4, sd * .5)]); });
+      if (brk === 1){ var c = P(14.6, 0), hx = []; for (var m = 0; m < 6; m++){ var ha = a + m * Math.PI / 3; hx.push([c[0] + Math.cos(ha) * 2.7, c[1] + Math.sin(ha) * 2.7]); } polys.push(hx); }
+      ridge += "M" + P2(P(3, 0)) + " L" + P2(P(L + (brk === 1 ? 1.6 : 0), 0));
+    }
+  }
+  if (kind !== "dendrite"){ var hub = []; for (var q = 0; q < 6; q++){ var qa = -Math.PI / 2 + q * Math.PI / 3 + .52; hub.push([20 + Math.cos(qa) * 3.3, 20 + Math.sin(qa) * 3.3]); } polys.push(hub); }
+  var d = polys.map(poly).join(" ");
+  return '<g class="fk"><path class="fkU" d="' + d + '"/><path class="fkF" d="' + d + '"/><path class="fkR" d="' + ridge + '"/></g>';
+}
+var KINDS = ["dendrite", "fern", "plate", "tipped"];
+function flakeAt(x, y, size, kind, seed, rot){ return nest(x - size / 2, y - size / 2, size, size, "0 0 40 40", '<g transform="rotate(' + (rot || 0) + ' 20 20)">' + flake(kind, seed) + '</g>'); }
+function fleckAt(x, y, d){   // a fleck is a tiny six-armed star (a ringed dot read as a bubble)
+  var r = d / 2, w = Math.max(.9, r * .2), t = "", k, a;
+  for (k = 0; k < 6; k++){ a = k * Math.PI / 3 + .3; t += poly([[x - Math.sin(a) * w, y + Math.cos(a) * w], [x + Math.cos(a) * r, y + Math.sin(a) * r], [x + Math.sin(a) * w, y - Math.cos(a) * w]]) + " "; }
+  return '<g><path class="fkU" style="stroke-width:1.2" d="' + t + '"/><path class="fkF" d="' + t + '"/></g>'; }
+
+/* ===== the corner: frost ferns grown from the corner by rules (60° branching, like ice), icicles, a snow lip ===== */
+function corner(stage, o){
+  o = o || {};
+  var id = "cn" + (++UID), k = [0, .46, .7, .88, 1][stage], R = rng(11), main = "", br = "", tw = "";
+  var fronds = [{ x: 141, y: -1, a: 134, L: 96 }, { x: 122, y: 0, a: 114, L: 70 }, { x: 96, y: 0, a: 101, L: 48 }, { x: 141, y: 24, a: 158, L: 70 }, { x: 141, y: 56, a: 172, L: 42 }, { x: 70, y: 0, a: 94, L: 26 }];
+  fronds.forEach(function(f){
+    var L = f.L * k; if (L < 5) return;
+    var x = f.x, y = f.y, a = f.a * Math.PI / 180, step = 3, n = Math.round(L / step), pts = [[x, y, a]], curl = (R() - .5) * .03, i;
+    for (i = 1; i <= n; i++){ a += curl + (R() - .5) * .05; x += Math.cos(a) * step; y += Math.sin(a) * step; pts.push([x, y, a]); }
+    main += "M" + pts.map(P2).join(" L");
+    for (i = 1; i < n - 1; i++){
+      var p = pts[i], u = i / n, side = i % 2 ? 1 : -1;
+      var len = L * .3 * Math.sin(Math.PI * Math.min(1, .15 + u * 1.15)) * (.7 + R() * .6);
+      if (len < 2.2) continue;
+      var ba = p[2] + side * Math.PI / 3, bx = p[0] + Math.cos(ba) * len, by = p[1] + Math.sin(ba) * len;
+      br += "M" + P2(p) + " L" + r1(bx) + "," + r1(by);
+      if (stage >= 3 && len > 5) for (var j = 1; j <= 2; j++){ var q = j / 3, sx = p[0] + (bx - p[0]) * q, sy = p[1] + (by - p[1]) * q, tl = len * .34 * (1 - q * .4), ta = ba + (j % 2 ? 1 : -1) * Math.PI / 3;
+        tw += "M" + r1(sx) + "," + r1(sy) + " L" + r1(sx + Math.cos(ta) * tl) + "," + r1(sy + Math.sin(ta) * tl); }
+    }
+  });
+  /* icicles: [x, length at full, base width, bend]; the long ones away from the stage chip */
+  var I = [[40, 16, 4.8, -1], [53, 30, 6.4, 1.2], [65, 10, 3.8, 0], [80, 40, 7.4, -1.6], [99, 11, 4.4, .8], [117, 6, 3.4, 0]], ic = "", hi = "", tipx = 0, tipy = 0;
+  var ik = o.ice != null ? o.ice : k;
+  I.forEach(function(c, n){
+    var x = c[0], L = c[1] * ik, w = c[2] * Math.max(.62, ik), b = c[3] * ik, h = w / 2; if (L < 2.5) return;
+    var y0 = 3, tx = x + b;
+    ic += "M" + r1(x - h) + "," + y0 + " C" + r1(x - h) + "," + r1(y0 + L * .22) + " " + r1(x - h * .62 + b * .2) + "," + r1(y0 + L * .36) + " " + r1(x - h * .72 + b * .3) + "," + r1(y0 + L * .48) +
+          " C" + r1(x - h * .5 + b * .55) + "," + r1(y0 + L * .62) + " " + r1(x - h * .3 + b * .8) + "," + r1(y0 + L * .82) + " " + r1(tx) + "," + r1(y0 + L) +
+          " C" + r1(x + h * .3 + b * .7) + "," + r1(y0 + L * .72) + " " + r1(x + h * .55 + b * .35) + "," + r1(y0 + L * .44) + " " + r1(x + h * .66) + "," + r1(y0 + L * .3) +
+          " C" + r1(x + h * .85) + "," + r1(y0 + L * .16) + " " + r1(x + h) + "," + r1(y0 + L * .08) + " " + r1(x + h) + "," + y0 + " Z ";
+    hi += "M" + r1(x - h * .42) + "," + (y0 + 1.5) + " C" + r1(x - h * .4 + b * .2) + "," + r1(y0 + L * .3) + " " + r1(x - h * .3 + b * .4) + "," + r1(y0 + L * .45) + " " + r1(x - h * .15 + b * .55) + "," + r1(y0 + L * .62) + " ";
+    if (n === 3){ tipx = tx; tipy = y0 + L; }
+  });
+  var lip = "M26,0 L141,0 L141,3.6 C133,4.8 127,2.9 119,3.9 C109,5.1 101,3.1 91,4.3 C81,5.5 71,3.3 61,4.5 C51,5.7 43,3.5 35,3.7 C30,3.8 26.4,2.2 26,0 Z";
+  var s = '<defs><clipPath id="' + id + 'c"><path d="M0,0 H128 Q140,0 140,12 V140 H0 Z"/></clipPath>' +
+          '<radialGradient id="' + id + 'h" gradientUnits="userSpaceOnUse" cx="140" cy="0" r="' + r1(108 * Math.max(.45, k)) + '"><stop offset="0" stop-color="#D8F6F1" stop-opacity=".95"/><stop offset=".55" stop-color="#D8F6F1" stop-opacity=".45"/><stop offset="1" stop-color="#D8F6F1" stop-opacity="0"/></radialGradient></defs>' +
+          '<g clip-path="url(#' + id + 'c)"><rect width="140" height="140" fill="url(#' + id + 'h)"/>' +
+          '<path class="frTw" d="' + tw + '"/><path class="frBr" d="' + br + '"/><path class="frMain" d="' + main + '"/>';
+  if (o.breath) s += '<circle cx="' + o.breath[0] + '" cy="' + o.breath[1] + '" r="17" fill="url(#wnBreathG)"/><circle cx="' + o.breath[0] + '" cy="' + o.breath[1] + '" r="14.5" fill="none" stroke="#D8F6F1" stroke-width="1.2" opacity=".9"/>';
+  if (stage > 0) s += '<path class="icLipU" d="' + lip + '"/><path class="icU" d="' + ic + '"/><path class="icLip" d="' + lip + '"/><path class="icLipShade" d="M28,3.4 C40,4.4 50,6 61,4.9 C71,3.9 81,6 91,4.8 C101,3.7 109,5.6 119,4.4 C127,3.5 133,5.2 140,4.1"/>' +
+                   '<path class="icF" d="' + ic + '"/><path class="icHi" d="' + hi + '"/>';
+  if (o.drip && stage > 0) s += '<ellipse class="smDrop" cx="' + r1(tipx) + '" cy="' + r1(tipy + 1.3) + '" rx="1.25" ry="1.5"/><path class="smDrop" d="M' + r1(tipx) + ',' + r1(tipy + 13) + ' c-1.1,1.6 -1.4,2.6 -1.4,3.3 a1.4,1.4 0 0 0 2.8,0 c0,-.7 -.3,-1.7 -1.4,-3.3 Z"/>';
+  return s + '</g>';
+}
+
+/* ===== the snowman (100 × 140 box, ground y 131; light from the upper left, as the board's shadows fall) ===== */
+var SM = {
+  patch: "M2,131 C6,125.6 20,124.6 34,125.2 C46,124.2 62,124.6 76,125.4 C88,125.8 97,127.6 98,131 C97,134.6 86,136.8 70,137.2 C52,137.8 30,137.6 16,136.8 C6,136.2 1.4,134 2,131 Z",
+  patchShade: "M3.4,133.6 C12,136.4 32,137.4 52,137.4 C72,137.4 90,136 97,132.6 C95,135.6 84,137.4 68,137.9 C48,138.4 24,138.1 13,137 C7.6,136.4 4.4,135.2 3.4,133.6 Z",
+  shadow: "M26,131.2 C32,128.6 50,128.2 68,128.8 C82,129.4 90,130.6 90,132 C88,133.6 76,134.4 60,134.4 C44,134.4 30,133.4 26,131.2 Z",
+  base: "M22.6,108 C21.6,92 34,80.4 49.6,80.6 C66,80.8 78.4,92 77.8,107.4 C77.4,118.8 70,127.8 60,130.6 C55,131.6 45,131.8 40,130.8 C29.4,128.6 23,119.6 22.6,108 Z",
+  baseShade: "M77.8,107.4 C77.4,118.8 70,127.8 60,130.6 C55,131.6 45,131.8 40,130.8 C52,128.6 63.6,122.4 69.4,112 C72.4,106.4 73.2,99.6 72,93.4 C75.8,97.2 78,102 77.8,107.4 Z",
+  seat: "M32.6,84 C40,88.8 58,89.2 66.4,84.2 C61,88.6 40.6,90 32.6,84 Z",
+  mid: "M29.4,70 C28.8,57.2 37.6,48.6 49.4,48.4 C61.4,48.2 69.6,57.4 69.2,69 C68.8,79.4 61,86.6 49.6,86.8 C38,87 29.8,80.2 29.4,70 Z",
+  midShade: "M69.2,69 C68.8,79.4 61,86.6 49.6,86.8 C58.4,83.6 64,77 65,68 C65.4,63.6 64.6,59.2 62.6,55.6 C66.8,59 69.4,63.8 69.2,69 Z",
+  neck: "M38.6,47.4 C44,51.8 57,52.2 63.6,47.6 C58,51.6 44,52.6 38.6,47.4 Z",
+  head: "M37,37 C36.6,27.6 43,21.4 51.2,21.4 C59.6,21.4 65.4,27.8 65,36.4 C64.6,44.6 58.8,50 51,50 C43,50 37.4,44.8 37,37 Z",
+  headShade: "M65,36.4 C64.6,44.6 58.8,50 51,50 C57.4,47.6 61.4,42.4 61.8,36 C62,32.4 61,29.4 59.6,27 C63.2,29.4 65.2,32.6 65,36.4 Z",
+  armL: "M31.6,64 L10.8,45.8 L9.8,46.8 L30.8,66.4 Z", armLT: "M10.4,46.3 L6.2,45.2 M10.4,46.3 L9.2,41.8 M18.6,53.2 L17,48.4",
+  armR: "M68.4,70.6 L88.6,81.4 L87.8,82.8 L68,73 Z", armRT: "M88.2,82.1 L92.8,81.2 M88.2,82.1 L90.8,86.6 M80.2,77.6 L82.8,72.8",
+  carrot: "M51.4,36 L35.6,40.8 L51.8,40.2 Z", carrotL: "M46.6,37.5 L46.2,39.9 M42,38.9 L41.8,40.4",
+  scarf: "M36.6,47.4 C44,51.4 57.4,51.6 65.4,46.8 L66.2,52 C58,56.2 44,56.4 36.2,52.6 Z",
+  endA: "M39.4,52.4 C38.2,57 36.6,62 34.2,67 L39.4,68 C41,63 42.2,58 43.2,53.2 Z",
+  endB: "M43.4,53.2 C43.2,56.6 42.8,60.2 42,63.4 L46,63.8 C46.6,60.4 47,56.6 46.8,53.4 Z",
+  bars: "M36.2,61.6 L40.6,62.4 L40.2,63.6 L35.7,62.8 Z M35.2,64.2 L39.8,65 L39.5,66 L34.8,65.2 Z M42.4,59.2 L46.4,59.6 L46.3,60.6 L42.2,60.2 Z M44.6,48.6 L45.4,53.4 L44.2,53.4 L43.4,48.4 Z M54.4,49.2 L54.8,54 L53.6,54 L53.2,49.2 Z",
+  fringe: "M34.6,67.4 L33.8,69.4 M36.4,67.7 L35.8,69.8 M38.2,68 L37.8,70 M42.6,63.8 L42.2,65.6 M44.4,64 L44.2,65.8",
+  hat: "M38.8,26.6 C38.6,17.4 44.8,11.6 51.8,11.6 C58.8,11.6 64.4,17.2 64,26.4 Z",
+  cuff: "M37.2,24.6 C46,22 56,21.8 65.2,24.2 L65.6,29.4 C56.6,27.2 46,27.2 36.8,29.8 Z",
+  ribs: "M41,23.8 L40.8,28.8 M45,23.2 L44.9,28.2 M49,22.8 L49,27.8 M53,22.8 L53.1,27.8 M57,23 L57.2,28 M61,23.6 L61.3,28.6",
+  hatCap: "M40.6,20.4 C42.2,14 47,11.2 52,11.2 C57,11.2 61.8,13.8 63.2,19.4 C60,17.8 56,17.2 52,17.4 C47,17.6 43,18.6 40.6,20.4 Z"
+};
+function coal(list){ return list.map(function(c){ return c.length === 4 ? '<ellipse class="smCoal" cx="' + c[0] + '" cy="' + c[1] + '" rx="' + c[2] + '" ry="' + c[3] + '"/>' : '<circle class="smCoal" cx="' + c[0] + '" cy="' + c[1] + '" r="' + c[2] + '"/>'; }).join(""); }
+var EYES = [[46.2, 33.4, 1.9, 2.1], [55.4, 32.6, 1.6, 1.8]], MOUTH = [[43.4, 43.2, .95], [46.4, 45.1, 1.05], [50, 46, 1.1], [53.6, 45.2, 1], [57, 42.8, .9]], BUTTONS = [[48.6, 60, 1.6], [49, 67.6, 1.8], [49.6, 75.4, 1.7]];
+function ball(d, shade){ return '<path class="smSnow smEdge" d="' + d + '"/><path class="smShade" d="' + shade + '"/>'; }
+function prints(){ return '<g>' + [[86, 133.4], [78.6, 135.2], [71, 133], [63.4, 134.8]].map(function(p){ var x = p[0], y = p[1]; return '<path class="smPrint" d="M' + x + ',' + y + ' l-2.3,-.9 M' + x + ',' + y + ' l-2.5,.2 M' + x + ',' + y + ' l-1.9,1.2 M' + x + ',' + y + ' l1.1,0"/>'; }).join("") + '</g>'; }
+function smHat(fresh){ return '<g transform="rotate(8 51.6 22)"><path class="smHat" d="' + SM.hat + '"/>' + (fresh ? '<path class="smSnow" d="' + SM.hatCap + '"/>' : "") +
+  '<path class="smHat" d="' + SM.cuff + '"/><path class="smRib" d="' + SM.ribs + '"/><circle class="smPom smEdge" cx="52.2" cy="9.2" r="5"/><circle class="smShade" cx="53.6" cy="10.6" r="2.4" opacity=".8"/></g>'; }
+function smScarf(){ return '<g><path class="smScarf" d="' + SM.endA + '"/><path class="smScarf" d="' + SM.endB + '"/><path class="smScarf" d="' + SM.scarf + '"/><path class="smBar" d="' + SM.bars + '"/><path class="smFringe" d="' + SM.fringe + '"/></g>'; }
+function arms(fresh, noRight){ return '<path class="smStick" d="' + SM.armL + '"/><path class="smTwig" d="' + SM.armLT + '"/>' + (noRight ? "" : '<path class="smStick" d="' + SM.armR + '"/><path class="smTwig" d="' + SM.armRT + '"/>') +
+  (fresh ? '<path class="smCapW" d="M30.4,63.2 L11.4,46.6' + (noRight ? "" : ' M68.8,69.8 L87.8,80.2') + '"/>' : ""); }
+function visitGull(o){ return '<g transform="translate(51.4 4.6) scale(-.82 .82)"><g class="btGull"><g class="glPerch">' + GULL_PERCH + GULL_SCARF + (o && o.hat ? GULL_HAT : "") + '</g></g></g>'; }
+/* stage: S0 nothing · S1 the rolled ball · S2 stacked, coal, sticks · S3 complete · caper (no scarf) · M1 · M2 · M3 */
+function snowman(stage, o){
+  o = o || {};
+  var s = "", upper;
+  if (stage === "S0") return '<path class="smShade2" d="M30,131 C40,129.6 60,129.6 70,131 C60,132.2 40,132.2 30,131 Z" opacity="0"/>';
+  if (stage === "S1"){
+    return '<path class="smSnow smEdge" d="M-44,131 C-34,126.6 -12,126 10,126.4 C30,125.4 52,125.6 70,126.6 C80,127.2 86,128.6 86,131 C85,134.2 74,135.8 58,136.2 C38,136.8 4,136.8 -22,136.4 C-36,136 -45,134 -44,131 Z"/>' +
+      '<path class="smTrack" d="M-46,130.6 C-26,129.4 2,129.2 30,129.8 L31,133.4 C4,132.6 -24,132.8 -46,134 Z"/>' +
+      '<path class="smShade2" d="M30,131.4 C36,129.4 52,129.2 62,130.2 C66,130.8 66,132.6 62,133.2 C52,134 38,133.6 30,131.4 Z"/>' +
+      ball("M28.8,115.6 C28.4,105.6 36.4,98.6 46.4,98.6 C56.4,98.8 63.6,106.4 63.2,115.6 C62.8,124.2 56.4,130.6 46.4,130.8 C36.6,131 29.2,124.6 28.8,115.6 Z",
+           "M63.2,115.6 C62.8,124.2 56.4,130.6 46.4,130.8 C53.6,128.4 58.8,123 59.6,115.6 C60,111.4 59,107.6 57.2,104.6 C61,107.4 63.4,111.2 63.2,115.6 Z") + prints();
+  }
+  var fresh = !!o.fresh, scarfOn = stage === "S3" || stage === "M1" || stage === "M2";
+  var face = coal(EYES) + coal(MOUTH);
+  var nose = (stage === "S2") ? "" : '<g transform="' + (stage === "M1" ? "rotate(-12 51.6 38)" : stage === "M2" ? "rotate(-26 51.6 38)" : "") + '"><path class="smCarrot" d="' + SM.carrot + '"/><path class="smCarrotLine" d="' + SM.carrotL + '"/></g>';
+  var hat = (stage === "S2") ? "" : smHat(fresh);
+  if (stage === "M3"){
+    return '<ellipse class="smPuddle" cx="52" cy="131.4" rx="46" ry="6"/><path class="smGlint" d="M18,129.6 C26,127.6 40,126.8 50,127" />' +
+      '<path class="smSnow smEdge" d="M24,131 C24,121.4 34,114.6 50,114.4 C66,114.2 77.4,121 77.4,131 C70,133 32,133 24,131 Z"/><path class="smShade" d="M77.4,131 C70,133 58,133.2 50,133 C62,130.6 70,126 72.6,119.6 C75.8,122.6 77.4,126.6 77.4,131 Z"/>' +
+      '<g transform="rotate(-12 49 112) translate(-2 87)">' + '<path class="smHat" d="' + SM.hat + '"/><path class="smHat" d="' + SM.cuff + '"/><path class="smRib" d="' + SM.ribs + '"/><circle class="smPom smEdge" cx="52.2" cy="9.2" r="5"/></g>' +
+      '<path class="smScarf" d="M26.4,124 C30,121.4 34,120.4 37.6,121.2 L38.4,124.6 C35,124.4 31,125.6 27.8,127.8 Z"/><path class="smScarf" d="M27.6,126.4 C24,128.2 20.6,130.6 18.4,133.2 L21.8,134 C24,131.8 27,129.8 30.2,128.4 Z"/><path class="smBar" d="M22.8,130.2 L25.6,129.6 L26,130.6 L23.2,131.2 Z M30.6,121.6 L31.4,124.6 L30.4,124.8 L29.6,121.8 Z"/>' +
+      '<g transform="translate(-14 96) rotate(-8 36 40)"><path class="smCarrot" d="' + SM.carrot + '"/><path class="smCarrotLine" d="' + SM.carrotL + '"/></g>' +
+      coal([[33, 133.6, 1.2], [40.4, 134.6, 1.3], [62, 134.2, 1.2], [69.6, 133.4, 1.1], [56, 135.2, 1], [46, 135.4, 1.1], [80.6, 132.8, 1.2], [27.6, 135, 1]]) +
+      '<path class="smTwig" d="M66,128.6 L90,124.2 M84,125.4 L88,121.6 M70,126.2 L92,130.4 M88,129.6 L92.4,127.2"/>' +
+      '<g transform="translate(95 131.4) scale(1.5) translate(-95 -131.4)"><path class="smSproutStem" d="M94.4,131.4 C94.2,127.6 94.6,124.6 95.6,122"/><path class="smSprout" d="M95.2,124.2 C91.6,122 89.2,122.6 88.2,124.6 C90.8,125.6 93.2,125.4 95.2,124.2 Z"/><path class="smSprout" d="M95.6,122.8 C98,119.6 100.8,119.8 101.8,121.4 C99.8,123.2 97.6,123.6 95.6,122.8 Z"/></g>';
+  }
+  var patch = stage === "M2" ? '<g transform="translate(50 131) scale(.62 .8) translate(-50 -131)"><path class="smShade2" d="' + SM.patch + '"/></g>' :
+              stage === "M1" ? '<g transform="translate(50 131) scale(.84 1) translate(-50 -131)"><path class="smSnow smEdge" d="' + SM.patch + '"/><path class="smShade" d="' + SM.patchShade + '"/></g>' :
+              '<path class="smSnow smEdge" d="' + SM.patch + '"/><path class="smShade" d="' + SM.patchShade + '"/>';
+  s += patch;
+  if (stage === "M1" || stage === "M2") s += '<ellipse class="smPuddle" cx="52" cy="132.2" rx="' + (stage === "M2" ? 44 : 33) + '" ry="' + (stage === "M2" ? 5 : 3.6) + '"/>';
+  s += '<path class="smShade2" d="' + SM.shadow + '"/>' + (stage === "M1" || stage === "M2" ? "" : prints());
+  var baseT = stage === "M2" ? 'transform="translate(50 131) scale(1.1 .8) translate(-50 -131)"' : "";
+  s += '<g ' + baseT + '>' + ball(SM.base, SM.baseShade) + '<path class="smShade" d="' + SM.seat + '"/></g>';
+  upper = ball(SM.mid, SM.midShade) + (stage === "S2" ? "" : "") + coal(BUTTONS);
+  var headG = '<g' + (stage === "M2" ? ' transform="rotate(12 51 50) translate(1 2) scale(.94)"' : stage === "M1" ? ' transform="translate(0 1.4) rotate(3 51 50)"' : "") + '>' +
+              '<path class="smShade" d="' + SM.neck + '"/>' + ball(SM.head, SM.headShade) + face + nose + (stage === "M2" ? '<g transform="rotate(16 52 24) translate(3 4)">' + hat + '</g>' : hat) + '</g>';
+  upper += headG;
+  upper = arms(fresh, stage === "M2") + upper;
+  if (scarfOn) upper += smScarf();
+  if (o.visit) upper += visitGull(o);
+  if (stage === "M2") upper = '<g transform="translate(50 101) rotate(7) scale(.9) translate(-50 -87)">' + upper + '</g>';
+  if (stage === "M1") upper = '<g transform="rotate(4 50 120)">' + upper + '</g>';
+  s += upper;
+  if (stage === "M2") s += '<path class="smStick" d="M66,129.6 L90,126.6 L90.2,128 L66.2,131 Z"/><path class="smTwig" d="M90,127.2 L94.4,125.2 M82,128.2 L84.4,124.2"/>';
+  if (stage === "M1" || stage === "M2") s += '<path class="smDrop" d="M36.6,47 c-1,1.5 -1.3,2.4 -1.3,3 a1.3,1.3 0 0 0 2.6,0 c0,-.6 -.3,-1.5 -1.3,-3 Z"/><path class="smDrop" d="M92,90 c-1,1.5 -1.3,2.4 -1.3,3 a1.3,1.3 0 0 0 2.6,0 c0,-.6 -.3,-1.5 -1.3,-3 Z"/>';
+  return s;
+}
+
+/* ===== the sea ===== */
+/* a pancake floe in a 40 × 14 box, waterline y 9 (its own water in front, so the waterline never changes as it bobs) */
+function floe(w, x, y, seed, tilt){
+  var R = rng(seed), j = function(n){ return r1(n + (R() - .5) * 1.2); };
+  var top = "M2.4," + j(6) + " C3," + j(3.4) + " 10," + j(2.4) + " 20," + j(2.4) + " C30,2.4 37," + j(3.4) + " 37.6," + j(5.8) + " C37,7.4 30,7.8 20,7.8 C10,7.8 3,7.4 2.4,6 Z";
+  var side = "M2,6.6 C2,5.4 4,5 6,5 L34,4.8 C36.6,4.8 38,5.4 38,6.6 L38,9.6 L2,9.6 Z";
+  return nest(x, y, w, w * 14 / 40, "0 0 40 14", '<defs><clipPath id="fc' + (++UID) + '"><rect x="-4" y="-8" width="48" height="17.2"/></clipPath></defs><g clip-path="url(#fc' + UID + ')"><g transform="rotate(' + (tilt || 0) + ' 20 8)"><path class="flU" d="' + side + " " + top + '"/><path class="flSide" d="' + side + '"/><path class="flTop" d="' + top + '"/><path class="flRim" d="M5.4,4.4 C10,3.3 30,3.2 34.8,4.4"/></g></g>');
+}
+/* the seal (64 × 32 box, waterline y 25): .slFront and .slRear overlap at the middle so the banana pose is two rotations */
+var SEAL_FRONT = "M8.8,14.2 C8.4,12.6 8.6,11.2 10,10.2 C11.4,9 13.6,8.8 15.6,9.4 C17.4,9.9 18.6,10.8 19.6,11.6 C23,10.4 27.6,9.8 32.6,9.8 L33.6,16.9 C27,17 21.4,17 17,16.8 C14,16.6 11.6,16.2 10.2,15.6 C9.4,15.2 9,14.8 8.8,14.2 Z";
+var SEAL_REAR = "M29,9.8 C35.4,9.6 41.4,10.6 45.6,12.6 L49.8,10.4 C50.8,10 51.8,10.6 51.4,11.6 L49.2,13.6 L52.2,14.6 C53,15 52.8,16 51.8,16.2 L47.6,15.8 C43,16.8 37,17 29,17 Z";
+function sealBody(pose){
+  var fr = pose === "banana" ? -15 : pose === "look" ? -9 : 0, rr = pose === "banana" ? 17 : 0;
+  return '<g transform="rotate(' + rr + ' 30 16.6)"><path class="navy" d="' + SEAL_REAR + '"/><circle class="pt" cx="38.6" cy="11.8" r=".5"/><circle class="pt" cx="42.6" cy="12.9" r=".42"/></g>' +
+         '<g transform="rotate(' + fr + ' 30 16.6)"><path class="navy" d="' + SEAL_FRONT + '"/><path class="navy" d="M21.8,15.6 C22.6,17.4 24.8,18.2 27,17.8 C25.6,17.2 24.4,16.4 23.8,15.4 Z"/>' +
+         '<circle class="pt" cx="13.8" cy="11.6" r=".9"/><path class="ptS" d="M9.4,13.4 L6.4,12.4 M9.2,14 L6.2,14.2 M9.6,14.6 L7,15.6"/><circle class="pt" cx="24" cy="11.2" r=".55"/><circle class="pt" cx="28.6" cy="10.8" r=".45"/><circle class="pt" cx="33.6" cy="11" r=".6"/></g>';
+}
+function sealOnFloe(pose, tilt){
+  var top = "M4,18.6 C5.6,16.2 12,15.6 20,16 C30,15.4 44,15.4 53,15.8 C58,16 60.6,16.8 60.6,18.2 C60.2,19.6 56,20 49,19.8 L12,20.2 C7,20.2 3.4,19.8 4,18.6 Z";
+  var side = "M3,20 C3.6,18.6 6,18.2 9,18.2 L55,17.6 C58.4,17.6 60.8,18.6 61,20.4 L61,26 L3,26 Z";
+  var id = "sf" + (++UID);
+  var seal = pose === "slide" ? '<g transform="translate(-9 6) rotate(-24 30 16)">' + sealBody("lie") + '</g>' : sealBody(pose);
+  return '<defs><clipPath id="' + id + '"><rect x="-10" y="-20" width="84" height="45.2"/></clipPath></defs><g clip-path="url(#' + id + ')"><g transform="rotate(' + (tilt || 0) + ' 32 21)">' +
+    '<path class="flU" d="' + side + " " + top + '"/><path class="flSide" d="' + side + '"/><path class="flTop" d="' + top + '"/><path class="flRim" d="M7,17.2 C14,16 30,15.6 50,16 C55,16.1 58.4,16.6 59.6,17.4"/>' +
+    (pose === "slide" ? "" : seal) + '</g>' + (pose === "slide" ? seal : "") + '</g>';
+}
+/* the seal "bottling" (head up out of the water), facing left toward the boat — 20 × 20, waterline y 15.4 */
+function sealHead(tilt){ return '<defs><clipPath id="sh' + (++UID) + '"><rect x="-4" y="-6" width="28" height="21.4"/></clipPath></defs><g clip-path="url(#sh' + UID + ')"><g transform="rotate(' + (tilt || 0) + ' 10 15)">' +
+  '<path class="navy" d="M14.8,16.6 C15.4,12 14.6,7.6 11.6,6 C9.4,4.9 7,5.4 5.8,7.2 C5.2,8 4.9,8.6 4.4,8.9 C3.2,9.4 2.4,10.2 2.6,11.2 C2.8,12.2 3.8,12.6 4.8,12.4 C5.6,12.3 6.2,12.6 6.4,13.4 C6.6,14.4 6.4,15.6 6,16.6 Z"/><circle class="pt" cx="8.9" cy="8.3" r=".85"/><path class="ptS" d="M3.6,10.6 L.8,9.8 M3.6,11.2 L1,11.8 M3.2,11.7 Q4.2,12.2 5.2,11.8"/></g></g>' +
+  '<ellipse class="ring" cx="10" cy="15.6" rx="7.5" ry="1.6"/>'; }
+/* the narwhal (120 × 36, waterline y 28), head-first to the left; the tusk is the silhouette */
+var NW_BODY = "M31,28 C30.4,23.6 32.6,20.2 37,19 C40,18.2 43.6,18 48,17.8 C58,17.4 70,17.8 80,19.2 C88.4,20.4 95.4,23.4 99.6,28 Z";
+function narwhal(pose, noClip){
+  var id = "nw" + (++UID), tuskT = pose === "salute" ? 'transform="rotate(16 33 24.4)"' : "";
+  var spots = [[48, 20.6, .7], [54.6, 19.8, .55], [61, 20.4, .75], [67.4, 20, .5], [73.6, 21.2, .7], [80, 21.8, .55], [52.4, 22.8, .5], [66, 23, .6], [86, 23.6, .5]].map(function(c){ return '<circle class="pt" cx="' + c[0] + '" cy="' + c[1] + '" r="' + c[2] + '"/>'; }).join("");
+  var hatch = ""; for (var i = 0; i < 9; i++){ var tx = 29 - i * 3.1, ty = 24.2 - i * .42; hatch += "M" + r1(tx) + "," + r1(ty - .7) + " l1,1.1 "; }
+  var tusk = '<g ' + tuskT + '><path class="navy" d="M32.6,23.6 L2.8,20.2 L2.6,20.9 L32.4,25.4 Z"/><path class="ptS" d="' + hatch + '"/></g>';
+  if (pose === "dive") return '<defs><clipPath id="' + id + '"><rect x="-20" y="-20" width="160" height="48.4"/></clipPath></defs><g clip-path="url(#' + id + ')">' +
+    '<path class="navy" d="M58,29 C58,24 56,19 52.4,14.6 C56.4,14.6 59.8,16.8 61.4,19.8 C62.6,16.6 66,14.2 70.2,14 C66.8,18 64.8,23 64.8,29 Z"/><path class="ptS" d="M55,16.4 C57,17.4 58.6,18.8 59.6,20.6"/></g><ellipse class="ring" cx="40" cy="28.2" rx="11" ry="2"/>';
+  var puff = pose === "puff" ? '<g><path class="puffU" d="M45,15.6 m-2.9,0 a2.9,2.9 0 1 0 5.8,0 a2.9,2.9 0 1 0 -5.8,0 M47.8,12.8 m-2.2,0 a2.2,2.2 0 1 0 4.4,0 a2.2,2.2 0 1 0 -4.4,0 M42.4,13.2 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 M45.6,10.4 m-1.6,0 a1.6,1.6 0 1 0 3.2,0 a1.6,1.6 0 1 0 -3.2,0"/>' +
+    '<circle class="puff" cx="45" cy="15.6" r="2.9"/><circle class="puff" cx="47.8" cy="12.8" r="2.2"/><circle class="puff" cx="42.4" cy="13.2" r="2"/><circle class="puff" cx="45.6" cy="10.4" r="1.6"/></g>' : "";
+  return '<defs><clipPath id="' + id + '"><rect x="-20" y="-30" width="160" height="58.4"/></clipPath></defs>' + puff + '<g' + (noClip ? "" : ' clip-path="url(#' + id + ')"') + '>' + tusk +
+    '<path class="navy" d="' + NW_BODY + '"/><path class="navy" d="M68,19 C69.6,17.8 71.6,17.8 73,18.8 Z"/>' + spots + '<circle class="pt" cx="37.8" cy="22.2" r=".9"/><path class="ptS" d="M33.4,25.6 Q35,26.4 36.8,26"/></g>';
+}
+function tusking(){   // A (head-left) on the right, B (mirrored, head-right) on the left; both heads up, the tusks an X above the water
+  var id = "tk" + (++UID);
+  return '<defs><clipPath id="' + id + '"><rect x="-10" y="-40" width="190" height="68.4"/></clipPath></defs><g clip-path="url(#' + id + ')">' +
+    '<g transform="translate(62 0) rotate(28 33 27)">' + narwhal("plain", true) + '</g>' +
+    '<g transform="translate(104 0) scale(-1 1) rotate(28 33 27)">' + narwhal("plain", true) + '</g></g>' +
+    '<ellipse class="ring" cx="70" cy="28.6" rx="9" ry="1.8"/><ellipse class="ring" cx="96" cy="28.6" rx="9" ry="1.8"/>';
+}
+/* the serpent (Deckhand's markup, mirrored as its CSS mirrors it) with the snowman's scarf on its neck */
+function serpent(scarf){
+  var sc = scarf ? '<g class="wnSerpScarf"><path class="smScarf" d="M80.4,18.6 C74,14.4 67.6,13.6 61.6,14.6 L62.4,17.6 C68,17 73.2,18.2 78.4,21 Z"/><path class="smScarf" d="M79.8,20.4 C75.2,21.8 70.4,24 66.4,27 L68.2,28.6 C71.8,26 76,24 80.6,22.8 Z"/>' +
+    '<path class="smScarf" d="M79.2,16.8 C84.4,15.2 90.4,16 96,18.4 L94.6,22.6 C89.2,20.8 83.8,20.4 78.6,21.6 Z"/><path class="smBar" d="M84.8,16.4 L85.6,16.3 L85.2,20.6 L84.4,20.7 Z M90.4,17.1 L91.2,17.4 L90.4,21.4 L89.6,21.2 Z M66.6,14.4 L67.6,14.4 L68,17.2 L67,17.3 Z M70.2,24.8 L71,24.4 L72.4,26.6 L71.6,27 Z"/>' +
+    '<path class="smFringe" d="M61.8,15 L59.8,14.6 M62,16.4 L60,16.6 M66.6,27.4 L65,28.8 M67.6,28.2 L66.4,29.8"/></g>' : "";
+  return '<g transform="translate(132 0) scale(-1 1)"><g class="navy"><path d="M9,34 C9.5,27 8,22 5,18.8 L2,19.6 L3.6,14.2 L8.2,16.4 L7.4,18.4 C11.5,22 13.5,27 13.5,34 Z"/>' +
+    '<path d="M22,34 C22,17 40,17 40,34 L35.5,34 C35.5,24.5 26.5,24.5 26.5,34 Z"/><path d="M46,34 C46,9 70,9 70,34 L63.5,34 C63.5,19 52.5,19 52.5,34 Z"/><path d="M50.6,19 L52,11.8 L54.6,16.2 L56.2,10 L58.6,15.4 L60.8,10.6 L62.8,16 L65,18.8 Z"/>' +
+    '<path d="M76,34 C75,18 84,10 94,10.5 C98,6.5 104,5 110,6.5 C117,8 122,10 124.5,13 Q125.8,15.4 122.8,16.4 C117,18 111,19.5 104.5,19 Q100,18.8 97.5,17 C92,19 87.5,25 86.5,34 Z"/><path d="M95.5,11 Q92,5 87.5,3.5 Q91.5,8.5 91.8,12.8 Z"/></g>' +
+    sc + '<path class="ssMouth" d="M122.5,15.4 Q114,16.2 106,15.2"/><circle class="ssEye" cx="111.5" cy="10.6" r="1.9"/></g>';
+}
+function sea(w, h){   // a strip of the board's sea: sand dune, the still water, a front swell with a trough under the mast at 42vw
+  var dune = "M0,55 C240,25 480,85 720,55 C960,25 1200,85 1440,55 C1680,25 1820,70 1920,50 L1920,120 L0,120 Z", fw = "M0,120 ";
+  for (var x = 0; x <= 1920; x += 16){ var y = 100 + 6.8 * Math.cos(2 * Math.PI * (x - 806) / 768) * .5; fw += "L" + x + "," + r1(y) + " "; }
+  return '<svg viewBox="0 0 1920 120" width="' + w + '" height="' + h + '" preserveAspectRatio="none" style="position:absolute;left:0;bottom:0"><path fill="#E6D5B8" d="' + dune + '"/><rect y="84" width="1920" height="36" fill="#BFEFEA"/><rect y="104" width="1920" height="16" fill="#8FE5DC"/><path fill="#8FE5DC" d="' + fw + 'L1920,120 Z" opacity=".9"/></svg>';
+}
+/* the dune's snow cap: white on the dune's crest where it stands above the water; cov = how much of the crest is white */
+function duneCap(cov, seed){
+  if (!cov) return "";
+  var segs = [[[0, 55], [240, 25], [480, 85], [720, 55]], [[720, 55], [960, 25], [1200, 85], [1440, 55]], [[1440, 55], [1680, 25], [1820, 70], [1920, 50]]], pts = [];
+  segs.forEach(function(s){ for (var i = 0; i <= 80; i++){ var t = i / 80, m = 1 - t;
+    pts.push([m*m*m*s[0][0] + 3*m*m*t*s[1][0] + 3*m*t*t*s[2][0] + t*t*t*s[3][0], m*m*m*s[0][1] + 3*m*m*t*s[1][1] + 3*m*t*t*s[2][1] + t*t*t*s[3][1]]); } });
+  var R = rng(seed || 5), p1 = R() * 6, p2 = R() * 6, p3 = R() * 6, p4 = R() * 6;
+  var th = pts.map(function(p){ var x = p[0], m = .5 + .26 * Math.sin(x / 97 + p1) + .16 * Math.sin(x / 41 + p2) + .08 * Math.sin(x / 17 + p3);
+    var c = Math.max(0, Math.min(1, (m - (1 - cov)) / .1)), above = Math.max(0, Math.min(1, (78 - p[1]) / 10));
+    return 10 * c * above * (1 + .22 * Math.sin(x / 9 + p4)); });
+  var top = pts.map(function(p){ return [p[0], p[1] - .8]; }), bot = pts.map(function(p, i){ return [p[0], p[1] + th[i]]; }).reverse();
+  var sh = pts.map(function(p, i){ return [p[0], p[1] + th[i] * .72]; }).concat(pts.map(function(p, i){ return [p[0], p[1] + th[i]]; }).reverse());
+  return '<path fill="#fff" d="M' + top.concat(bot).map(P2).join(" L") + ' Z"/><path fill="#D8F6F1" d="M' + sh.map(P2).join(" L") + ' Z"/>';
+}
+
+/* ===== 1 · the lineup at true size ===== */
+(function(){
+  var H = 340, by = H - 6 - 38, s = '<div class="grid" style="position:relative;width:1920px;height:' + H + 'px;border-radius:6px;box-shadow:6px 8px 0 #D8C5A0;overflow:hidden">' + sea(1920, 88);
+  var o = '<svg class="ov" viewBox="0 0 1920 ' + H + '" width="1920" height="' + H + '" style="position:absolute;left:0;top:0">';
+  o += nest(468, 302, 59.5, 17.9, "0 0 120 36", narwhal("puff"));                                   // far lane, behind
+  o += nest(1176, H - 9 - 45.3, 136, 45.3, "0 0 132 44", '<defs><clipPath id="lsc"><rect x="-10" y="-10" width="160" height="44.4"/></clipPath></defs><g clip-path="url(#lsc)">' + serpent(true) + '</g>');
+  o += nest(787, by, 38, 38, "0 0 40 40", boat({ lamp: 1, lights: 9, hat: true }));
+  o += nest(842, H - 6 - 26, 52, 26, "0 0 64 32", sealOnFloe("lie"));                             // near, Wilson's spot
+  o += floe(44, 960, H - 4 - 15.4, 3) + floe(28, 1012, H - 2 - 9.8, 8) + floe(18, 1046, H - 3 - 6.3, 13);
+  o += nest(1747, H - 34 - 126.7, 96, 134.4, "0 0 100 140", snowman("S3", { fresh: true }));
+  o += flakeAt(1430, 132, 62, "fern", 21, 4) + flakeAt(1530, 210, 52, "dendrite", 5, -7) + flakeAt(1612, 92, 44, "plate", 9, 12) + flakeAt(1350, 228, 48, "tipped", 17, 0) + fleckAt(1480, 60, 10) + fleckAt(1660, 176, 8) + fleckAt(1395, 300, 12);
+  var L = function(x, y, t){ return '<text class="lbl" x="' + x + '" y="' + y + '">' + t + '</text>'; };
+  o += L(440, 290, "narwhal, far · 60 px") + L(700, 270, "the boat · 38 px box") + L(850, 296, "seal on its floe · 52 px (near)") + L(960, 318, "floes · 44 / 28 / 18") +
+       L(1150, 270, "the serpent in the scarf · 136 px") + L(1700, 168, "snowman · 96 × 134") + L(1336, 30, "flakes 44–62 px · flecks 8–12 px");
+  document.getElementById("lineup").innerHTML = s + o + '</svg></div>';
+})();
+
+/* ===== 2 · the boat ===== */
+(function(){
+  var cells = [
+    ["December 8 · the first bulb", { lamp: 1, lights: 1 }, "The string goes up dark on December 7, when nine school days are left; one bulb lights each school day after, from the bow up; all nine on the last day before break. Amber bodies (yellow alone vanishes on cream), lit-yellow cores, a small glow."],
+    ["December 18 · all nine", { lamp: 1, lights: 9 }, "The last school day: the string full, the lantern full (November's, kept: brightest at the solstice)."],
+    ["A snowfall period", { lamp: .75, deck: true, hat: true }, "Snow on the deck (one white line on the navy hull) and the gull's bobble hat — the same teal hat as the snowman's. The scarf has stayed on since November 15."],
+    ["January · the lights are down", { lamp: .75 }, "Taken down on the first day back. The lantern dims a step a month as the nights shorten: full in December, .75 in January, .5 in February."]
+  ];
+  document.getElementById("boats").innerHTML = cells.map(function(c){ return '<div class="cell cream"><h3>' + c[0] + '</h3>' + svg("-6 -16 52 56", 312, 336, boat(c[1])) + '<div style="display:flex;gap:10px;align-items:flex-end;margin-top:6px">' + svg("-6 -16 52 56", 52, 56, boat(c[1])) + '<span style="font-size:11px;color:#127A85">true size</span></div><p>' + c[2] + '</p></div>'; }).join("");
+})();
+
+/* ===== 3 · flakes ===== */
+(function(){
+  var html = KINDS.map(function(k, i){ return '<div class="cell"><h3>' + k + '</h3><div style="display:flex;gap:10px">' + svg("0 0 40 40", 150, 150, flake(k, 3 + i * 7)) + svg("0 0 40 40", 150, 150, flake(k, 40 + i * 5)) + '</div></div>'; }).join("");
+  var bg = function(cls, title){ var s = '<div class="cell ' + cls + '" style="width:300px"><h3>' + title + '</h3><svg viewBox="0 0 280 120" width="280" height="120">';
+    s += flakeAt(40, 50, 62, "fern", 21, 4) + flakeAt(110, 70, 52, "dendrite", 5, -7) + flakeAt(170, 44, 44, "plate", 9, 12) + flakeAt(232, 66, 48, "tipped", 17, 0) + fleckAt(76, 102, 10) + fleckAt(200, 104, 8) + fleckAt(140, 18, 12);
+    return s + '</svg></div>'; };
+  html += bg("", "true size · on the white card") + bg("grid", "true size · on the grid") + bg("water", "true size · over the water");
+  document.getElementById("flakes").innerHTML = html;
+})();
+
+/* ===== 4 · the corner ===== */
+(function(){
+  var card = function(inner, w){ return '<div style="position:relative;width:' + w + 'px;height:' + w + 'px;background:#fff;border-radius:0 18px 0 0;box-shadow:6px 8px 0 #D8C5A0;overflow:hidden">' + inner + '</div>'; };
+  var chip = '<div style="position:absolute;right:8px;top:8px;width:44px;height:44px;border-radius:50%;background:rgba(23,50,77,.08)"></div>';
+  var stages = [[1, "Dec 1–4 · f1"], [2, "Dec 7–11 · f2"], [3, "Dec 14 → break · f3"], [4, "Jan 1 → Feb 14 · f4"]];
+  var html = stages.map(function(s){ return '<div class="cell cream"><h3>' + s[1] + '</h3>' + card(chip + svg("0 0 140 140", 200, 200, corner(s[0]), 'style="position:absolute;right:0;top:0"'), 200) + '</div>'; }).join("");
+  html += '<div class="cell cream"><h3>× 2 · f4, a drip, and a tap (a warm breath clears a spot)</h3>' + card(svg("0 0 140 140", 400, 400, corner(4, { drip: true, breath: [96, 64] }), 'style="position:absolute;right:0;top:0"'), 400) + '</div>';
+  html += '<div class="cell cream"><h3>The thaw · Feb 22–26 · f2, short icicles, dripping</h3>' + card(chip + svg("0 0 140 140", 200, 200, corner(2, { drip: true, ice: .5 }), 'style="position:absolute;right:0;top:0"'), 200) + '</div>';
+  document.getElementById("corners").innerHTML = html;
+})();
+
+/* ===== 5 · the snowman's calendar ===== */
+(function(){
+  var st = [["S0", "Dec 1–4", "first frost; nothing on the sand yet"], ["S1", "Dec 7–11", "a rolled snowball and its track"], ["S2", "Dec 14–17", "stacked: coal eyes, smile, buttons, sticks"], ["S3", "Dec 18 →", "the carrot, the scarf, the hat: done"],
+            ["S3v", "Dec 18 · period 1", "the gull on his hat: the builder"], ["caper", "Jan 18–21", "the scarf is gone"], ["M1", "Feb 15–19", "leaning, dripping, slush"], ["M2", "Feb 22–25", "slumped; an arm has fallen"], ["M3", "Feb 26–28", "a hat, a carrot, a sprout"]];
+  var one = function(k, scale){ var stage = k === "S3v" ? "S3" : k, o = k === "S3v" ? { visit: true } : {}, w = 96 * scale, h = 140 * .96 * scale;
+    return '<div style="position:relative;width:' + (w + 30 * scale) + 'px;height:' + (h + 8) + 'px;margin:0 auto">' + svg("0 0 100 140", w, h, snowman(stage, o), 'style="position:absolute;left:' + (24 * scale) + 'px;top:0"') + '</div>'; };
+  document.getElementById("snowmen").innerHTML = st.map(function(s){ return '<div class="cell sand" style="width:196px"><h3>' + s[1] + '</h3>' + one(s[0], 1) + '<p>' + s[2] + '</p></div>'; }).join("");
+  /* Steward: 0.32× at 1920, on the ~76 px of free sand under the cards */
+  var row = '<div class="cell sand"><h3>Steward · 0.32× on 76 px of free sand (with the boat at its own size)</h3><div style="display:flex;gap:14px;align-items:flex-end;height:76px">';
+  ["S1", "S2", "S3", "caper", "M1", "M2", "M3"].forEach(function(k){ row += svg("0 0 100 140", 30.7, 43, snowman(k)); });
+  row += svg("-6 -16 52 56", 52, 56, boat({ lamp: .75, hat: true, deck: true })) + '</div><p style="max-width:600px">At 31 × 43 px the snowman is three white balls with a teal edge, a teal hat, a rust band and an amber point — each stage still reads. The face is gone at this size, as it should be.</p></div>';
+  document.getElementById("steward").innerHTML = row;
+})();
+
+/* ===== 6 · the sea's visitors ===== */
+(function(){
+  var cell = function(t, body, p, cls){ return '<div class="cell ' + (cls || "water") + '"><h3>' + t + '</h3>' + body + (p ? '<p>' + p + '</p>' : "") + '</div>'; };
+  var wb = function(vb, w, h, b){ return '<div style="background:linear-gradient(#F8F2E4 0 70%, #BFEFEA 70%)">' + svg(vb, w, h, b) + '</div>'; };
+  var html = "";
+  html += cell("The seal · surfaces and looks (× 5)", wb("-2 -2 24 22", 120, 110, sealHead(-14)), "Bottling beside the boat: head up, the curious tilt toward the boat.", "cream");
+  html += cell("Hauled out on its floe (× 5)", wb("0 0 64 32", 320, 160, sealOnFloe("lie")), "Lying on pancake ice: front and rear halves overlap at the middle.", "cream");
+  html += cell("The banana pose (× 5)", wb("0 0 64 32", 320, 160, sealOnFloe("banana")), "Head and tail up together — what a cold seal really does.", "cream");
+  html += cell("Windy: the floe tips (× 5)", wb("0 0 64 32", 320, 160, sealOnFloe("slide", -14)), "The floe tips left; the seal slides off the low side head-first; the floe drifts on, empty.", "cream");
+  html += cell("The narwhal · the tusk first, then a breath (× 3)", wb("-4 -4 128 40", 384, 120, narwhal("puff")), "Far lane: a 60 px animal behind a 38 px boat. The breath is white and lingers: a cold day.", "cream");
+  html += cell("The salute, then the dive (× 3)", wb("-4 -4 128 40", 384, 120, narwhal("salute")) + wb("-4 -4 128 40", 384, 120, narwhal("dive")), "", "cream");
+  html += cell("Tusking · the rare (× 2.4)", wb("40 -4 86 38", 400, 177, tusking()), "Two meet and cross tusks: an X over the water is the whole picture.", "cream");
+  html += cell("Pancake floes (× 4)", wb("0 0 120 30", 480, 120, floe(40, 4, 4, 3) + floe(28, 52, 8, 8) + floe(18, 88, 10, 13)), "Flotsam: they drift right, with the buoy and Wilson.", "cream");
+  html += cell("The serpent in the snowman's scarf (× 2.5)", wb("-4 -4 140 50", 350, 125, serpent(true)), "The caper week: the rust knit with the cream bars, the ends streaming behind the head as it glides left.", "cream");
+  document.getElementById("sea").innerHTML = html;
+})();
+
+/* ===== the composites: the real board at a winter date, the winter drawings over it ===== */
+function composite(name, o){
+  var G = window.GEO && window.GEO[name];
+  if (!G){ document.getElementById("b-" + name).innerHTML = '<p class="note">(no frame: run tools/proofs/winter.js capture)</p>'; return; }
+  var d = G.dock, m = G.boat, s = '<svg class="ov" viewBox="0 0 1920 1080" width="1920" height="1080"><defs><clipPath id="nd-' + name + '"><path clip-rule="evenodd" d="M0,0 H1920 V1080 H0 Z M' + (d.x - 6) + ',' + (d.y - 6) + ' h' + (d.w + 12) + ' v' + (d.h + 14) + ' h' + (-(d.w + 12)) + ' Z"/></clipPath></defs><g clip-path="url(#nd-' + name + ')">';
+  s += nest(0, G.waves.y, 1920, G.waves.h, "0 0 1920 120", duneCap(o.cap, 5), 'preserveAspectRatio="none"');
+  s += nest(G.clock.x + G.clock.w - 200, G.clock.y, 200, 200, "0 0 140 140", corner(o.frost, o.corner || {}));
+  if (o.snowman) s += nest(1920 - 76.8 - 96, 1046 - 126.7, 96, 134.4, "0 0 100 140", snowman(o.snowman, o.sm || {}));
+  if (o.act) s += o.act(G);
+  s += '<g transform="matrix(' + [m.a, m.b, m.c, m.d, m.e, m.f].map(function(v){ return r1(v * 100) / 100; }).join(" ") + ')">' + boatWinter(o.boat) + '</g>';
+  (o.flakes || []).forEach(function(f, i){ s += f.length === 3 ? fleckAt(f[0], f[1], f[2]) : flakeAt(f[0], f[1], f[2], KINDS[(i + f[3]) % 4], 30 + i * 7, f[4] || 0); });
+  if (o.after) s += o.after(G);
+  s += '</g></svg>';
+  document.getElementById("b-" + name).innerHTML = '<div class="board"><img src="winter-frames/' + name + '.png" alt="">' + s + '</div>';
+  document.getElementById("n-" + name).innerHTML = o.note;
+}
+composite("dec09", { cap: .55, frost: 2, snowman: "S1", boat: { lamp: 1, lights: 2 },
+  act: function(G){ return floe(44, 930, 1080 - 4 - 15.4, 3) + floe(28, 982, 1080 - 2 - 9.8, 8) + floe(18, 1016, 1080 - 3 - 6.3, 13); },
+  flakes: [[118, 250, 54, 0, 8], [214, 600, 46, 1, -10], [96, 860, 58, 2, 3], [1702, 330, 50, 3, 0], [1822, 560, 60, 0, 14], [1690, 790, 46, 1, -4], [168, 420, 9], [1852, 360, 8]],
+  note: "<b>Over the real board</b> (Deckhand.html at #t=2026-12-09T10:40, locked, breezy, motion paused): the frost at its second week in the clock card's corner (the branch's box, above the date line and far from the digits); flurries in the outer 15% columns at the leaves' rate (six on the board, never in the 31–69% the digits use); the first ground snow on the dune's crests; a snowball rolled up the sand at the right edge, its track behind it, gull prints beside it; the boat's string up with two of nine bulbs lit (seven school days to break); a raft of pancake floes drifting right in the near lane." });
+composite("jan13", { cap: 1, frost: 4, snowman: "S3", sm: { fresh: true }, boat: { lamp: .75, hat: true, deck: true },
+  act: function(G){
+    var s = '<defs><linearGradient id="sqV" x1="0" y1="972" x2="0" y2="1080" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#E9F8F5" stop-opacity="0"/><stop offset=".3" stop-color="#E9F8F5" stop-opacity=".72"/><stop offset="1" stop-color="#DDF3EF" stop-opacity=".82"/></linearGradient>' +
+            '<linearGradient id="sqH" x1="560" y1="0" x2="800" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient>' +
+            '<mask id="sqM" maskUnits="userSpaceOnUse" x="540" y="940" width="1400" height="160"><rect x="540" y="940" width="1400" height="160" fill="url(#sqH)"/></mask></defs><g mask="url(#sqM)">';
+    var top = "M560,1080 L560,996", R = rng(77), i, x, y, l;
+    for (x = 560; x <= 1920; x += 80) top += " Q" + (x + 40) + "," + r1(975 + R() * 14) + " " + (x + 80) + "," + r1(984 + R() * 10);
+    s += '<path d="' + top + ' L1920,1080 Z" fill="url(#sqV)"/>';
+    for (i = 0; i < 340; i++){ x = 560 + R() * 1380; y = 984 + R() * 100; l = 7 + R() * 10;
+      s += '<path d="M' + r1(x) + ',' + r1(y) + ' l' + r1(-l * .82) + ',' + r1(l * .5) + '" stroke="#fff" stroke-width="' + r1(1.6 + R() * 1.4) + '" stroke-linecap="round" opacity="' + r1(.7 + R() * .3) + '"/>'; }
+    return s + '</g>'; },
+  flakes: [[64, 160, 50, 0, 20], [196, 330, 58, 1, -14], [112, 520, 46, 2, 30], [232, 700, 54, 3, 8], [78, 870, 44, 0, -22], [1668, 270, 56, 1, 18], [1846, 430, 50, 2, -6], [1724, 610, 62, 3, 26], [1810, 800, 48, 0, -18], [1660, 880, 44, 1, 10],
+           [150, 240, 10], [40, 640, 9], [260, 520, 11], [1760, 360, 9], [1880, 650, 10], [1700, 740, 8]],
+  note: "<b>Windy and snowing</b> (#t=2027-01-13T13:20, windy weather: the boat heeled 11°): the frost at full, the dune white, fresh snow on the snowman's hat and sticks; ten flakes (the windy cap) driven left in both columns; the gull in its bobble hat and snow on the deck. <b>The squall</b> (January's weather act: only in a windy snowfall period, once at most, in its middle third) is crossing right to left over the water: a soft-topped band of driven snow over the boat and the front waves, under the dock; while it passes, the columns snow their hardest and the boat heels and collects snow on its sails." });
+composite("jan20", { cap: 1, frost: 4, snowman: "caper", boat: { lamp: .75 },
+  act: function(G){ return nest(1072, 1080 - 9 - 45.3, 136, 45.3, "0 0 132 44", '<defs><clipPath id="jsc"><rect x="-10" y="-10" width="160" height="44.4"/></clipPath></defs><g clip-path="url(#jsc)">' + serpent(true) + '</g>'); },
+  flakes: [[150, 380, 54, 1, 6], [1760, 420, 50, 2, -8], [1840, 700, 46, 3, 12], [210, 760, 9], [1700, 560, 8]],
+  note: "<b>The caper</b> (#t=2027-01-20T09:50, breezy): the snowman stands with a bare neck — the rust scarf is gone since Monday — and the serpent glides by behind the boat wearing it, the cream-barred ends streaming. All week the serpent is weighted ×2 and may greet a class as it sits down; on Friday the scarf is back on the snowman." });
+composite("feb26", { cap: 0, frost: 1, corner: { drip: true, ice: .3 }, snowman: "M3", boat: { lamp: .5 },
+  flakes: [],
+  note: "<b>The thaw's end</b> (#t=2027-02-26T14:10, calm): no snow falls; the frost has shrunk back into the corner and its last icicles drip; the dune is sand again; where the snowman stood there is a puddle with his hat on a mound, the carrot, the coal, the sticks, the scarf — and a teal sprout. Every period greets with the turtle, back from the south. On March 1 all of it is gone." });
+</script>
+</body></html>
