@@ -3,6 +3,7 @@
                                             #t= override the tests use), pauses its motion at a fixed
                                             time, photographs the board and writes the geometry the
                                             proof sheet overlays its drawings on
+   node tools/proofs/winter.js measure      — the frost's paint cost, written to winter-frames/cost.js
    node tools/proofs/winter.js render [crops-dir]
                                          — renders docs/reviews/winter-proofs.html to winter-proofs.png
                                             and the one-third sheet (the 8 m check), and optionally
@@ -15,13 +16,16 @@ const ROOT = path.resolve(__dirname, "../..");
 const APP = "file://" + path.join(ROOT, "Deckhand.html");
 const FR = path.join(ROOT, "docs/reviews/winter-frames");
 const SHEET = path.join(ROOT, "docs/reviews/winter-proofs.html");
-const FRAMES = [
-  { name: "dec09", hash: "#t=2026-12-09T10:40", sea: "breezy" },   // an ordinary December day (week 2)
-  { name: "dec18", hash: "#t=2026-12-18T09:40", sea: "breezy" },   // the last school day before break, period 1
-  { name: "jan13", hash: "#t=2027-01-13T13:20", sea: "windy" },    // a January day with wind and snow (the squall), the frost at its peak
-  { name: "jan27", hash: "#t=2027-01-27T09:50", sea: "breezy" },   // the caper week (Jan 25–28)
-  { name: "feb26", hash: "#t=2027-02-26T14:10", sea: "calm" },     // the last school day of February
-  { name: "m1280", hash: "#t=2027-01-13T13:20", sea: "breezy", w: 1280, h: 800 }   // the peak frost's fit on a 1280 × 800 board
+const FRAMES = [   // v2 (Nov 14): the redesign's dates — every beat runs several days, so each composite is a typical day of its stretch
+  { name: "dec02", hash: "#t=2026-12-02T10:40", sea: "breezy" },   // early December: the first week (the snowball, first frost, 3 of 14 bulbs)
+  { name: "dec16", hash: "#t=2026-12-16T09:40", sea: "breezy" },   // the last week before break: the snowman finished, 12 of 14 bulbs
+  { name: "jan13", hash: "#t=2027-01-13T13:20", sea: "windy" },    // mid-January: the frost at its peak, a snowing period
+  { name: "jan27", hash: "#t=2027-01-27T09:50", sea: "breezy" },   // the caper week (Jan 25–29)
+  { name: "feb24", hash: "#t=2027-02-24T14:10", sea: "calm" },     // late February: the puddle week, the serpent in the pail
+  { name: "m1280dec", hash: "#t=2026-12-16T09:40", sea: "breezy", w: 1280, h: 800 },
+  { name: "m1280jan", hash: "#t=2027-01-13T13:20", sea: "breezy", w: 1280, h: 800 },
+  { name: "steward", hash: "#t=2026-12-16T09:40", sea: "breezy", steward: true },   // a dense board: every card's area is off-limits
+  { name: "nov18", hash: "#t=2026-11-18T10:40", sea: "breezy", live: true }         // the live November board, the standard winter is held to
 ];
 async function capture(){
   fs.mkdirSync(FR, { recursive: true });
@@ -34,7 +38,22 @@ async function capture(){
     await page.waitForFunction(() => !!window.Deckhand);
     if (await page.evaluate(() => document.body.classList.contains("landing"))) await page.click("#launchBtn");
     await page.waitForTimeout(400);
-    await page.addStyleTag({ content: "#greetToast{display:none !important} #dateline .sim{display:none !important} #boat .btGull{visibility:hidden !important}" });   // the gull is the sheet's own (it moves to the snowman on Dec 18)   // the boot toast and the coral SIM tag the #t= override shows
+    await page.addStyleTag({ content: "#greetToast{display:none !important} #dateline .sim{display:none !important}" + (f.live ? "" : " #boat .btGull{visibility:hidden !important}") });
+    if (f.steward){   // a Steward-like dense board: the clock shrinks to a card and five cards share the board
+      for (const id of ["addTimerBtn", "addTextBtn", "addScoreBtn", "addTallyBtn", "addPickerBtn"]){
+        try { await page.click("#addBtn", { timeout: 2000 }); await page.click("#" + id, { timeout: 2000 }); await page.waitForTimeout(150); } catch(e){ console.log("steward add", id, String(e).slice(0, 80)); }
+        await page.keyboard.press("Escape").catch(() => {});
+      }
+      await page.evaluate(() => {
+        const L = [[0, 0, 48, 62], [50, 0, 50, 46], [0, 64, 31, 36], [33, 64, 33, 36], [68, 48, 32, 52], [50, 48, 16, 14]];
+        const els = Array.from(document.querySelectorAll("*")).filter(e => e._entry && e.offsetParent);
+        els.sort((a, b) => (a._entry.cfg.type === "clock" ? -1 : 0) - (b._entry.cfg.type === "clock" ? -1 : 0));
+        els.forEach((el, i) => { const r = L[i % L.length], c = el._entry.cfg; c.x = r[0]; c.y = r[1]; c.w = r[2]; c.h = r[3];
+          el.style.left = r[0] + "%"; el.style.top = r[1] + "%"; el.style.width = r[2] + "%"; el.style.height = r[3] + "%"; });
+        window.dispatchEvent(new Event("resize"));
+      });
+      await page.waitForTimeout(600);
+    }   // the gull is the sheet's own (it moves to the snowman on Dec 18)   // the boot toast and the coral SIM tag the #t= override shows
     if (!(await page.evaluate(() => document.body.classList.contains("locked")))) await page.click("#lockBtn");   // teaching mode: no handle band
     await page.evaluate(sea => {
       window.Deckhand.config.ui.motion = "on";
@@ -75,7 +94,8 @@ async function capture(){
       const cR = Math.max.apply(null, content.map(b => b.x + b.w)), cT = Math.min.apply(null, content.map(b => b.y));
       const free = { uMax: Math.round(right - (cR + 28)), vTop: Math.round(cT - 28 - top), contentRight: Math.round(cR), contentTop: Math.round(cT),
                      cardH: Math.round(C.h), cardW: Math.round(C.w) };
-      return { boat: m, clock: C, waves: r(document.getElementById("waves")), dock: r(document.getElementById("dock")),
+      const cards = Array.from(document.querySelectorAll("*")).filter(e => e._entry && e.offsetParent).map(e => Object.assign({ t: e._entry.cfg.type }, r(e)));
+      return { cards: cards, boat: m, clock: C, waves: r(document.getElementById("waves")), dock: r(document.getElementById("dock")),
                fs: r(document.getElementById("fsBtn")), face: r(face), content: content, controls: controls, free: free,
                W: innerWidth, H: innerHeight };
     });
@@ -120,8 +140,44 @@ async function render(crops){
   await br.close();
 }
 
+/* the frost's paint cost: each stage's SVG decoded and drawn to a board-size canvas, ten times, median ms,
+   with no throttle and with 4× CPU throttling (the Chromebox stand-in); written to winter-frames/cost.js */
+async function measure(){
+  const br = await chromium.launch();
+  const page = await (await br.newContext({ viewport: { width: 1960, height: 1200 } })).newPage();
+  await page.goto("file://" + SHEET);
+  await page.waitForTimeout(800);
+  const cdp = await page.context().newCDPSession(page);
+  const stages = [["dec02", .25], ["dec16", .55], ["jan13", 1], ["feb24", .22], ["m1280jan", 1]];
+  const out = {};
+  for (const rate of [1, 4]){
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate });
+    for (const [name, sc] of stages){
+      const ms = await page.evaluate(async ([name, sc]) => {
+        const src = window.frostSVG(name, sc), G = window.GEO[name], times = [];
+        for (let i = 0; i < 11; i++){
+          const t0 = performance.now();
+          const url = URL.createObjectURL(new Blob([src], { type: "image/svg+xml" }));
+          const img = new Image(); img.src = url; await img.decode();
+          const c = document.createElement("canvas"); c.width = G.W; c.height = G.H; const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+          x.getImageData(0, 0, 1, 1);   // force the draw to finish
+          URL.revokeObjectURL(url);
+          if (i) times.push(performance.now() - t0);
+        }
+        times.sort((a, b) => a - b); return Math.round(times[5] * 10) / 10;
+      }, [name, sc]);
+      const k = name + "@" + sc; out[k] = out[k] || {}; out[k][rate === 1 ? "ms1" : "ms4"] = ms;
+    }
+  }
+  fs.writeFileSync(path.join(FR, "cost.js"), "/* written by tools/proofs/winter.js measure */\nwindow.COST = " + JSON.stringify(out) + ";\n");
+  console.log("cost", JSON.stringify(out));
+  await br.close();
+}
+
 (async () => {
   const cmd = process.argv[2] || "all";
+
   if (cmd === "capture" || cmd === "all") await capture();
+  if (cmd === "measure" || cmd === "all") await measure();
   if (cmd === "render" || cmd === "all") await render(process.argv[3]);
 })().catch(e => { console.error(e); process.exit(1); });
