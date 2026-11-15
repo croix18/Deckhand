@@ -2,6 +2,26 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.64.0 — 2026-11-15
+
+**Winter, part one: the new serpent all year, and December's lights.** Croix, on the serpent prototype's clips:
+"Yes that's great. Do it." The serpent is the approved prototype on the real board: one body that follows its own
+head, slithering up out of the water and back down, with water that parts, rings and splashes where it crosses the
+surface. Its everyday pass porpoises across the far lane and stops to look round. The rare attack is now a battle
+of 39–50 seconds, put together fresh each time from an opener, two different exchanges and a finisher: the boat
+wins about half of them (a tiny cannon, or the serpent tied in a knot) and the serpent the other half (a dunk, or a
+belly-flop that rolls the boat right over). There is no truce. It fights Deckhand's own boat and gull at 1×: the
+boat heels, bounces and throws spray big enough to see from the back of the room, and the words ("CHOMP", "BONK",
+"KER-SPLASH") are about 30 px tall. The fight stays in open water, clear of the dock. The ice pass is built, but it
+waits for the frozen sea (Jan 11–29), which comes in a later version.
+**The lights:** from Monday Nov 30, November clears and a string of 14 colored bulbs hangs across the top of the
+board, unlit. One more lights each December school day (all 14 on Dec 18), they stay lit over the break, and from
+Jan 4 one goes dark each school day. The string comes down on Jan 22. The lantern and the gull's scarf carry over.
+**Days with no school:** Settings → Bells has a new field for single days off. It is seeded with Jan 18 (MLK Day) and
+Feb 15 (Presidents' Day). On those days there are no bells, and they no longer count as school days (the countdown
+card, the lights).
+Not in this version: the frost, the flurries, the snowman and the manatee (see HANDOFF).
+
 ## 7.63.1 — 2026-11-14
 
 **Nib 1.7.0 inside.** Croix, of Nib after its audit: "take on the speed head on. Throw your best at it." The engine's
