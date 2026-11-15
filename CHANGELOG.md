@@ -19,15 +19,17 @@ its rolling track and the gull's footprints (Nov 30), stacked with pebble eyes, 
 scarf and an upside-down sand pail). Tap him and his head slips crooked; tap again to straighten it. The dune
 gets snow, more each week. **The manatee** arrives Dec 7: it surfaces nostrils first beside the boat, looks at it
 (the gull leans over to look back), cruises slowly right and dives with its round tail lifted. It greets every
-class on Dec 7–8 and on the first two days back (Jan 6–7), and on Fri Jan 8 it swims off left, upriver, for the
-cold. **The gull visits the snowman** from Dec 14 (that day in the first class, then about one day in three):
+class on Dec 7–8 and on the first two days back (Jan 6–7), and on Fri Jan 8 it does not dive: it swims on, out of
+the frame on the right, upriver for the cold. **The gull visits the snowman** from Dec 14 (that day in the first class, then about one day in three):
 it leaves the boat, sits on his pail for four minutes, and flies home. The lights, the lantern and the scarf are
 as in 7.64. Reduced motion holds everything still (two flakes lie on the sand during a flurry), and Seasonal
 touches Off takes all of it.
 **After the December proofs** ("The look is good. Make the necessary fixes."): the manatee now swims head-first
 the whole way (after looking at the boat it lowers its head and slips under with a soft ring, a faint shape turns
-under the water, and its back and round tail come up facing right before its head; on Jan 8 it simply swims off
-left, head-first). It sits IN the water: only its back, the top of its head and, in the dive, its tail show above the
+under the water, and its back and round tail come up facing right before its head). On Jan 8 it does all of that
+and then, instead of diving, swims on a little faster, breathes twice on the way and leaves the frame on the right,
+in sight the whole way. (The first build sent it off to the left that day: that took it straight through the boat
+and then behind the dock for most of the act.) It sits IN the water: only its back, the top of its head and, in the dive, its tail show above the
 waterline, the rest shows faintly through the water, a broken ripple line rides where it meets the surface, and the
 front waves pass in front of it. It is drawn as a manatee (a heavy rounded body, a squarish whiskered snout, a small
 eye, a flipper that sculls, a paddle tail that strokes, three pale scars, a pale rim on its back and a lighter belly),

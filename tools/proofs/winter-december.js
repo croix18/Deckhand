@@ -2,11 +2,11 @@
    node tools/proofs/winter-december.js shots [OUT]     — the board at Nov 24, Nov 30, Dec 3, Dec 7, Dec 10, Dec 14, Dec 18, Jan 6
                                                            (locked, the motion paused at a fixed moment), plus 3× crops of the frost,
                                                            a flake, the snowman and the frost at its designed peak (s = 1, Frost.paintAt)
-   node tools/proofs/winter-december.js clip OUT snow|manatee|manatee3x|leave|visit
+   node tools/proofs/winter-december.js clip OUT snow|manatee|manatee3x|leave|leave3x|visit
                                                          — a frame-exact MP4: every animation on the page paused and stepped together
                                                            (snow: a flurry over the frost, the right edge; manatee: the whole act; visit:
                                                            its arrival and its leaving; manatee3x: the act at 3×, the frame following
-                                                           the manatee; leave: Jan 8's act, swimming off left, at 1×)
+                                                           the manatee; leave: Jan 8's act, swimming out of the frame on the right, at 1×; leave3x: the same at 3×, following it)
    node tools/proofs/winter-december.js cost            — script time per frame at 1× and 4× CPU throttle with snow falling and the
                                                            frost showing, and with the manatee's act playing too (a trace: every main-thread task between two frames), and the
                                                            style / layout passes per frame
@@ -86,7 +86,8 @@ async function zoom(src, out, crop, k){
   }
   if (cmd === "clip"){
     const out = path.resolve(process.argv[3]), which = process.argv[4] || "snow";
-    const p = await board(br, which === "visit" ? "#t=2026-12-15T10:30" : which === "leave" ? "#t=2027-01-08T10:30" : "#t=2026-12-10T10:30", { scale: which === "manatee3x" ? 3 : 1 });
+    const x3 = which === "manatee3x" || which === "leave3x", jan8 = which === "leave" || which === "leave3x";
+    const p = await board(br, which === "visit" ? "#t=2026-12-15T10:30" : jan8 ? "#t=2027-01-08T10:30" : "#t=2026-12-10T10:30", { scale: x3 ? 3 : 1 });
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wnclip-"));
     /* the director's end-of-act timers run on the wall clock, and a frame-exact recording takes far longer than the act:
        drop the long ones (the act's end, the boat's reaction, the gull's return) while the act is started */
@@ -96,10 +97,10 @@ async function zoom(src, out, crop, k){
       /* a flurry's worth in 22 s: three flakes started at staggered points of their fall, over the frost's column */
       await p.evaluate(() => { const S = window.Deckhand.season.snow; S.spawn({ kind: "dendrite", size: 24, x: .9, at: .0 }); S.spawn({ kind: "fleck", x: .95, at: .38 }); S.spawn({ kind: "plate", size: 20, x: .875, at: .7 }); });
       n = 22 * fps; clip = { x: 1180, y: 0, width: 740, height: 1080 }; step = (t) => t;
-    } else if (which === "manatee" || which === "manatee3x" || which === "leave"){
+    } else if (which === "manatee" || x3 || jan8){
       await p.evaluate(() => { const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("manatee", "near"); });
-      n = 50 * fps; clip = which === "leave" ? { x: 0, y: 900, width: 1360, height: 180 } : { x: 560, y: 900, width: 1360, height: 180 }; step = (t) => t;
-      if (which === "manatee3x") clip = null;   // follows the manatee: 400 × 110 around its drift, at 3×
+      n = 50 * fps; clip = { x: 560, y: 900, width: 1360, height: 180 }; step = (t) => t;
+      if (x3) clip = null;   // follows the manatee: 400 × 110 around its drift, at 3×
     } else {
       await p.evaluate(() => { const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("visit"); });
       n = 16 * fps; clip = { x: 1080, y: 380, width: 840, height: 700 }; step = (t) => t < 9 ? t : 231 + (t - 9);   // the arrival, then the leaving
@@ -108,7 +109,14 @@ async function zoom(src, out, crop, k){
     await p.evaluate(() => { window.__a = document.getAnimations(); window.__b = window.__a.map(x => x.currentTime || 0); window.__a.forEach(x => x.pause()); });
     for (let i = 0; i < n; i++){
       const t = step(i / fps);
-      await p.evaluate(t => { window.__a.forEach((x, k) => { try { x.currentTime = window.__b[k] + t * 1000; } catch(e){} }); }, t);
+      await p.evaluate(t => {
+        window.__a.forEach((x, k) => { try { x.currentTime = window.__b[k] + t * 1000; } catch(e){} });
+        /* a paused animation never fires "finish": a flake that reached the water would lie on it for ever. Run its handler
+           once at the end of its fall, and step whatever that starts (the melt, the ring) from this moment on */
+        window.__a.slice().forEach(x => { let end = Infinity; try { end = x.effect.getComputedTiming().endTime; } catch(e){}
+          if (x.onfinish && !x.__done && isFinite(end) && x.currentTime >= end){ x.__done = true; const f = x.onfinish; x.onfinish = null; try { f.call(x); } catch(e){}
+            document.getAnimations().forEach(y => { if (window.__a.indexOf(y) === -1){ y.pause(); window.__a.push(y); window.__b.push((y.currentTime || 0) - t * 1000); } }); } });
+      }, t);
       let c = clip;
       if (!c){ const x = await p.evaluate(() => { const r = document.querySelector("#sea-manatee .mnDrift").getBoundingClientRect(); return r.left + r.width / 2; });
         c = { x: Math.round(Math.max(0, Math.min(1520, x - 200))), y: 970, width: 400, height: 110 }; }

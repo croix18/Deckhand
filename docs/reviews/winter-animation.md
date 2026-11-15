@@ -316,7 +316,7 @@ The drift starts after the head-up (16.8%), so the manatee looks at the boat fro
 leaves. Its distance (30vw) keeps it clear of the sand pieces at every width. The spray (`.mnSpray`,
 three drops, `translate(0, −6px)` and fade over 700 ms) plays at 1.2 s and 30 s.
 
-**Fri Jan 8: it leaves.** The day's acts use the `leave` variant. After the look at the boat it turns (a 60 ms flip) and cruises **left**, past the boat and behind the dock, without diving: `mnDrift` runs to `translateX(calc(-42vw - 120px))` over 40 s. From Jan 11 it is gone until Feb 1.
+**Fri Jan 8: it leaves.** The day's acts use the `leave` variant. As built in 7.65 (after the proofs): the act is the usual one up to the cruise; then it does not dive but keeps on to the **right**, out of the frame: `mnDriftL` runs to `translateX(calc(100vw - max(42vw, 300px) - 22px))` by 50 s at one speed (29 px/s at 1920), with breaths at 26 s and 40 s. (First written here as a turn and a cruise **left**, past the boat and behind the dock: built, it swam through the boat and spent most of the act behind the dock.) From Jan 11 it is gone until Feb 1.
 
 **Windy:** the spray shears left (`translate(−6px, −4px)`), and the cruise is unchanged. A manatee
 doesn't care about the wind.

@@ -7,7 +7,7 @@
  *     Seasonal touches Off take all of it
  *   · snow is weather: one to three flurries a school week, a cap of three flakes on the board
  *   · the manatee from Dec 7 (the greeting every period on Dec 7–8 and the first two days back), gone
- *     after Jan 8 (it swims off left that day); the gull's first visit on Dec 14, in the day's first class */
+ *     after Jan 8 (it swims off that day, out of the frame on the right); the gull's first visit on Dec 14, in the day's first class */
 const { test, ok } = require("./helpers");
 
 const shown = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== "none" && (e.id === "wnFrostBox" || e.id === "wnCap" || e.getBoundingClientRect().width > 0); }, sel);
@@ -122,7 +122,7 @@ test.describe("v7.65 winter, December", () => {
     ok(still.on === 2 && still.anims === 0, "reduced motion: " + JSON.stringify(still));
   });
 
-  test("v7.65: the manatee — from Dec 7, greeting every period on Dec 7–8 and Jan 6–7, leaving left on Jan 8, gone after; it plays on the board and the gull leans", async ({ page, dh }) => {
+  test("v7.65: the manatee — from Dec 7, greeting every period on Dec 7–8 and Jan 6–7, leaving on Jan 8, gone after; it plays on the board and the gull leans", async ({ page, dh }) => {
     await dh.openAt("#t=2026-12-10T10:30");
     await dh.launch();
     const r = await page.evaluate(() => {
@@ -195,15 +195,30 @@ test.describe("v7.65 winter, December", () => {
     const v = xs.slice(1).map((x, i) => x - xs[i]), vm = v.reduce((s, x) => s + x, 0) / v.length;
     ok(v.every(d => Math.abs(d - vm) < .03 * vm + .2), "the cruise's speed is not constant: " + v.map(d => d.toFixed(2)).join());
     for (const t of [10400, 10500, 10600]){ const a = await mnAt(page, t); ok(a.top > a.wl, t + " ms: the mirror happens in sight: " + JSON.stringify(a)); }
-    // Jan 8: it leaves left, head-first, without turning
+    /* Jan 8, its last act: the same look and the same turn under water, then no dive — it swims on, head-first and in the
+       water the whole way, at one speed, and out of the frame on the right. It never crosses the boat (the first build sent it
+       left, through the boat and behind the dock) */
     await dh.openAt("#t=2027-01-08T10:30");
     await dh.launch();
-    await page.evaluate(() => { window.__mn = null; window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); const M = window.Deckhand.seaModule; M.clear(); M.play("manatee", "near"); });
+    await page.evaluate(() => { window.__mn = null; window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("manatee", "near"); });
     await page.waitForTimeout(200);
-    for (let t = 12000; t <= 30000; t += 3000){
+    ok(await page.evaluate(() => document.getElementById("sea-manatee").classList.contains("leave") && document.getElementById("mnGhost").classList.contains("leave")), "Jan 8: the leaving variant is not on it and its ghost");
+    const boatR = await page.evaluate(() => document.getElementById("boat").getBoundingClientRect().right), W = await page.evaluate(() => window.innerWidth);
+    const look8 = await mnAt(page, 5000);
+    ok(look8.head < look8.tail && look8.x > boatR - 6, "Jan 8: at the look it faces the boat from beside it: " + JSON.stringify([look8, boatR]));
+    for (const t of [10400, 10500, 10600]){ const a = await mnAt(page, t); ok(a.top > a.wl, t + " ms on Jan 8: the mirror happens in sight: " + JSON.stringify(a)); }
+    const xs8 = [];
+    for (let t = 14000; t <= 46000; t += 2000){
       const a = await mnAt(page, t), b = await mnAt(page, t + 400);
-      ok(b.x < a.x && a.head < a.tail, t + " ms on Jan 8: not leaving left head-first: " + JSON.stringify([a, b.x]));
+      ok(b.x > a.x && a.head > a.tail, t + " ms on Jan 8: not leaving right head-first: " + JSON.stringify([a, b.x]));
+      ok(a.x > boatR, t + " ms on Jan 8: it is over the boat: " + JSON.stringify([a.x, boatR]));
+      ok(a.top < a.wl && a.bottom > a.wl + 8, t + " ms on Jan 8: it dived, or it is out of the water: " + JSON.stringify(a));
+      if (t >= 16000) xs8.push(a.x);
     }
+    const v8 = xs8.slice(1).map((x, i) => x - xs8[i]), vm8 = v8.reduce((s, x) => s + x, 0) / v8.length;
+    ok(v8.every(d => Math.abs(d - vm8) < .03 * vm8 + .2), "Jan 8: the cruise's speed is not constant: " + v8.map(d => d.toFixed(2)).join());
+    const end8 = await mnAt(page, 49800);
+    ok(end8.x >= W, "Jan 8: at the end of its act it is still on the screen (it would pop out): " + JSON.stringify([end8.x, W]));
   });
 
   test("v7.65: the frost runs behind the card's button (no hole), the first week's frost is the branch's size, the dune's drifts taper, the visiting gull stands on the pail", async ({ page, dh }) => {

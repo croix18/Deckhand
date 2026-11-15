@@ -75,7 +75,7 @@ student day and Dec 18 a normal class day (Croix: "Yes and yes I think at least"
 | **Starts** | **Mon Nov 30** (the first school day after the Thanksgiving skip week; fallback Dec 1) | November clears. The first snowflake falls, a snowball sits in the scarecrow's slot, the first frost is in the corner, and the string goes up dark. |
 | **December** | Nov 30 → Fri Dec 18 | The frost grows weekly, and the dune gets snow. The snowman is built in three stages (finished Dec 14). One more bulb lights each December school day (Dec 18 → 14). The manatee arrives Dec 7. The serpent tastes the first snow. |
 | **Break** | Dec 19 → Jan 3 | The last school day's world holds: 14 lit, the snowman finished. |
-| **Back** | Jan 4 → 21 | **The reverse countdown:** one bulb goes dark each school day (Jan 4 → 13 lit, Jan 21 → 0); the string comes down Jan 22. The manatee greets every period on Jan 4–5 and **swims off upriver on Fri Jan 8** (its last act heads out left). |
+| **Back** | Jan 4 → 21 | **The reverse countdown:** one bulb goes dark each school day (Jan 4 → 13 lit, Jan 21 → 0); the string comes down Jan 22. The manatee greets every period on Jan 4–5 and **swims off upriver on Fri Jan 8** (its last act has no dive: it swims on, out of the frame on the right). |
 | **The freeze** | **Jan 11 → Jan 29** | The frost grows to F5 (Jan 11–21) and peaks Jan 22–29, as the last bulb goes out. **The sea freezes**: freeze-in Jan 11–14, the full freeze Jan 15–25, break-up Jan 26–29 (C6e). **Caper week, Jan 25–29**: the serpent wears the snowman's scarf. |
 | **The thaw** | Feb 1 → Feb 26 | Open water on Feb 1, with a few floes drifting out Feb 1–5. **The manatee is back with a calf** (the greeting on Feb 1–2). The scarf is back on the snowman. The frost shrinks and drips. The snowman leans (Feb 8–12), slumps (Feb 15–19), and is a puddle with a growing sprout (**puddle week, Feb 22–26**), while the serpent wears his pail. |
 | **Coda** | Mar 1–5 | Plain, except the pail back on the sand with the sprout planted in it. The turtle greets every period. |
@@ -359,8 +359,10 @@ gull leans), cruises right, and dives with the round tail lifted clear. It debut
 period) and greets Jan 4–5.
 
 **It leaves before the freeze.** Manatees can't take cold water; in a cold snap Florida's go up the
-rivers to the warm springs. On **Fri Jan 8** its act ends differently: it swims off left, out past the
-dock, and does not dive. From Jan 11 it is gone.
+rivers to the warm springs. On **Fri Jan 8** its act ends differently: it does not dive. It swims on, a
+little faster, breathes twice on the way and leaves the frame on the right, in sight the whole way.
+(As first designed it swam off left, out past the dock; built, that took it through the boat and
+behind the dock for most of the act, so 7.65 sends it right.) From Jan 11 it is gone.
 
 **C6b. It comes back with a calf** (Feb 1). The greeting on Feb 1–2 is the mother and calf: the calf
 at 0.55× follows close behind, breathing a beat after its mother. Through Feb 26 the calf act is
