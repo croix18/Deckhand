@@ -2,6 +2,32 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.65.0 — 2026-11-15
+
+**Winter, December: the frost, the flurries, the snowman, the manatee.** Croix: "Can you build the rest of December."
+From Monday Nov 30 the board gets colder by the week. **The frost** grows in from the clock card's top-right edges
+like real window frost (needle feathers branching at 60°, a white crust at the frame, a few sparkles, small icicles
+along the top), drawn once a day as a still picture: a small corner the first week, bigger on Dec 7, bigger again
+on Dec 14, and bigger once more the first week back. It always keeps clear of the clock's numbers and the period
+lines, and it hides during a bell routine and on the stage. **Snow is weather:** most periods are clear; one or two
+periods a week (one the first week, Nov 30's first period, with the year's first snowflake) get a 3–6 minute
+flurry of small, perfect six-sided flakes in the board's outer edges, never more than three falling at once. A
+flake that reaches the water melts with a ring. During a flurry the snowman's pail gets a cap of fresh snow that
+stays until the bell. **The snowman** stands where the scarecrow stood, built from beach finds: a snowball with
+its rolling track and the gull's footprints (Nov 30), stacked with pebble eyes, driftwood arms and one shell
+(Dec 7), and finished on Dec 14 (a cone-shell nose, a pebble smile, scallop and sand-dollar buttons, a sargassum
+scarf and an upside-down sand pail). Tap him and his head slips crooked; tap again to straighten it. The dune
+gets snow, more each week. **The manatee** arrives Dec 7: it surfaces nostrils first beside the boat, looks at it
+(the gull leans over to look back), cruises slowly right and dives with its round tail lifted. It greets every
+class on Dec 7–8 and on the first two days back (Jan 6–7), and on Fri Jan 8 it swims off left, upriver, for the
+cold. **The gull visits the snowman** from Dec 14 (that day in the first class, then about one day in three):
+it leaves the boat, sits on his pail for four minutes, and flies home. The lights, the lantern and the scarf are
+as in 7.64. Reduced motion holds everything still (two flakes lie on the sand during a flurry), and Seasonal
+touches Off takes all of it.
+Not in this version: the serpent's first-snow beat, the gull's ride on the manatee, a tap's warm breath and the
+drips on the frost, snow along the boat's deck; January's frozen sea and the frost's peak (the frost already
+paints at its full size; the schedule stops at the first week back), February's thaw and the March coda.
+
 ## 7.64.0 — 2026-11-15
 
 **Winter, part one: the new serpent all year, and December's lights.** Croix, on the serpent prototype's clips:
