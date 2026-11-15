@@ -15,11 +15,14 @@ boat heels, bounces and throws spray big enough to see from the back of the room
 "KER-SPLASH") are about 30 px tall. The fight stays in open water, clear of the dock. The ice pass is built, but it
 waits for the frozen sea (Jan 11–29), which comes in a later version.
 **The lights:** from Monday Nov 30, November clears and a string of 14 colored bulbs hangs across the top of the
-board, unlit. One more lights each December school day (all 14 on Dec 18), they stay lit over the break, and from
-Jan 4 one goes dark each school day. The string comes down on Jan 22. The lantern and the gull's scarf carry over.
-**Days with no school:** Settings → Bells has a new field for single days off. It is seeded with Jan 18 (MLK Day) and
-Feb 15 (Presidents' Day). On those days there are no bells, and they no longer count as school days (the countdown
-card, the lights).
+board, unlit, with a bare stretch behind the greeting pill so no bulb hides under it. One more lights each December
+school day (all 14 on Dec 18), they stay lit over the break (through Jan 5), and from Wed Jan 6, the first day back,
+one goes dark each school day: the last on Tue Jan 26, and the string comes down Wed Jan 27. The lantern and the
+gull's scarf carry over.
+**Days with no school:** Settings → Bells has a new field for single days off, seeded from the district's 2026-27
+student calendar: Jan 4 (teacher work day), Jan 5 (teacher professional learning), Jan 18 (MLK Day) and Feb 15
+(Presidents' Day). Whole weeks off (Thanksgiving, the two weeks of winter break, spring break) stay under "Weeks with
+no school". On a day off there are no bells, and it doesn't count as a school day (the countdown card, the lights).
 Not in this version: the frost, the flurries, the snowman and the manatee (see HANDOFF).
 
 ## 7.63.1 — 2026-11-14

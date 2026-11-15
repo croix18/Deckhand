@@ -77,24 +77,33 @@ test.describe("v7.64 winter: the lights and the calendar", () => {
   test("v7.64: the lights count December's school days, hold over the break, then count down — MLK Day is not a school day", async ({ page, dh }) => {
     await dh.openAt("");
     const want = { "2026-11-29": null, "2026-11-30": 0, "2026-12-01": 1, "2026-12-09": 7, "2026-12-18": 14, "2026-12-25": 14, "2027-01-01": 14,
-      "2027-01-04": 13, "2027-01-15": 4, "2027-01-18": 4, "2027-01-19": 3, "2027-01-21": 1, "2027-01-22": null, "2027-02-10": null };
+      "2027-01-04": 14, "2027-01-05": 14, "2027-01-06": 13, "2027-01-15": 6, "2027-01-18": 6, "2027-01-19": 5, "2027-01-22": 2,
+      "2027-01-26": 0, "2027-01-27": null, "2027-02-10": null };
     for (const [d, n] of Object.entries(want)) ok((await count(page, d)) === n, d + " should have " + n + " lit, not " + (await count(page, d)));
     const cal = await page.evaluate(() => { const B = window.Deckhand.bell;
       return { mlk: B.isSchoolDay(new Date(2027, 0, 18)), tue: B.isSchoolDay(new Date(2027, 0, 19)), pres: B.isSchoolDay(new Date(2027, 1, 15)),
+               jan4: B.isSchoolDay(new Date(2027, 0, 4)), jan5: B.isSchoolDay(new Date(2027, 0, 5)), jan6: B.isSchoolDay(new Date(2027, 0, 6)),
                bells: B.dayBlocksFor(new Date(2027, 0, 18), 0), between: B.schoolDaysBetween(new Date(2027, 0, 15), new Date(2027, 0, 19)),
                seed: window.Deckhand.config.bell.skipDays.join() }; });
     ok(cal.mlk === false && cal.tue === true && cal.pres === false && cal.bells === null && cal.between === 1, "the calendar: " + JSON.stringify(cal));
-    ok(cal.seed === "2027-01-18,2027-02-15", "the seed's days off: " + cal.seed);
+    ok(cal.jan4 === false && cal.jan5 === false && cal.jan6 === true, "Jan 4–5 are teacher days, Jan 6 the first day back: " + JSON.stringify(cal));
+    ok(cal.seed === "2027-01-04,2027-01-05,2027-01-18,2027-02-15", "the seed's days off: " + cal.seed);
+    // one bulb at a time: from Jan 6 to the take-down no school day drops two
+    const steps = await page.evaluate(() => { const out = []; let prev = 14;
+      for (let d = new Date(2027, 0, 6); d < new Date(2027, 0, 27); d.setDate(d.getDate() + 1)){ const c = window.Deckhand.season.lights.count(new Date(d));
+        if (window.Deckhand.bell.isSchoolDay(d)){ out.push(prev - c.lit); prev = c.lit; } else if (c.lit !== prev) out.push("changed on a day off"); }
+      return out; });
+    ok(steps.length === 14 && steps.every(x => x === 1), "a school day without exactly one bulb going out: " + steps.join());
   });
 
   test("v7.64: a device copy saved before single days off takes the file's list", async ({ page, dh }) => {
     await dh.openAt("");
     await page.evaluate(() => { const o = JSON.parse(localStorage.getItem("deckhand.config")); delete o.cfg.bell.skipDays; localStorage.setItem("deckhand.config", JSON.stringify(o)); });
     await dh.reopen("");
-    ok((await page.evaluate(() => window.Deckhand.config.bell.skipDays.join())) === "2027-01-18,2027-02-15", "the file's days off were not taken");
+    ok((await page.evaluate(() => window.Deckhand.config.bell.skipDays.join())) === "2027-01-04,2027-01-05,2027-01-18,2027-02-15", "the file's days off were not taken");
   });
 
-  test("v7.64: nothing winter before Nov 30; on Nov 30 November clears and the string goes up dark; Dec 18 all 14 lit; Jan 22 it comes down", async ({ page, dh }) => {
+  test("v7.64: nothing winter before Nov 30; on Nov 30 November clears and the string goes up dark; Dec 18 all 14 lit, none under the greeting or the controls; Jan 27 it comes down", async ({ page, dh }) => {
     for (const d of ["2026-10-20", "2026-11-20", "2026-11-27"]){
       await dh.openAt("#t=" + d + "T10:30");
       await dh.launch();
@@ -112,11 +121,20 @@ test.describe("v7.64 winter: the lights and the calendar", () => {
     // every bulb clear of the face's lines
     ok(await page.evaluate(() => { const f = document.getElementById("dateline").getBoundingClientRect();
       return [...document.querySelectorAll("#wnLights .wnBulb .wnDark")].every(b => b.getBoundingClientRect().bottom < f.top - 8); }), "a bulb over the date line");
+    // no bulb under the greeting pill (its slot, shown or not) or the card's corner controls
+    const clash = await page.evaluate(() => { const t = document.getElementById("greetToast"); t.hidden = false; t.textContent = "Good morning, Mr. Shaffer · Black Week · tap anywhere for sound";
+      const tr = t.getBoundingClientRect(), ctl = [...document.querySelectorAll("#clockWidget .strip button, #clockWidget .wSize, #fsBtn")].map(b => b.getBoundingClientRect()).filter(r => r.width > 0);
+      const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      return [...document.querySelectorAll("#wnLights .wnBulb .wnDark")].map(b => b.getBoundingClientRect()).filter(b => hit(b, tr) || ctl.some(c => hit(b, c))).length; });
+    ok(clash === 0, clash + " bulbs under the greeting or the controls");
     // the stage takes them
     await page.click("#clockWidget .wFocus");
     ok(!(await shown(page, "#wnLights")), "the lights on the stage");
-    await dh.openAt("#t=2027-01-22T10:30");
+    await dh.openAt("#t=2027-01-26T10:30");
     await dh.launch();
-    ok((await has(page, "winter")) && !(await shown(page, "#wnLights")), "the string is still up on Jan 22");
+    ok((await shown(page, "#wnLights")) && (await page.evaluate(() => document.querySelectorAll("#wnLights .wnBulb.on").length)) === 0, "Jan 26: the string up, all dark");
+    await dh.openAt("#t=2027-01-27T10:30");
+    await dh.launch();
+    ok((await has(page, "winter")) && !(await shown(page, "#wnLights")), "the string is still up on Jan 27");
   });
 });

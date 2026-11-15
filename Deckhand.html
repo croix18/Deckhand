@@ -60,7 +60,7 @@
     "autoWeek": true,
     "anchorMonday": "2026-08-31",
     "skipWeeks": ["2026-11-23", "2026-12-21", "2026-12-28", "2027-03-22"],
-    "skipDays": ["2027-01-18", "2027-02-15"],
+    "skipDays": ["2027-01-04", "2027-01-05", "2027-01-18", "2027-02-15"],
     "anchorWeekName": "Black Week",
     "defaultGroup": "Teal Week",
     "groups": [
@@ -32446,9 +32446,9 @@ var Season = (function(){
      A colored C9 string across the top of the board, still. 14 bulbs, one per December school day:
      up dark on the season's first Monday (Nov 30), one more lit each December school day (Dec 18 →
      all 14), all lit over the break, then the reverse countdown — one goes dark each school day from
-     the first day back (Jan 4 → 13) — and the string comes down on the fourth Friday of January
-     (2027: Jan 22). School days are the board's own (Bell.isSchoolDay: weekends, the weeks AND the
-     single days with no school), so MLK Day is not one: Jan 15 → 4, Jan 19 → 3, Jan 21 → 1.
+     the first day back (Wed Jan 6 → 13), the last on Jan 26 — and the string comes down the next day
+     (Jan 27). School days are the board's own (Bell.isSchoolDay: weekends, the weeks AND the single
+     days with no school — Jan 4–5 teacher days, MLK Day), so no day ever drops two.
      count(date) is pure in the date and the calendar. No motion at rest; a bulb that changes while
      the board is up fades over 1.5 s; a tap swings one bulb, once. */
   var Lights = (function(){
@@ -32464,16 +32464,24 @@ var Season = (function(){
       while (d <= e && g++ < 400){ if (Bell.isSchoolDay(d)) n++; d.setDate(d.getDate() + 1); }
       return n;
     }
-    function takeDown(y){ var d = new Date(y, 0, 1); d.setDate(1 + (12 - d.getDay()) % 7 + 21); return d; }   // the fourth Friday of January
-    /* → null (no string) or { lit, of } */
+    /* → null (no string) or { lit, of }. of = December's school days (14 in 2026–27). Up to the break: the December
+       school days so far, today included; over the break: all lit; from the first school day back one goes dark each
+       school day (lit = of − January's school days so far). The last one goes dark on January's of-th school day and
+       the string comes down the next day. (2026–27: Jan 4–5 are teacher days, MLK Day is off — Jan 6 → 13 lit,
+       Jan 26 → 0, down Jan 27.) Pure in the date and the board's calendar. */
     function count(d){
       d = mid(d || now());
       var y = d.getMonth() < 6 ? d.getFullYear() - 1 : d.getFullYear();
-      if (!inWinter(d) || d >= takeDown(y + 1)) return null;
+      if (!inWinter(d)) return null;
       var of = Math.max(1, schoolDays(new Date(y, 11, 1), new Date(y, 11, 31)));
       if (d.getFullYear() === y) return { lit: d.getMonth() === 11 ? Math.min(of, schoolDays(new Date(y, 11, 1), d)) : 0, of: of };
-      return { lit: Math.max(0, of - schoolDays(new Date(y + 1, 0, 1), d)), of: of };
+      var jan1 = new Date(y + 1, 0, 1), before = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+      if (before >= jan1 && schoolDays(jan1, before) >= of) return null;     // the last bulb went out on an earlier day: down
+      return { lit: Math.max(0, of - schoolDays(jan1, d)), of: of };
     }
+    /* the day the string comes down: the day after January's of-th school day */
+    function takeDown(y2){ var of = Math.max(1, schoolDays(new Date(y2 - 1, 11, 1), new Date(y2 - 1, 11, 31))), d = new Date(y2, 0, 1), n = 0, g = 0;
+      while (g++ < 120){ if (Bell.isSchoolDay(d) && ++n >= of) break; d.setDate(d.getDate() + 1); } d.setDate(d.getDate() + 1); return d; }
     var svg = null, built = null, shown = -1, laidFor = "";
     function r1(n){ return Math.round(n * 10) / 10; }
     function tear(cx, top, w, h){ return "M" + r1(cx - w * .32) + "," + r1(top) + " C" + r1(cx - w * .62) + "," + r1(top + h * .35) + " " + r1(cx - w * .5) + "," + r1(top + h * .78) + " " + r1(cx) + "," + r1(top + h) +
@@ -32489,21 +32497,31 @@ var Season = (function(){
       if (card) [].forEach.call(document.querySelectorAll("#clockWidget .strip button, #clockWidget .strip .wSize, #clockWidget > .wFocus"), function(b){
         var r = rect(b); if (r && r.top < card.top + 60 && r.left > card.left + card.width / 2 && (!chip || r.left < chip.left)) chip = r; });
       var x0 = card ? card.left + 20 : 48, x1 = chip ? chip.left - 18 : card ? card.right - 60 : W - 64;
-      var sc = Math.max(1, Math.ceil(n / 2)), y0 = 5, step = (x1 - x0) / sc, drop = 34 * k;
+      var sc = Math.max(1, Math.ceil(n / 2)), y0 = 5, drop = 34 * k;
       var content = ["dateline", "clock", "periodLine"].map(function(id){ return rect(document.getElementById(id)); }).filter(Boolean);
-      var wire = "", tacks = "", pos = [], R = 17;
+      /* v7.64.1: no bulb under the greeting pill (#greetToast, top center, up to ~620 px at 1080p) — the string runs
+         behind it taut and bare, and the bulbs hang either side; the gap is fixed, so the string never moves when it goes */
+      var gt = rect(document.getElementById("greetToast")), half = Math.max(330 * k, gt ? gt.width / 2 : 0) + 14, cL = W / 2 - half, cR = W / 2 + half;
+      var segs = (cL - x0 > 120 && x1 - cR > 120) ? [[x0, cL], [cR, x1]] : [[x0, x1]];
+      var tot = segs.reduce(function(a, g){ return a + g[1] - g[0]; }, 0), nL = segs.length > 1 ? Math.max(1, Math.min(sc - 1, Math.round(sc * (segs[0][1] - segs[0][0]) / tot))) : sc;
+      var wire = "", tacks = "", pos = [], R = 17, tx = [];
       function rnd(){ R = (R * 16807) % 2147483647; return R / 2147483647; }
-      for (var i = 0; i < sc; i++){
-        var a = x0 + i * step, b = a + step, D = 2 * 46 * k;
-        [.3, .7].forEach(function(t){ var bx = a + t * step, lim = 1e9;
-          content.forEach(function(c){ if (bx > c.left - 10 * k - 16 && bx < c.right + 10 * k + 16) lim = Math.min(lim, c.top - 16); });
-          D = Math.max(4, Math.min(D, (lim - drop - y0) / (2 * t * (1 - t)))); });
-        var cx = (a + b) / 2, cy = y0 + D;
-        wire += "M" + r1(a) + "," + y0 + " Q" + r1(cx) + "," + r1(cy) + " " + r1(b) + "," + y0 + " ";
-        [.3, .7].forEach(function(t){ if (pos.length >= n) return;
-          pos.push([(1 - t) * (1 - t) * a + 2 * (1 - t) * t * cx + t * t * b, (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y0, (rnd() - .5) * 10]); });
-      }
-      for (i = 0; i <= sc; i++){ var tx = x0 + i * step; tacks += '<circle class="liTack" cx="' + r1(tx) + '" cy="' + y0 + '" r="' + r1(3.2 * k) + '"/><circle cx="' + r1(tx - k) + '" cy="' + r1(y0 - k) + '" r="' + r1(.9 * k) + '" fill="#fff"/>'; }
+      segs.forEach(function(g, gi){
+        var ns = gi === 0 ? nL : sc - nL, step = (g[1] - g[0]) / ns;
+        for (var i = 0; i < ns; i++){
+          var a = g[0] + i * step, b = a + step, D = 2 * 46 * k;
+          [.3, .7].forEach(function(t){ var bx = a + t * step, lim = 1e9;
+            content.forEach(function(c){ if (bx > c.left - 10 * k - 16 && bx < c.right + 10 * k + 16) lim = Math.min(lim, c.top - 16); });
+            D = Math.max(4, Math.min(D, (lim - drop - y0) / (2 * t * (1 - t)))); });
+          var cx = (a + b) / 2, cy = y0 + D;
+          wire += "M" + r1(a) + "," + y0 + " Q" + r1(cx) + "," + r1(cy) + " " + r1(b) + "," + y0 + " ";
+          [.3, .7].forEach(function(t){ if (pos.length >= n) return;
+            pos.push([(1 - t) * (1 - t) * a + 2 * (1 - t) * t * cx + t * t * b, (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y0, (rnd() - .5) * 10]); });
+          tx.push(a); if (i === ns - 1) tx.push(b);
+        }
+      });
+      if (segs.length > 1) wire += "M" + r1(cL) + "," + y0 + " Q" + r1(W / 2) + "," + r1(y0 + 14 * k) + " " + r1(cR) + "," + y0 + " ";   // behind the pill: bare and nearly taut
+      tx.forEach(function(x){ tacks += '<circle class="liTack" cx="' + r1(x) + '" cy="' + y0 + '" r="' + r1(3.2 * k) + '"/><circle cx="' + r1(x - k) + '" cy="' + r1(y0 - k) + '" r="' + r1(.9 * k) + '" fill="#fff"/>'; });
       return { k: k, wire: wire, tacks: tacks, pos: pos, key: [W, H, r1(x0), r1(x1), content.map(function(c){ return r1(c.top); }).join("/")].join("|") };
     }
     function build(n){
