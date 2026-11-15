@@ -24,6 +24,18 @@ cold. **The gull visits the snowman** from Dec 14 (that day in the first class, 
 it leaves the boat, sits on his pail for four minutes, and flies home. The lights, the lantern and the scarf are
 as in 7.64. Reduced motion holds everything still (two flakes lie on the sand during a flurry), and Seasonal
 touches Off takes all of it.
+**After the December proofs** ("The look is good. Make the necessary fixes."): the manatee now swims head-first
+the whole way (after looking at the boat it lowers its head and slips under with a soft ring, a faint shape turns
+under the water, and its back and round tail come up facing right before its head; on Jan 8 it simply swims off
+left, head-first). It sits IN the water: only its back, the top of its head and, in the dive, its tail show above the
+waterline, the rest shows faintly through the water, a broken ripple line rides where it meets the surface, and the
+front waves pass in front of it. It is drawn as a manatee (a heavy rounded body, a squarish whiskered snout, a small
+eye, a flipper that sculls, a paddle tail that strokes, three pale scars, a pale rim on its back and a lighter belly),
+it cruises at a steady speed, and its breath puffs. The frost no longer cuts a white circle round the clock card's
+button: it runs up to it and thins softly. The first week's frost is clearly visible (about the autumn branch's size)
+and still grows week by week. The dune's snow is one continuous blanket of varying depth from Dec 7, and the first
+week's separate drifts taper away at both ends. The visiting gull now stands on the pail (it floated 2–3 px above it)
+and folds its wings as it lands instead of switching pose in one frame.
 Not in this version: the serpent's first-snow beat, the gull's ride on the manatee, a tap's warm breath and the
 drips on the frost, snow along the boat's deck; January's frozen sea and the frost's peak (the frost already
 paints at its full size; the schedule stops at the first week back), February's thaw and the March coda.
