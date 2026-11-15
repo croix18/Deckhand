@@ -88,7 +88,7 @@ table.cost td:first-child, table.cost th:first-child{text-align:left}
 <section id="s8-ice"><h2>8 · The frozen sea: freeze-in, the full freeze and break-up at true size, and the serpent breaking through</h2><div id="ice"></div><p class="note" id="n-ice"></p></section>
 <section id="c1"><h2>Composite 1 · Wednesday, December 2: the first week (a snowball where the scarecrow stood, first frost, 2 of 14 bulbs, a flurry)</h2><div id="b1"></div><p class="note" id="n1"></p></section>
 <section id="c2"><h2>Composite 2 · Wednesday, December 16: the last week before break (the snowman finished, 12 of 14 bulbs, the manatee by the boat)</h2><div id="b2"></div><p class="note" id="n2"></p></section>
-<section id="c3"><h2>Composite 3 · Wednesday, January 13: the frost at its peak and the sea freezing in (day 3)</h2><div id="b3"></div><p class="note" id="n3"></p></section>
+<section id="c3"><h2>Composite 3 · Wednesday, January 13: the sea freezing in (day 3), the reverse countdown at 6 of 14</h2><div id="b3"></div><p class="note" id="n3"></p></section>
 <section id="c3b"><h2>Composite 4 · Wednesday, January 20: the full freeze (the boat frozen in, the gull walking on the ice, the serpent breaking through, a flurry)</h2><div id="b3b"></div><p class="note" id="n3b"></p></section>
 <section id="c4"><h2>Composite 5 · Wednesday, January 27: break-up in caper week (leads open, the serpent in the snowman's scarf)</h2><div id="b4"></div><p class="note" id="n4"></p></section>
 <section id="c5"><h2>Composite 6 · Wednesday, February 24: puddle week (the thaw, the sprout, the manatee back with her calf, the serpent in the pail)</h2><div id="b5"></div><p class="note" id="n5"></p></section>
@@ -414,8 +414,8 @@ function boardOf(name, inner){ var G = GEO[name]; return '<div class="board" sty
 var DAYS = {
   dec02: { frost: .25, cap: .45, snowman: "S1", bulbs: 2, lamp: 4, flakes: 3, seed: 11 },
   dec16: { frost: .55, cap: .85, snowman: "visit", gullAway: true, bulbs: 12, lamp: 4, acts: [["manatee", { pose: "breathe", dx: 40 }]] },
-  jan13: { frost: 1, cap: 1, snowman: "S3", lamp: 3, ice: "in3" },
-  jan20: { frost: 1, cap: 1, snowman: "S3", lamp: 3, ice: "full", frozenBoat: true, gullAway: true, iceWalk: true, flakes: 3, seed: 5, acts: [["serpent", { x: 1150, t: 1.1 }]] },
+  jan13: { frost: .9, cap: 1, snowman: "S3", lamp: 3, ice: "in3", bulbs: 6 },
+  jan20: { frost: .9, bulbs: 1, cap: 1, snowman: "S3", lamp: 3, ice: "full", frozenBoat: true, gullAway: true, iceWalk: true, flakes: 3, seed: 5, acts: [["serpent", { x: 1150, t: 1.1 }]] },
   jan27: { frost: 1, cap: 1, snowman: "caper", lamp: 3, ice: "break", acts: [["serpent", { scarf: true, x: 1180, t: .6 }]] },
   feb24: { frost: .22, frostO: { drip: true }, cap: .3, snowman: "M3", smO: { day: 3 }, lamp: 2, acts: [["calf", { dx: 70 }], ["serpent", { pail: true, x: 1300, t: 1.4 }]] }
 };
@@ -466,7 +466,7 @@ var LWL = 65;   // the far lane's waterline in a 90 px strip
   more += cell("cream", "B at one third", windowOf("dec16", 0, 0, 1920, 300, frost(G, .55) + topLights(G, 14), 1 / 3));
   more += cell("cream", "Dec 2 (2 of 14) at one third", windowOf("dec02", 0, 0, 1920, 300, frost(GEO.dec02, .25) + topLights(GEO.dec02, 2), 1 / 3));
   document.getElementById("lightsMore").innerHTML = more;
-  document.getElementById("n-lights").innerHTML = "<b>Colored, as Croix asked.</b> Five classic C9 colors repeat along the string: <b>red</b> #E0483E, <b>amber</b> #EE8F22, <b>green</b> #2FA85A, <b>ice blue</b> #4C7BD9 (winter's own) and <b>yellow</b> #F2C82E. Each is tuned against the board: the red is warmer than the alerts' coral and darker than the Veterans Day red; the green is a clear mid green, not November's olive; the blue is winter's. A lit bulb has saturated glass, a pale hot core and a soft halo of its own color. A dark one is the same hue gone to dull smoke, with the glint, so it is plainly a bulb and plainly off. Everything else is 2.0's: navy tacks at the screen's top edge, seven scallops, 14 bulbs (17 × 26 px glass), every bulb 16 px clear of the face, taut over the date line at 1280 × 800, no motion. <b>Recommendation: A, the countdown</b>; it becomes B on Dec 18 and stays lit through Jan 8.";
+  document.getElementById("n-lights").innerHTML = "<b>Colored, as Croix asked.</b> Five classic C9 colors repeat along the string: <b>red</b> #E0483E, <b>amber</b> #EE8F22, <b>green</b> #2FA85A, <b>ice blue</b> #4C7BD9 (winter's own) and <b>yellow</b> #F2C82E. Each is tuned against the board: the red is warmer than the alerts' coral and darker than the Veterans Day red; the green is a clear mid green, not November's olive; the blue is winter's. A lit bulb has saturated glass, a pale hot core and a soft halo of its own color. A dark one is the same hue gone to dull smoke, with the glint, so it is plainly a bulb and plainly off. Everything else is 2.0's: navy tacks at the screen's top edge, seven scallops, 14 bulbs (17 × 26 px glass), every bulb 16 px clear of the face, taut over the date line at 1280 × 800, no motion. <b>Croix picked the countdown, then a reverse countdown:</b> all 14 lit on Dec 18 and over the break; from the first day back one bulb goes dark each school day (Jan 4 → 13 lit … Jan 21 → 0), and the string comes down on Jan 22, the day the frost reaches its peak.";
 })();
 
 /* ===== 3 · flakes ===== */
@@ -497,8 +497,8 @@ var LWL = 65;   // the far lane's waterline in a 90 px strip
     '<p style="margin:0"><b>What it must not be.</b> A web (lines radiating from a point) or foliage (filled leaf shapes). 2.0\'s plumes were leaves; these are needles.</p></div>');
   big += cell("cream", "the same corner at 1:1", windowOf("jan20", 1500, 24, 400, 330, frost(G, 1)));
   document.getElementById("frostBig").innerHTML = big;
-  var ST = [["F1 · Nov 30 – Dec 4 · s .25", "dec02", .25], ["F2 · Dec 7–11 · s .4", "dec02", .4], ["F3 · Dec 14–18, and the break · s .55", "dec16", .55], ["F4 · Jan 4–8 · s .78 · a tap: a breath", "jan13", .78, { breath: [1690, 230] }],
-    ["PEAK · Jan 11 – 29 · s 1 (the dashed lines: 28 px off the face)", "jan20", 1, { env: true }], ["T1 · Feb 1–12 · s .72, dripping", "feb24", .72, { drip: true }], ["T2 · Feb 15–19 · s .45", "feb24", .45, { drip: true }], ["T3 · Feb 22–26 · s .22, a rim", "feb24", .22, { drip: true }],
+  var ST = [["F1 · Nov 30 – Dec 4 · s .25", "dec02", .25], ["F2 · Dec 7–11 · s .4", "dec02", .4], ["F3 · Dec 14–18, and the break · s .55", "dec16", .55], ["F4 · Jan 4–8 · s .78 · a tap: a breath", "jan13", .78, { breath: [1690, 230] }], ["F5 · Jan 11–21 · s .9 (the reverse countdown runs out)", "jan13", .9],
+    ["PEAK · Jan 22 – 29 · s 1 (the dashed lines: 28 px off the face)", "jan20", 1, { env: true }], ["T1 · Feb 1–12 · s .72, dripping", "feb24", .72, { drip: true }], ["T2 · Feb 15–19 · s .45", "feb24", .45, { drip: true }], ["T3 · Feb 22–26 · s .22, a rim", "feb24", .22, { drip: true }],
     ["PEAK at 1280 × 800 · s 1", "m1280jan", 1, { env: true }]];
   var s = ""; ST.forEach(function(st){ var Gx = GEO[st[1]], w = Math.min(860, Gx.W); s += cell("cream", st[0], windowOf(st[1], Gx.W - w, 0, w, Math.min(700, Gx.H), frost(Gx, st[2], st[3] || {}))); });
   document.getElementById("frosts").innerHTML = s;
@@ -582,8 +582,8 @@ var LWL = 65;   // the far lane's waterline in a 90 px strip
 function comp(id, frame, o, note){ document.getElementById(id).innerHTML = boardOf(frame, overlay(GEO[frame], o)); document.getElementById(id.replace("b", "n")).innerHTML = note; }
 comp("b1", "dec02", DAYS.dec02, "<b>Dec 2, week one.</b> A snowball sits in the scarecrow's slot with its track and the gull's prints. First frost in the card's corner (F1). 2 of 14 bulbs lit. A flurry is passing: three small flakes in the outer columns (a flurry's cap). The dune has its first patches of snow.");
 comp("b2", "dec16", DAYS.dec16, "<b>Dec 16.</b> The snowman is finished, and the gull is on his pail. 12 of 14 bulbs lit, in color. The frost is a frosted corner (F3) behind the lights. The manatee breathes beside the boat. A clear period: no snow falling (most are).");
-comp("b3", "jan13", DAYS.jan13, "<b>Jan 13, freeze-in day 3.</b> The frost is at its peak, grown in from the card's edges. The sea is icing over from both shores, with one lead of open water left. The lights came down on Jan 11. The manatee has gone to the warm spring.");
-comp("b3b", "jan20", DAYS.jan20, "<b>Jan 20, the full freeze.</b> The sea is a sheet of ice: no waves. The boat is frozen in and iced. The gull has walked out on the ice (its prints behind it). The serpent's coils break through the sheet. A flurry. This is the coldest week of the season.");
+comp("b3", "jan13", DAYS.jan13, "<b>Jan 13, freeze-in day 3.</b> The frost is nearly at its peak (F5), grown in from the card's edges. The reverse countdown is at 6 of 14. The sea is icing over from both shores, with one lead of open water left. The manatee has gone to the warm spring.");
+comp("b3b", "jan20", DAYS.jan20, "<b>Jan 20, the full freeze.</b> One bulb left in the reverse countdown. The sea is a sheet of ice: no waves. The boat is frozen in and iced. The gull has walked out on the ice (its prints behind it). The serpent's coils break through the sheet. A flurry. This is the coldest week of the season.");
 comp("b4", "jan27", DAYS.jan27, "<b>Jan 27, break-up in caper week.</b> Leads have opened and slabs tilt. The snowman's scarf is gone, and the serpent swims the leads wearing it.");
 comp("b5", "feb24", DAYS.feb24, "<b>Feb 24, puddle week.</b> The frost is a dripping rim (T3). The snowman is a mound in a puddle, and the sprout is on its third day. The manatee is back with her calf. The serpent wears the pail.");
 comp("b6", "m1280dec", Object.assign({}, DAYS.dec16, { acts: [] }), "<b>1280 × 800, Dec 16.</b> The scallops over the date line pull nearly taut; the colors still read. The boat sits behind the dock at this size (as it does today).");

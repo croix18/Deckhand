@@ -205,7 +205,7 @@ more lit.
 **A tap on a bulb.** One damped swing about its socket, on `.wnBulbSwing` (rotate, origin at the
 socket's top), 1.2 s: 8° → −5° → 2.5° → 0, `ease-in-out` per swing. It is a toy, and it ends.
 
-**The string comes down** on Jan 11: it is simply gone at the day's first tick.
+**The reverse countdown** (Croix's pick): from Jan 4, at each school day's first tick, the last lit bulb fades to dark over 1.5 s (Jan 4 → 13 lit … Jan 21 → 0). **The string comes down** on Jan 22: it is simply gone at the day's first tick, the morning the frost reaches its peak.
 
 **Reduced motion.** As at rest. A tap does nothing.
 
@@ -342,6 +342,14 @@ The manatee act at the cruise (no dive until 52 s), with the gull:
 | 52–56 | the manatee dives |
 
 ### B9. The serpent, for every season: one body, a traveling wave
+
+**Approved for the whole year** (Croix: "All year round"). **Prototyped and recorded:**
+`tools/proofs/serpent.html` (the real sea strip) and `docs/reviews/serpent-clips/` (60 fps). The
+prototype's final numbers supersede the table below where they differ: λ 80 px, f 0.42 Hz, A 17 px,
+L 176 px, headUp 19 px, entry and exit slopes of 46 px. It also draws **the submerged body at 20% navy
+over the front waves**, so the coils read as one animal, and puts the waterline at the far lane's real
+one, under Deckhand's own front waves. Measured: 0.24 ms of JavaScript a frame (0.97 ms at 4× throttle),
+holding 60 fps.
 
 This replaces `#sea-serpent`'s four pieces (`ssSeg`/`ssHump` with `ssRoll`, `ssGlide`, `ssDive`) and
 `#sea-attack`'s coils (`atCoil`, `atSink`). Design C8 says why they look funky.

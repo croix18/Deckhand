@@ -1,4 +1,4 @@
-# Winter 2.1: the design (Nov 14, 2026)
+# Winter 2.1: the design (Nov 14, 2026; approved)
 
 The drawings are `winter-proofs.html` → `winter-proofs.png` (the 2.1 drawings live in
 `winter-proofs-21.js`), and `winter-proofs-8m.png` is the same sheet at one third (the 8 m check).
@@ -20,6 +20,8 @@ serpent is still funky as hell not smooth. I want that thing to slither in and o
 | "Occasional flurries." | Snow is rare weather: one to three short flurries a week, never more than 3 flakes on the board; most periods are clear (C2). |
 | "Have the ocean freeze and the coldest part of the year." | **The sea freezes** Jan 11–29: freeze-in over four days, a full freeze with the boat frozen in, and break-up. It is the season's set piece (C6e). The manatee leaves for the warm spring before the freeze and comes back on Feb 1 with a calf. |
 | "The serpent is still funky as hell not smooth. I want that thing to slither in and out of the water." | **The serpent is redrawn for every season**: one continuous body that moves as a traveling wave, so coils rise out of the water, slide back along the body and sink again. It arrives and leaves by slithering up and down, never by appearing. The attack is rebuilt on the same body (C8). |
+
+**Croix's picks on 2.1 (Nov 14), verbatim:** "Yes build it. All year round. Lights countdown. Then reverse countdown. Yeah that's good for freeze." So: build it; **the new serpent is year-round** (C8); **the lights count down to the break, then count down again after it** (C4); **the freeze, Jan 11–29, is approved** (C6e). The serpent has a working prototype, recorded at 60 fps (C8).
 
 Everything else is 2.0's: ice blue as winter's color, navy-edged snow, the Nov 30 start and the
 March coda, the beach snowman, the lights across the top, Steward worked piece by piece, silence.
@@ -73,8 +75,8 @@ student day and Dec 18 a normal class day (Croix: "Yes and yes I think at least"
 | **Starts** | **Mon Nov 30** (the first school day after the Thanksgiving skip week; fallback Dec 1) | November clears. The first snowflake falls, a snowball sits in the scarecrow's slot, the first frost is in the corner, and the string goes up dark. |
 | **December** | Nov 30 → Fri Dec 18 | The frost grows weekly, and the dune gets snow. The snowman is built in three stages (finished Dec 14). One more bulb lights each December school day (Dec 18 → 14). The manatee arrives Dec 7. The serpent tastes the first snow. |
 | **Break** | Dec 19 → Jan 3 | The last school day's world holds: 14 lit, the snowman finished. |
-| **Back** | Jan 4–8 | The lights stay lit all week. The manatee greets every period on Jan 4–5 and **swims off upriver on Fri Jan 8** (its last act heads out left). |
-| **The freeze** | **Jan 11 → Jan 29** | The lights come down on Jan 11, and the frost is at its peak. **The sea freezes**: freeze-in Jan 11–14, the full freeze Jan 15–25, break-up Jan 26–29 (C6e). **Caper week, Jan 25–29**: the serpent wears the snowman's scarf. |
+| **Back** | Jan 4 → 21 | **The reverse countdown:** one bulb goes dark each school day (Jan 4 → 13 lit, Jan 21 → 0); the string comes down Jan 22. The manatee greets every period on Jan 4–5 and **swims off upriver on Fri Jan 8** (its last act heads out left). |
+| **The freeze** | **Jan 11 → Jan 29** | The frost grows to F5 (Jan 11–21) and peaks Jan 22–29, as the last bulb goes out. **The sea freezes**: freeze-in Jan 11–14, the full freeze Jan 15–25, break-up Jan 26–29 (C6e). **Caper week, Jan 25–29**: the serpent wears the snowman's scarf. |
 | **The thaw** | Feb 1 → Feb 26 | Open water on Feb 1, with a few floes drifting out Feb 1–5. **The manatee is back with a calf** (the greeting on Feb 1–2). The scarf is back on the snowman. The frost shrinks and drips. The snowman leans (Feb 8–12), slumps (Feb 15–19), and is a puddle with a growing sprout (**puddle week, Feb 22–26**), while the serpent wears his pail. |
 | **Coda** | Mar 1–5 | Plain, except the pail back on the sand with the sprout planted in it. The turtle greets every period. |
 | **Ends** | Mon Mar 8 | `active()` returns null. |
@@ -87,7 +89,7 @@ student day and Dec 18 a normal class day (Croix: "Yes and yes I think at least"
 | the finished snowman before break | five days |
 | the manatee's debut | two days |
 | its first-back greeting | two days |
-| the lights after the break | a week |
+| the reverse countdown | 14 school days |
 | the freeze-in | four days |
 | the full freeze | nine school days |
 | break-up | four days |
@@ -180,7 +182,8 @@ too.
 | F2 | Dec 7–11 | .40 |
 | F3 | Dec 14 → break | .55 |
 | F4 | Jan 4–8 | .78 |
-| **peak** | **Jan 11–29** | **1** |
+| F5 | Jan 11–21 | .90 |
+| **peak** | **Jan 22–29** | **1** (the day after the string comes down) |
 | T1 | Feb 1–12 | .72, dripping |
 | T2 | Feb 15–19 | .45 |
 | T3 | Feb 22–26 | .22, a rim |
@@ -309,12 +312,20 @@ the board:
 is the same hue gone to a dull smoke at .8, with the white glint: a dark bulb is plainly a bulb and
 plainly off, and its color is still guessable.
 
-**Countdown or fully lit.** Both are in the proofs (§2), at true size and at one third.
-**Recommendation: the countdown.**
-- Twelve colors and two smoky bulbs read as a count from the back row; the fully lit string says
-  nothing.
-- The countdown becomes fully lit on Dec 18, stays lit over the break and through Jan 8, and comes
-  down on Mon Jan 11 as the sea freezes.
+**The countdown, then the reverse countdown** (Croix: "Lights countdown. Then reverse countdown.").
+- **Up to the break:** the string goes up dark on Nov 30, and one more bulb lights each December
+  school day (Dec 1 → 1 … Dec 18 → 14). The dark bulbs are the school days left before break.
+- **Over the break:** all 14 lit.
+- **After the break:** from the first day back, one bulb goes dark each school day, the last lit one
+  first: Jan 4 → 13, Jan 5 → 12, Jan 6 → 11, Jan 7 → 10, Jan 8 → 9, Jan 11 → 8, Jan 12 → 7,
+  Jan 13 → 6, Jan 14 → 5, Jan 15 → 4, Jan 18 → 3, Jan 19 → 2, Jan 20 → 1, Jan 21 → 0.
+- **Down:** the dark string comes down on Fri Jan 22, and that same morning the frost reaches its
+  peak.
+- **Why the frost moved:** the frost's peak moved from Jan 11 to Jan 22 (F5, s .9, Jan 11–21) so the
+  string finishes as the frost peaks instead of hanging over it. The freeze's dates don't change.
+- **Jan 18 (MLK Day):** Deckhand knows whole skip weeks only, so it counts Jan 18 as a school day.
+  The board is dark that day, so on Jan 19 the room sees two bulbs gone. Marking Jan 18 as a day off
+  in Deckhand's calendar would shift the end to Jan 22 and the take-down to Jan 25.
 
 **No motion.** No breathing, swinging or flicker. The day's new bulb lights at the first tick with a
 1.5 s fade. A tap gives one damped 1.2 s swing.
@@ -455,6 +466,69 @@ Deckhand.html 7.63.0, and from the live frames on proofs §7.
   - the front-face moment stays (the face swap is a separate drawing), and coral stays its eye's
     color.
 
+**The prototype** (`tools/proofs/serpent.html`, recorded by `tools/proofs/serpent-record.js`).
+- **The strip:** Deckhand's real sea, 1920 × 200: the static `#waves` (sand, light and mid water), the
+  back swell `#wv3`, the front layers `#wv1`/`#wv2` and the foam, copied from Deckhand.html and
+  scrolled on their own periods (11.2 s, 7.1 s, 15.8 s); the boat on the swell at 42vw.
+- **The scenes:** the far-lane pass, the attack and the frozen pass.
+- **The clips** are in `docs/reviews/serpent-clips/`, recorded frame by frame with the clock stepped
+  exactly (no dropped frames):
+
+  | clip | what it shows | size |
+  |---|---|---|
+  | `serpent-compare.mp4` | today's live pass from Deckhand.html (top) over the new one (bottom), 1920 × 400, 26 s at 60 fps | 657 KB |
+  | `serpent-attack.mp4` | the new attack, × 2 round the boat, 20 s at 60 fps | 490 KB |
+  | `serpent-closeup-x3.mp4` | × 3 of the new pass, 10 s at 60 fps | 325 KB |
+  | `serpent-closeup-x3.gif` | the same, looping, 9 s, 20 fps, 960 wide | 960 KB |
+  | `serpent-ice.mp4` | the frozen pass, 26 s at 30 fps | 209 KB |
+
+**What the prototype changed, so it reads as one animal in the water.**
+1. **The waterline is the far lane's real one** (19.3 px above the screen's bottom, where today's
+   serpent sits), and Deckhand's front wave layers paint over the body there, so it is in the water,
+   not on the sand band. The still frames' strip had put the waterline at the sand's edge.
+2. **The submerged body shows.** The whole body is drawn again under the waterline, over the front
+   waves, in navy at 20%: the coils are visibly joined under the surface, so two humps and a head read
+   as one serpent seen through clear water.
+3. **Longer, taller coils and a raised head.** The proportions changed:
+
+   | | before | now |
+   |---|---|---|
+   | wavelength | 64 px | 80 px |
+   | amplitude | 15 px | 17 px |
+   | body length | 164 px | 176 px |
+   | head and neck lift | 13 px | 19 px |
+   | the outline | straight segments | smoothed with quadratic midpoints |
+
+   Fewer, rounder coils, with the head riding clearly above the water.
+4. **Entry and exit are depth slopes** (smoothstep 46 px over 12% of the lane), so the head comes up
+   and goes down along the body's path. The swim (84 px/s) and the wave (0.42 Hz, running back along
+   the body at 34 px/s) are constant.
+
+**The attack on the same body** follows the live act's beats and times:
+- **0–2.8 s, the tell:** bubbles, and only the horn and eye showing.
+- **2.8–10 s, the slither in:** an ease-out stop 46 px from the mast.
+- **10–11 s, the rear:** lift 0 → 40 → 36, the eye coral.
+- **11–12.4 s, the lunge:** 20 px toward the boat.
+- **12.4–13.6 s, the miss:** the head into the water; the boat's pitch kicks 7° and damps out.
+- **13.6–15.7 s:** a look.
+- **15.7–20 s, the sink:** the body slides back and down its path, head first.
+
+**Cost (measured, `serpent-record.js cost`, 240 frames real time).** The serpent's JavaScript is
+0.24 ms a frame, and 0.97 ms with 4× CPU throttling. Frames held 16.7 ms (60 fps) at both. That
+includes rewriting the body, ghost, spine, face and ripple paths every frame. The budget line was
+2 ms.
+
+**How it goes into Deckhand.**
+- **Replace:** `#sea-serpent`'s and `#sea-attack`'s pieces with the prototype's elements: two body
+  paths (above and below the waterline), spines, a face, ripples and a splash.
+- **Drive:** a `SerpentBody` module, one `requestAnimationFrame` loop that runs only while
+  `.go` is on the act.
+- **Stop:** the loop stops at `dur`, on `deckhand:stage`, under reduced motion and when the page is
+  hidden.
+- **Unchanged:** the act's names, durations and `Sea.play()` entry.
+- **Fold in:** the boat's `struck` reaction stays the act's, and the costumes and the ice holes
+  become options on the body.
+
 **What it touches.**
 - the year-round sea's `serpent` and `attack` acts, and their markup and CSS in Deckhand.html;
 - the winter costumes;
@@ -563,12 +637,11 @@ Check it on the real Steward board before building there.
 
 ## H. Decisions for Croix
 
+Decided (Nov 14): build it; the serpent year-round; the countdown, then the reverse countdown; the
+freeze Jan 11–29. Still open:
 1. **The window:** Nov 30 → the Mar 1–5 coda (my pick), or Dec 1 → Feb 28.
-2. **The lights:** the countdown (my pick) or fully lit from Nov 30; down Jan 11 (my pick) or up all
-   January.
-3. **The serpent's new body:** approve it for the whole year (my pick), or only in winter first.
-4. **The freeze's length:** Jan 11–29 with nine days of full ice (my pick), or a shorter full freeze.
-5. **Names** for the manatee and the snowman (or a class vote); opt-ins; theme sounds (none).
+2. **Names** for the manatee and the snowman (or a class vote); opt-ins; theme sounds (none).
+3. **Jan 18 in Deckhand's calendar** (C4): leave it (my pick), or mark it as a day off.
 
 ---
 
@@ -577,7 +650,7 @@ Check it on the real Steward board before building there.
 - **Season.** `winterStart` and `winterEnd`. `apply()` sets:
   - `body.winter`;
   - `data-wn-frost`, `data-wn-sm` and `data-wn-cap`;
-  - `data-wn-bulbs` (0–14, absent from Jan 11);
+  - `data-wn-bulbs` (0–14: the countdown up to Dec 18, 14 over the break, the reverse countdown Jan 4–21, absent from Jan 22);
   - `data-wn-sea` (`in1` / `in2` / `in3` / `frozen` / `break`, or absent);
   - `wnFrozen`, `wnCaper`, `wnPuddle`, `wnCoda`;
   - `data-nv-lamp`.
@@ -600,7 +673,7 @@ Check it on the real Steward board before building there.
   ripples, the costumes, the ice holes), driven by one `requestAnimationFrame` loop per act.
   `#sea-serpent` and `#sea-attack` become one `<path>` each, plus their details.
 - **Tests.**
-  - **The date helpers:** Nov 30; Dec 2 → 2 bulbs, Dec 16 → 12, Dec 18 → 14; Jan 11, no bulbs; the
+  - **The date helpers:** Nov 30; Dec 2 → 2 bulbs, Dec 16 → 12, Dec 18 → 14; Jan 4 → 13, Jan 13 → 6, Jan 21 → 0, Jan 22 no string; the
     freeze stages; the manatee gone Jan 11–29 and back with the calf Feb 1; caper Jan 25–29; puddle
     Feb 22–26; the coda; null on Mar 8.
   - **Flurries:** purity, at most 3 a week, and 3 flakes on the board.
