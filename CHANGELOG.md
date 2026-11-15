@@ -2,6 +2,16 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.65.1 — 2026-11-15
+
+**Nib 1.8.0 inside.** Croix: "Push it deckhand." The engine behind the Sketch Pad and the pen over the slides, two
+releases on (1.7.1 and 1.8.0); nothing in Deckhand's own code changes. **Writing that is moved is read where it is:**
+with the pen over a slide, lasso one stroke of a symbol away from the rest (the bar of a plus off its stem), or put
+it back with Undo, and the reading follows. It used to keep the old reading. **A full Sketch Pad joins every line**
+that was written with a wide gap in it, not only the first eight. **A pad that comes back full** — a scene put
+back, the board opened again — is read on worker threads, on every core but one, and reads what it read; the board
+stays free meanwhile, and ordinary writing never starts one. The file is about 36 KB larger.
+
 ## 7.65.0 — 2026-11-15
 
 **Winter, December: the frost, the flurries, the snowman, the manatee.** Croix: "Can you build the rest of December."
