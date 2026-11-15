@@ -1,78 +1,50 @@
-/* Records the serpent prototype (tools/proofs/serpent.html) and today's live serpent (Deckhand.html) frame by frame,
-   with the clock stepped exactly (no dropped frames), and assembles 60 fps clips with ffmpeg.
-   node tools/proofs/serpent-record.js stills OUTDIR            — a few still frames of each scene
-   node tools/proofs/serpent-record.js clips OUTDIR [fps] [parts] — the clips: compare, attack, close (+ a GIF), ice
-   node tools/proofs/serpent-record.js cost                     — frame cost of the new serpent, real time, 4× CPU throttle */
+/* Records the serpent prototype (tools/proofs/serpent.html) frame by frame, the clock stepped exactly (no dropped
+   frames), and assembles 60 fps clips with ffmpeg.
+   node tools/proofs/serpent-record.js clips OUTDIR [parts]  — parts: pass,battle-a,battle-b,battle-c,battle-d,ice
+   node tools/proofs/serpent-record.js plans [n]             — the battle each seed 1…n plays (opener > exchanges > finisher)
+   node tools/proofs/serpent-record.js cost                  — script time per frame (render() inclusive), 1× and 4× CPU throttle */
 const { chromium } = require("playwright");
-const path = require("path"), fs = require("fs"), { execSync } = require("child_process");
-const ROOT = path.resolve(__dirname, "../.."), PROTO = "file://" + path.join(__dirname, "serpent.html"), APP = "file://" + path.join(ROOT, "Deckhand.html");
-async function proto(br, q, w, h){ const p = await (await br.newContext({ viewport: { width: w, height: h } })).newPage(); await p.goto(PROTO + "?" + q); await p.waitForFunction(() => !!window.render); return p; }
-async function frames(page, dur, fps, dir, clip, t0){
-  fs.mkdirSync(dir, { recursive: true });
-  const n = Math.round(dur * fps);
-  for (let i = 0; i < n; i++){
-    await page.evaluate(t => window.render(t), (t0 || 0) + i / fps);
-    await page.screenshot({ path: path.join(dir, "f" + String(i).padStart(5, "0") + ".jpg"), type: "jpeg", quality: 92, clip });
-  }
-  return n;
-}
-async function liveFrames(br, dur, fps, dir){
-  fs.mkdirSync(dir, { recursive: true });
-  const page = await (await br.newContext({ viewport: { width: 1920, height: 1080 }, reducedMotion: "no-preference" })).newPage();
-  await page.goto(APP + "#t=2026-11-18T13:00");
-  await page.waitForFunction(() => !!window.Deckhand);
-  if (await page.evaluate(() => document.body.classList.contains("landing"))) await page.click("#launchBtn");
-  await page.waitForTimeout(400);
-  await page.addStyleTag({ content: "#greetToast{display:none !important} #nvScarecrow,#nvSquirrel,#nvTurkey,#dock{visibility:hidden !important}" });
-  await page.evaluate(() => { window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); document.body.dataset.sea = "breezy"; try { window.Deckhand.seaModule.clear(); } catch(e){} });
-  await page.waitForTimeout(400);
-  await page.evaluate(() => window.Deckhand.sea("serpent"));
-  await page.waitForTimeout(100);
-  const n = Math.round(dur * fps);
-  for (let i = 0; i < n; i++){
-    await page.evaluate(t => { const el = document.getElementById("sea-serpent");
-      document.getAnimations().forEach(a => { try { a.pause(); const tg = a.effect && a.effect.target; a.currentTime = (tg && el.contains(tg) ? 0 : 2800) + t * 1000; } catch(e){} }); }, i / fps);
-    await page.screenshot({ path: path.join(dir, "f" + String(i).padStart(5, "0") + ".jpg"), type: "jpeg", quality: 92, clip: { x: 0, y: 880, width: 1920, height: 200 } });
-  }
-  return n;
-}
-function mp4(dir, fps, out, extra){ execSync(`ffmpeg -y -loglevel error -framerate ${fps} -i ${dir}/f%05d.jpg ${extra || ""} -c:v libx264 -pix_fmt yuv420p -crf 20 -movflags +faststart ${out}`); }
+const path = require("path"), fs = require("fs"), os = require("os"), { execSync } = require("child_process");
+const PROTO = "file://" + path.join(__dirname, "serpent.html");
+const FF = fs.existsSync("/usr/local/bin/ffmpeg") ? "/usr/local/bin/ffmpeg" : "ffmpeg";
+/* the recorded battles: two the boat wins, two the serpent wins, no two alike */
+const BATTLES = { "battle-a": 1, "battle-b": 5, "battle-c": 3, "battle-d": 6 };
+const CLIPS = {
+  /* × 2 close-up of a normal pass: a 960 × 100 window, the arcs and the stop to look round */
+  "pass": { q: "scene=pass&vb=900,100,960,100&w=1920", w: 1920, h: 200, t0: .5, dur: 16 },
+  /* × 2 on the frozen sea: under the ice, under the boat, up through the ice on the far side, back under */
+  "ice": { q: "scene=ice&vb=480,100,960,100&w=1920", w: 1920, h: 200, t0: 0, dur: 20 }
+};
+for (const [k, seed] of Object.entries(BATTLES)) CLIPS[k] = { q: "scene=battle&seed=" + seed + "&vb=446,30,880,170&w=1920", w: 1920, h: 370, t0: 0, dur: null };
+async function open(br, q, w, h){ const p = await (await br.newContext({ viewport: { width: w, height: h } })).newPage(); await p.goto(PROTO + "?" + q); await p.waitForFunction(() => !!window.render); return p; }
 (async () => {
-  const cmd = process.argv[2], out = path.resolve(process.argv[3] || "."), fps = +(process.argv[4] || 60);
-  const br = await chromium.launch();
-  if (cmd === "stills"){
-    fs.mkdirSync(out, { recursive: true });
-    for (const [scene, ts] of [["pass", [5, 6.5, 8, 10, 12.5, 14, 17, 19.5]], ["attack", [1.5, 6, 9.5, 10.6, 12, 13.8, 16.5, 18.5]], ["ice", [8, 10, 14]]]){
-      const p = await proto(br, "scene=" + scene, 1920, 200);
-      for (const t of ts){ await p.evaluate(t => window.render(t), t); await p.screenshot({ path: path.join(out, scene + "-" + t + ".png") }); }
-    }
-  }
+  const cmd = process.argv[2], br = await chromium.launch();
   if (cmd === "clips"){
-    const parts = (process.argv[5] || "compare,attack,close,ice").split(","), tmp = path.join(require("os").tmpdir(), "serp-frames");
-    let p;
-    /* (a) compare: today's live pass on top, the new pass below, the same 1920 × 200 strip, the same 26 s */
-    if (parts.includes("compare")){
-    await liveFrames(br, 26, fps, tmp + "/live");
-    p = await proto(br, "scene=pass", 1920, 200); await frames(p, 26, fps, tmp + "/pass");
-    mp4(tmp + "/live", fps, tmp + "/live.mp4"); mp4(tmp + "/pass", fps, tmp + "/pass.mp4");
-    execSync(`ffmpeg -y -loglevel error -i ${tmp}/live.mp4 -i ${tmp}/pass.mp4 -filter_complex "[0:v]drawtext=text='TODAY':x=12:y=10:fontsize=18:fontcolor=0xB5542A[a];[1:v]drawtext=text='NEW':x=12:y=10:fontsize=18:fontcolor=0x127A85[b];[a][b]vstack" -c:v libx264 -pix_fmt yuv420p -crf 20 -movflags +faststart ${out}/serpent-compare.mp4`); }
-    /* (b) the attack, a 960 × 200 window round the boat, drawn at × 2 */
-    if (parts.includes("attack")){ p = await proto(br, "scene=attack&vb=520,100,960,100&w=1920", 1920, 200); await frames(p, 20, fps, tmp + "/attack"); mp4(tmp + "/attack", fps, out + "/serpent-attack.mp4"); }
-    /* (c) × 3 close-up of the new pass: a 640 × 100 window (x 880–1520), 6 → 16 s */
-    if (parts.includes("close")){ p = await proto(br, "scene=pass&vb=880,100,640,100&w=1920", 1920, 300); fs.rmSync(tmp + "/close", { recursive: true, force: true }); await frames(p, 10, fps, tmp + "/close", undefined, 6); mp4(tmp + "/close", fps, out + "/serpent-closeup-x3.mp4");
-    execSync(`ffmpeg -y -loglevel error -ss 0 -t 9 -i ${out}/serpent-closeup-x3.mp4 -vf "fps=20,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=48[p];[s1][p]paletteuse=dither=none" -loop 0 ${out}/serpent-closeup-x3.gif`); }
-    /* (d) one pass on the frozen sea */
-    if (parts.includes("ice")){ p = await proto(br, "scene=ice", 1920, 200); await frames(p, 26, 30, tmp + "/ice"); mp4(tmp + "/ice", 30, out + "/serpent-ice.mp4"); }
-    fs.readdirSync(out).forEach(f => console.log(f, (fs.statSync(path.join(out, f)).size / 1024).toFixed(0) + " KB"));
+    const out = path.resolve(process.argv[3] || "."), parts = (process.argv[4] || Object.keys(CLIPS).join(",")).split(",");
+    fs.mkdirSync(out, { recursive: true });
+    for (const name of parts){ const c = CLIPS[name], p = await open(br, c.q, c.w, c.h), dir = path.join(os.tmpdir(), "serp-" + name);
+      const dur = c.dur || await p.evaluate(() => window.SCENE_DUR), n = Math.round(dur * 60);
+      fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir);
+      for (let i = 0; i < n; i++){ await p.evaluate(t => window.render(t), c.t0 + i / 60); await p.screenshot({ path: path.join(dir, "f" + String(i).padStart(5, "0") + ".jpg"), type: "jpeg", quality: 92 }); }
+      const file = path.join(out, "serpent-" + name + ".mp4");
+      execSync(`${FF} -y -loglevel error -framerate 60 -i ${dir}/f%05d.jpg -c:v libx264 -pix_fmt yuv420p -crf 24 -preset slow -tune animation -movflags +faststart ${file}`);
+      const plan = await p.evaluate(() => (window.PLAN || []).filter(x => x[0] !== "@").join(" > "));
+      console.log(path.basename(file), (fs.statSync(file).size / 1048576).toFixed(2) + " MB", n + " frames", plan); await p.context().close(); }
   }
+  if (cmd === "plans"){ const p = await open(br, "scene=battle&seed=1", 400, 100);
+    for (let s = 1; s <= +(process.argv[3] || 20); s++){ await p.goto(PROTO + "?scene=battle&seed=" + s); await p.waitForFunction(() => !!window.render);
+      console.log(s, await p.evaluate(() => window.PLAN.filter(x => x[0] !== "@").join(" > ") + " | " + window.SCENE_DUR.toFixed(1) + " s")); } }
   if (cmd === "cost"){
-    const p = await proto(br, "scene=pass&play=1", 1920, 200), cdp = await p.context().newCDPSession(p);
-    for (const rate of [1, 4]){
-      await cdp.send("Emulation.setCPUThrottlingRate", { rate });
-      const r = await p.evaluate(() => new Promise(res => { window.STATS.frames = 0; window.STATS.ms = 0; const d = []; let last = performance.now();
-        (function f(now){ d.push(now - last); last = now; if (d.length < 240) requestAnimationFrame(f); else { d.sort((a, b) => a - b); res({ jsPerFrame: +(window.STATS.ms / window.STATS.frames).toFixed(3), medianFrame: +d[120].toFixed(1), p95Frame: +d[228].toFixed(1) }); } })(last); }));
-      console.log("throttle " + rate + "×", JSON.stringify(r));
-    }
+    for (const q of ["scene=pass&play=1", "scene=battle&seed=6&play=1", "scene=battle&seed=3&play=1", "scene=ice&play=1"]){
+      const p = await open(br, q, 1920, 200), cdp = await p.context().newCDPSession(p);
+      for (const rate of [1, 4]){
+        await cdp.send("Emulation.setCPUThrottlingRate", { rate });
+        /* step the clock across the whole act so every beat is costed, not just the first seconds */
+        const r = await p.evaluate(() => { const d = window.SCENE_DUR, ts = []; window.STATS.frames = 0; window.STATS.ms = 0;
+          for (let i = 0; i < 600; i++){ const a = performance.now(); window.render(i / 600 * d); ts.push(performance.now() - a); }
+          ts.sort((x, y) => x - y); return { mean: +(window.STATS.ms / window.STATS.frames).toFixed(3), p95: +ts[570].toFixed(2), max: +ts[599].toFixed(2) }; });
+        console.log(q.split("&play")[0].padEnd(22), "throttle " + rate + "×", JSON.stringify(r)); }
+      await p.context().close(); }
   }
   await br.close();
 })().catch(e => { console.error(e); process.exit(1); });

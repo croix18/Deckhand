@@ -518,6 +518,66 @@ Deckhand.html 7.63.0, and from the live frames on proofs §7.
 includes rewriting the body, ghost, spine, face and ripple paths every frame. The budget line was
 2 ms.
 
+**Winter 2.2 rework (after Croix: "still looks funky … not really animated like a real serpent … have
+him go under the boat and pop up the other side … I want a full blown mini battle", then "multiple
+endings … No truce. Different battle scenarios. Randomized").** The traveling-wave body above is
+replaced; the attack is replaced by the battle.
+- **The body is a spine chain that follows its head.** The head is keyed in time (cubic Hermite,
+  zero tangents at holds) and sampled once at 120 Hz into a trail with arc length. Every frame, 44
+  points sit at fixed arc spacing behind the head on that trail, so each point travels the path the
+  head took and nothing ever moves backward along the body. The facing (−1 … +1) is smoothed along
+  the trail, so the belly band narrows to nothing and flips while the body turns.
+- **The neck acts on top of the path:** the first 11 segments are rebuilt from the shoulders at
+  fixed lengths with `raise`, `lean`, `look` and a swan `curl`. Every hold gets the curl
+  automatically from the head's speed, so an upright serpent is an S, not a stick. A head `turn`
+  squashes the head through profile and points it back over the shoulder.
+- **The drawing:** one tapered outline (neck 11.5, chest 15.6, tail 2 px at the battle's scale), a teal
+  belly band, low raked dorsal fins on the back side only, and a forked fluke that lags the body's
+  bend and flicks with travel. The head is its own drawing: skull and horns, a jaw on a hinge (coral
+  mouth, two fangs when open), an eye with auto-blink, glance, squint, brow, ×-eyes, happy ^ and
+  sulk. The whole serpent is one `<g>` drawn by `<use>` three times: behind the boat, in front of it,
+  and as the 20% ghost under the waterline (16% under the ice).
+- **The water:** each place the head's path crosses the surface is found once. The water parts round
+  the body while it runs through. A ring spreads when the tail clears. Exits throw drops and entries
+  throw a crown, both sized by speed. A fin skimming the surface draws a V.
+- **The pass:** porpoising arcs of uneven height and spacing, then a stop where the neck rises into a
+  swan S. It looks up, ahead and back over its shoulder, blinks, gulps, and goes on.
+- **The ice:** the shadow glides under the ice and passes under the boat. The boat rocks, a crack runs
+  from the hull ("crrk") and the gull turns to look. On the far side it bursts up through the ice with
+  thrown shards, curls round to look at the boat, blinks, then arcs back down the same hole. The
+  shards fade and the hole skins over.
+- **The battle (`?scene=battle&seed=N`)** is assembled from a pool of beats by a seeded random:
+  an opener, two different exchanges, a finisher. Each beat starts from wherever the last left the
+  serpent (submerged) and the boat, so any beat can follow any other (4 × 12 × 2 × 2 = 96 battles,
+  31–38 s).
+  - **Openers:** *fin* (a fin cuts in, the gull bolts with a "!", it breaches round the far side) and
+    *periscope* (a head comes up far off, looks round, spots the boat, grins, comes on in arcs).
+  - **Exchanges:** *lunge* (it rears high, roars, winds up and strikes; the boat tacks away;
+    CHOMP), *peck* (the gull dive-bombs it; stars; it shakes, snaps and misses), *coil* (it wraps
+    the hull and squeezes; the boat squirts out, "pop!", and the coil closes on nothing, "?") and
+    *chase* (the boat runs for it; three arcs after it and a snap at the stern; "zoom!").
+  - **Finishers, the boat wins:** *bonk* (it rises to gloat; the boat turns and runs out a tiny cannon;
+    BONK, stars, ×-eyes; it slumps and sinks sulking in bubbles; the gull comes home; ♪) and *knot*
+    (two strikes the boat zips away from; it ties itself in a knot, "?!", "uh oh", and sinks).
+  - **Finishers, the serpent wins:** *dunk* (it comes up under the boat, lifts and tips it, SPLOOSH;
+    the boat pops back up dripping; "ha ha!") and *flop* (a huge breach and belly-flop away from the
+    boat, KER-SPLASH; the wave flips the boat a full turn, "whee!"; it bows, "ta-da!").
+  - Over seeds 1–30 the boat won 16 and the serpent 14.
+- **Clips (2.2)** in `docs/reviews/serpent-clips/`, 60 fps, frame-exact (`serpent-record.js clips`):
+  | clip | what it shows | size |
+  |---|---|---|
+  | `serpent-pass.mp4` | × 2 close-up of a normal pass (arcs, the stop to look round), 16 s | 0.26 MB |
+  | `serpent-battle-a.mp4` | seed 1: periscope > coil > peck > bonk (the boat wins), 32.6 s at × 2.2 | 0.96 MB |
+  | `serpent-battle-b.mp4` | seed 5: fin > lunge > chase > dunk (the serpent wins), 32.8 s | 0.95 MB |
+  | `serpent-battle-c.mp4` | seed 3: periscope > peck > chase > knot (the boat wins), 31.6 s | 0.96 MB |
+  | `serpent-battle-d.mp4` | seed 6: fin > peck > coil > flop (the serpent wins), 36.6 s | 1.14 MB |
+  | `serpent-ice.mp4` | × 2 on the frozen sea, 20 s | 0.23 MB |
+
+  The 2.1 clips (compare, attack, × 3 close-up and its GIF) are removed; the 2.1 table above is history.
+- **Cost (`serpent-record.js cost`, the whole act stepped, `render()` inclusive, 4× CPU throttle):**
+  mean 0.58 ms (pass), 0.72–0.80 ms (battles), 0.71 ms (ice); p95 1.3–1.8 ms; worst single frame 3.5–6 ms
+  (rare, collection-like spikes). Un-throttled: mean 0.17–0.23 ms. The 3 ms line holds on mean and p95.
+
 **How it goes into Deckhand.**
 - **Replace:** `#sea-serpent`'s and `#sea-attack`'s pieces with the prototype's elements: two body
   paths (above and below the waterline), spines, a face, ripples and a splash.
