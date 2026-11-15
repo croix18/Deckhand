@@ -2,12 +2,13 @@
    node tools/proofs/winter-december.js shots [OUT]     — the board at Nov 24, Nov 30, Dec 3, Dec 7, Dec 10, Dec 14, Dec 18, Jan 6
                                                            (locked, the motion paused at a fixed moment), plus 3× crops of the frost,
                                                            a flake, the snowman and the frost at its designed peak (s = 1, Frost.paintAt)
-   node tools/proofs/winter-december.js clip OUT snow|manatee|visit
+   node tools/proofs/winter-december.js clip OUT snow|manatee|manatee3x|leave|visit
                                                          — a frame-exact MP4: every animation on the page paused and stepped together
                                                            (snow: a flurry over the frost, the right edge; manatee: the whole act; visit:
-                                                           its arrival and its leaving)
+                                                           its arrival and its leaving; manatee3x: the act at 3×, the frame following
+                                                           the manatee; leave: Jan 8's act, swimming off left, at 1×)
    node tools/proofs/winter-december.js cost            — script time per frame at 1× and 4× CPU throttle with snow falling and the
-                                                           frost showing (a trace: every main-thread task between two frames), and the
+                                                           frost showing, and with the manatee's act playing too (a trace: every main-thread task between two frames), and the
                                                            style / layout passes per frame
    CHROME=/path/to/chrome uses a system Chrome. */
 const { chromium } = require("playwright");
@@ -21,7 +22,7 @@ const DATES = [["2026-11-24", "T10:30"], ["2026-11-30", "T10:30"], ["2026-12-03"
                ["2026-12-10", "T10:30"], ["2026-12-14", "T10:30"], ["2026-12-18", "T10:30"], ["2027-01-06", "T10:30"]];
 async function board(br, hash, opts){
   opts = opts || {};
-  const p = await (await br.newContext({ viewport: { width: 1920, height: 1080 }, reducedMotion: "no-preference" })).newPage();
+  const p = await (await br.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: opts.scale || 1, reducedMotion: "no-preference" })).newPage();
   p.on("pageerror", e => console.error("pageerror:", e.message));
   await p.goto(APP + hash); await p.waitForFunction(() => !!window.Deckhand);
   await p.evaluate(() => { const l = document.getElementById("launchBtn"); if (document.body.classList.contains("landing") && l) l.click(); });
@@ -85,7 +86,7 @@ async function zoom(src, out, crop, k){
   }
   if (cmd === "clip"){
     const out = path.resolve(process.argv[3]), which = process.argv[4] || "snow";
-    const p = await board(br, which === "visit" ? "#t=2026-12-15T10:30" : "#t=2026-12-10T10:30");
+    const p = await board(br, which === "visit" ? "#t=2026-12-15T10:30" : which === "leave" ? "#t=2027-01-08T10:30" : "#t=2026-12-10T10:30", { scale: which === "manatee3x" ? 3 : 1 });
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wnclip-"));
     /* the director's end-of-act timers run on the wall clock, and a frame-exact recording takes far longer than the act:
        drop the long ones (the act's end, the boat's reaction, the gull's return) while the act is started */
@@ -95,9 +96,10 @@ async function zoom(src, out, crop, k){
       /* a flurry's worth in 22 s: three flakes started at staggered points of their fall, over the frost's column */
       await p.evaluate(() => { const S = window.Deckhand.season.snow; S.spawn({ kind: "dendrite", size: 24, x: .9, at: .0 }); S.spawn({ kind: "fleck", x: .95, at: .38 }); S.spawn({ kind: "plate", size: 20, x: .875, at: .7 }); });
       n = 22 * fps; clip = { x: 1180, y: 0, width: 740, height: 1080 }; step = (t) => t;
-    } else if (which === "manatee"){
+    } else if (which === "manatee" || which === "manatee3x" || which === "leave"){
       await p.evaluate(() => { const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("manatee", "near"); });
-      n = 50 * fps; clip = { x: 560, y: 900, width: 1360, height: 180 }; step = (t) => t;
+      n = 50 * fps; clip = which === "leave" ? { x: 0, y: 900, width: 1360, height: 180 } : { x: 560, y: 900, width: 1360, height: 180 }; step = (t) => t;
+      if (which === "manatee3x") clip = null;   // follows the manatee: 400 × 110 around its drift, at 3×
     } else {
       await p.evaluate(() => { const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("visit"); });
       n = 16 * fps; clip = { x: 1080, y: 380, width: 840, height: 700 }; step = (t) => t < 9 ? t : 231 + (t - 9);   // the arrival, then the leaving
@@ -107,7 +109,10 @@ async function zoom(src, out, crop, k){
     for (let i = 0; i < n; i++){
       const t = step(i / fps);
       await p.evaluate(t => { window.__a.forEach((x, k) => { try { x.currentTime = window.__b[k] + t * 1000; } catch(e){} }); }, t);
-      await p.screenshot({ path: path.join(dir, "f" + String(i).padStart(5, "0") + ".jpg"), type: "jpeg", quality: 90, clip });
+      let c = clip;
+      if (!c){ const x = await p.evaluate(() => { const r = document.querySelector("#sea-manatee .mnDrift").getBoundingClientRect(); return r.left + r.width / 2; });
+        c = { x: Math.round(Math.max(0, Math.min(1520, x - 200))), y: 970, width: 400, height: 110 }; }
+      await p.screenshot({ path: path.join(dir, "f" + String(i).padStart(5, "0") + ".jpg"), type: "jpeg", quality: 90, clip: c });
     }
     execSync(`${FF} -y -loglevel error -framerate ${fps} -i ${dir}/f%05d.jpg -c:v libx264 -pix_fmt yuv420p -crf 27 -preset slow -tune animation -movflags +faststart ${out}`);
     console.log(path.basename(out), (fs.statSync(out).size / 1048576).toFixed(2) + " MB", n + " frames, frames in " + dir);
@@ -115,10 +120,12 @@ async function zoom(src, out, crop, k){
   if (cmd === "cost"){
     /* three runs: the board on Nov 18 (November, the baseline), Dec 14 with the frost and no snow, Dec 14 with the frost and
        three flakes falling (the cap) */
-    for (const [label, hash, snow] of [["nov18 (baseline)", "#t=2026-11-18T10:30", false], ["dec14 frost", "#t=2026-12-14T10:30", false], ["dec14 frost+snow", "#t=2026-12-14T10:30", true]]){
+    for (const [label, hash, snow] of [["nov18 (baseline)", "#t=2026-11-18T10:30", false], ["dec14 frost", "#t=2026-12-14T10:30", false], ["dec14 frost+snow", "#t=2026-12-14T10:30", true], ["dec14 +manatee", "#t=2026-12-14T10:30", "manatee"]]){
     const p = await board(br, hash), cdp = await p.context().newCDPSession(p);
     for (const rate of [1, 4]){
       await cdp.send("Emulation.setCPUThrottlingRate", { rate });
+      if (snow === "manatee") await p.evaluate(() => { const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("manatee", "near");
+        document.getAnimations().forEach(a => { if (/^mn/.test(a.animationName || "")) a.currentTime = (a.currentTime || 0) + 6000; }); });   // the look, the slip and the turn fall inside the 10 s trace
       await p.evaluate(snow => { const S = window.Deckhand.season.snow; S.clear(); if (snow){ S.spawn({ kind: "dendrite", x: .9, at: 0 }); S.spawn({ kind: "plate", x: .06, at: .05 }); S.spawn({ kind: "fleck", x: .94, at: .1 }); } }, snow);
       await p.waitForTimeout(1000);
       const ev = [];

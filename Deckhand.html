@@ -853,7 +853,7 @@
   body.focusMode:not(.landing) #waves{display:none;}
   body.focusMode:not(.landing) #boat{display:none;}
   body.focusMode:not(.landing) .wvLayer{display:none;}
-  body.focusMode:not(.landing) #sea{display:none;}
+  body.focusMode:not(.landing) #sea, body.focusMode:not(.landing) #mnGhost{display:none;}
   body.focusMode:not(.landing) main#canvas{margin:10px 12px 8px;}
   /* the focused widget's own strip folds too — its buttons sat exactly
      under the focus bar, and the deck deserves every pixel. The bar
@@ -3794,15 +3794,17 @@
   #wnSnowman .wnVisit .vgScarf .k{fill:#B5542A;} #wnSnowman .wnVisit .vgScarf .b{fill:#F6E6CE;}
   #wnSnowman .vgX, #wnSnowman .vgY, #wnSnowman .vgSettle, #wnSnowman .vgTurn, #wnSnowman .vgNod{transform-box:view-box; transform-origin:0 0;}
   #wnSnowman .vgTurn{transform-origin:1px -6px;} #wnSnowman .vgNod{transform-origin:5px -8px;}
-  #wnSnowman .vgFly{visibility:hidden;}
+  #wnSnowman .vgFly{opacity:0;}
   body.waveMotion #wnSnowman .wnVisit.go{visibility:visible;}
   body.waveMotion #wnSnowman .wnVisit.go .vgX{animation:vgX 240s linear both;}
   body.waveMotion #wnSnowman .wnVisit.go .vgY{animation:vgY 240s linear both;}
   body.waveMotion #wnSnowman .wnVisit.go .vgSettle{animation:vgSettle 240s linear both;}
   body.waveMotion #wnSnowman .wnVisit.go .vgTurn{animation:vgTurn 240s linear both;}
   body.waveMotion #wnSnowman .wnVisit.go .vgNod{animation:vgNod 240s linear both;}
-  body.waveMotion #wnSnowman .wnVisit.go .vgFly{animation:vgFly 240s step-end both;}
-  body.waveMotion #wnSnowman .wnVisit.go .vgPerch{animation:vgPerch 240s step-end both;}
+  /* v7.65 (frame check): the glide and the perch crossfade as it lands and lifts off (they were a one-frame swap): the perched bird is
+     solid under the glide while its spread wings fade out over 0.35 s (and back in before it lifts), and it stands ON the pail (its feet were 2–3 px above the rim: the group sits 2.2 lower) */
+  body.waveMotion #wnSnowman .wnVisit.go .vgFly{animation:vgFly 240s linear both;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgPerch{animation:vgPerch 240s linear both;}
   /* 1 s = .41667 %: off the masthead 0–2.5 s (Sea.gullLeave), the glide 2.5–6.5 s, landed 6.5, the leaving 236–240 */
   @keyframes vgX{0%,1.0417%{transform:translateX(-300px); animation-timing-function:cubic-bezier(.2,.55,.45,1);} 2.7083%,98.333%{transform:translateX(0); animation-timing-function:cubic-bezier(.55,0,.8,.45);} 100%{transform:translateX(-330px);}}
   @keyframes vgY{0%,1.0417%{transform:translateY(-760px); animation-timing-function:cubic-bezier(.3,.35,.5,1);} 2.7083%,98.333%{transform:translateY(0); animation-timing-function:cubic-bezier(.35,.1,.65,.55);} 100%{transform:translateY(-800px);}}
@@ -3810,51 +3812,137 @@
   @keyframes vgTurn{0%,15.833%{transform:scaleX(1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 15.95%,33.75%{transform:scaleX(-1); animation-timing-function:cubic-bezier(.45,0,.55,1);}
     33.867%,58.333%{transform:scaleX(1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 58.45%,82.083%{transform:scaleX(-1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 82.2%,100%{transform:scaleX(1);}}
   @keyframes vgNod{0%,45.833%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 46.167%,47.083%{transform:rotate(10deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 47.5%,100%{transform:rotate(0deg);}}
-  @keyframes vgFly{0%{visibility:visible;} 2.7083%{visibility:hidden;} 98.333%{visibility:visible;} 100%{visibility:visible;}}
-  @keyframes vgPerch{0%{visibility:hidden;} 2.7083%{visibility:visible;} 98.333%{visibility:hidden;} 100%{visibility:hidden;}}
-  /* C6a the manatee (50 s): nostrils first beside the boat, a look at the boat (the gull leans), level, a slow cruise
-     right at the surface, one more breath, and the dive with the round tail lifted clear */
-  #sea-manatee{bottom:6px; left:calc(max(42vw, 300px) + 34px); width:92px;}
+  @keyframes vgFly{0%,2.6354%{opacity:1;} 2.7813%,98.26%{opacity:0;} 98.406%,100%{opacity:1;}}
+  @keyframes vgPerch{0%,2.6354%{opacity:0;} 2.6563%,98.385%{opacity:1;} 98.406%,100%{opacity:0;}}   /* solid under the glide's fading wings: no grey double */
+  /* C6a the manatee (50 s), reworked after the December proofs (Croix: "Make the necessary fixes"): it travels HEAD-FIRST
+     and sits IN the water. The art faces left (toward the boat); .mnTurn mirrors it, but only while it is out of sight.
+     The waterline is the svg's y 29: the solid body is clipped above it (only the back, the top of the head and, in the
+     dive, the paddle show), and #mnGhost, a second copy over the front waves, shows the part under it faintly (the
+     serpent's way). A broken ripple line rides the waterline where the body breaks it. Every pose change is keyed and
+     eased; the tail strokes and the flipper sculls on their own slow clocks.
+     0–1.2 a ring and bubbles beside the boat · 1.2–2.5 nostrils first, a spray and a puff · 2.5–3.6 the head lifts ·
+     3.6–6.6 it looks at the boat (the gull leans) · 6.6–9.2 it lowers its head and slips under (a soft ring) ·
+     9.5–11.8 under water its faint shape swings round (the turn) · 12–14.2 its back and paddle come up facing right,
+     then its head · 10.8–14 it gathers speed, 14–40.4 a constant cruise right · 26–28 a breath (spray, puff) ·
+     38–40.4 the dive: head down, the round paddle lifted clear LATE, hangs to 41.4, under by 42.8 (a ring) */
+  #sea-manatee, #mnGhost{bottom:6px; left:calc(max(42vw, 300px) + 34px); width:92px;}
   #sea-manatee.far, #sea-manatee.near{bottom:6px;}
-  #sea-manatee .mnSvg{display:block; width:92px; height:36.8px; overflow:visible;}
-  #sea-manatee .mnBody path{fill:var(--navy);}
-  #sea-manatee .mnPt{fill:var(--paleturq);} #sea-manatee .mnPtS{fill:none; stroke:var(--paleturq); stroke-width:.9; stroke-linecap:round;}
-  #sea-manatee .mnSpray path{fill:#fff; stroke:var(--wnBlue); stroke-width:.9; stroke-opacity:.6;}
-  #sea-manatee .mnPitch, #sea-manatee .mnSpray{transform-box:view-box;}
-  #sea-manatee .mnPitch{transform-origin:50px 29px; transform:translateY(40px);}
-  #sea-manatee .mnSpray{opacity:0;}
+  #mnGhost{position:fixed; z-index:2; pointer-events:none; visibility:hidden; opacity:.2;}
+  #mnGhost.go{visibility:visible;}
+  body.focusMode:not(.landing) #mnGhost, body.landing #mnGhost{display:none !important;}
+  .mnRig .mnSvg{display:block; width:92px; height:36.8px; overflow:visible;}
+  .mnRig .mnBody, #mnGhost path{fill:var(--navy);}
+  .mnRig .mnBelly{fill:var(--paleturq); opacity:.3;}
+  .mnRig .mnRim{fill:none; stroke:var(--paleturq); stroke-width:1; stroke-linecap:round; opacity:.55;}
+  .mnRig .mnPt{fill:var(--paleturq);} .mnRig .mnEyeD{fill:var(--navy);}
+  .mnRig .mnPtS{fill:none; stroke:var(--paleturq); stroke-width:.9; stroke-linecap:round;}
+  .mnRig .mnSpray path{fill:#fff; stroke:var(--wnBlue); stroke-width:.9; stroke-opacity:.6;}
+  .mnRig .mnPuff{fill:#fff; stroke:var(--wnBlue); stroke-width:.6; stroke-opacity:.5;}
+  .mnRig .mnRip path{fill:none; stroke:#fff; stroke-width:1.1; stroke-linecap:round;}
+  .mnRig .mnPitch, .mnRig .mnSpray, .mnRig .mnTail, .mnRig .mnTailLift, .mnRig .mnPad, .mnRig .mnFlip, .mnRig .mnGA, .mnRig .mnGB, .mnRig .mnRip{transform-box:view-box;}
+  .mnRig .mnPitch{transform-origin:50px 22px; transform:translate(0, 40px);}
+  .mnRig .mnTail, .mnRig .mnTailLift{transform-origin:82px 21.6px;}
+  .mnRig .mnPad{transform-origin:90.6px 21.6px;}
+  .mnRig .mnFlip{transform-origin:27.4px 30px;}
+  .mnRig .mnGA, .mnRig .mnGB{transform-origin:50px 22px;}
+  .mnRig .mnGB{opacity:0; transform:scaleX(-1);}
+  .mnRig .mnSpray, .mnRig .mnPuff, .mnRig .mnRip path{opacity:0;}
+  .mnRig .mnPuff{transform-box:fill-box; transform-origin:center;}
   #sea-manatee .mnTurn{transform-origin:46px 50%;}
-  body.waveMotion #sea-manatee.go .mnDrift{animation:mnDrift 50s linear both;}
-  body.waveMotion #sea-manatee.go .mnBob{animation:mnHeave calc(var(--T1) / 2) cubic-bezier(.37,0,.63,1) infinite alternate;}
-  body.waveMotion #sea-manatee.go .mnPitch{animation:mnPitch 50s linear both;}
-  body.waveMotion #sea-manatee.go .mnSpray{animation:mnSpray 50s linear both;}
+  body.waveMotion .mnRig.go .mnDrift{animation:mnDrift 50s linear both;}
+  body.waveMotion .mnRig.go .mnTurn{animation:mnTurn 50s linear both;}
+  body.waveMotion #mnGhost.go .mnSvg{animation:mnGFade 50s linear both;}   /* it fades in under the ring, and out as it goes deep */
+  body.waveMotion #mnGhost.go.leave .mnSvg{animation-name:mnGFadeL;}
+  @keyframes mnGFade{0%{opacity:0;} 2.4%,84%{opacity:1;} 89%,100%{opacity:0;}}
+  @keyframes mnGFadeL{0%{opacity:0;} 2.4%,100%{opacity:1;}}
+  body.waveMotion .mnRig.go .mnBob{animation:mnHeave calc(var(--T1) / 2) cubic-bezier(.37,0,.63,1) infinite alternate;}
+  body.waveMotion .mnRig.go .mnPitch{animation:mnPitch 50s linear both;}
+  body.waveMotion .mnRig.go .mnTail{animation:mnStroke 3.2s cubic-bezier(.45,0,.55,1) infinite alternate;}
+  body.waveMotion .mnRig.go .mnTailLift{animation:mnTailLift 50s linear both;}
+  body.waveMotion .mnRig.go .mnPad{animation:mnPad 50s linear both;}
+  body.waveMotion .mnRig.go .mnFlip{animation:mnScull 2.3s cubic-bezier(.45,0,.55,1) infinite alternate;}
+  body.waveMotion .mnRig.go .mnGA{animation:mnGA 50s linear both;}
+  body.waveMotion .mnRig.go .mnGB{animation:mnGB 50s linear both;}
+  body.waveMotion .mnRig.go .mnSpray{animation:mnSpray 50s linear both;}
+  body.waveMotion .mnRig.go .mnPuff{animation:mnPuff 50s linear both;}
+  body.waveMotion .mnRig.go .mnRip{animation:mnRipple 1.5s cubic-bezier(.45,0,.55,1) infinite alternate;}
+  body.waveMotion .mnRig.go .mnRip .rN{animation:mnRipN 50s linear both;}
+  body.waveMotion .mnRig.go .mnRip .rF{animation:mnRipF 50s linear both;}
+  body.waveMotion .mnRig.go .mnRip .rH{animation:mnRipH 50s linear both;}
+  body.waveMotion .mnRig.go .mnRip .rC{animation:mnRipC 50s linear both;}
+  body.waveMotion .mnRig.go .mnRip .rD{animation:mnRipD 50s linear both;}
   body.waveMotion #sea-manatee.go .seaRing.r0{animation:seaRing 1.3s cubic-bezier(.2,.6,.4,1) .1s forwards;}
-  body.waveMotion #sea-manatee.go .seaRing.r1{animation:seaRing 1.3s cubic-bezier(.2,.6,.4,1) 42.4s forwards;}
+  body.waveMotion #sea-manatee.go .seaRing.r1{animation:seaRing 1.5s cubic-bezier(.2,.6,.4,1) 8.6s forwards;}
+  body.waveMotion #sea-manatee.go .seaRing.r2{animation:seaRing 1.5s cubic-bezier(.2,.6,.4,1) 12.3s forwards;}
+  body.waveMotion #sea-manatee.go .seaRing.r3{animation:seaRing 1.4s cubic-bezier(.2,.6,.4,1) 42s forwards;}
   body.waveMotion #sea-manatee.go .seaBub{animation:seaBub .9s ease-out .3s forwards;}
   body.waveMotion #sea-manatee.go .seaBub.b2{animation-delay:.6s;}
   @keyframes mnHeave{from{translate:0 1.4px;} to{translate:0 -1.4px;}}
-  @keyframes mnDrift{0%,16.8%{transform:translateX(0); animation-timing-function:cubic-bezier(.45,0,.55,1);} 84%,100%{transform:translateX(calc(30vw - 40px));}}
-  @keyframes mnPitch{0%,2.4%{transform:translateY(26px) rotate(20deg); animation-timing-function:cubic-bezier(.2,.6,.4,1);}
-    4%{transform:translateY(6px) rotate(20deg); animation-timing-function:ease-in-out;} 6%,13.2%{transform:translateY(3px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
-    16.8%,60%{transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 62%{transform:translateY(0) rotate(10deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
-    64%,76%{transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.4,0,.6,1);}
-    80.8%,82.8%{transform:translateY(5px) rotate(-22deg); animation-timing-function:cubic-bezier(.5,0,.9,.5);}
-    84.8%,100%{transform:translateY(46px) rotate(-22deg);}}
-  @keyframes mnSpray{0%,2.4%{opacity:0; transform:translate(0,0);} 2.6%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 3.8%{opacity:0; transform:translate(0,-6px);}
-    59.9%{opacity:0; transform:translate(0,0);} 60.3%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 61.5%,100%{opacity:0; transform:translate(0,-6px);}}
-  body.waveMotion[data-sea="windy"] #sea-manatee.go .mnSpray{animation-name:mnSprayW;}
-  @keyframes mnSprayW{0%,2.4%{opacity:0; transform:translate(0,0);} 2.6%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 3.8%{opacity:0; transform:translate(-6px,-4px);}
-    59.9%{opacity:0; transform:translate(0,0);} 60.3%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 61.5%,100%{opacity:0; transform:translate(-6px,-4px);}}
-  /* the first Friday back (B6): after the look it turns and cruises LEFT, past the boat and behind the dock, without diving */
-  body.waveMotion #sea-manatee.go.leave .mnDrift{animation-name:mnDriftL;}
-  body.waveMotion #sea-manatee.go.leave .mnTurn{animation:mnTurn 50s linear both;}
-  body.waveMotion #sea-manatee.go.leave .mnPitch{animation-name:mnPitchL;}
-  body.waveMotion #sea-manatee.go.leave .seaRing.r1{animation:none;}
-  @keyframes mnDriftL{0%,18%{transform:translateX(0); animation-timing-function:cubic-bezier(.5,0,.75,1);} 98%,100%{transform:translateX(calc(-42vw - 160px));}}
-  @keyframes mnTurn{0%,16.8%{transform:scaleX(1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 18%,100%{transform:scaleX(-1);}}
-  @keyframes mnPitchL{0%,2.4%{transform:translateY(26px) rotate(20deg); animation-timing-function:cubic-bezier(.2,.6,.4,1);}
-    4%{transform:translateY(6px) rotate(20deg); animation-timing-function:ease-in-out;} 6%,13.2%{transform:translateY(3px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
-    16.8%,100%{transform:translateY(0) rotate(0deg);}}
+  @keyframes mnStroke{from{transform:rotate(-4deg);} to{transform:rotate(5deg);}}
+  @keyframes mnScull{from{transform:rotate(-14deg);} to{transform:rotate(10deg);}}
+  @keyframes mnRipple{from{transform:translateX(-1px);} to{transform:translateX(1px);}}
+  /* the cruise is a constant speed: a quadratic ease-in (cubic-bezier(1/3,0,2/3,1/3), end slope 2) into a linear run into a
+     quadratic ease-out, the three joined at the same speed (1.6 + 26.4 + 1.6 = 29.6 speed-seconds of the distance) */
+  @keyframes mnDrift{0%,21.6%{transform:translateX(0); animation-timing-function:cubic-bezier(.333,0,.667,.333);}
+    28%{transform:translateX(calc((30vw - 40px) * .05405)); animation-timing-function:linear;}
+    80.8%{transform:translateX(calc((30vw - 40px) * .94595)); animation-timing-function:cubic-bezier(.333,.667,.667,1);}
+    87.2%,100%{transform:translateX(calc(30vw - 40px));}}
+  /* the mirror happens at 10.5 s, while the whole body is under the waterline (the ghost shows the turn) */
+  @keyframes mnTurn{0%,20.8%{transform:scaleX(1); animation-timing-function:step-end;} 21%,100%{transform:scaleX(-1);}}
+  @keyframes mnPitch{0%,2.4%{transform:translate(0, 36px) rotate(20deg); animation-timing-function:cubic-bezier(.2,.6,.4,1);}
+    4%{transform:translate(0, 26.5px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    5%{transform:translate(0, 25.5px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    7.2%{transform:translate(0, 12px) rotate(22deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    10%{transform:translate(0, 11.2px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    13.2%{transform:translate(0, 12px) rotate(22deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    15.6%{transform:translate(0, 14px) rotate(-4deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    18.4%{transform:translate(0, 25px) rotate(-6deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    20.4%,24%{transform:translate(0, 24px) rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    26%{transform:translate(0, 14px) rotate(-5deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    28.4%,52%{transform:translate(0, 10px) rotate(3deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    53.6%{transform:translate(0, 7.5px) rotate(12deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    56%,76%{transform:translate(0, 10px) rotate(3deg); animation-timing-function:cubic-bezier(.4,0,.6,1);}
+    80.8%,82.8%{transform:translate(0, 12px) rotate(-22deg); animation-timing-function:cubic-bezier(.5,0,.9,.5);}
+    85.6%,100%{transform:translate(0, 40px) rotate(-24deg);}}
+  @keyframes mnTailLift{0%,23%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 26%{transform:rotate(-6deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    28.4%,76%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 80.8%,82.8%{transform:rotate(-16deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 85.6%,100%{transform:rotate(-8deg);}}
+  @keyframes mnPad{0%,77%{transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 80.8%,83.6%{transform:scaleY(1.32); animation-timing-function:cubic-bezier(.45,0,.55,1);} 86%,100%{transform:scaleY(1);}}
+  /* the ghost's turn: the left-facing copy foreshortens to a third, crossfades with the right-facing one, which opens out */
+  @keyframes mnGA{0%,19%{transform:scaleX(1); opacity:1; animation-timing-function:cubic-bezier(.55,0,.85,.6);} 21.2%{transform:scaleX(.3); opacity:1; animation-timing-function:linear;} 21.8%,100%{transform:scaleX(.26); opacity:0;}}
+  @keyframes mnGB{0%,20.6%{transform:scaleX(-.28); opacity:0; animation-timing-function:linear;} 21.6%{transform:scaleX(-.34); opacity:1; animation-timing-function:cubic-bezier(.15,.4,.45,1);} 24%,100%{transform:scaleX(-1); opacity:1;}}
+  @keyframes mnSpray{0%,3.8%{opacity:0; transform:translate(0,0);} 4.2%{opacity:1; transform:translate(0,-1px); animation-timing-function:ease-out;} 6%{opacity:0; transform:translate(0,-6px);}
+    53%{opacity:0; transform:translate(0,0);} 53.4%{opacity:1; transform:translate(0,-1px); animation-timing-function:ease-out;} 55.2%,100%{opacity:0; transform:translate(0,-6px);}}
+  @keyframes mnPuff{0%,3.9%{opacity:0; transform:scale(.3);} 4.4%{opacity:.85; transform:scale(.6); animation-timing-function:ease-out;} 6.4%{opacity:0; transform:scale(1.6);}
+    53.1%{opacity:0; transform:scale(.3);} 53.6%{opacity:.85; transform:scale(.6); animation-timing-function:ease-out;} 55.6%,100%{opacity:0; transform:scale(1.6);}}
+  body.waveMotion[data-sea="windy"] .mnRig.go .mnSpray{animation-name:mnSprayW;}
+  /* windy: the spray shears left on the screen (the cruise's breath is in the mirrored frame, so +x there) */
+  @keyframes mnSprayW{0%,3.8%{opacity:0; transform:translate(0,0);} 4.2%{opacity:1; transform:translate(-1px,-1px); animation-timing-function:ease-out;} 6%{opacity:0; transform:translate(-6px,-4px);}
+    53%{opacity:0; transform:translate(0,0);} 53.4%{opacity:1; transform:translate(1px,-1px); animation-timing-function:ease-out;} 55.2%,100%{opacity:0; transform:translate(6px,-4px);}}
+  @keyframes mnRipN{0%,3.6%{opacity:0;} 4.4%,6%{opacity:.9;} 7.2%,100%{opacity:0;}}
+  @keyframes mnRipF{0%,4.8%{opacity:0;} 6.8%,13.2%{opacity:.9;} 15.2%,100%{opacity:0;}}
+  @keyframes mnRipH{0%,14%{opacity:0;} 15.2%,16.4%{opacity:.9;} 17.6%,24.4%{opacity:0;} 25.6%,27.2%{opacity:.9;} 28.6%,100%{opacity:0;}}
+  @keyframes mnRipC{0%,26.8%{opacity:0;} 28.4%,77.6%{opacity:.9;} 80%,100%{opacity:0;}}
+  @keyframes mnRipD{0%,79%{opacity:0;} 80.6%,83.6%{opacity:.9;} 85.6%,100%{opacity:0;}}
+  /* Fri Jan 8 (B6): it is already facing left, toward the boat, so after the look it levels out and cruises LEFT, head-first,
+     past the boat and off the screen beyond the dock, at a constant speed, without turning or diving */
+  body.waveMotion .mnRig.go.leave .mnDrift{animation-name:mnDriftL;}
+  body.waveMotion .mnRig.go.leave .mnPitch{animation-name:mnPitchL;}
+  body.waveMotion .mnRig.go.leave .mnTurn, body.waveMotion .mnRig.go.leave .mnTailLift, body.waveMotion .mnRig.go.leave .mnPad,
+  body.waveMotion .mnRig.go.leave .mnGA, body.waveMotion .mnRig.go.leave .mnGB, body.waveMotion .mnRig.go.leave .mnRip .rH, body.waveMotion .mnRig.go.leave .mnRip .rD,
+  body.waveMotion #sea-manatee.go.leave .seaRing.r1, body.waveMotion #sea-manatee.go.leave .seaRing.r2, body.waveMotion #sea-manatee.go.leave .seaRing.r3{animation:none;}
+  body.waveMotion .mnRig.go.leave .mnRip .rC{animation-name:mnRipCL;}
+  @keyframes mnDriftL{0%,17.6%{transform:translateX(0); animation-timing-function:cubic-bezier(.333,0,.667,.333);}
+    24%{transform:translateX(calc((-42vw - 160px) * .04145)); animation-timing-function:linear;} 98%{transform:translateX(calc(-42vw - 160px));} 100%{transform:translateX(calc((-42vw - 160px) * 1.0259));}}
+  @keyframes mnPitchL{0%,2.4%{transform:translate(0, 36px) rotate(20deg); animation-timing-function:cubic-bezier(.2,.6,.4,1);}
+    4%{transform:translate(0, 26.5px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    5%{transform:translate(0, 25.5px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    7.2%{transform:translate(0, 12px) rotate(22deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    10%{transform:translate(0, 11.2px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    13.2%{transform:translate(0, 12px) rotate(22deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    17.6%,52%{transform:translate(0, 10px) rotate(3deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    53.6%{transform:translate(0, 7.5px) rotate(12deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    56%,100%{transform:translate(0, 10px) rotate(3deg);}}
+  @keyframes mnRipCL{0%,14.4%{opacity:0;} 17.6%,100%{opacity:.9;}}
   /* the boat's part (B5): the gull leans over to look at it, 3.0–6.6 s, and straightens */
   body.waveMotion #boat.manatee.gull .glPerch{animation:mnGullLean 50s linear both;}
   @keyframes mnGullLean{0%,6%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 7.6%,12%{transform:rotate(11deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 13.6%,100%{transform:rotate(0deg);}}
@@ -4100,7 +4188,7 @@
     #nvScarecrow, #nvSquirrel, #nvTurkey, #sea-campfire, .nvBranch{display:none !important;}   /* v7.58: nor the rest of November 2.0 */
     #wnSnow, #wnSnowman, #wnFrostBox, #wnCap{display:none !important;}   /* v7.65: nor winter's furniture */
     .wvLayer{display:none;}
-    #sea{display:none;}
+    #sea, #mnGhost{display:none;}
     .tplGrid{grid-template-columns:1fr;}
     /* a phone has no keyboard — don't advertise shortcuts; no fullscreen pill */
     .kbd{display:none;}
@@ -5073,21 +5161,29 @@
   <!-- v7.58 November 2.0 (docs/reviews/november-2.0-design.md, C): the sea's November acts.
        DUCKS: a raft of five, right to left — a leader, two pairs, each on its own bob; the
        fourth dabbles (head under, tail up) once. Navy, a paleturq cheek patch. -->
-  <!-- v7.65 the manatee (docs/reviews/winter-design.md C6a, winter-animation.md B6): a navy silhouette 92 px long in the
-       near lane at Wilson's spot; nested wrappers, one motion each: drift > turn (the leaving day) > bob > svg > the pitch -->
-  <div id="sea-manatee" class="seaThing">
+  <!-- v7.65 the manatee (docs/reviews/winter-design.md C6a, winter-animation.md B6), reworked after the proofs: a navy
+       manatee 92 px long in the near lane at Wilson's spot, drawn facing left (the boat), sitting IN the water — the svg's
+       y 29 is the waterline; the body above it is solid, the part under it is #mnGhost's (after the front waves).
+       drift > turn (the mirror, only while it is under) > bob > svg > the pitch > the tail (lift > stroke > paddle), the
+       body, the flipper (sculls), the details, the spray; the rings and the ripple ride the waterline -->
+  <div id="sea-manatee" class="seaThing mnRig">
     <div class="mnDrift"><div class="mnTurn"><div class="mnBob">
       <svg class="mnSvg" viewBox="0 0 100 40">
         <defs><clipPath id="mnClip"><rect x="-60" y="-80" width="240" height="109"/></clipPath></defs>
         <g clip-path="url(#mnClip)"><g class="mnPitch">
-          <g class="mnBody"><path d="M8,24 C6,19 9,15 14,14.6 C18,14 21,15 24,14.4 C30,10.4 42,8.2 54,8.6 C66,9 75,13 81,19 C83,14 90,9.6 97,11 C102.5,12.4 102.8,20.6 98,24 C94,27 88,26.6 84.6,25 C78,30 66,34.6 52,34.8 C38,35 26,33 18,30 C13,28.6 9.4,27 8.4,25.6 Z"/><path d="M24,29 C20,33 21,37 26,36.4 C28,34.6 28.6,31.6 27.6,29 Z"/></g>
-          <g class="mnDet"><circle class="mnPt" cx="18.6" cy="19.4" r="1.7"/><circle class="mnPt" cx="9.4" cy="17.6" r=".9"/><circle class="mnPt" cx="11.8" cy="16.6" r=".9"/>
-            <g class="mnPt"><circle cx="8.8" cy="21.6" r=".55"/><circle cx="10.4" cy="22.6" r=".55"/><circle cx="9" cy="23.6" r=".55"/><circle cx="11.6" cy="21.2" r=".55"/></g>
-            <path class="mnPtS" d="M50,9.4 l1.2,4.6 M54,9 l1.2,4.6 M58,9.4 l1.2,4.6"/><path class="mnPtS" d="M24.4,15.2 Q26.4,20 24.8,25" style="stroke-width:.7"/><path class="mnPtS" d="M88,15 Q93,13 98,15.6" style="stroke-width:.7"/></g>
-          <g class="mnSpray" transform="translate(6 12) rotate(-20)"><path d="M2,2 c-1.6,-2.6 -1,-5.4 1,-6.4 c.6,2 1.6,4 .6,6.6 z"/><path d="M6.6,1 c-.6,-3 .6,-5.6 2.8,-6 c0,2.2 .4,4.4 -1.4,6.2 z"/><path d="M-.8,4.6 c-2.4,-1.4 -3.2,-3.8 -2,-5.6 c1,1.6 2.6,3 2.6,5.4 z"/></g>
+            <g class="mnTailLift"><g class="mnTail"><g class="mnPad"><path class="mnBody" d="M81.6,19.4 C84.6,15.8 89.6,14.8 94.2,15.6 C98.8,16.6 100.8,20.2 99.4,23.6 C97.8,27.2 92.4,28.4 87.6,27.4 C85,26.8 82.8,25.6 81.6,24.2 Z"/><path class="mnPtS" d="M85.6,17.4 Q91,15 96.6,17" style="stroke-width:.7"/></g></g></g><path class="mnBody" d="M6,16 C9,13.5 14,12.6 19,12.8 C24,11.6 28,9.4 36,8.2 C48,6.6 62,8 71,12.2 C75,14 78.4,16.2 83,18.4 L83.6,24.8 C77,28.4 71,31 62,32.8 C50,35.6 36,35.4 26,32.6 C20,31 15,29.4 12,27.6 C8,26.6 5,25 4.6,22.4 C4.2,20 4.4,17.6 6,16 Z"/>
+            <path class="mnBelly" d="M13,27.2 C21,31 35,33.6 49,33.4 C60,33.2 69,30.6 77,26.6 C71,30.6 62,33.6 50,34.8 C37,35.6 22,33.2 13,27.2 Z"/><path class="mnBelly" d="M6.2,24.4 C9,26.6 13,27.6 17,28.2 C13,28.4 8.6,27.4 6.2,24.4 Z"/><path class="mnRim" d="M20.6,14 C27,11.2 34,9.6 42,9 C53,8.4 63,9.8 70.6,13.6"/><g class="mnFlip"><path class="mnBody" d="M25.4,29.6 C21.6,32.8 21.8,37 26.2,37 C28.8,35.4 30,32.4 29.4,29.4 Z"/></g>
+            <circle class="mnPt" cx="17.4" cy="17.2" r="1.5"/><circle class="mnEyeD" cx="17" cy="17.3" r=".6"/><circle class="mnPt" cx="7.4" cy="15.4" r=".8"/><circle class="mnPt" cx="10.4" cy="14.4" r=".8"/>
+            <g class="mnPt"><circle cx="6.2" cy="19.2" r=".5"/><circle cx="8.4" cy="19.8" r=".5"/><circle cx="6.6" cy="21.4" r=".5"/><circle cx="9" cy="21.6" r=".5"/><circle cx="7.8" cy="23" r=".5"/></g>
+            <path class="mnPtS" d="M45,8.4 l1.6,4.4 M49.4,8 l1.6,4.4 M53.8,8.2 l1.6,4.4"/><path class="mnPtS" d="M5.4,23.6 Q8.6,25.2 12.4,24.4" style="stroke-width:.7"/><path class="mnPtS" d="M23.4,13.6 Q25.6,19.6 23.6,26.6" style="stroke-width:.7; opacity:.7"/>
+            <g transform="translate(5.6 11.4) rotate(-20)"><ellipse class="mnPuff" cx="1.6" cy="-3.4" rx="3.4" ry="2.4"/><g class="mnSpray"><path d="M2,2 c-1.6,-2.6 -1,-5.4 1,-6.4 c.6,2 1.6,4 .6,6.6 z"/><path d="M6.6,1 c-.6,-3 .6,-5.6 2.8,-6 c0,2.2 .4,4.4 -1.4,6.2 z"/><path d="M-.8,4.6 c-2.4,-1.4 -3.2,-3.8 -2,-5.6 c1,1.6 2.6,3 2.6,5.4 z"/></g></g>
         </g></g>
-        <ellipse class="seaRing r0" cx="18" cy="29.4" rx="16" ry="2.6"/><ellipse class="seaRing r1" cx="62" cy="29.4" rx="20" ry="2.8"/>
-        <circle class="seaBub b1" cx="14" cy="28" r="1.4"/><circle class="seaBub b2" cx="22" cy="28.4" r="1.1"/>
+        <g class="mnRip"><path class="rN" d="M3,29.2 h4 M9.4,29.4 h5"/><path class="rF" d="M13,29.3 h7 M22.6,29.1 h10 M35.4,29.3 h8 M46,29.2 h9"/>
+          <path class="rH" d="M20,29.3 h9 M31.6,29.1 h12 M46.4,29.3 h10 M59,29.2 h9 M70.6,29.3 h6"/>
+          <path class="rC" d="M2.6,29.3 h7 M12.2,29.1 h11 M26,29.3 h9 M37.6,29.1 h12 M52.4,29.3 h9 M64,29.1 h10 M76.6,29.3 h5"/><path class="rD" d="M56,29.3 h8 M66.6,29.1 h10 M79.2,29.3 h7"/></g>
+        <ellipse class="seaRing r0" cx="12" cy="29.4" rx="14" ry="2.4"/><ellipse class="seaRing r1" cx="44" cy="29.4" rx="22" ry="2.8"/>
+        <ellipse class="seaRing r2" cx="62" cy="29.4" rx="22" ry="2.8"/><ellipse class="seaRing r3" cx="82" cy="29.4" rx="16" ry="2.6"/>
+        <circle class="seaBub b1" cx="10" cy="28" r="1.4"/><circle class="seaBub b2" cx="17" cy="28.4" r="1.1"/>
       </svg>
     </div></div></div>
   </div>
@@ -5288,6 +5384,19 @@
 </svg>
 <!-- v7.64: the serpent over the front waves — its body under the waterline at 20 %, the splashes, the words, the gull in flight -->
 <svg id="srpTop" class="srpLayer" aria-hidden="true"></svg>
+<!-- v7.65: the manatee under the waterline, faint, over the front waves (the serpent's ghost, as CSS): the same rig on the
+     same clocks as #sea-manatee (Sea.play gives both .go together); the turn is two copies crossfading, not a mirror -->
+<div id="mnGhost" class="mnRig" aria-hidden="true">
+  <div class="mnDrift"><div class="mnBob">
+    <svg class="mnSvg" viewBox="0 0 100 40">
+      <defs><clipPath id="mnGClip"><rect x="-60" y="29" width="240" height="200"/></clipPath></defs>
+      <g clip-path="url(#mnGClip)">
+        <g class="mnGA"><g class="mnPitch"><g class="mnTailLift"><g class="mnTail"><g class="mnPad"><path class="mnBody" d="M81.6,19.4 C84.6,15.8 89.6,14.8 94.2,15.6 C98.8,16.6 100.8,20.2 99.4,23.6 C97.8,27.2 92.4,28.4 87.6,27.4 C85,26.8 82.8,25.6 81.6,24.2 Z"/></g></g></g><path class="mnBody" d="M6,16 C9,13.5 14,12.6 19,12.8 C24,11.6 28,9.4 36,8.2 C48,6.6 62,8 71,12.2 C75,14 78.4,16.2 83,18.4 L83.6,24.8 C77,28.4 71,31 62,32.8 C50,35.6 36,35.4 26,32.6 C20,31 15,29.4 12,27.6 C8,26.6 5,25 4.6,22.4 C4.2,20 4.4,17.6 6,16 Z"/><g class="mnFlip"><path class="mnBody" d="M25.4,29.6 C21.6,32.8 21.8,37 26.2,37 C28.8,35.4 30,32.4 29.4,29.4 Z"/></g></g></g>
+        <g class="mnGB"><g class="mnPitch"><g class="mnTailLift"><g class="mnTail"><g class="mnPad"><path class="mnBody" d="M81.6,19.4 C84.6,15.8 89.6,14.8 94.2,15.6 C98.8,16.6 100.8,20.2 99.4,23.6 C97.8,27.2 92.4,28.4 87.6,27.4 C85,26.8 82.8,25.6 81.6,24.2 Z"/></g></g></g><path class="mnBody" d="M6,16 C9,13.5 14,12.6 19,12.8 C24,11.6 28,9.4 36,8.2 C48,6.6 62,8 71,12.2 C75,14 78.4,16.2 83,18.4 L83.6,24.8 C77,28.4 71,31 62,32.8 C50,35.6 36,35.4 26,32.6 C20,31 15,29.4 12,27.6 C8,26.6 5,25 4.6,22.4 C4.2,20 4.4,17.6 6,16 Z"/><g class="mnFlip"><path class="mnBody" d="M25.4,29.6 C21.6,32.8 21.8,37 26.2,37 C28.8,35.4 30,32.4 29.4,29.4 Z"/></g></g></g>
+      </g>
+    </svg>
+  </div></div>
+</div>
 
 <!-- settings: v7.2 preferences panel — a tab rail, one panel at a time,
      every field label-above on a small grid, one sticky action row -->
@@ -27422,6 +27531,7 @@ var Sea = (function(){
     th.classList.remove("joined");
     if (name === "manatee") th.classList.toggle("leave", !!(Season.manateeLeaves && Season.manateeLeaves(now())));   // v7.65: the first Friday back, it swims off upriver
     th.classList.add("go");
+    if (name === "manatee") mnGhost(true, th.classList.contains("leave"));   // v7.65: its part under the waterline, on the same style recalc
     /* v7.64: the serpent's two acts run on Serpent's frame loop, timed by the act it actually plays */
     if (name === "serpent" || name === "attack"){
       var kind = name === "attack" ? "battle" : (Serpent.frozen(dateKey(now())) ? "ice" : "pass");
@@ -27434,7 +27544,7 @@ var Sea = (function(){
     alignHeave(th);
     if (name === "fog") alignDrift(th);          // v7.58: the halo drifts with the boat
     clearTimeout(timers[name]);
-    timers[name] = setTimeout(function(){ th.classList.remove("go"); th.classList.remove("joined"); }, a.dur);
+    timers[name] = setTimeout(function(){ th.classList.remove("go"); th.classList.remove("joined"); if (name === "manatee") mnGhost(false); }, a.dur);
     /* v7.58: the loon's one quiet call, as it shakes off the dive (Sound Off is silence; never over a timer) */
     if (name === "loon"){
       clearTimeout(timers["defer:call"]);
@@ -27453,7 +27563,14 @@ var Sea = (function(){
      without this, the restarted glide outlives its wall-clock removal
      timer and the creature pops out of existence mid-screen (adversarial
      find). Hiding the sea now simply ends the show. */
+  /* v7.65: #mnGhost (the manatee under the waterline, over the front waves) plays and stops with #sea-manatee */
+  function mnGhost(on, leave){
+    var g = document.getElementById("mnGhost");
+    if (!g) return;
+    if (on){ g.classList.toggle("leave", !!leave); g.classList.add("go"); } else g.classList.remove("go");
+  }
   function clear(){
+    mnGhost(false);
     THINGS.forEach(function(n){
       var th = elFor(n);
       if (th){ th.classList.remove("go"); th.classList.remove("joined"); }
@@ -32968,7 +33085,7 @@ var Season = (function(){
       '<path class="k" d="M4.2,-10.2 C5.6,-11 7.6,-11.2 8.9,-10.3 L8.6,-8.5 C7.3,-9.2 5.6,-9 4.4,-8.3 Z"/><path class="b" d="M6,-10.7 L6.8,-10.8 L6.7,-8.9 L5.9,-8.8 Z"/></g>';
     var GULL_FLY = '<path d="M-.6,-8.4 Q-3.5,-13.8 -8.5,-13.6 Q-11.6,-13.4 -13.6,-11.2 Q-8.6,-11.8 -5.4,-9.6 Q-3,-8 -1.8,-7 Z"/><path d="M.6,-8.4 Q3.5,-13.8 8.5,-13.6 Q11.6,-13.4 13.6,-11.2 Q8.6,-11.8 5.4,-9.6 Q3,-8 1.8,-7 Z"/>' +
       '<path d="M-5,-7.6 Q0,-9.6 4.6,-8.2 L7.2,-7.6 L4.6,-7 Q0,-5.6 -5,-7.6 Z"/>';
-    var VISIT = '<g transform="translate(64 26.4) scale(1.25)"><g id="sea-visit" class="wnVisit"><g class="vgX"><g class="vgY"><g class="vgSettle"><g class="vgTurn"><g class="vgNod">' +
+    var VISIT = '<g transform="translate(64 28.6) scale(1.25)"><g id="sea-visit" class="wnVisit"><g class="vgX"><g class="vgY"><g class="vgSettle"><g class="vgTurn"><g class="vgNod">' +
       '<g class="vgFly">' + GULL_FLY + '</g><g class="vgPerch">' + GULL_PERCH + '</g></g></g></g></g></g></g></g>';
     /* the flakes: perfect (one arm, mirrored, turned six times), filled white, an ice-blue edge, a pale rib */
     function flakeBody(kind, R){
@@ -33040,7 +33157,11 @@ var Season = (function(){
       }
       function envelope(G, s){
         var C = G.clock, f = G.free, Rx = C.x + C.w, T = C.y;
-        var u = Math.max(0, Math.min(520, .92 * f.uMax)) * s, strip = .64 * C.h * s, v = f.vTop >= 20 ? Math.min(130, .92 * f.vTop) * s : 0, band = v ? .42 * C.w * s : 0;
+        /* v7.65 (Croix on the proofs: the first week was "a pale haze", about 150 px): the size never goes under s = .31 (the
+           first week, s = .25, is about the autumn branch's 220 × 160 footprint), the plumes' reach and the top band's depth never under .36;
+           from the second week (s = .40) it is exactly as before */
+        var z = Math.max(s, .31), zv = Math.max(s, .36);
+        var u = Math.max(0, Math.min(520, .92 * f.uMax)) * Math.max(s, .36), strip = .64 * C.h * z, v = f.vTop >= 20 ? Math.min(130, .92 * f.vTop) * zv : 0, band = v ? .42 * C.w * z : 0;
         return { Rx: Rx, T: T, u: u, strip: strip, v: v, band: band, x0: Rx - Math.max(u, band) - 4, w: Math.max(u, band) + 4, h: strip + 4 };
       }
       function paint(cv, G, s, dpr){
@@ -33052,7 +33173,7 @@ var Season = (function(){
           if (px > E.Rx - 1 || py < E.T + 1) return false;
           var inStrip = px >= E.Rx - E.u && py <= E.T + E.strip, inBand = py <= E.T + E.v && px >= E.Rx - E.band;
           if (!inStrip && !inBand) return false;
-          for (var i = 0; i < ctls.length; i++){ var q = ctls[i], dx = px - (q.x + q.w / 2), dy = py - (q.y + q.h / 2), rr = Math.max(q.w, q.h) / 2 + 12; if (dx * dx + dy * dy < rr * rr) return false; }
+          for (var i = 0; i < ctls.length; i++){ var q = ctls[i], dx = px - (q.x + q.w / 2), dy = py - (q.y + q.h / 2), rr = Math.max(q.w, q.h) / 2 + 1; if (dx * dx + dy * dy < rr * rr) return false; }
           return true;
         }
         /* 1. the rime haze: a translucent pane, whitest at the frame */
@@ -33069,7 +33190,8 @@ var Season = (function(){
           var hbH = x.createLinearGradient(E.Rx - E.band, 0, E.Rx - E.band * .7, 0); hbH.addColorStop(0, "rgba(255,255,255,1)"); hbH.addColorStop(1, "rgba(255,255,255,0)");
           x.globalCompositeOperation = "destination-out"; x.fillStyle = hbH; x.fillRect(E.Rx - E.band, E.T, E.band * .3, E.v); x.restore(); }
         /* 2. the dendrites: feather plumes of needles from nuclei along the frame, side needles at 60° */
-        var W = [1.3, .8, .5], P = W.map(function(){ return []; }), tips = [];
+        /* the first weeks' plumes are a little bolder (k: 1 at s = .25, 0 from s = .55), so day one reads from the back row */
+        var k = Math.max(0, Math.min(1, (.55 - s) / .3)), W = [1.3, .8, .5].map(function(w){ return w * (1 + .3 * k); }), P = W.map(function(){ return []; }), tips = [];
         function line(x1, y1, a, len, lvl){ var x2 = x1 + Math.cos(a) * len, y2 = y1 + Math.sin(a) * len; if (!inside(x2, y2)) return null; P[lvl].push([[x1, y1], [x2, y2]]); segs++; return [x2, y2]; }
         function plume(px, py, ang, L, curl){
           var a = ang, stem = [[px, py]], Bw = Math.max(6, Math.min(26, L * .17)), next = 3 + Rn() * 3, n = Math.round(L / 4);
@@ -33114,7 +33236,7 @@ var Season = (function(){
         x.lineCap = "round"; x.lineJoin = "round";
         strokeAll(crust, .7, "rgba(70,110,185,.32)", .6, .6); strokeAll(crust, .55, "rgba(255,255,255,.95)", 0, 0);
         var lv;
-        for (lv = 2; lv >= 0; lv--) strokeAll(P[lv], W[lv] + .5, "rgba(62,102,178," + (lv === 0 ? .45 : .34) + ")", .7, .8);
+        for (lv = 2; lv >= 0; lv--) strokeAll(P[lv], W[lv] + .5, "rgba(62,102,178," + ((lv === 0 ? .45 : .34) + .14 * k).toFixed(2) + ")", .7, .8);
         for (lv = 2; lv >= 0; lv--) strokeAll(P[lv], W[lv], "rgba(255,255,255,.97)", 0, 0);
         /* 3. sparkle points where the light catches a tip */
         tips.forEach(function(p, ti){ if (ti % 3) return; var rr = 2.6 + Rn() * 2.4;
@@ -33131,7 +33253,13 @@ var Season = (function(){
           x.fillStyle = g; x.beginPath(); x.moveTo(xi - w2, E.T + 2); x.quadraticCurveTo(xi - w2 * .4, E.T + len * .6, xi + .4, E.T + len); x.quadraticCurveTo(xi + w2 * .5, E.T + len * .5, xi + w2, E.T + 2); x.closePath(); x.fill(); x.stroke();
         }
         x.fillStyle = "#fff"; x.beginPath(); x.moveTo(E.Rx - iceL - 4, E.T); for (xi = E.Rx - iceL - 4; xi < E.Rx; xi += 8) x.quadraticCurveTo(xi + 4, E.T + 4.5 + Rn() * 2.5, xi + 8, E.T + 2); x.lineTo(E.Rx, E.T); x.closePath(); x.fill();
-        ctls.forEach(function(q){ x.save(); x.globalCompositeOperation = "destination-out"; x.beginPath(); x.arc(q.x + q.w / 2, q.y + q.h / 2, Math.max(q.w, q.h) / 2 + 12, 0, 7); x.fill(); x.restore(); });
+        /* v7.65 (Croix on the proofs: the hard white disc round the card's button read as a hole in the ice): the frost runs up
+           to each control and thins over a wide, smooth falloff (clear only under the control's own disc, ~45 % gone at
+           its edge + 8 px, nothing gone 46 px out), so no edge can be seen */
+        ctls.forEach(function(q){ var cx = q.x + q.w / 2, cy = q.y + q.h / 2, r0 = Math.max(q.w, q.h) / 2, r1 = r0 + 46, gq = x.createRadialGradient(cx, cy, 0, cx, cy, r1), e0 = r0 / r1;
+          gq.addColorStop(0, "rgba(0,0,0,1)"); gq.addColorStop(e0, "rgba(0,0,0,.85)"); gq.addColorStop(Math.min(.99, e0 + 8 / r1), "rgba(0,0,0,.45)");
+          gq.addColorStop(Math.min(.995, e0 + .55 * (1 - e0)), "rgba(0,0,0,.12)"); gq.addColorStop(1, "rgba(0,0,0,0)");
+          x.save(); x.globalCompositeOperation = "destination-out"; x.fillStyle = gq; x.fillRect(cx - r1, cy - r1, 2 * r1, 2 * r1); x.restore(); });
         var ms = performance.now() - t0;
         stats = { segments: segs, ms: Math.round(ms * 10) / 10, px: cv.width + "×" + cv.height, s: s, paints: stats.paints + 1 };
         return E;
@@ -33356,18 +33484,26 @@ var Season = (function(){
       }
       /* the dune's cap (proofs' duneCap): white, 14 units at its thickest, an ice-blue underside line; clipped under the dock */
       var DUNE = [[[0, 55], [240, 25], [480, 85], [720, 55]], [[720, 55], [960, 25], [1200, 85], [1440, 55]], [[1440, 55], [1680, 25], [1820, 70], [1920, 50]]];
-      function capPath(cov){
+      /* v7.65 (Croix on the proofs: two drifts, the left one ending in a hooked tip): the cover is one continuous blanket of
+         varying thickness from the second week (its thinnest is about a third of its deepest), and in the first week (cov .45)
+         separate drifts whose every end tapers away over 60–100 px — the mask is the slow noise only, through a smoothstep, so
+         no end is steeper than the dune; the cover also tapers in from the dock (x0) instead of being cut there */
+      function capPath(cov, x0){
         var pts = [];
         DUNE.forEach(function(s){ for (var i = 0; i <= 80; i++){ var t = i / 80, m = 1 - t;
           pts.push([m*m*m*s[0][0] + 3*m*m*t*s[1][0] + 3*m*t*t*s[2][0] + t*t*t*s[3][0], m*m*m*s[0][1] + 3*m*m*t*s[1][1] + 3*m*t*t*s[2][1] + t*t*t*s[3][1]]); } });
-        var R = rngP(5), p1 = R() * 6, p2 = R() * 6, p3 = R() * 6, p4 = R() * 6;
-        var th = pts.map(function(p){ var x = p[0], m = .5 + .26 * Math.sin(x / 97 + p1) + .16 * Math.sin(x / 41 + p2) + .08 * Math.sin(x / 17 + p3);
-          var c = Math.max(0, Math.min(1, (m - (1 - cov)) / .1)), above = Math.max(0, Math.min(1, (80 - p[1]) / 10));
-          return 14 * c * above * (1 + .2 * Math.sin(x / 9 + p4)); });
-        var top = pts.map(function(p){ return [p[0], p[1] - 1]; }), bot = pts.map(function(p, i){ return [p[0], p[1] + th[i]]; });
+        var R = rngP(5), p1 = R() * 6, p2 = R() * 6, p3 = R() * 6, p4 = R() * 6, floor = cov >= .7 ? .32 : 0;
+        function ss(a, b, v){ var q = Math.max(0, Math.min(1, (v - a) / (b - a))); return q * q * (3 - 2 * q); }
+        x0 = x0 || 0;
+        var th = pts.map(function(p){ var x = p[0], m = .5 + .3 * Math.sin(x / 97 + p1) + .14 * Math.sin(x / 41 + p2);
+          var c = ss(-.2, .2, m - (1 - cov)), above = ss(74, 90, 160 - p[1]) , dock = x0 > 0 ? ss(x0, x0 + 110, x) : 1;
+          return 14 * (floor + (1 - floor) * c) * above * dock * (1 + .12 * Math.sin(x / 23 + p4) * c); });
+        /* two passes of a ±5-point (±40 px) box blur: every end is at least an 80 px taper, whatever the noise did there */
+        for (var bp = 0; bp < 2; bp++) th = th.map(function(v, i){ var sum = 0, k = 0; for (var j = Math.max(0, i - 5); j <= Math.min(th.length - 1, i + 5); j++){ sum += th[j]; k++; } return sum / k; });
+        var top = pts.map(function(p, i){ return [p[0], p[1] - Math.min(1, th[i])]; }), bot = pts.map(function(p, i){ return [p[0], p[1] + th[i]]; });
         var sh = pts.map(function(p, i){ return [p[0], p[1] + th[i] * .62]; }).concat(bot.slice().reverse());
         var line = "", on = false;
-        bot.forEach(function(p, i){ if (th[i] > 1.2){ line += (on ? " L" : " M") + P2(p); on = true; } else on = false; });
+        bot.forEach(function(p, i){ if (th[i] > 1.4){ line += (on ? " L" : " M") + P2(p); on = true; } else on = false; });
         return '<path fill="#fff" d="M' + top.concat(bot.slice().reverse()).map(P2).join(" L") + ' Z"/><path fill="#C9D9F7" d="M' + sh.map(P2).join(" L") + ' Z"/><path fill="none" stroke="#4C7BD9" stroke-opacity=".55" stroke-width="1.3" vector-effect="non-scaling-stroke" d="' + line + '"/>';
       }
       function cap(cov){
@@ -33377,12 +33513,14 @@ var Season = (function(){
         var x0 = db && db.width > 2 && wb.width > 2 ? Math.max(0, (db.right + 4 - wb.left) * 1920 / wb.width) : 0;
         var key = cov + "|" + Math.round(x0 / 8);
         if (key === capKey) return;
-        var fade = capCov > 0 && cov !== capCov && shownNow();
+        /* v7.65 (frame check): a new x0 alone (the dock minimizing or coming back) crossfades too — it was an instant swap of the
+           snow's left end */
+        var fade = capCov > 0 && shownNow();
         capKey = key; capCov = cov;
         var old = [].slice.call(host.querySelectorAll(".capLayer"));
         if (cov > 0){
           var g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.setAttribute("class", "capLayer");
-          g.innerHTML = '<clipPath id="wnCapClip' + (key.length + old.length) + '"><rect x="' + r1(x0) + '" y="0" width="' + r1(1920 - x0) + '" height="120"/></clipPath><g clip-path="url(#wnCapClip' + (key.length + old.length) + ')">' + capPath(cov) + '</g>';
+          g.innerHTML = '<clipPath id="wnCapClip' + (key.length + old.length) + '"><rect x="' + r1(x0) + '" y="0" width="' + r1(1920 - x0) + '" height="120"/></clipPath><g clip-path="url(#wnCapClip' + (key.length + old.length) + ')">' + capPath(cov, x0) + '</g>';
           if (fade){ g.classList.add("smIn"); host.appendChild(g); void g.getBBox(); g.classList.remove("smIn"); } else host.appendChild(g);
         }
         old.forEach(function(o){ if (fade){ o.classList.add("smOut"); setTimeout(function(){ if (o.parentNode) o.parentNode.removeChild(o); }, 4200); } else o.parentNode.removeChild(o); });

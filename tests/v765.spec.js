@@ -166,4 +166,86 @@ test.describe("v7.65 winter, December", () => {
     await dh.launch();
     ok(!(await page.evaluate(() => window.Deckhand.seaModule.play("visit"))), "a visit before the snowman is finished");
   });
+  /* v7.65 rework (Croix on the December proofs: "Make the necessary fixes … Make sure all the fixes are in and it looks excellent") */
+  const mnAt = (page, ms) => page.evaluate(ms => {
+    /* every act animation started on the same style recalc: set each to the act's own time (not "now + ms", which drifts
+       with how long the page took to get here under load) */
+    window.__mn = window.__mn || (() => { const a = document.getAnimations().filter(x => /^mn|seaRing|seaBub|mnGullLean/.test(x.animationName || "")); a.forEach(x => x.pause()); return { a }; })();
+    window.__mn.a.forEach(x => { x.currentTime = ms; });
+    const M = document.getElementById("sea-manatee"), svg = M.querySelector(".mnSvg").getBoundingClientRect(), eye = M.querySelector('circle.mnPt[cx="17.4"]').getBoundingClientRect(),
+      pad = M.querySelector(".mnPad path").getBoundingClientRect(), body = M.querySelector(".mnPitch > path.mnBody").getBoundingClientRect(), drift = M.querySelector(".mnDrift").getBoundingClientRect();
+    return { head: eye.left + eye.width / 2, tail: pad.left + pad.width / 2, x: drift.left, wl: svg.top + 29 * svg.height / 40, top: body.top, bottom: body.bottom };
+  }, ms);
+  test("v7.65: the manatee travels head-first in every variant, at a constant speed, sitting IN the water; it turns only while under", async ({ page, dh }) => {
+    await dh.openAt("#t=2026-12-10T10:30");
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("manatee", "near"); });
+    await page.waitForTimeout(200);
+    ok(await page.evaluate(() => document.getElementById("mnGhost").classList.contains("go")), "the ghost (its part under the water) did not play with it");
+    const look = await mnAt(page, 5000);
+    ok(look.head < look.tail, "at the look it faces the boat (left): " + JSON.stringify(look));
+    const xs = [];
+    for (let t = 14000; t <= 40000; t += 2000){
+      const a = await mnAt(page, t), b = await mnAt(page, t + 400);
+      ok(b.x > a.x, t + " ms: it is not moving right (" + a.x + " → " + b.x + ")");
+      ok(a.head > a.tail, t + " ms: it travels right tail-first: " + JSON.stringify(a));
+      ok(a.top < a.wl && a.bottom > a.wl + 8, t + " ms: the waterline does not cross the body: " + JSON.stringify(a));
+      if (t >= 16000 && t <= 38000) xs.push(a.x);
+    }
+    const v = xs.slice(1).map((x, i) => x - xs[i]), vm = v.reduce((s, x) => s + x, 0) / v.length;
+    ok(v.every(d => Math.abs(d - vm) < .03 * vm + .2), "the cruise's speed is not constant: " + v.map(d => d.toFixed(2)).join());
+    for (const t of [10400, 10500, 10600]){ const a = await mnAt(page, t); ok(a.top > a.wl, t + " ms: the mirror happens in sight: " + JSON.stringify(a)); }
+    // Jan 8: it leaves left, head-first, without turning
+    await dh.openAt("#t=2027-01-08T10:30");
+    await dh.launch();
+    await page.evaluate(() => { window.__mn = null; window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); const M = window.Deckhand.seaModule; M.clear(); M.play("manatee", "near"); });
+    await page.waitForTimeout(200);
+    for (let t = 12000; t <= 30000; t += 3000){
+      const a = await mnAt(page, t), b = await mnAt(page, t + 400);
+      ok(b.x < a.x && a.head < a.tail, t + " ms on Jan 8: not leaving left head-first: " + JSON.stringify([a, b.x]));
+    }
+  });
+
+  test("v7.65: the frost runs behind the card's button (no hole), the first week's frost is the branch's size, the dune's drifts taper, the visiting gull stands on the pail", async ({ page, dh }) => {
+    const sizes = {};
+    for (const d of ["2026-11-30", "2026-12-07"]){
+      await dh.openAt("#t=" + d + "T10:30");
+      await dh.launch();
+      await frostOn(page);
+      sizes[d] = await page.evaluate(() => { const c = document.querySelector("#wnFrostBox .wnFrost.on").getBoundingClientRect(); return { w: c.width, h: c.height }; });
+    }
+    ok(sizes["2026-11-30"].w >= 220 && sizes["2026-11-30"].h >= 160 && sizes["2026-11-30"].w < sizes["2026-12-07"].w && sizes["2026-11-30"].h < sizes["2026-12-07"].h, "the first week's frost: " + JSON.stringify(sizes));
+    await dh.openAt("#t=2026-12-14T10:30");
+    await dh.launch();
+    await frostOn(page);
+    const hole = await page.evaluate(() => {
+      const F = window.Deckhand.season.frost, G = F.measure(), cv = document.querySelector("#wnFrostBox .wnFrost.on"), c = cv.getBoundingClientRect(), k = cv.width / c.width, x = cv.getContext("2d");
+      const a = (sx, sy) => { const px = Math.round((sx - c.left) * k), py = Math.round((sy - c.top) * k); if (px < 0 || py < 0 || px >= cv.width || py >= cv.height) return -1; return x.getImageData(px, py, 1, 1).data[3]; };
+      return G.controls.map(q => { const cx = q.x + q.w / 2, cy = q.y + q.h / 2, r = Math.max(q.w, q.h) / 2;
+        /* just outside the button's disc and 30 px out, on its left and below it: frost at both, and no sharp step between */
+        return [[-1, 0], [0, 1]].map(([dx, dy]) => [a(cx + dx * (r + 3), cy + dy * (r + 3)), a(cx + dx * (r + 30), cy + dy * (r + 30))]); });
+    });
+    const near = hole[0];
+    ok(near.every(([i, o]) => i === -1 || (i > 20 && o > 20)), "a hole in the frost round the card's button: " + JSON.stringify(hole));
+    /* the dune's cover is one blanket from the second week; in the first, every drift's end tapers (under 9 of its 14 within 30 px of the tip) */
+    const cap = await page.evaluate(() => (document.querySelector("#wnCap .capLayer path[stroke]").getAttribute("d").match(/M/g) || []).length);
+    ok(cap === 1, "the Dec 14 dune cover is in " + cap + " pieces");
+    await dh.openAt("#t=2026-11-30T10:30");
+    await dh.launch();
+    const ends = await page.evaluate(() => {
+      const d = document.querySelector("#wnCap .capLayer path").getAttribute("d"), P = d.replace(/[MZ]/g, "").trim().split(/\s*L\s*/).map(p => p.split(",").map(Number)), n = P.length / 2;
+      const th = []; for (let i = 0; i < n; i++) th.push([P[i][0], P[2 * n - 1 - i][1] - P[i][1]]);
+      const out = []; for (let i = 1; i < n; i++){ const a = th[i - 1][1] > 1.6, b = th[i][1] > 1.6; if (a !== b){ const x0 = th[i][0], dir = b ? 1 : -1; let j = b ? i : i - 1, mx = 0; while (j >= 0 && j < n && th[j][1] > 1.6 && Math.abs(th[j][0] - x0) < 30){ mx = Math.max(mx, th[j][1]); j += dir; } out.push([Math.round(x0), +mx.toFixed(1)]); } }
+      return out; });
+    ok(ends.length >= 2 && ends.every(e => e[1] < 9), "a drift's end is blunt (thickness within 30 px of its tip): " + JSON.stringify(ends));
+    // the gull on the pail
+    await dh.openAt("#t=2026-12-15T10:30");
+    await dh.launch();
+    await page.evaluate(() => { window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); const M = window.Deckhand.seaModule; M.clear(); M.residents.gull = true; document.getElementById("boat").classList.add("gull"); M.play("visit"); });
+    await page.waitForTimeout(200);
+    const g = await page.evaluate(() => { document.getAnimations().forEach(a => { a.pause(); a.currentTime = 30000; });
+      const l = document.querySelector("#sea-visit .vgPerch .glLegs").getBoundingClientRect(), p = document.querySelector("#wnSnowman .smPail .pail").getBoundingClientRect();
+      return { feet: l.bottom, pail: p.top, fly: +getComputedStyle(document.querySelector("#sea-visit .vgFly")).opacity }; });
+    ok(Math.abs(g.feet - g.pail) <= 1.5 && g.fly === 0, "the gull floats over the pail: " + JSON.stringify(g));
+  });
 });
