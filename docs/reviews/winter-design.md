@@ -548,8 +548,8 @@ replaced; the attack is replaced by the battle.
   shards fade and the hole skins over.
 - **The battle (`?scene=battle&seed=N`)** is assembled from a pool of beats by a seeded random:
   an opener, two different exchanges, a finisher. Each beat starts from wherever the last left the
-  serpent (submerged) and the boat, so any beat can follow any other (4 × 12 × 2 × 2 = 96 battles,
-  31–38 s).
+  serpent (submerged), the boat and the gull, so any beat can follow any other (4 × 12 × 2 × 2 = 96
+  battles, 39–50 s after the polish below).
   - **Openers:** *fin* (a fin cuts in, the gull bolts with a "!", it breaches round the far side) and
     *periscope* (a head comes up far off, looks round, spots the boat, grins, comes on in arcs).
   - **Exchanges:** *lunge* (it rears high, roars, winds up and strikes; the boat tacks away;
@@ -562,21 +562,53 @@ replaced; the attack is replaced by the battle.
   - **Finishers, the serpent wins:** *dunk* (it comes up under the boat, lifts and tips it, SPLOOSH;
     the boat pops back up dripping; "ha ha!") and *flop* (a huge breach and belly-flop away from the
     boat, KER-SPLASH; the wave flips the boat a full turn, "whee!"; it bows, "ta-da!").
-  - Over seeds 1–30 the boat won 16 and the serpent 14.
+  - Over seeds 1–60 the boat won 31 and the serpent 29.
+- **Polish (after Croix: "The fights scenes could use some refining, they are a bit quick and jumpy …
+  that knot was floating. Fix them all.").** The swimming is unchanged.
+  - **Room for every beat:** longer anticipation before each strike (the lunge's wind-up 1.0 s, the
+    gull lines up 1.5 s before its dive, the cannon gets an "aim…"), longer holds, and a reaction after
+    each hit (a "phew", a blink and a squint, a wobble). Every pose is an envelope that starts and ends
+    at rest. Between beats the serpent swims shallow with its fin cutting the water.
+  - **No jumps, measured:** `render()` exports the head, boat and gull positions. Over 20 seeds at 60 fps
+    no frame jumps more than 2.2× its neighbors. The fastest moves are the intended ones: the strike
+    (head 7.8 px a frame), the boat squirting out of the coil (11.1) and the gull's dive (8.3). Three
+    causes of jumps were found and fixed. The neck rebuild used the nominal segment length instead of
+    each segment's chord, which threw the head outward on tight curves. The neck pose's "up" flipped
+    when the facing crossed zero. And `swimTo` reversed in place (a cusp) when a target sat just
+    behind it; it now swings out and turns in a loop, and picks the side reachable with the fewest
+    turns.
+  - **Anchored:** upright poses end by sinking the whole serpent straight down (a body offset) while it
+    glides on under water; the offset eases out only once all of it is deep. The knot's loops dip into
+    the water. Ripples are taken every frame from wherever the body actually meets the surface, and the
+    pops and stars follow the head. After the flop, an underwater loop keeps the tail from standing out
+    of the water at the bow.
+  - **No hunched arch:** see "anchored"; nothing folds over its own column any more.
+  - **Over/under:** the body is drawn in 8 overlapping chunks, tail first, each with a thin cream
+    paper-cut edge, so wherever it crosses itself the nearer part reads on top. The coil ring is wider,
+    so the boat shows inside it.
+  - **Head turns:** the look-back now turns the head up through upright and over, never thinner than
+    45%; the facing flip and the boat's turn have the same floor (45% and 30%).
+  - **The boat's reactions are bigger, not the boat:** the boat stays at Deckhand's size. Every hit or
+    near-miss heels it up to about 18°, bounces it, flaps the sail and throws spray. It shivers under the
+    rear. The gull jumps off the mast with a "!".
+  - **Ice:** the boat lurches and rocks (10°) and the sail flaps as the shadow passes under; the gull
+    jumps off the mast, squawks and lands facing the hole.
 - **Clips (2.2)** in `docs/reviews/serpent-clips/`, 60 fps, frame-exact (`serpent-record.js clips`):
   | clip | what it shows | size |
   |---|---|---|
-  | `serpent-pass.mp4` | × 2 close-up of a normal pass (arcs, the stop to look round), 16 s | 0.26 MB |
-  | `serpent-battle-a.mp4` | seed 1: periscope > coil > peck > bonk (the boat wins), 32.6 s at × 2.2 | 0.96 MB |
-  | `serpent-battle-b.mp4` | seed 5: fin > lunge > chase > dunk (the serpent wins), 32.8 s | 0.95 MB |
-  | `serpent-battle-c.mp4` | seed 3: periscope > peck > chase > knot (the boat wins), 31.6 s | 0.96 MB |
-  | `serpent-battle-d.mp4` | seed 6: fin > peck > coil > flop (the serpent wins), 36.6 s | 1.14 MB |
-  | `serpent-ice.mp4` | × 2 on the frozen sea, 20 s | 0.23 MB |
+| `serpent-pass.mp4` | × 2 close-up of a normal pass (arcs, the stop to look round), 16 s | 0.27 MB |
+  | `serpent-battle-a.mp4` | seed 1: periscope > coil > peck > bonk (the boat wins), 44.0 s at × 2.2 | 1.15 MB |
+  | `serpent-battle-b.mp4` | seed 2: fin > chase > lunge > dunk (the serpent wins), 39.4 s | 1.12 MB |
+  | `serpent-battle-c.mp4` | seed 3: periscope > peck > chase > knot (the boat wins), 43.8 s | 1.24 MB |
+  | `serpent-battle-d.mp4` | seed 4: fin > coil > chase > flop (the serpent wins), 47.2 s | 1.41 MB |
+  | `serpent-ice.mp4` | × 2 on the frozen sea, 20 s | 0.25 MB |
 
   The 2.1 clips (compare, attack, × 3 close-up and its GIF) are removed; the 2.1 table above is history.
 - **Cost (`serpent-record.js cost`, the whole act stepped, `render()` inclusive, 4× CPU throttle):**
-  mean 0.58 ms (pass), 0.72–0.80 ms (battles), 0.71 ms (ice); p95 1.3–1.8 ms; worst single frame 3.5–6 ms
-  (rare, collection-like spikes). Un-throttled: mean 0.17–0.23 ms. The 3 ms line holds on mean and p95.
+the last of three runs (warmed): mean 1.0–1.6 ms, p95 1.7–2.9 ms across the pass, three battles and
+  the ice; un-throttled, mean 0.16–0.23 ms. Rare single frames spike to 9–53 ms at 4× (garbage
+  collection; one per run). The polish roughly doubled the cost of drawing the serpent (6 chunks with
+  edges), and it now writes the DOM only when a string has changed.
 
 **How it goes into Deckhand.**
 - **Replace:** `#sea-serpent`'s and `#sea-attack`'s pieces with the prototype's elements: two body

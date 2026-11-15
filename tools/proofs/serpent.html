@@ -18,7 +18,7 @@ svg{display:block}
 .btStay{fill:none; stroke:var(--navy); stroke-width:.9; stroke-linecap:round} .btMastFix{stroke:var(--navy); stroke-width:1.3; stroke-linecap:round}
 .btBurgee{fill:var(--navy)} .btStripe{stroke:var(--paleturq); stroke-width:.9; opacity:.9}
 .glBody{fill:#fff; stroke:var(--navy); stroke-width:1.1; vector-effect:non-scaling-stroke} .gl path, .gl circle{fill:var(--navy)} .glLegs{fill:none !important; stroke:var(--navy); stroke-width:.8}
-.sk{fill:var(--navy)} .belly{fill:var(--teal)} .eyeW{fill:var(--paleturq)} .mouthIn{fill:var(--coral)}
+.sk{fill:var(--navy)} .edge{fill:none; stroke:#F8F2E4; stroke-width:1.1; stroke-linecap:round; stroke-opacity:.9} .belly{fill:var(--teal)} .eyeW{fill:var(--paleturq)} .mouthIn{fill:var(--coral)}
 .lineP{fill:none; stroke:var(--paleturq); stroke-width:1.1; stroke-linecap:round; stroke-linejoin:round}
 .rip{fill:none; stroke:#fff; stroke-width:1.6; stroke-linecap:round} .drop{fill:#fff}
 .puff{fill:#fff; stroke:var(--navy); stroke-width:1}
@@ -37,7 +37,7 @@ svg{display:block}
     <clipPath id="below"><rect id="clipB" x="-200" y="180.7" width="2400" height="200"/></clipPath>
     <clipPath id="wrapClip"><path id="wrapRect" d=""/></clipPath>
     <g id="serp">
-      <path id="sBody" class="sk"/><path id="sBelly" class="belly"/><path id="sFins" class="sk"/><path id="sFluke" class="sk"/>
+      <path id="sFluke" class="sk"/><g id="sChunks"></g>
       <g id="sHead">
         <path id="sMouth" class="mouthIn"/>
         <path id="sJaw" class="sk" d="M1.5,1 L19,.7 C19.2,2.6 16.4,4.5 11,5.1 C6,5.5 2,4.7 -.5,3 Z"/>
@@ -84,6 +84,9 @@ var W = 1920, WL = 180.7, T1 = 11.2, T2 = 7.1, T3 = 15.8, MAST = 806.4, PI = Mat
 (function(){ var vb = Q.get("vb"), sv = document.getElementById("scene");
   if (vb){ var v = vb.split(",").map(Number), w = +(Q.get("w") || v[2]); sv.setAttribute("viewBox", v.join(" ")); sv.setAttribute("width", w); sv.setAttribute("height", Math.round(w * v[3] / v[2])); } })();
 function $(id){ return document.getElementById(id); }
+/* DOM writes only when the string changed (the cheapest frame is the one that touches nothing) */
+function setD(el, d){ if (el._d !== d){ el._d = d; el.setAttribute("d", d); } }
+function setHTML(el, h){ if (el._h !== h){ el._h = h; el.innerHTML = h; } }
 function r1(n){ return Math.round(n * 10) / 10; }
 function cl(x, a, b){ return x < a ? a : x > b ? b : x; }
 function smooth(a, b, x){ var t = cl((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
@@ -156,51 +159,60 @@ function spine(S, t){
 }
 /* the neck pose: rebuild the first segments from the shoulders with fixed lengths — raise (toward upright),
    lean (+ = up/back), look (head and throat only), so the head can act while the body holds its path */
-var ANG = new Float64Array(16);
+var ANG = new Float64Array(16), LEN = new Float64Array(16);
 function poseNeck(S, P){
-  var K = S.neck, up = -(S.pf[0] < 0 ? -1 : 1), i;
+  var K = S.neck, up = -cl(S.pf[0] * 2, -1, 1), i;   /* continuous through a turn, so the pose fades through zero instead of flipping */
   if (P.face) up = -P.face;
-  for (i = 0; i < K; i++) ANG[i] = Math.atan2(S.py[i] - S.py[i + 1], S.px[i] - S.px[i + 1]);
+  for (i = 0; i < K; i++){ ANG[i] = Math.atan2(S.py[i] - S.py[i + 1], S.px[i] - S.px[i + 1]); LEN[i] = Math.hypot(S.py[i] - S.py[i + 1], S.px[i] - S.px[i + 1]); }   /* each segment keeps its own chord */
   for (i = K - 1; i >= 0; i--){
     var w = (K - i) / K, a = ANG[i];
     if (P.raise) a += wrapA(-PI / 2 - a) * P.raise * w * w;
     if (P.lean) a += P.lean * up * w;
     if (P.curl) a += P.curl * up * Math.sin(2 * PI * w);
     if (P.look && i < 4) a += P.look * up * (4 - i) / 4;
-    S.px[i] = S.px[i + 1] + S.seg * Math.cos(a); S.py[i] = S.py[i + 1] + S.seg * Math.sin(a);
+    S.px[i] = S.px[i + 1] + LEN[i] * Math.cos(a); S.py[i] = S.py[i + 1] + LEN[i] * Math.sin(a);
   }
   S.up = up;
 }
+var NCH = 6, CH_N = 8, CHK = [], OUX = new Float64Array(64), OUY = new Float64Array(64), INX = new Float64Array(64), INY = new Float64Array(64);
+(function(){ var g = document.getElementById("sChunks"); for (var c = NCH - 1; c >= 0; c--){ var row = []; ["sk", "belly", "edge"].forEach(function(k){ var e = document.createElementNS("http://www.w3.org/2000/svg", "path"); e.setAttribute("class", k); g.appendChild(e); row.push(e); }); CHK[c] = row; } })();
 var TOPX = new Float64Array(64), TOPY = new Float64Array(64), BOTX = new Float64Array(64), BOTY = new Float64Array(64), NX = new Float64Array(64), NY = new Float64Array(64);
 function curve(xs, ys, from, to, step){ var d = ""; for (var j = from; j !== to; j += step){ var k = j + step; d += " Q" + r1(xs[j]) + "," + r1(ys[j]) + " " + r1((xs[j] + xs[k]) / 2) + "," + r1((ys[j] + ys[k]) / 2); } return d; }
 function drawSerpent(S, t, P){
   spine(S, t);
-  if (P.autoCurl){ var hk = cl(Math.floor((t - S.t0) / S.dt), 0, S.n - 2), spd = (S.A[hk + 1] - S.A[hk]) / S.dt; P.curl = (P.curl || 0) + P.autoCurl * (1 - smooth(8, 70, spd)); }
-  poseNeck(S, P); $("serp").setAttribute("transform", P.oy ? "translate(0 " + r1(P.oy) + ")" : "");
+  var hold = 0;
+  if (P.autoCurl){ var hk = cl(Math.floor((t - S.t0) / S.dt), 0, S.n - 2), spd = (S.A[hk + 1] - S.A[hk]) / S.dt; hold = (1 - smooth(8, 70, spd)) * smooth(.35, .75, (S.py[S.neck] - S.py[0]) / (S.neck * S.seg));   /* only an upright, slow neck */
+    P.curl = (P.curl || 0) + P.autoCurl * hold; P.lean = (P.lean || 0) + hold * .05 * Math.sin(t * 2.1); }   /* holds breathe */
+  poseNeck(S, P); var oy = P.oy || 0; S.oy = oy; $("serp").setAttribute("transform", oy ? "translate(0 " + r1(oy) + ")" : "");
   var N = S.N, px = S.px, py = S.py, pf = S.pf, i;
   for (i = 0; i <= N; i++){
     var a = Math.max(0, i - 1), b = Math.min(N, i + 1), tx = px[a] - px[b], ty = py[a] - py[b], l = Math.hypot(tx, ty) || 1;
     NX[i] = ty / l; NY[i] = -tx / l;                       /* the belly-side normal when facing left */
     TOPX[i] = px[i] - NX[i] * S.w[i]; TOPY[i] = py[i] - NY[i] * S.w[i]; BOTX[i] = px[i] + NX[i] * S.w[i]; BOTY[i] = py[i] + NY[i] * S.w[i];
   }
-  var tl = N, d = "M" + r1(TOPX[0]) + "," + r1(TOPY[0]) + curve(TOPX, TOPY, 0, N - 1, 1) + " L" + r1(px[tl]) + "," + r1(py[tl]) + " L" + r1(BOTX[N - 1]) + "," + r1(BOTY[N - 1]) + curve(BOTX, BOTY, N - 1, 0, -1) + " Z";
-  $("sBody").setAttribute("d", d);
-  /* the belly: a lighter band on whichever side faces down; it narrows to nothing while the body turns */
-  var bd = "", inX = [], inY = [], ouX = [], ouY = [];
-  for (i = 1; i <= N - 4; i++){ var f = -pf[i], s = f < 0 ? -1 : 1, m = Math.min(1, Math.abs(f) * 1.15), w = S.w[i];
-    ouX.push(px[i] + s * NX[i] * w * .98); ouY.push(py[i] + s * NY[i] * w * .98); inX.push(px[i] + s * NX[i] * w * (1 - .6 * m)); inY.push(py[i] + s * NY[i] * w * (1 - .6 * m)); }
-  var nb = ouX.length - 1;
-  bd = "M" + r1(ouX[0]) + "," + r1(ouY[0]) + curve(ouX, ouY, 0, nb, 1) + " L" + r1(inX[nb]) + "," + r1(inY[nb]) + curve(inX, inY, nb, 0, -1) + " Z";
-  $("sBelly").setAttribute("d", bd);
-  /* the dorsal fins: raked back, sized by the body, riding the back */
-  var fd = "", fu = P.finUp || 1; S.finX = null;
-  for (i = 6; i < N * .7; i += 4){ var s2 = -pf[i] < 0 ? 1 : -1, mm = Math.min(1, Math.abs(pf[i]) * 1.3);
-    if (mm < .08) continue;
-    var w1 = S.w[i] * .92, w2 = S.w[i + 2] * .92, bx1 = px[i] + s2 * NX[i] * w1, by1 = py[i] + s2 * NY[i] * w1, bx2 = px[i + 2] + s2 * NX[i + 2] * w2, by2 = py[i + 2] + s2 * NY[i + 2] * w2;
-    var h = (1.6 + 2.2 * S.w[i] / (6.4 * S.sc)) * S.sc * fu * mm, tx2 = (bx1 + bx2) / 2 + s2 * NX[i + 1] * h + (px[i + 2] - px[i]) * .45, ty2 = (by1 + by2) / 2 + s2 * NY[i + 1] * h + (py[i + 2] - py[i]) * .45;
-    fd += "M" + r1(bx1) + "," + r1(by1) + " L" + r1(tx2) + "," + r1(ty2) + " L" + r1(bx2) + "," + r1(by2) + " Z";
-    if (S.finX === null && ty2 < S.wl - 1 && by1 > S.wl - 3) S.finX = [tx2, (bx1 + bx2) / 2]; }
-  $("sFins").setAttribute("d", fd);
+  /* where the body meets the water this frame (with the sink offset): ripples go exactly there */
+  S.wet = [];
+  for (i = 0; i < N; i++){ var y1 = py[i] + oy - S.wl, y2 = py[i + 1] + oy - S.wl; if (y1 * y2 < 0){ var u0 = y1 / (y1 - y2); S.wet.push([px[i] + (px[i + 1] - px[i]) * u0, S.w[i]]); } }
+  /* the belly band: on whichever side faces down; it narrows to nothing while the body turns */
+  for (i = 0; i <= N; i++){ var f = -pf[i], sg = f < 0 ? -1 : 1, m = Math.min(1, Math.abs(f) * 1.15), w = S.w[i];
+    OUX[i] = px[i] + sg * NX[i] * w * .98; OUY[i] = py[i] + sg * NY[i] * w * .98; INX[i] = px[i] + sg * NX[i] * w * (1 - .6 * m); INY[i] = py[i] + sg * NY[i] * w * (1 - .6 * m); }
+  /* the body in chunks, tail first, each with a paper-cut edge: where it crosses itself the nearer (headward) part reads on top */
+  var fu = P.finUp || 1; S.finX = null;
+  for (var c = 0; c < NCH; c++){
+    var ia = c * CH_N, ib = Math.min(N, ia + CH_N + 1), last = ib === N, ie = last ? N - 1 : ib;
+    var top = "M" + r1(TOPX[ia]) + "," + r1(TOPY[ia]) + curve(TOPX, TOPY, ia, ib - 1, 1) + (last ? " L" + r1(px[N]) + "," + r1(py[N]) : " L" + r1(TOPX[ib]) + "," + r1(TOPY[ib]));
+    var bot = r1(BOTX[ie]) + "," + r1(BOTY[ie]) + curve(BOTX, BOTY, ie, ia, -1);
+    var d = top + " L" + bot + " Z", ed = top + " M" + bot;   /* the edge reuses the fill's strings: one stringify per chunk */
+    for (i = 6; i < N * .7; i += 4){ if (i < ia || i >= ia + CH_N) continue;   /* the dorsal fins: raked back, riding the back */
+      var s2 = -pf[i] < 0 ? 1 : -1, mm = Math.min(1, Math.abs(pf[i]) * 1.3); if (mm < .08) continue;
+      var w1 = S.w[i] * .92, w2 = S.w[i + 2] * .92, bx1 = px[i] + s2 * NX[i] * w1, by1 = py[i] + s2 * NY[i] * w1, bx2 = px[i + 2] + s2 * NX[i + 2] * w2, by2 = py[i + 2] + s2 * NY[i + 2] * w2;
+      var h = (1.6 + 2.2 * S.w[i] / (6.4 * S.sc)) * S.sc * fu * mm, tx2 = (bx1 + bx2) / 2 + s2 * NX[i + 1] * h + (px[i + 2] - px[i]) * .45, ty2 = (by1 + by2) / 2 + s2 * NY[i + 1] * h + (py[i + 2] - py[i]) * .45;
+      d += " M" + r1(bx1) + "," + r1(by1) + " L" + r1(tx2) + "," + r1(ty2) + " L" + r1(bx2) + "," + r1(by2) + " Z";
+      if (S.finX === null && ty2 + oy < S.wl - 1 && by1 + oy > S.wl - 3) S.finX = [tx2, (bx1 + bx2) / 2]; }
+    var ba = Math.max(1, ia), bb = Math.min(N - 4, ib), bd = "";
+    if (bb > ba) bd = "M" + r1(OUX[ba]) + "," + r1(OUY[ba]) + curve(OUX, OUY, ba, bb, 1) + " L" + r1(OUX[bb]) + "," + r1(OUY[bb]) + " L" + r1(INX[bb]) + "," + r1(INY[bb]) + curve(INX, INY, bb, ba, -1) + " Z";
+    setD(CHK[c][0], d); setD(CHK[c][1], bd); setD(CHK[c][2], ed);
+  }
   /* the fluke: it lags the body's bend and flicks with travel */
   var th = Math.atan2(py[N] - py[N - 1], px[N] - px[N - 1]), th2 = Math.atan2(py[N - 6] - py[N - 7], px[N - 6] - px[N - 7]);
   var fl = th + 1.1 * wrapA(th - th2) + .32 * Math.sin(S.Ah * .05) + .12 * Math.sin(t * 1.9), Lf = 8.5 * S.sc;
@@ -208,10 +220,14 @@ function drawSerpent(S, t, P){
   $("sFluke").setAttribute("d", "M" + r1(px[N - 2]) + "," + r1(py[N - 2]) + " L" + r1(ex + Lf * Math.cos(fl + .62)) + "," + r1(ey + Lf * Math.sin(fl + .62)) +
     " L" + r1(ex + 3.4 * S.sc * Math.cos(fl)) + "," + r1(ey + 3.4 * S.sc * Math.sin(fl)) + " L" + r1(ex + Lf * Math.cos(fl - .62)) + "," + r1(ey + Lf * Math.sin(fl - .62)) + " Z");
   /* the head: pitched into the path, flipped by the facing (squashed while it turns), jaw, eye, brow */
-  var ha = Math.atan2(py[0] - py[1], px[0] - px[1]) + (P.nod || 0) * S.up, fy = P.face || (pf[0] < 0 ? -1 : 1) * Math.max(.3, Math.min(1, Math.abs(pf[0]) * 1.3));
-  var tr = P.turn || 0, tx3 = Math.abs(Math.cos(PI * tr)), hs = S.sc * .92;
-  if (tr > .5){ var fc = fy < 0 ? -1 : 1; ha = fc < 0 ? .14 : PI - .14; fy = -fc; }   /* looking back over the shoulder */
-  S.hx = px[0]; S.hy = py[0]; S.ha = ha; S.hsx = hs * tx3; S.hsy = hs * fy;
+  /* the head: pitched into the path, flipped by the facing, jaw, eye, brow. A look back turns the head up through
+     upright and over (thin, never flat), not a squash through nothing. */
+  var ha = Math.atan2(py[0] - py[1], px[0] - px[1]) + (P.nod || 0) * S.up, fy = P.face || (pf[0] < 0 ? -1 : 1) * Math.max(.45, Math.min(1, Math.abs(pf[0]) * 1.3));
+  var tr = cl(P.turn || 0, 0, 1), hs = S.sc * .92;
+  if (tr > 0){ var sg2 = fy < 0 ? -1 : 1, back = sg2 < 0 ? .14 : PI - .14, e = smooth(0, 1, tr), cc = Math.cos(PI * e);
+    ha = e < .5 ? ha + wrapA(-PI / 2 - ha) * e * 2 : -PI / 2 + wrapA(back + PI / 2) * (e * 2 - 1);
+    fy = sg2 * (cc >= 0 ? 1 : -1) * Math.max(.45, Math.abs(cc)); }
+  S.hx = px[0]; S.hy = py[0] + oy; S.ha = ha; S.hsx = hs; S.hsy = hs * fy;
   $("sHead").setAttribute("transform", "translate(" + r1(px[0]) + " " + r1(py[0]) + ") rotate(" + r1(ha * 180 / PI) + ") scale(" + (S.hsx).toFixed(3) + " " + (S.hsy).toFixed(3) + ")");
   var jw = cl(P.jaw || 0, 0, 1.2), ja = jw * .55, jx = 2 + 17 * Math.cos(ja) - (-.5) * Math.sin(ja), jy = 1.2 + 17 * Math.sin(ja) - .5 * Math.cos(ja);
   $("sJaw").setAttribute("transform", "rotate(" + r1(ja * 180 / PI) + " 2 1.2)");
@@ -231,11 +247,12 @@ function layer(z){ $("layBack").style.display = z === "back" ? "" : "none"; $("l
 /* ---------- water: where the body breaks the surface ---------- */
 function surfaceFx(S, t, ice){
   var s = "", wl = S.wl;
-  for (var c = 0; c < S.cross.length; c++){ var C = S.cross[c], age = t - C.th; if (age < 0) continue;
+  for (var q = 0; q < S.wet.length; q++){ var wx = S.wet[q][0], ww = S.wet[q][1] + 1, wb0 = 1.2 * Math.sin(t * 5 + q * 2);   /* the water parts round the body wherever it is in it */
+    s += '<path class="rip" d="M' + r1(wx - ww - 9) + ',' + r1(wl + .6) + ' Q' + r1(wx - ww - 3) + ',' + r1(wl - 1.8 + wb0) + ' ' + r1(wx - ww) + ',' + r1(wl + .2) +
+      ' M' + r1(wx + ww) + ',' + r1(wl + .2) + ' Q' + r1(wx + ww + 3) + ',' + r1(wl - 1.8 - wb0) + ' ' + r1(wx + ww + 9) + ',' + r1(wl + .6) + '"/>'; }
+  for (var c = 0; c < S.cross.length; c++){ var C = S.cross[c], age = t - C.th; if (age < 0 || (S.oy > 2 && t < C.tt)) continue;
     var sz = cl(C.v / 90, .6, 2.2) * S.sc, x = C.x;
-    if (t < C.tt){ var w = 6.5 * S.sc + 1.5 * Math.sin(t * 6 + c), wb = 1.2 * Math.sin(t * 5 + c * 2);   /* the water parts round the body */
-      s += '<path class="rip" d="M' + r1(x - w - 9) + ',' + r1(wl + .6) + ' Q' + r1(x - w - 3) + ',' + r1(wl - 1.8 + wb) + ' ' + r1(x - w) + ',' + r1(wl + .2) +
-        ' M' + r1(x + w) + ',' + r1(wl + .2) + ' Q' + r1(x + w + 3) + ',' + r1(wl - 1.8 - wb) + ' ' + r1(x + w + 9) + ',' + r1(wl + .6) + '"/>'; }
+    if (t < C.tt) {}
     else if (!ice && t < C.tt + 1.1){ var g = (t - C.tt) / 1.1, rx = 7 + 26 * easeOut(g), ry = rx * .16;      /* then a ring spreads */
       s += '<ellipse class="rip" cx="' + r1(x) + '" cy="' + r1(wl + 1) + '" rx="' + r1(rx) + '" ry="' + r1(ry) + '" opacity="' + r1(1 - g) + '"/>'; }
     if (C.up && age < .9) for (var k = 0; k < 5; k++){ var vx = (k - 2) * 17 * sz + 6 * hash(c * 9 + k), vy = -(46 + 26 * hash(c * 7 + k)) * Math.sqrt(sz), y = wl - 2 + vy * age + 230 * age * age;   /* drops thrown on the exit */
@@ -335,7 +352,7 @@ SCENES.pass = function(){
       jaw: kf([[12.0, 0], [12.12, .45], [12.35, .1], [12.5, 0]], t) + kf([[2.2, 0], [2.4, .25], [2.8, 0]], t),
       blink: bump(t, 12.92, 13.08), gx: t > 11.2 && t < 14 ? kf([[11.4, .4], [11.9, 1.1], [12.5, -1.0], [13.2, .6]], t) : null };
     layer("back"); drawSerpent(S, t, P);
-    $("fx").innerHTML = surfaceFx(S, t); } };
+    setHTML($("fx"), surfaceFx(S, t)); } };
 };
 
 /* ---- the frozen sea: the shadow under the ice, under the boat, up through the ice on the far side ---- */
@@ -349,9 +366,12 @@ SCENES.ice = function(){
   var CRACK = [[806, 0], [790, -2], [776, 3], [757, 1], [741, 5], [728, 2], [714, 6], [700, 4], [688, 7]], CR2 = [[806, 0], [818, 3], [833, 1], [846, 5]];
   function crack(pts, k){ var d = "", n = Math.max(1, Math.floor(k * (pts.length - 1))); for (var i = 0; i <= n; i++) d += (i ? " L" : "M") + r1(pts[i][0]) + "," + r1(189 + pts[i][1]); return d; }
   return { dur: 24, draw: function(t){ waves(t, true);
-    var rock = spring(t, 7.55, 5.5, 1.7, 1.6) + spring(t, 8.3, -2.5, 2.4, 3);
-    boatAt(t, { dx: 0, dy: kf([[7.5, 0], [7.8, -2.2], [8.4, 0]], t), roll: rock, tack: 1, flip: 1, sx: 1, sy: 1, cannon: 0, still: true, perch: true, gflip: t > 7.6 && t < 13.8 ? -1 : 1 });
-    gullAt(t, null);
+    /* the shadow passes under the hull: the boat lurches, rocks and settles; the gull jumps off the mast, squawks, lands */
+    var rock = spring(t, 7.45, 10, 1.4, 1.3) + spring(t, 8.25, -4, 2.2, 2.4) + .8 * Math.sin(t * 26) * bump(t, 7.0, 7.5);
+    var hop = t > 7.5 && t < 8.9, bp = { dx: 0, dy: kf([[7.4, 0], [7.62, -4.5], [8.0, .8], [8.4, 0]], t), roll: rock, tack: 1 - .35 * bump(t, 7.45, 9.2) * (.5 + .5 * Math.sin(t * 30)), flip: 1, sx: 1, sy: 1, cannon: 0, still: true, perch: !hop, gflip: t > 7.6 && t < 13.8 ? -1 : 1 };
+    var BX = boatAt(t, bp);
+    if (hop){ var mp = boatPt(BX, 20, 2.6), u = (t - 7.5) / 1.4; gullAt(t, [mp[0] - 10 * Math.sin(PI * u), mp[1] - 6 - 26 * Math.sin(PI * u), u < .5 ? 1 : -1, 0, 4.2]); } else gullAt(t, null);
+
     var P = { seed: 2, finUp: .8, autoCurl: .4,
       look: kf([[11.0, 0], [11.4, -.42], [12.4, -.42], [12.7, -.15], [13.3, -.15]], t) + spring(t, 11.05, .2, 1.4, 3),
       nod: spring(t, 11.9, .22, 1.2, 2.2), raise: kf([[10.8, 0], [11.2, .22], [13.2, .22], [13.6, 0]], t),
@@ -372,19 +392,23 @@ SCENES.ice = function(){
     /* the crack runs from the boat toward the hole as the shadow passes under; it stays */
     var ck = smooth(7.5, 9.6, t), op2 = 1 - .5 * smooth(tEnd + 1, tEnd + 4, t);
     if (ck > 0) s += '<path class="crackNew" opacity="' + r1(op2) + '" d="' + crack(CRACK, ck) + ' ' + crack(CR2, smooth(7.6, 8.4, t)) + '"/>';
-    if (t > 7.5 && t < 8.6) fx += pop(t, 7.55, 8.5, 806, 140, "crrk", 11);
-    $("iceBack").innerHTML = s;
-    $("fx").innerHTML = surfaceFx(S, t, true) + fx; } };
+    if (t > 7.4 && t < 8.6) fx += pop(t, 7.45, 8.5, 868, 168, "crrk", 11);
+    fx += pop(t, 7.55, 8.5, 790, 118, "!", 16);
+    setHTML($("iceBack"), s);
+    setHTML($("fx"), surfaceFx(S, t, true) + fx); } };
 };
 
 /* ---- the battle: a seeded scenario assembled from a pool of beats — an opener, two exchanges, a finisher.
-   Every beat starts from wherever the last one left the serpent (submerged) and the boat, and leaves them the same
-   way, so any beat can follow any other. Half the finishers go to the boat, half to the serpent. ?seed=N replays one. */
+   Every beat starts from wherever the last one left the serpent (submerged, moving), the boat and the gull, and leaves
+   them the same way, so any beat can follow any other: nothing snaps to a beat's start pose. Every pose is an
+   envelope that starts and ends at rest. Upright poses end by sinking straight down (the whole body, so it stays
+   anchored in the water) while it glides forward, never by folding over. Half the finishers go to the boat, half to
+   the serpent. ?seed=N replays one. The script runs at TEMPO × real time so every beat has room. */
 function rng(seed){ var a = seed >>> 0; return function(){ a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 SCENES.battle = function(){
-  var wl = WL + 1, SEED = Q.get("seed") != null ? +Q.get("seed") : Math.floor(Math.random() * 1e6), R = rng(SEED * 7919 + 13);
+  var TEMPO = 1.0, wl = WL + 1, SEED = Q.get("seed") != null ? +Q.get("seed") : Math.floor(Math.random() * 1e6), R = rng(SEED * 7919 + 13);
   var CH = { dx: [[-9, 0]], dy: [[-9, 0]], roll: [[-9, 0]], flip: [[-9, 1]], tack: [[-9, 1]], cannon: [[-9, 0]] };
-  var KS = [], ADDS = [], POSE = [], FX = [], Z = [[-9, "back"]], WRAP = [], GK = [], PERCH = [[-99, 2.45]], PLAN = [];
+  var KS = [], ADDS = [], POSE = [], FX = [], Z = [[-9, "back"]], WRAP = [], GK = [], PERCH = [[-99, 2.45]], PLAN = [], OY = [], SPRAY = [];
   var st = { t: 0, x: 0, y: 0, face: -1, dx: 0, tack: 1 };
   function K(t, x, y){ KS.push([t, x, y]); st.t = t; st.x = x; st.y = y; }
   function Kr(dt, x, y){ K(st.t + dt, x, y); }
@@ -393,220 +417,254 @@ SCENES.battle = function(){
   function bxAt(t){ return MAST + kf(CH.dx, t); }
   function z(t, v){ Z.push([t, v]); }
   function pose(f){ POSE.push(f); } function fx(f){ FX.push(f); } function add(f){ ADDS.push(f); }
-  function sideOf(D){ var bx = MAST + st.dx, f = st.face; if (D && ((bx - f * D) - st.x) * f > 30) return -f; return Math.abs(st.x - bx) < 30 ? (R() < .5 ? 1 : -1) : st.x > bx ? 1 : -1; }
+  function sideOf(D){ var bx = MAST + st.dx, f = st.face; if (((bx - f * D) - st.x) * f > 30) return -f; if (((bx + f * D) - st.x) * f > 30) return f; return st.x > bx ? 1 : -1; }   /* the side it can reach with the fewest turns */
+  /* the boat's reactions, big enough to read from the back of the room: heel, bounce, sail flutter, spray */
+  function react(t0, k, dir){ add(function(t, b){ if (t < t0 || t > t0 + 4) return;
+      b.roll += spring(t, t0, 17 * k * dir, 1.15, 1.5); b.dy += -8 * k * bump(t, t0, t0 + .42) + spring(t, t0 + .42, 3 * k, 1.5, 2.4);
+      b.flutter = Math.max(b.flutter || 0, k * (1 - smooth(t0, t0 + 1.8, t))); });
+    SPRAY.push([t0, k, dir]); }
+  /* the exit from an upright pose: the whole serpent sinks straight down (hold seconds of pure sink first), then
+     glides on underwater until the body has left the column, and the offset eases back while all of it is deep */
+  function sinkExit(i0, hold, f, sinkT){
+    var minY = wl; for (var i = i0; i < KS.length; i++) minY = Math.min(minY, KS[i][2]);
+    var D = wl - minY + 30, t0 = st.t, x = st.x, y = st.y, T1 = sinkT || Math.max(1.3, hold);
+    if (hold) stay(hold);
+    Kr(.85, x + f * 34, Math.max(y + 24, wl - 10)); Kr(.6, x + f * 76, wl + 42); Kr(.6, x + f * 310, wl + 46);
+    var t3 = st.t;
+    OY.push([t0, t0 + T1, t3, t3 + .85, D]);
+    return t0;
+  }
+  function oyAt(t){ var o = 0; for (var i = 0; i < OY.length; i++){ var e = OY[i]; if (t > e[0] && t < e[3]) o += e[4] * smooth(e[0], e[1], t) * (1 - smooth(e[2], e[3], t)); } return o; }
   /* the gull: circles high over the boat whenever no beat needs it */
   function gullFill(t1){ var t = GK.length ? GK[GK.length - 1][0] : 2.45, k = GK.length;
-    while (t + 1.5 < t1){ t += 1.3 + .4 * R(); k++; GK.push([t, bxAt(t) + (k % 2 ? 70 + 50 * R() : -60 - 50 * R()), 48 + 30 * R()]); } }
-  /* underwater travel; a little loop when it has to turn round (ghost only, never at the surface) */
+    while (t + 1.7 < t1){ t += 1.5 + .4 * R(); k++; GK.push([t, bxAt(t) + (k % 2 ? 70 + 50 * R() : -60 - 50 * R()), 50 + 26 * R()]); } }
+  /* underwater travel; a wide loop when it has to turn round (ghost only, never at the surface) */
   function swimTo(x, y, face){
-    var dir = Math.abs(x - st.x) < 24 ? st.face : (x > st.x ? 1 : -1);
-    if (dir !== st.face){ Kr(.35, st.x + st.face * 22, st.y + 8); Kr(.35, st.x - st.face * 2, st.y + 12); st.face = dir; }
-    if (face !== dir){ var ox = x + dir * 26, d0 = Math.hypot(ox - st.x, y + 6 - st.y); Kr(Math.max(.5, d0 / 165), ox, y + 6); Kr(.35, ox + dir * 6, y + 18); Kr(.35, ox - dir * 18, y + 14); Kr(.35, x, y); }
-    else Kr(Math.max(.6, Math.hypot(x - st.x, y - st.y) / 165), x, y);
+    if (Math.abs(x - st.x) < 60) Kr(.55, st.x + st.face * 50, Math.max(st.y, wl + 15) + 4);   /* too close to turn on: swing out first */
+    var dir = x > st.x ? 1 : -1;
+    if (dir !== st.face){ Kr(.5, st.x + st.face * 30, st.y + 10); Kr(.5, st.x - st.face * 4, st.y + 14); st.face = dir; }
+    if (face !== dir){ var ox = x + dir * 30, d0 = Math.hypot(ox - st.x, y + 6 - st.y); Kr(Math.max(.6, d0 / 240), ox, y + 6); Kr(.5, ox + dir * 8, y + 18); Kr(.5, ox - dir * 20, y + 14); Kr(.5, x, y); }
+    else Kr(Math.max(.7, Math.hypot(x - st.x, y - st.y) / 240), x, y);
     st.face = face;
   }
   function alarmAndFlee(tSpot, tFly){ PERCH[0][1] = tFly; GK.push([tFly, "mast"]);
-    GK.push([tFly + .45, MAST - 14, 136], [tFly + 1.15, MAST - 46, 112], [tFly + 2.1, MAST - 94, 94]);
-    fx(function(t, C){ return pop(t, tSpot, tSpot + .95, MAST + 4, 142, "!", 18); });
-    add(function(t, b){ if (t > tSpot - .3 && t < tFly) b.gflip = 1; }); }
+    GK.push([tFly + .5, MAST - 12, 136], [tFly + 1.3, MAST - 46, 112], [tFly + 2.3, MAST - 94, 94]);
+    fx(function(t, C){ return pop(t, tSpot, tSpot + 1.1, MAST + 4, 140, "!", 18); });
+    add(function(t, b){ if (t > tSpot - .3 && t < tFly) b.gflip = 1; b.dy += -2.5 * bump(t, tFly - .1, tFly + .3); }); }
 
   /* ======== openers ======== */
   var OPEN = {
     fin: function(){   /* a fin cuts toward the boat, the gull bolts, the serpent breaches round the far side */
-      [[-4, 1420, 193], [0, 1185, 191], [1.5, 1100, 191], [3, 1010, 191], [4.5, 890, 192], [5.7, 780, 193],
-       [6.5, 690, 187], [7.0, 655, 161], [7.4, 648, 137], [7.8, 666, 125], [8.2, 692, 139], [8.55, 708, 168], [8.9, 722, 197] ].forEach(function(k){ K(k[0], k[1], k[2]); });
-      st.face = 1; alarmAndFlee(.7, 1.6); z(8.8, "front");
-      pose(function(t, P){ if (t < 8.8) P.finUp = 2.1; P.jaw += kf([[6.7, 0], [7.1, .3], [8.1, .3], [8.4, 0]], t); });
+      [[-4, 1350, 192], [0, 1100, 191], [1.5, 1010, 191], [3, 890, 192], [4.2, 780, 193],
+       [5.1, 690, 187], [5.65, 655, 161], [6.1, 648, 137], [6.55, 666, 125], [7.0, 692, 139], [7.4, 708, 168], [7.8, 722, 197], [8.7, 790, 208]].forEach(function(k){ K(k[0], k[1], k[2]); });
+      st.face = 1; alarmAndFlee(.7, 1.7); z(7.7, "front");
+      pose(function(t, P){ P.finUp = 1 + 1.1 * (1 - smooth(7.1, 7.7, t)); P.jaw += kf([[5.3, 0], [5.8, .3], [6.8, .3], [7.2, 0]], t); });
     },
     periscope: function(){   /* a head comes up far off, looks round, spots the boat, grins, and comes on in arcs */
-      [[-4, 1420, 206], [0, 1210, 204], [.9, 1166, 190], [1.4, 1156, 168], [1.75, 1152, 156], [3.9, 1152, 156],
-       [4.3, 1140, 164], [4.7, 1128, 190], [5.3, 1090, 205], [6.0, 1030, 178], [6.4, 1006, 160], [6.8, 982, 164], [7.25, 962, 186], [7.8, 930, 205]].forEach(function(k){ K(k[0], k[1], k[2]); });
-      st.face = -1; alarmAndFlee(3.0, 3.6); z(0, "front");
+      [[-4, 1420, 206], [0, 1210, 204], [.9, 1166, 190], [1.4, 1156, 168], [1.75, 1152, 156], [4.2, 1152, 156],
+       [4.7, 1140, 164], [5.2, 1128, 190], [5.9, 1090, 205], [6.7, 1030, 178], [7.15, 1006, 160], [7.6, 982, 164], [8.1, 962, 186], [8.7, 930, 205], [9.4, 880, 208]].forEach(function(k){ K(k[0], k[1], k[2]); });
+      st.face = -1; alarmAndFlee(3.1, 3.8); z(0, "front");
       pose(function(t, P){
-        P.raise += kf([[1.5, 0], [1.9, .5], [3.7, .5], [4.1, 0]], t);
-        P.look += kf([[1.8, 0], [2.1, .3], [2.4, .3], [2.6, -.15], [3.0, -.3], [3.8, -.3], [4.0, 0]], t) + spring(t, 1.75, -.2, 1.4, 3);
-        P.turn = Math.max(P.turn || 0, kf([[2.15, 0], [2.32, 1], [2.62, 1], [2.8, 0]], t));
-        if (t > 2.9 && t < 3.4) P.small = true;
-        if (t > 3.3 && t < 4.4){ P.angry = true; P.jaw += kf([[3.3, 0], [3.5, .45], [4.0, .45], [4.3, 0]], t); }
-        P.blink = Math.max(P.blink || 0, bump(t, 2.82, 2.98));
-        if (t > 1.8 && t < 4) P.gx = kf([[1.9, -1], [2.4, 1.1], [2.9, 0], [3.1, -1.1]], t); });
+        P.raise += kf([[1.5, 0], [1.9, .5], [4.0, .5], [4.5, 0]], t);
+        P.look += kf([[1.8, 0], [2.1, .3], [2.4, .3], [2.6, -.15], [3.0, -.3], [4.0, -.3], [4.3, 0]], t) + spring(t, 1.75, -.2, 1.4, 3);
+        P.turn = Math.max(P.turn || 0, kf([[2.1, 0], [2.35, 1], [2.65, 1], [2.9, 0]], t));
+        if (t > 3.0 && t < 3.5) P.small = true;
+        P.angry = P.angry || (t > 3.4 && t < 4.6); P.jaw += kf([[3.4, 0], [3.6, .45], [4.2, .45], [4.6, 0]], t);
+        P.blink = Math.max(P.blink || 0, bump(t, 2.92, 3.08));
+        P.gx = t > 1.8 && t < 4.4 ? kf([[1.9, -1], [2.4, 1.1], [2.9, 0], [3.1, -1.1]], t) * (1 - smooth(4.1, 4.4, t)) : P.gx; });
     }
   };
   /* ======== exchanges ======== */
   var MID = {
-    lunge: function(){   /* rears high over the boat, roars, winds up, strikes — the boat tacks away just in time */
+    lunge: function(){   /* rears high over the boat, roars, winds up slowly, strikes — the boat tacks away just in time */
       var bx = MAST + st.dx, s = sideOf(185), T0 = st.t; PLAN.push("lunge");
-      swimTo(bx + s * 185, wl + 22, -s);
-      Kr(.6, bx + s * 172, wl - 4); Kr(.4, bx + s * 170, wl - 34); Kr(.4, bx + s * 156, wl - 62); Kr(.4, bx + s * 138, wl - 82); Kr(.45, bx + s * 124, wl - 94);
-      var A = st.t; stay(2.1); var H = st.t, d0 = st.dx;
-      Kr(.16, bx + s * 104, wl - 100); Kr(.13, bx + s * 74, wl - 90); Kr(.12, bx + s * 42, wl - 56); Kr(.11, bx + s * 22, wl - 16); Kr(.11, bx + s * 10, wl + 14); Kr(.34, bx - s * 14, wl + 30); Kr(.5, bx - s * 50, wl + 34);
-      bk("dx", H - .25, d0); bk("dx", H - .05, d0 + s * 4); bk("dx", H + .4, d0 - s * 66); bk("dx", H + .75, d0 - s * 60); st.dx = d0 - s * 60;
-      bk("tack", H - .15, st.tack); bk("tack", H + .2, -st.tack); st.tack = -st.tack;
-      add(function(t, b){ b.roll += spring(t, H - .05, 15 * s, 1.4, 2.4); });
+      swimTo(bx + s * 185, wl + 15, -s);
+      Kr(.7, bx + s * 172, wl - 4); Kr(.5, bx + s * 170, wl - 34); Kr(.5, bx + s * 156, wl - 62); Kr(.5, bx + s * 138, wl - 82); Kr(.55, bx + s * 124, wl - 94);
+      var A = st.t; stay(2.5); var H = st.t, d0 = st.dx;
+      Kr(.2, bx + s * 104, wl - 100); Kr(.17, bx + s * 74, wl - 90); Kr(.15, bx + s * 42, wl - 56); Kr(.14, bx + s * 22, wl - 16); Kr(.14, bx + s * 10, wl + 14); Kr(.3, bx - s * 18, wl + 34); Kr(.45, bx - s * 70, wl + 40); Kr(.6, bx - s * 150, wl + 42); Kr(.8, bx - s * 190, wl + 24);
+      bk("dx", H - .45, d0); bk("dx", H - .2, d0 + s * 5); bk("dx", H + .45, d0 - s * 68); bk("dx", H + .9, d0 - s * 60); st.dx = d0 - s * 60;
+      bk("tack", H - .35, st.tack); bk("tack", H + .1, -st.tack); st.tack = -st.tack;
+      react(H - .2, 1.1, s); react(H + .62, .7, -s);
+      add(function(t, b){ if (t > A + .2 && t < H - .3) b.roll += 1.6 * Math.sin(t * 23) * bump(t, A + .2, H - .3); });   /* the boat shivers under the rear */
       z(T0, "front");
-      pose(function(t, P){ if (t < A - .3 || t > H + 1.6) return;
-        P.angry = P.angry || (t > A + .2 && t < H + 1);
-        P.jaw += kf([[A + .1, 0], [A + .4, .95], [A + .6, .7], [H - .7, .7], [H - .45, .2], [H - .1, .1], [H + .02, 1.05], [H + .45, 1.05], [H + .65, .1], [H + .9, 0]], t);
-        P.look += kf([[A, 0], [A + .4, -.55], [H - .6, -.55], [H - .05, .15], [H + .1, -.2], [H + .5, 0]], t) + spring(t, A + .05, .25, 1.3, 2.6);
-        P.lean += kf([[H - .6, 0], [H - .1, .62], [H + .02, .62], [H + .12, 0]], t);
-        P.raise += kf([[A - .1, 0], [A + .3, .2], [H - .6, .2], [H - .1, .35], [H + .1, 0]], t);
-        P.nod += spring(t, H + .02, -.25, 2, 4); });
-      fx(function(t, C){ return pop(t, H - .5, H + .25, MAST + kf(CH.dx, H - .5) + 4, 140, "!", 18) + pop(t, H + .42, H + 1.1, bx + s * 4, wl - 26, "CHOMP", 12); });
+      pose(function(t, P){ if (t < A - .5 || t > H + 2) return;
+        P.angry = P.angry || (t > A + .3 && t < H + 1);
+        P.jaw += kf([[A + .2, 0], [A + .55, .95], [A + .75, .7], [H - 1.1, .7], [H - .8, .2], [H - .1, .1], [H + .04, 1.05], [H + .5, 1.05], [H + .75, .1], [H + 1.0, 0]], t);
+        P.look += kf([[A, 0], [A + .5, -.55], [H - 1.0, -.55], [H - .1, .15], [H + .12, -.2], [H + .6, 0]], t) + spring(t, A + .05, .25, 1.3, 2.6);
+        P.lean += kf([[H - 1.0, 0], [H - .15, .66], [H + .02, .66], [H + .16, 0]], t);
+        P.raise += kf([[A - .2, 0], [A + .4, .2], [H - 1.0, .2], [H - .15, .35], [H + .15, 0]], t);
+        P.nod += spring(t, H + .04, -.25, 2, 4) + spring(t, A, .18, 1.2, 2.2); });
+      fx(function(t, C){ return pop(t, H - .75, H + .2, MAST + kf(CH.dx, H - .7) + 4, 138, "!", 18) + pop(t, H + .5, H + 1.4, bx + s * 4, wl - 28, "CHOMP", 12) + pop(t, H + 1.5, H + 2.6, MAST + st.dx + 4, 128, "phew", 11); });
       st.face = -s;
     },
-    peck: function(){   /* surfaces beside the boat looking for it; the gull dive-bombs, it shakes, snaps, misses */
-      var bx = MAST + st.dx, s = sideOf(92), T0 = st.t; PLAN.push("peck");
-      swimTo(bx + s * 92, wl + 22, -s);
-      Kr(.5, bx + s * 88, wl - 6); Kr(.35, bx + s * 82, wl - 28); Kr(.3, bx + s * 74, wl - 40);
-      var A = st.t, hx = st.x, hy = st.y, p = A + 1.1; stay(2.6); var H = st.t;
-      gullFill(p - 1.4); GK.push([p - 1.0, hx + s * 36, 66], [p - .45, hx + s * 18, hy - 30], [p, hx - s * 2, hy - 13], [p + .35, hx - s * 26, hy - 34], [p + 1.0, hx - s * 70, 76], [p + 1.9, hx - s * 30, 52]);
-      Kr(.4, hx - s * 20, hy - 8); Kr(.4, hx - s * 36, wl - 6); Kr(.5, hx - s * 46, wl + 30);
+    peck: function(){   /* surfaces beside the boat looking for it; the gull lines up, dive-bombs; it shakes, snaps, misses */
+      var bx = MAST + st.dx, s = sideOf(92), T0 = st.t, i0; PLAN.push("peck");
+      swimTo(bx + s * 92, wl + 15, -s); i0 = KS.length;
+      Kr(.6, bx + s * 88, wl - 6); Kr(.45, bx + s * 82, wl - 28); Kr(.4, bx + s * 74, wl - 40);
+      var A = st.t, hx = st.x, hy = st.y, p = A + 1.6; stay(3.0); var H = st.t;
+      gullFill(p - 2.0); GK.push([p - 1.5, hx + s * 40, 62], [p - .95, hx + s * 30, 70], [p - .45, hx + s * 16, hy - 30], [p, hx - s * 2, hy - 13], [p + .4, hx - s * 26, hy - 34], [p + 1.1, hx - s * 70, 76], [p + 2.1, hx - s * 30, 52]);
+      sinkExit(i0, .5, -s, 1.6);
       z(T0, "front");
-      pose(function(t, P){ if (t < A - .5 || t > H + 1.4) return;
-        if (t < p) { P.look += .3 * Math.sin((t - A) * 3.4) * smooth(A, A + .3, t); P.gx = 1.1 * Math.sin((t - A) * 3.4); }
-        P.nod += spring(t, p, .6, 2.2, 3.4); P.blink = Math.max(P.blink || 0, bump(t, p, p + .3));
-        P.look += spring(t, p + .2, .38, 4.2, 3.2) + kf([[p + .8, 0], [p + .95, .6], [p + 1.3, .6], [p + 1.6, 0]], t);
-        P.jaw += kf([[p + .85, 0], [p + .95, 1.05], [p + 1.08, 0]], t);
-        P.angry = P.angry || (t > p + .15 && t < H + .4); });
-      fx(function(t, C){ if (t < p || t > p + .6) return ""; var hq = headPt(C.S, 6, -10), s2 = ""; for (var k = 0; k < 3; k++){ var an = (t - p) * 6 + k * 2.09; s2 += star(hq[0] + 9 * Math.cos(an), hq[1] + 3 * Math.sin(an), 2.6); } return s2 + pop(t, p, p + .55, hq[0] - 6, hq[1] - 12, "peck!", 11); });
-      fx(function(t, C){ return pop(t, p + .95, p + 1.5, hx - s * 6, hy - 34, "SNAP", 11); });
+      pose(function(t, P){ if (t < A - .5 || t > H + 2) return;
+        var srch = smooth(A, A + .4, t) * (1 - smooth(p - .7, p - .35, t));
+        P.look += .3 * Math.sin((t - A) * 3.0) * srch; P.gx = 1.1 * Math.sin((t - A) * 3.0) * srch + (t > p - .7 && t < p ? 1.1 * smooth(p - .7, p - .4, t) : 0);
+        if (t > p - .8 && t < p) P.small = true;
+        P.nod += spring(t, p, .6, 1.8, 3); P.blink = Math.max(P.blink || 0, bump(t, p, p + .35));
+        P.look += spring(t, p + .55, .36, 3.4, 2.8) + kf([[p + 1.4, 0], [p + 1.6, .6], [p + 1.95, .6], [p + 2.3, 0]], t);
+        P.jaw += kf([[p + 1.45, 0], [p + 1.58, 1.05], [p + 1.75, 0]], t);
+        P.angry = P.angry || (t > p + .5 && t < H + .4);
+        P.lid = Math.max(P.lid || 0, .5 * smooth(H + .1, H + .5, t) * (1 - smooth(H + 1.3, H + 1.8, t))); });
+      fx(function(t, C){ if (t < p || t > p + 1) return ""; var hq = headPt(C.S, 6, -10), s2 = ""; for (var k = 0; k < 3; k++){ var an = (t - p) * 5 + k * 2.09; s2 += star(hq[0] + 10 * Math.cos(an), hq[1] - 2 + 3 * Math.sin(an), 2.8); } return s2 + pop(t, p, p + .9, hq[0] - 6, hq[1] - 14, "peck!", 11); });
+      fx(function(t, C){ if (t < p + 1.55 || t > p + 2.3) return ""; var hq = headPt(C.S, 14, -8); return pop(t, p + 1.55, p + 2.3, hq[0], hq[1] - 12, "SNAP", 11); });
       st.face = -s;
     },
     coil: function(){   /* wraps the hull and squeezes; the boat squirts out like soap; the coil closes on nothing */
-      var cx = MAST + st.dx, s = sideOf(72), T0 = st.t; PLAN.push("coil");
-      swimTo(cx + s * 72, wl + 22, -s);
-      Kr(.5, cx + s * 66, wl - 12); Kr(.4, cx + s * 60, wl - 37); stay(.5);
+      var cx = MAST + st.dx, s = sideOf(78), T0 = st.t, i0; PLAN.push("coil");
+      swimTo(cx + s * 78, wl + 15, -s); i0 = KS.length;
+      Kr(.6, cx + s * 70, wl - 12); Kr(.5, cx + s * 62, wl - 37); stay(.5);
       var C0 = st.t, wrap0 = 0;
-      [[.35, -34, -20], [.28, -12, -22], [.26, 12, -21], [.24, 28, -14], [.24, 34, -4], [.24, 26, 8], [.24, 8, 12], [.24, -14, 12], [.22, -28, 6], [.22, -32, -4],
-       [.22, -14, -6], [.22, 6, -8], [.22, 24, -10], [.22, 32, -18], [.22, 18, -26], [.22, -2, -24], [.22, -16, -16]].forEach(function(k, i){
+      [[.4, -38, -20], [.32, -14, -24], [.3, 12, -23], [.28, 32, -15], [.28, 40, -4], [.27, 30, 9], [.27, 8, 14], [.27, -16, 14], [.26, -33, 6], [.26, -38, -5],
+       [.26, -16, -6], [.26, 6, -9], [.26, 28, -11], [.26, 37, -19], [.26, 20, -28], [.26, -2, -26], [.26, -18, -18]].forEach(function(k, i){
         Kr(k[0], cx - s * k[1], wl + k[2]); if (i === 9) wrap0 = st.t; });
-      var Tsq = st.t - .2, d0 = st.dx;
-      [[.24, -20, -4], [.22, -10, 2], [.2, 2, -2], [.2, 4, -12], [.18, -6, -18]].forEach(function(k){ Kr(k[0], cx - s * k[1], wl + k[2]); });
-      var Hq = st.t; stay(1.0); var H = st.t;
-      Kr(.45, st.x + s * 4, wl + 6); Kr(.5, st.x + s * 16, wl + 30);
-      bk("dx", Tsq, d0); bk("dx", Tsq + .32, d0 - s * 101); bk("dx", Tsq + .8, d0 - s * 92); st.dx = d0 - s * 92;
-      add(function(t, b){ if (t > C0 + 1.2 && t < Tsq){ var q = smooth(C0 + 1.2, Tsq - .1, t); b.sx *= 1 - .1 * q + .02 * Math.sin(t * 40) * q; b.sy *= 1 + .06 * q; }
-        b.roll += spring(t, Tsq, -12 * s, 2.2, 3); b.sx *= 1 + spring(t, Tsq - .05, .22, 3, 6); b.sy *= 1 - spring(t, Tsq - .05, .2, 3, 6); });
-      WRAP.push([wrap0 - .05, Tsq + .02]); z(T0, "back"); z(H + .2, "front");
-      pose(function(t, P){ if (t < C0 || t > H + 1) return;
-        if (t < Tsq){ P.lid = Math.max(P.lid || 0, .45 * smooth(C0 + .8, C0 + 1.2, t)); P.jaw += .25 * smooth(C0 + .8, C0 + 1.2, t); }
-        else if (t < H){ P.small = true; P.look += .25 * Math.sin((t - Hq) * 7) * smooth(Hq, Hq + .3, t); } });
-      fx(function(t, C){ var X = C.X; return pop(t, Tsq + .02, Tsq + .5, X.x + 19 - s * 22, X.y + 4, "pop!", 11) + (t > Hq && t < H ? pop(t, Hq, H, C.S.hx + 4, C.S.hy - 20, "?", 17) : ""); });
+      stay(.3); var Tsq = st.t - .1, d0 = st.dx;
+      [[.34, -22, -4], [.3, -12, 2], [.28, 2, -2], [.28, 5, -12], [.26, -6, -19]].forEach(function(k){ Kr(k[0], cx - s * k[1], wl + k[2]); });
+      var Hq = st.t; stay(.85); var H = st.t;
+      sinkExit(i0, .4, -s, 1.4);
+      bk("dx", Tsq, d0); bk("dx", Tsq + .45, d0 - s * 104); bk("dx", Tsq + 1.0, d0 - s * 94); st.dx = d0 - s * 94;
+      react(Tsq + .05, 1.2, -s);
+      add(function(t, b){ if (t > C0 + 1.4 && t < Tsq + .2){ var q = smooth(C0 + 1.4, Tsq - .2, t) * (1 - smooth(Tsq, Tsq + .2, t)); b.sx *= 1 - .12 * q + .025 * Math.sin(t * 38) * q; b.sy *= 1 + .07 * q; }
+        b.sx *= 1 + spring(t, Tsq, .2, 2.4, 5); b.sy *= 1 - spring(t, Tsq, .18, 2.4, 5); });
+      WRAP.push([wrap0 - .05, Tsq + .1]); z(T0, "back"); z(H + 1.5, "front");
+      pose(function(t, P){ if (t < C0 || t > H + 2) return;
+        var sq = smooth(C0 + 1.0, C0 + 1.5, t) * (1 - smooth(Tsq, Tsq + .15, t));
+        P.lid = Math.max(P.lid || 0, .45 * sq); P.jaw += .25 * sq;
+        var cf = smooth(Tsq + .2, Tsq + .5, t) * (1 - smooth(H - .3, H, t));
+        if (cf > .05) P.small = true; P.look += .25 * Math.sin((t - Hq) * 6) * cf;
+        P.blink = Math.max(P.blink || 0, bump(t, Hq + .3, Hq + .45) + bump(t, Hq + .55, Hq + .7)); });
+      fx(function(t, C){ var X = C.X; return pop(t, Tsq + .05, Tsq + .8, X.x + 19 - s * 26, X.y - 4, "pop!", 12) + (t > Hq - .2 && t < H ? pop(t, Hq - .2, H, C.S.hx + 4, C.S.hy - 22, "?", 17) : ""); });
       st.face = -s;
     },
     chase: function(){   /* the boat runs for it; the serpent porpoises after it and snaps at the stern */
       var f = st.dx > 30 ? -1 : st.dx < -30 ? 1 : (R() < .5 ? 1 : -1), T0 = st.t; PLAN.push("chase");
       var bx = MAST + st.dx;
-      swimTo(bx - f * 92, wl + 20, f);
-      var S0 = st.t, d0 = st.dx, flip0 = kf(CH.flip, S0);
-      bk("flip", S0 - .5, flip0); bk("flip", S0 - .15, f); bk("tack", S0 - .5, st.tack); bk("tack", S0 - .15, f); st.tack = f;
-      bk("dx", S0 - .1, d0); bk("dx", S0 + 3.1, d0 + f * 110); bk("dx", S0 + 3.7, d0 + f * 150); bk("dx", S0 + 4.4, d0 + f * 160); st.dx = d0 + f * 160;
-      for (var k = 0; k < 3; k++){ var tk = S0 + k * 1.3, x0 = bxAt(tk + .6) - f * (68 - k * 12);
-        K(tk + .35, x0 - f * 6, wl - 16 - 9 * k); K(tk + .62, x0 + f * 12, wl - 27 - 8 * k); K(tk + .9, x0 + f * 26, wl - 8); K(tk + 1.3, x0 + f * 40, wl + 20); }
-      var chomp = S0 + 2 * 1.3 + .62;
-      Kr(.8, st.x + f * 40, wl + 30);
-      add(function(t, b){ b.roll += spring(t, S0 - .1, -6 * f, 1.2, 2) + spring(t, chomp, -9 * f, 2, 3); b.sx *= 1 + spring(t, chomp, .14, 3, 5); });
+      swimTo(bx - f * 92, wl + 15, f);
+      var S0 = st.t + .3, d0 = st.dx, flip0 = kf(CH.flip, S0);
+      bk("flip", S0 - .9, flip0); bk("flip", S0 - .4, f); bk("tack", S0 - .9, st.tack); bk("tack", S0 - .4, f); st.tack = f;
+      bk("dx", S0 - .2, d0); bk("dx", S0 + 3.6, d0 + f * 110); bk("dx", S0 + 4.3, d0 + f * 150); bk("dx", S0 + 5.2, d0 + f * 160); st.dx = d0 + f * 160;
+      K(S0, st.x + f * 20, wl + 22);
+      for (var k = 0; k < 3; k++){ var tk = S0 + k * 1.5, x0 = bxAt(tk + .7) - f * (70 - k * 12);
+        K(tk + .4, x0 - f * 6, wl - 16 - 9 * k); K(tk + .72, x0 + f * 12, wl - 27 - 8 * k); K(tk + 1.05, x0 + f * 26, wl - 8); K(tk + 1.5, x0 + f * 40, wl + 20); }
+      var chomp = S0 + 2 * 1.5 + .72;
+      Kr(.9, st.x + f * 50, wl + 32); Kr(.9, st.x + f * 40, wl + 36);
+      react(S0 - .2, .8, -f); react(chomp + .02, 1.1, -f);
       z(T0, "front");
-      pose(function(t, P){ if (t < S0 || t > S0 + 4.5) return; P.angry = true; P.jaw += kf([[chomp - .3, 0], [chomp - .1, 1.05], [chomp + .05, 0]], t) + .2 * bump(t, S0, S0 + 2.5); });
-      fx(function(t, C){ return pop(t, chomp, chomp + .55, C.S.hx + f * 10, C.S.hy - 18, "CHOMP", 12) + pop(t, chomp + .05, chomp + .7, bxAt(chomp) + f * 30, 150, "zoom!", 11); });
+      pose(function(t, P){ if (t < S0 || t > S0 + 6) return; P.angry = P.angry || t < chomp + .6; P.jaw += kf([[chomp - .45, 0], [chomp - .15, 1.05], [chomp + .06, 0]], t) + .2 * bump(t, S0, S0 + 2.8); });
+      fx(function(t, C){ return pop(t, chomp, chomp + .7, C.S.hx + f * 10, C.S.hy - 20, "CHOMP", 12) + pop(t, chomp + .1, chomp + .9, bxAt(chomp + .3) + f * 30, 148, "zoom!", 11); });
       st.face = f;
     }
   };
   /* ======== finishers: the boat wins (bonk, knot) or the serpent wins (dunk, flop) ======== */
   var FIN = {
     bonk: function(){   /* it rises to gloat; the boat turns, runs out a tiny cannon — BONK — it sinks, sulking */
-      var bx = MAST + st.dx, s = sideOf(70), T0 = st.t; PLAN.push("bonk (boat wins)");
-      swimTo(bx + s * 70, wl + 22, -s);
-      Kr(.45, bx + s * 66, wl - 14); Kr(.35, bx + s * 60, wl - 38); Kr(.3, bx + s * 58, wl - 46);
-      var A = st.t, F = A + 1.5, bonk = F + .42; stay(bonk + 1.5 - A); var H = st.t, hx = st.x;
-      Kr(.8, hx - s * 14, wl - 42); Kr(.8, hx - s * 28, wl - 18); Kr(.9, hx - s * 36, wl + 14); Kr(1.0, hx - s * 40, wl + 40);
-      var fl0 = kf(CH.flip, A - .6); bk("flip", A - .6, fl0); bk("flip", A - .2, s); bk("cannon", A, 0); bk("cannon", A + .2, 1.15); bk("cannon", A + .3, 1); bk("cannon", H + .5, 1); bk("cannon", H + .7, 0);
-      bk("flip", H + 2.6, s); bk("flip", H + 3, 1); bk("dx", H + 1.5, st.dx); bk("dx", H + 4, 0); st.dx = 0;
-      add(function(t, b){ b.dx += kf([[F - .1, 0], [F + .02, 8], [F + .5, 2]], t) * -s; b.sx *= 1 + spring(t, F, .16, 3, 5); b.roll += spring(t, F, 6 * s, 2, 3); b.dy += -6 * bump(t, H + 3.2, H + 3.6) - 4 * bump(t, H + 3.7, H + 4); });
+      var bx = MAST + st.dx, s = sideOf(70), T0 = st.t, i0; PLAN.push("bonk (boat wins)");
+      swimTo(bx + s * 70, wl + 15, -s); i0 = KS.length;
+      Kr(.55, bx + s * 66, wl - 14); Kr(.45, bx + s * 60, wl - 38); Kr(.4, bx + s * 58, wl - 46);
+      var A = st.t, F = A + 2.0, bonk = F + .5; stay(bonk + 1.6 - A); var H = st.t, hx = st.x;
+      sinkExit(i0, 1.6, -s, 2.4);
+      var fl0 = kf(CH.flip, A - .9); bk("flip", A - .9, fl0); bk("flip", A - .35, s); bk("cannon", A + .2, 0); bk("cannon", A + .45, 1.15); bk("cannon", A + .6, 1); bk("cannon", H + .8, 1); bk("cannon", H + 1.1, 0);
+      bk("flip", H + 3.0, s); bk("flip", H + 3.5, 1); bk("dx", H + 1.4, st.dx); bk("dx", H + 3.8, 0); st.dx = 0;
+      react(F, .9, s);
+      add(function(t, b){ b.dx += kf([[F - .15, 0], [F + .03, 8], [F + .6, 2]], t) * -s; b.sx *= 1 + spring(t, F, .16, 3, 5); b.dy += -7 * bump(t, H + 3.7, H + 4.1) - 5 * bump(t, H + 4.2, H + 4.55); });
       z(T0, "front");
       var from = null;
-      pose(function(t, P){ if (t < A - .2 || t > H + 4) return;
-        P.angry = P.angry || (t > A && t < bonk);
-        P.jaw += kf([[A + .5, 0], [A + .7, .55], [A + .9, .3], [A + 1.05, .6], [A + 1.2, .35], [bonk - .1, .4], [bonk, 0]], t);
-        P.nod += spring(t, bonk, -.7, 1.6, 2.2);
-        if (t > bonk && t < H){ P.eyes = "x"; P.look += .32 * Math.sin((t - bonk) * 5.2) * Math.exp(-(t - bonk) * .6); }
-        if (t >= H){ P.eyes = "sulk"; P.look += -.25 * smooth(H - .2, H + .4, t); } });
+      pose(function(t, P){ if (t < A - .3 || t > H + 5) return;
+        P.angry = P.angry || (t > A + .1 && t < bonk);
+        P.jaw += kf([[A + .7, 0], [A + .95, .55], [A + 1.15, .3], [A + 1.35, .6], [A + 1.55, .35], [bonk - .15, .4], [bonk, 0]], t);
+        P.nod += spring(t, bonk, -.7, 1.4, 2);
+        if (t > bonk && t < H + .8){ P.eyes = "x"; P.look += .32 * Math.sin((t - bonk) * 4.6) * Math.exp(-(t - bonk) * .5) * (1 - smooth(H + .3, H + .8, t)); }
+        if (t >= H + .8) P.eyes = "sulk"; P.look -= .25 * smooth(H + .3, H + 1.0, t) * (1 - smooth(H + 3.6, H + 4.2, t)); });
       fx(function(t, C){ var o = "", X = C.X;
         if (t > F && t < bonk + .02){ if (!from) from = boatPt(X, 42, 22.8); var u = (t - F) / (bonk - F), hp = headPt(C.S, 9, -7);
-          o += '<circle class="sk" cx="' + r1(from[0] + (hp[0] - from[0]) * u) + '" cy="' + r1(from[1] + (hp[1] - from[1]) * u - 46 * 4 * u * (1 - u)) + '" r="2.6"/>'; }
-        if (t > F && t < F + .8){ var pz = boatPt(X, 43, 22.6), a2 = (t - F) / .8; for (var k = 0; k < 3; k++){ var rr = (2 + 7 * easeOut(a2)) * (1 - .25 * k); o += '<circle class="puff" cx="' + r1(pz[0] - 6 * k * easeOut(a2) * s * -1) + '" cy="' + r1(pz[1] - 3 * k * easeOut(a2) - 4 * a2) + '" r="' + r1(rr * (1 - a2 * .4)) + '" opacity="' + r1(1 - a2) + '"/>'; } }
-        if (t > bonk && t < H + .3){ var hc = headPt(C.S, 6, -12); o += pop(t, bonk, bonk + .8, hc[0], hc[1] - 10, "BONK", 13);
-          for (var k2 = 0; k2 < 3; k2++){ var an = (t - bonk) * 5 + k2 * 2.09; o += star(hc[0] + 13 * Math.cos(an), hc[1] - 3 + 4 * Math.sin(an), 3.2); } }
-        return o + bubbles(t, hx - s * 36, wl, H + 1.6, H + 3.8, 5) + pop(t, H + 3.2, H + 4.2, MAST + 6, 132, "♪", 15); });
-      st.t = Math.max(st.t, H + 2.6); st.face = -s; return H + 2.2;
+          o += '<circle class="sk" cx="' + r1(from[0] + (hp[0] - from[0]) * u) + '" cy="' + r1(from[1] + (hp[1] - from[1]) * u - 46 * 4 * u * (1 - u)) + '" r="2.8"/>'; }
+        if (t > F && t < F + 1){ var pz = boatPt(X, 43, 22.6), a2 = (t - F) / 1; for (var k = 0; k < 3; k++){ var rr = (2.4 + 8 * easeOut(a2)) * (1 - .25 * k); o += '<circle class="puff" cx="' + r1(pz[0] + 7 * k * easeOut(a2) * s) + '" cy="' + r1(pz[1] - 3 * k * easeOut(a2) - 5 * a2) + '" r="' + r1(rr * (1 - a2 * .4)) + '" opacity="' + r1(1 - a2) + '"/>'; } }
+        o += pop(t, F - .7, F, boatPt(X, 40, 10)[0], boatPt(X, 40, 10)[1], "aim...", 10) + pop(t, F, F + .6, boatPt(X, 44, 12)[0], boatPt(X, 44, 12)[1], "pop", 12);
+        if (t > bonk && t < H + .8){ var hc = headPt(C.S, 6, -12); o += pop(t, bonk, bonk + 1.0, hc[0], hc[1] - 12, "BONK", 14);
+          for (var k2 = 0; k2 < 3; k2++){ var an = (t - bonk) * 4.4 + k2 * 2.09; o += star(hc[0] + 13 * Math.cos(an), hc[1] - 4 + 4 * Math.sin(an), 3.2); } }
+        return o + bubbles(t, hx, wl, H + .6, H + 2.6, 5) + pop(t, H + 3.7, H + 4.8, MAST + 6, 132, "♪", 15); });
+      st.face = -s; return H + 3.0;
     },
-    knot: function(){   /* it strikes left, right, left at a boat that won't hold still — and ties its own neck in a knot */
-      var bx = MAST + st.dx, s = sideOf(64), T0 = st.t; PLAN.push("knot (boat wins)");
-      swimTo(bx + s * 64, wl + 22, -s);
-      Kr(.45, bx + s * 60, wl - 14); Kr(.35, bx + s * 54, wl - 40); stay(.35);
-      var A = st.t, d0 = st.dx;
-      /* three strikes, each curling back through its own neck */
-      var x0 = st.x, y0 = st.y, f = -s;
-      [[.28, 30, -6], [.22, 50, 8], [.25, 44, 26], [.25, 20, 30], [.25, 6, 12], [.25, 20, -14], [.22, 48, -22], [.2, 66, -4], [.25, 56, 16], [.25, 32, 14], [.25, 24, -8], [.25, 40, -24]].forEach(function(k){ Kr(k[0], x0 + f * k[1], y0 + k[2]); });
-      var Kt = st.t; stay(2.1); var H = st.t;
-      bk("dx", A + .1, d0); bk("dx", A + .45, d0 - s * 32); bk("dx", A + 1.5, d0 - s * 32); bk("dx", A + 1.85, d0 - s * 64);
-      bk("flip", A + .1, kf(CH.flip, A)); bk("flip", A + .3, f); bk("flip", Kt + .3, f); bk("flip", Kt + .7, -f);
-      bk("dx", H + 1.6, d0 - s * 64); bk("dx", H + 3.8, 0); st.dx = 0;
-      add(function(t, b){ b.roll += spring(t, A + .12, 9 * f, 2, 3) + spring(t, A + 1.52, 9 * f, 2, 3); });
+    knot: function(){   /* it strikes at a boat that won't hold still, twice — and ties itself in a knot in the water */
+      var bx = MAST + st.dx, s = sideOf(64), T0 = st.t, i0; PLAN.push("knot (boat wins)");
+      swimTo(bx + s * 64, wl + 15, -s); i0 = KS.length;
+      Kr(.55, bx + s * 60, wl - 12); Kr(.45, bx + s * 54, wl - 30); stay(.6);
+      var A = st.t, d0 = st.dx, x0 = st.x, y0 = st.y, f = -s;
+      /* the loops are big and dip into the water, so the knot sits in it */
+      [[.36, 34, -2], [.3, 58, 14], [.32, 54, 36], [.32, 26, 42], [.32, 6, 22], [.32, 20, -10], [.3, 54, -18], [.28, 74, 2], [.32, 64, 28], [.32, 36, 30], [.32, 26, 4], [.34, 44, -16]].forEach(function(k){ Kr(k[0], x0 + f * k[1], y0 + k[2]); });
+      var Kt = st.t; stay(1.8); var H = st.t;
+      sinkExit(i0, 1.6, f, 2.6);
+      bk("dx", A + .15, d0); bk("dx", A + .6, d0 - s * 34); bk("dx", A + 1.9, d0 - s * 34); bk("dx", A + 2.35, d0 - s * 68);
+      bk("flip", A + .05, kf(CH.flip, A)); bk("flip", A + .35, f); bk("flip", Kt + .4, f); bk("flip", Kt + .9, -f);
+      bk("dx", H + 1.8, d0 - s * 68); bk("dx", H + 3.9, 0); st.dx = 0;
+      react(A + .2, 1, f); react(A + 1.95, 1, f);
       z(T0, "front");
-      pose(function(t, P){ if (t < A || t > H + 4) return;
-        if (t < Kt){ P.angry = true; P.jaw += .6 * Math.abs(Math.sin((t - A) * 4.2)); }
-        else { P.eyes = t < Kt + 1.2 ? "x" : "sulk"; P.look += .25 * Math.sin((t - Kt) * 4) * Math.exp(-(t - Kt)); P.nod += spring(t, Kt + 1.3, .3, 2.5, 3) + spring(t, Kt + 1.8, -.3, 2.5, 3); }
-        P.oy = 40 * easeOut(smooth(H, H + 2.6, t)) * smooth(H, H + 2.6, t); });
-      fx(function(t, C){ return pop(t, A + .2, A + .8, bxAt(A + .45) - s * 10, 146, "zip!", 11) + pop(t, A + 1.6, A + 2.2, bxAt(A + 1.85) - s * 10, 146, "zip!", 11) + pop(t, Kt + .2, Kt + 1.2, C.S.hx, C.S.hy - 30, "?!", 15) + pop(t, Kt + 1.25, Kt + 2.3, x0 + f * 36, y0 - 50, "uh oh", 11) + bubbles(t, C.S.hx, wl, H + 1.1, H + 2.8, 9) + pop(t, H + 2.8, H + 3.8, MAST + 6, 132, "♪", 15); });
-      st.face = -s; st.t = Math.max(st.t, H + 2.7); return H + 2.0;
+      pose(function(t, P){ if (t < A - .3 || t > H + 5) return;
+        P.angry = P.angry || (t > A && t < Kt); P.jaw += .6 * Math.abs(Math.sin((t - A) * 3.6)) * smooth(A, A + .3, t) * (1 - smooth(Kt - .3, Kt, t));
+        if (t > Kt){ P.eyes = t < Kt + 1.3 ? "x" : "sulk"; P.look += .25 * Math.sin((t - Kt) * 3.6) * Math.exp(-(t - Kt)); P.nod += spring(t, Kt + 1.3, .3, 2.2, 3) + spring(t, Kt + 1.8, -.3, 2.2, 3); } });
+      fx(function(t, C){ return pop(t, A + .25, A + 1.0, bxAt(A + .6) - s * 10, 146, "zip!", 11) + pop(t, A + 2.0, A + 2.75, bxAt(A + 2.35) - s * 10, 146, "zip!", 11) +
+        pop(t, Kt + .2, Kt + 1.3, C.S.hx, C.S.hy - 30, "?!", 15) + pop(t, Kt + 1.35, Kt + 2.6, x0 + f * 36, y0 - 48, "uh oh", 11) + bubbles(t, x0 + f * 36, wl, H + .4, H + 2.6, 9) + pop(t, H + 3.4, H + 4.5, MAST + 6, 132, "♪", 15); });
+      st.face = f; return H + 3.0;
     },
     dunk: function(){   /* it comes up under the boat, lifts it, tips it in; the boat bobs back up dripping; it laughs */
-      var bx = MAST + st.dx, s = sideOf(70), T0 = st.t; PLAN.push("dunk (serpent wins)");
-      swimTo(bx + s * 70, wl + 26, -s);
-      Kr(.45, bx + s * 34, wl + 32); Kr(.45, bx + s * 2, wl + 20); Kr(.35, bx - s * 1, wl + 4); Kr(.3, bx - s * 1, wl - 14); Kr(.3, bx, wl - 32); Kr(.25, bx + s * 1, wl - 41);
-      var A = st.t; stay(1.4); var H = st.t;
-      Kr(.4, bx + s * 9, wl - 48); Kr(.4, bx + s * 25, wl - 39); Kr(.4, bx + s * 35, wl - 14); Kr(.4, bx + s * 41, wl + 16); Kr(.9, bx + s * 53, wl + 34);
-      var L0 = A - 1.0, Lt = A - .3, Sd = A + .2, d0 = st.dx;
-      bk("dy", L0, 0); bk("dy", L0 + .3, -10); bk("dy", Lt + .1, -27);
-      bk("roll", L0 + .05, 0); bk("roll", Lt + .1, 24 * -s); bk("roll", Sd, 48 * -s); bk("roll", Sd + .75, 48 * -s); bk("roll", Sd + 1.0, -10 * -s); bk("roll", Sd + 1.35, 4 * -s); bk("roll", Sd + 1.65, 0);
-      bk("dx", Sd - .4, d0); bk("dx", Sd + .2, d0 - s * 30);
-      bk("dy", Sd - .3, -27); bk("dy", Sd + .2, 44); bk("dy", Sd + .95, 44); bk("dy", Sd + 1.15, -12); bk("dy", Sd + 1.45, 3); bk("dy", Sd + 1.75, 0);
-      bk("dx", H + 1.6, d0 - s * 30); bk("dx", H + 4, 0); st.dx = 0;
+      var bx = MAST + st.dx, s = sideOf(70), T0 = st.t, i0; PLAN.push("dunk (serpent wins)");
+      swimTo(bx + s * 70, wl + 15, -s); i0 = KS.length;
+      Kr(.55, bx + s * 34, wl + 32); Kr(.55, bx + s * 2, wl + 20); Kr(.45, bx - s * 1, wl + 4); Kr(.4, bx - s * 1, wl - 14); Kr(.4, bx, wl - 32); Kr(.35, bx + s * 1, wl - 41);
+      var A = st.t; stay(2.0); var H = st.t;
+      sinkExit(i0, .5, s, 1.6);
+      var L0 = A - 1.3, Lt = A - .4, Sd = A + .3, d0 = st.dx;
+      bk("dy", L0, 0); bk("dy", L0 + .4, -10); bk("dy", Lt + .1, -27);
+      bk("roll", L0 + .05, 0); bk("roll", Lt + .1, 24 * -s); bk("roll", Sd, 48 * -s); bk("roll", Sd + .9, 48 * -s); bk("roll", Sd + 1.2, -12 * -s); bk("roll", Sd + 1.6, 5 * -s); bk("roll", Sd + 2.0, 0);
+      bk("dx", Sd - .5, d0); bk("dx", Sd + .25, d0 - s * 30);
+      bk("dy", Sd - .4, -27); bk("dy", Sd + .25, 44); bk("dy", Sd + 1.1, 44); bk("dy", Sd + 1.35, -14); bk("dy", Sd + 1.7, 4); bk("dy", Sd + 2.05, 0);
+      bk("dx", H + 1.8, d0 - s * 30); bk("dx", H + 3.9, 0); st.dx = 0;
+      add(function(t, b){ b.flutter = Math.max(b.flutter || 0, bump(t, L0, Sd + .3)); });
+      react(Sd + 1.35, .8, s);
       z(T0, "back");
-      pose(function(t, P){ if (t < L0 || t > H + 2) return;
-        if (t < A) P.lid = Math.max(P.lid || 0, .55);
-        if (t > A + .05 && t < H){ P.eyes = "happy"; P.jaw += .5 + .45 * Math.sin((t - A) * 22); P.nod += .1 * Math.sin((t - A) * 11); } });
-      fx(function(t, C){ var o = pop(t, A + .1, H, bx, wl - 72, "ha ha!", 12) + bubbles(t, C.X.x + 19, wl, Sd + .2, Sd + .9, 8) + pop(t, Sd + .05, Sd + .6, bx - s * 34, wl - 22, "SPLOOSH", 11);
-        if (t > Sd + 1.1 && t < Sd + 3.2) for (var k = 0; k < 7; k++){ var a3 = ((t - Sd - 1.1) * 1.3 + k / 7) % 1, dp = boatPt(C.X, 8 + k * 4.4, 14 + (k % 3) * 6); o += '<circle class="drop" cx="' + r1(dp[0]) + '" cy="' + r1(dp[1] + 24 * a3 * a3) + '" r="1.1" opacity="' + r1(1 - a3) + '"/>'; }
+      pose(function(t, P){ if (t < L0 || t > H + 2.5) return;
+        P.lid = Math.max(P.lid || 0, .55 * smooth(L0, L0 + .3, t) * (1 - smooth(A - .1, A + .1, t)));
+        var lf = smooth(A + .1, A + .3, t) * (1 - smooth(H - .3, H, t));
+        if (lf > .3) P.eyes = "happy"; P.jaw += lf * (.5 + .45 * Math.sin((t - A) * 20)); P.nod += lf * .1 * Math.sin((t - A) * 10); });
+      fx(function(t, C){ var o = pop(t, A + .2, H, bx, wl - 74, "ha ha!", 12) + bubbles(t, C.X.x + 19, wl, Sd + .25, Sd + 1.1, 8) + pop(t, Sd + .1, Sd + .9, bx - s * 34, wl - 22, "SPLOOSH", 12);
+        if (t > Sd + 1.3 && t < Sd + 3.8) for (var k = 0; k < 7; k++){ var a3 = ((t - Sd - 1.3) * 1.2 + k / 7) % 1, dp = boatPt(C.X, 8 + k * 4.4, 14 + (k % 3) * 6); o += '<circle class="drop" cx="' + r1(dp[0]) + '" cy="' + r1(dp[1] + 24 * a3 * a3) + '" r="1.2" opacity="' + r1(1 - a3) + '"/>'; }
         return o; });
-      st.face = s; st.t = Math.max(st.t, H + 2.7); return H + 3.1;
+      st.face = s; return H + 3.2;
     },
     flop: function(){   /* a huge breach beside the boat, a belly-flop away from it; the wave flips the boat right round; it bows */
-      var bx = MAST + st.dx, s = sideOf(84), T0 = st.t; PLAN.push("flop (serpent wins)");
-      swimTo(bx + s * 84, wl + 24, -s); var u0 = st.t;
-      Kr(.4, bx + s * 70, wl + 8); Kr(.35, bx + s * 64, wl - 30); Kr(.35, bx + s * 64, wl - 72); Kr(.35, bx + s * 70, wl - 100); Kr(.3, bx + s * 80, wl - 110);
-      var Ap = st.t; stay(.6);
-      Kr(.3, bx + s * 98, wl - 104); Kr(.25, bx + s * 116, wl - 78); Kr(.2, bx + s * 132, wl - 40); Kr(.16, bx + s * 142, wl - 4); Kr(.5, bx + s * 156, wl + 30);
-      var Fl = st.t - .4;   /* the slap: the body hits a beat after the head goes in */
-      Kr(.5, bx + s * 160, wl + 40); Kr(.4, bx + s * 148, wl + 40); Kr(.6, bx + s * 110, wl + 24); Kr(.45, bx + s * 98, wl - 6); Kr(.35, bx + s * 92, wl - 30); Kr(.3, bx + s * 88, wl - 38);
-      var A = st.t; stay(1.7); var H = st.t;
-      Kr(.4, bx + s * 94, wl - 30); Kr(.4, bx + s * 104, wl - 8); Kr(.5, bx + s * 112, wl + 30);
-      var d0 = st.dx, W0 = Fl + .25;
-      bk("dx", W0, d0); bk("dx", W0 + .7, d0 - s * 46); bk("dy", W0, 0); bk("dy", W0 + .32, -24); bk("dy", W0 + .7, 2); bk("dy", W0 + .95, 0);
-      bk("roll", W0, 0); bk("roll", W0 + .7, 360 * -s); bk("roll", W0 + .701, 0);
-      bk("dx", H + 1, d0 - s * 46); bk("dx", H + 3.4, 0); st.dx = 0;
-      add(function(t, b){ b.roll += spring(t, W0 + .7, 14, 1.6, 1.4); b.tack *= t > W0 + .7 && t < W0 + 2.2 ? Math.cos((t - W0) * 9) : 1; });
+      var bx = MAST + st.dx, s = sideOf(84), T0 = st.t, i0; PLAN.push("flop (serpent wins)");
+      swimTo(bx + s * 84, wl + 15, -s); var u0 = st.t;
+      Kr(.5, bx + s * 70, wl + 8); Kr(.45, bx + s * 64, wl - 30); Kr(.45, bx + s * 64, wl - 72); Kr(.45, bx + s * 70, wl - 100); Kr(.4, bx + s * 80, wl - 110);
+      var Ap = st.t; stay(.9);
+      Kr(.34, bx + s * 98, wl - 104); Kr(.28, bx + s * 116, wl - 78); Kr(.22, bx + s * 132, wl - 40); Kr(.18, bx + s * 142, wl - 4); Kr(.55, bx + s * 156, wl + 30);
+      var Fl = st.t - .45;
+      Kr(.45, bx + s * 196, wl + 44); Kr(.4, bx + s * 222, wl + 56); Kr(.4, bx + s * 204, wl + 66); Kr(.5, bx + s * 150, wl + 50); Kr(.5, bx + s * 110, wl + 26); i0 = KS.length; Kr(.55, bx + s * 98, wl - 6); Kr(.45, bx + s * 92, wl - 30); Kr(.4, bx + s * 88, wl - 38);
+      var A = st.t; stay(1.9); var H = st.t;
+      sinkExit(i0, .4, s, 1.4);
+      var d0 = st.dx, W0 = Fl + .3;
+      bk("dx", W0, d0); bk("dx", W0 + .9, d0 - s * 46); bk("dy", W0, 0); bk("dy", W0 + .4, -26); bk("dy", W0 + .85, 2); bk("dy", W0 + 1.15, 0);
+      bk("roll", W0, 0); bk("roll", W0 + .85, 360 * -s); bk("roll", W0 + .851, 0);
+      bk("dx", H + 1.0, d0 - s * 46); bk("dx", H + 3.3, 0); st.dx = 0;
+      react(W0 + .85, 1.0, -s);
+      add(function(t, b){ b.flutter = Math.max(b.flutter || 0, bump(t, W0, W0 + 2.4)); });
       z(T0, "front");
-      pose(function(t, P){ if (t < u0 || t > H + 1.4) return;
-        if (t > Ap - .2 && t < Fl){ P.jaw += .5; P.look += kf([[Ap, 0], [Ap + .3, .3], [Ap + .6, .3], [Ap + .9, 0]], t); }
-        if (t > A - .1 && t < H){ P.eyes = t > A + .5 && t < A + 1.6 ? "happy" : ""; P.nod += kf([[A + .4, 0], [A + .8, .65], [A + 1.3, .65], [A + 1.7, 0]], t); P.raise += .25; } });
+      pose(function(t, P){ if (t < u0 || t > H + 2) return;
+        var g1 = smooth(Ap - .3, Ap, t) * (1 - smooth(Fl - .2, Fl, t)); P.jaw += .5 * g1; P.look += .3 * g1 * bump(t, Ap, Ap + .9);
+        var g2 = smooth(A - .2, A + .1, t) * (1 - smooth(H - .2, H + .2, t));
+        if (t > A + .6 && t < A + 1.8) P.eyes = "happy"; P.nod += g2 * kf([[A + .5, 0], [A + .9, .65], [A + 1.4, .65], [A + 1.8, 0]], t); P.raise += .25 * g2; });
       fx(function(t, C){ var o = "", g = t - Fl;
-        if (g > 0 && g < 1.1){ var cx = bx + s * 118; for (var k = 0; k < 9; k++){ var vx = (k - 4) * 26, vy = -(120 + 70 * hash(k)), x = cx + vx * g, y = wl - 2 + vy * g + 260 * g * g; if (y < wl) o += '<circle class="drop" cx="' + r1(x) + '" cy="' + r1(y) + '" r="2"/>'; }
-          var hh = 34 * Math.sin(PI * Math.min(1, g * 1.4)); if (hh > 1) o += '<path class="drop" d="M' + r1(cx - 40) + ',' + r1(wl + 1) + ' Q' + r1(cx - 20) + ',' + r1(wl - hh) + ' ' + r1(cx) + ',' + r1(wl - hh * .7) + ' Q' + r1(cx + 20) + ',' + r1(wl - hh) + ' ' + r1(cx + 40) + ',' + r1(wl + 1) + ' Z" opacity=".95"/>';
-          o += pop(t, Fl, Fl + 1.1, cx, wl - 60, "KER-SPLASH", 13); }
-        return o + pop(t, A + .5, A + 1.9, bx + s * 88, wl - 74, "ta-da!", 12) + pop(t, W0 + .2, W0 + 1.2, MAST + kf(CH.dx, W0 + .7) + 6, 128, "whee!", 10); });
-      st.face = -s; st.t = Math.max(st.t, H + 2.3); return H + 2.4;
+        if (g > 0 && g < 1.3){ var cx = bx + s * 118; for (var k = 0; k < 9; k++){ var vx = (k - 4) * 26, vy = -(120 + 70 * hash(k)), x = cx + vx * g, y = wl - 2 + vy * g + 240 * g * g; if (y < wl) o += '<circle class="drop" cx="' + r1(x) + '" cy="' + r1(y) + '" r="2"/>'; }
+          var hh = 34 * Math.sin(PI * Math.min(1, g * 1.2)); if (hh > 1) o += '<path class="drop" d="M' + r1(cx - 40) + ',' + r1(wl + 1) + ' Q' + r1(cx - 20) + ',' + r1(wl - hh) + ' ' + r1(cx) + ',' + r1(wl - hh * .7) + ' Q' + r1(cx + 20) + ',' + r1(wl - hh) + ' ' + r1(cx + 40) + ',' + r1(wl + 1) + ' Z" opacity=".95"/>';
+          o += pop(t, Fl, Fl + 1.3, cx, wl - 62, "KER-SPLASH", 13); }
+        return o + pop(t, A + .5, A + 2.0, bx + s * 88, wl - 76, "ta-da!", 12) + pop(t, W0 + .2, W0 + 1.4, MAST + kf(CH.dx, W0 + .8) + 6, 126, "whee!", 11); });
+      st.face = s; return H + 2.3;
     }
   };
   /* ======== assemble ======== */
@@ -614,27 +672,30 @@ SCENES.battle = function(){
   var mids = ["lunge", "peck", "coil", "chase"], a = Math.floor(R() * 4), b2 = (a + 1 + Math.floor(R() * 3)) % 4;
   [mids[a], mids[b2]].forEach(function(m){ gullFill(st.t + 1); PLAN.push("@" + st.t.toFixed(1)); MID[m](); gullFill(st.t); });
   var fins = R() < .5 ? ["bonk", "knot"] : ["dunk", "flop"], fin = fins[R() < .5 ? 0 : 1];
-  PLAN.push("@" + st.t.toFixed(1)); var endHint = FIN[fin](), DUR = st.t + .3, landT = Math.min(DUR - .6, endHint + 1.2);
-  gullFill(landT - 1.4); GK.push([landT - .7, "mastUp"], [landT, "mast"]);
+  PLAN.push("@" + st.t.toFixed(1)); var endHint = FIN[fin](), DUR = endHint + 1.9, landT = endHint + 1.2;
+  gullFill(landT - 1.6); GK.push([landT - .8, "mastUp"], [landT, "mast"]);
   PERCH.push([landT, 999]);
   var S = makeSerpent({ L: 214, sc: 1.22, wl: wl, dur: DUR, keys: KS });
   $("clipA").setAttribute("height", 400 + wl); $("clipB").setAttribute("y", wl);
   function boat(t){
-    var b = { dx: kf(CH.dx, t), dy: kf(CH.dy, t), roll: kf(CH.roll, t), flip: kf(CH.flip, t), tack: kf(CH.tack, t), sx: 1, sy: 1, cannon: kf(CH.cannon, t), still: false, perch: false, gflip: 1 };
+    var b = { dx: kf(CH.dx, t), dy: kf(CH.dy, t), roll: kf(CH.roll, t), flip: kf(CH.flip, t), tack: kf(CH.tack, t), sx: 1, sy: 1, cannon: kf(CH.cannon, t), still: false, perch: false, gflip: 1, flutter: 0 };
     for (var i = 0; i < PERCH.length; i++) if (t >= PERCH[i][0] && t < PERCH[i][1]) b.perch = true;
-    if (Math.abs(b.flip) < .02) b.flip = .02;
     for (i = 0; i < ADDS.length; i++) ADDS[i](t, b);
+    b.flip = (b.flip < 0 ? -1 : 1) * Math.max(.3, Math.abs(b.flip));            /* a turning boat is thin, never flat */
+    if (b.flutter > 0) b.tack *= 1 - .4 * b.flutter * (.5 + .5 * Math.sin(t * 31));   /* the sail flaps */
     return b;
   }
-  var mast = function(tt){ return boatPt(boatXf(tt, boat(tt)), 20, 2.6); };
-  GK.forEach(function(k){ if (k[1] === "mast" || k[1] === "mastUp"){ var m = mast(k[0]); k[2] = m[1] - (k[1] === "mastUp" ? 26 : 0); k[1] = m[0] + (k[1] === "mastUp" ? 22 : 0); } });
+  var mast = function(tt){ return boatPt(boatXf(tt * TEMPO, boat(tt)), 20, 2.6); };
+  GK.forEach(function(k){ if (k[1] === "mast" || k[1] === "mastUp"){ var m = mast(k[0]); k[2] = m[1] - 6 - (k[1] === "mastUp" ? 26 : 0); k[1] = m[0] + (k[1] === "mastUp" ? 22 : 0); } });
   var gull = flight(GK);
-  window.PLAN = PLAN; window.SEED = SEED;
-  return { dur: DUR, draw: function(t){ waves(t);
-    var b = boat(t), X = boatAt(t, b);
-    var g = b.perch ? null : gull(t); if (g) g.push(3.4); gullAt(t, g);
-    var P = { seed: 3, finUp: 1, autoCurl: .42, jaw: 0, look: 0, lean: 0, nod: 0, raise: 0, face: 0 };
+  window.PLAN = PLAN; window.SEED = SEED; window.SS = S; window.KS = KS;
+  return { dur: DUR * TEMPO, draw: function(tr){ waves(tr); var t = tr / TEMPO;
+    var b = boat(t), X = boatAt(tr, b);
+    var g = b.perch ? null : gull(t); if (g) g.push(3.4); gullAt(tr, g);
+    var P = { seed: 3, finUp: 1, jaw: 0, look: 0, lean: 0, nod: 0, raise: 0, face: 0, autoCurl: .42 };
     for (var i = 0; i < POSE.length; i++) POSE[i](t, P);
+    P.oy = oyAt(t); var hr = S.head(t)[1], hv = Math.hypot(S.head(t + .05)[0] - S.head(t)[0], S.head(t + .05)[1] - hr) / .05;
+    P.finUp = Math.max(P.finUp, 1 + 1.1 * smooth(wl + 4, wl + 9, hr) * (1 - smooth(wl + 22, wl + 30, hr)) * smooth(30, 80, hv) * (1 - smooth(1, 6, P.oy)));
     var zz = "back"; for (i = 0; i < Z.length; i++) if (Z[i][0] <= t) zz = Z[i][1];
     layer(zz); drawSerpent(S, t, P);
     var wr = false; for (i = 0; i < WRAP.length; i++) if (t > WRAP[i][0] && t < WRAP[i][1]) wr = true;
@@ -643,7 +704,11 @@ SCENES.battle = function(){
       $("wrapRect").setAttribute("d", "M" + r1(c1[0]) + "," + r1(c1[1]) + " L" + r1(c2[0]) + "," + r1(c2[1]) + " L" + r1(c3[0]) + "," + r1(Math.min(c3[1], wl + 1)) + " L" + r1(c4[0]) + "," + r1(Math.min(c4[1], wl + 1)) + " Z"); }
     var C = { S: S, X: X, b: b }, o = surfaceFx(S, t);
     for (i = 0; i < FX.length; i++) o += FX[i](t, C);
-    $("fx").innerHTML = o; } };
+    for (i = 0; i < SPRAY.length; i++){ var sp = SPRAY[i], ag = t - sp[0]; if (ag < 0 || ag > .9) continue; var hp = boatPt(X, 21, 31);   /* spray off the hull */
+      for (var k = 0; k < 6; k++){ var vx = ((k - 2.5) * 22 + 16 * sp[2]) * sp[1], vy = -(70 + 40 * hash(k + i * 7)) * sp[1], yy = wl - 2 + vy * ag + 260 * ag * ag; if (yy < wl) o += '<circle class="drop" cx="' + r1(hp[0] + vx * ag) + '" cy="' + r1(yy) + '" r="1.5"/>'; } }
+    setHTML($("fx"), o);
+    var gp = g ? [g[0], g[1]] : (function(){ var m = boatPt(X, 20, 2.6); return [m[0], m[1] - 6]; })();
+    window.DBG = { hx: S.hx, hy: S.hy, bx: X.x, by: X.y, gx: gp[0], gy: gp[1], oy: P.oy, P: P }; } };
 };
 
 var ACT = SCENES[SCENE]();

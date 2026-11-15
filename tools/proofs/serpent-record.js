@@ -8,7 +8,7 @@ const path = require("path"), fs = require("fs"), os = require("os"), { execSync
 const PROTO = "file://" + path.join(__dirname, "serpent.html");
 const FF = fs.existsSync("/usr/local/bin/ffmpeg") ? "/usr/local/bin/ffmpeg" : "ffmpeg";
 /* the recorded battles: two the boat wins, two the serpent wins, no two alike */
-const BATTLES = { "battle-a": 1, "battle-b": 5, "battle-c": 3, "battle-d": 6 };
+const BATTLES = { "battle-a": 1, "battle-b": 2, "battle-c": 3, "battle-d": 4 };
 const CLIPS = {
   /* × 2 close-up of a normal pass: a 960 × 100 window, the arcs and the stop to look round */
   "pass": { q: "scene=pass&vb=900,100,960,100&w=1920", w: 1920, h: 200, t0: .5, dur: 16 },
@@ -35,15 +35,15 @@ async function open(br, q, w, h){ const p = await (await br.newContext({ viewpor
     for (let s = 1; s <= +(process.argv[3] || 20); s++){ await p.goto(PROTO + "?scene=battle&seed=" + s); await p.waitForFunction(() => !!window.render);
       console.log(s, await p.evaluate(() => window.PLAN.filter(x => x[0] !== "@").join(" > ") + " | " + window.SCENE_DUR.toFixed(1) + " s")); } }
   if (cmd === "cost"){
-    for (const q of ["scene=pass&play=1", "scene=battle&seed=6&play=1", "scene=battle&seed=3&play=1", "scene=ice&play=1"]){
+    for (const q of ["scene=pass", "scene=battle&seed=1", "scene=battle&seed=3", "scene=battle&seed=4", "scene=ice"]){
       const p = await open(br, q, 1920, 200), cdp = await p.context().newCDPSession(p);
       for (const rate of [1, 4]){
         await cdp.send("Emulation.setCPUThrottlingRate", { rate });
         /* step the clock across the whole act so every beat is costed, not just the first seconds */
-        const r = await p.evaluate(() => { const d = window.SCENE_DUR, ts = []; window.STATS.frames = 0; window.STATS.ms = 0;
+        let r; for (let rep = 0; rep < 3; rep++) r = await p.evaluate(() => { const d = window.SCENE_DUR, ts = []; window.STATS.frames = 0; window.STATS.ms = 0;   /* the last of three runs: warmed up */
           for (let i = 0; i < 600; i++){ const a = performance.now(); window.render(i / 600 * d); ts.push(performance.now() - a); }
           ts.sort((x, y) => x - y); return { mean: +(window.STATS.ms / window.STATS.frames).toFixed(3), p95: +ts[570].toFixed(2), max: +ts[599].toFixed(2) }; });
-        console.log(q.split("&play")[0].padEnd(22), "throttle " + rate + "×", JSON.stringify(r)); }
+        console.log(q.padEnd(22), "throttle " + rate + "×", JSON.stringify(r)); }
       await p.context().close(); }
   }
   await br.close();
