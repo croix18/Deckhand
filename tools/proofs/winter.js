@@ -20,6 +20,7 @@ const FRAMES = [   // v2 (Nov 14): the redesign's dates — every beat runs seve
   { name: "dec02", hash: "#t=2026-12-02T10:40", sea: "breezy" },   // early December: the first week (the snowball, first frost, 3 of 14 bulbs)
   { name: "dec16", hash: "#t=2026-12-16T09:40", sea: "breezy" },   // the last week before break: the snowman finished, 12 of 14 bulbs
   { name: "jan13", hash: "#t=2027-01-13T13:20", sea: "windy" },    // mid-January: the frost at its peak, a snowing period
+  { name: "jan20", hash: "#t=2027-01-20T10:40", sea: "calm", hideBoat: true },   // the full freeze: the sheet's own level, iced boat is drawn by the sheet
   { name: "jan27", hash: "#t=2027-01-27T09:50", sea: "breezy" },   // the caper week (Jan 25–29)
   { name: "feb24", hash: "#t=2027-02-24T14:10", sea: "calm" },     // late February: the puddle week, the serpent in the pail
   { name: "m1280dec", hash: "#t=2026-12-16T09:40", sea: "breezy", w: 1280, h: 800 },
@@ -38,7 +39,7 @@ async function capture(){
     await page.waitForFunction(() => !!window.Deckhand);
     if (await page.evaluate(() => document.body.classList.contains("landing"))) await page.click("#launchBtn");
     await page.waitForTimeout(400);
-    await page.addStyleTag({ content: "#greetToast{display:none !important} #dateline .sim{display:none !important}" + (f.live ? "" : " #boat .btGull{visibility:hidden !important}") });
+    await page.addStyleTag({ content: "#greetToast{display:none !important} #dateline .sim{display:none !important}" + (f.live ? "" : " #boat .btGull{visibility:hidden !important}") + (f.hideBoat ? " #boat{visibility:hidden !important}" : "") });
     if (f.steward){   // a Steward-like dense board: the clock shrinks to a card and five cards share the board
       for (const id of ["addTimerBtn", "addTextBtn", "addScoreBtn", "addTallyBtn", "addPickerBtn"]){
         try { await page.click("#addBtn", { timeout: 2000 }); await page.click("#" + id, { timeout: 2000 }); await page.waitForTimeout(150); } catch(e){ console.log("steward add", id, String(e).slice(0, 80)); }
@@ -140,6 +141,36 @@ async function render(crops){
   await br.close();
 }
 
+/* today's serpent, for comparison: Deckhand's own act summoned on the live board and photographed at eight
+   moments of one 26 s pass (every animation in the act paused at that time) */
+async function serpentLive(){
+  const br = await chromium.launch();
+  const ctx = await br.newContext({ viewport: { width: 1920, height: 1080 }, reducedMotion: "no-preference" });
+  const page = await ctx.newPage();
+  await page.goto(APP + "#t=2026-11-18T13:00");
+  await page.waitForFunction(() => !!window.Deckhand);
+  if (await page.evaluate(() => document.body.classList.contains("landing"))) await page.click("#launchBtn");
+  await page.waitForTimeout(400);
+  await page.addStyleTag({ content: "#greetToast{display:none !important} #dateline .sim{display:none !important}" });
+  await page.evaluate(() => { window.Deckhand.config.ui.motion = "on"; document.body.classList.add("waveMotion"); document.body.dataset.sea = "breezy"; try { window.Deckhand.seaModule.clear(); } catch(e){} });
+  await page.waitForTimeout(500);
+  await page.evaluate(() => window.Deckhand.sea("serpent"));
+  await page.waitForTimeout(300);
+  const out = [];
+  for (const t of [2, 5, 8, 11, 14, 17, 20, 23]){
+    const box = await page.evaluate(t => {
+      const el = document.getElementById("sea-serpent");
+      document.getAnimations().forEach(a => { try { a.pause(); if (a.effect && a.effect.target && el.contains(a.effect.target)) a.currentTime = t * 1000; else a.currentTime = 2800; } catch(e){} });
+      const b = el.querySelector(".ssSwim").getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height };
+    }, t);
+    await page.screenshot({ path: path.join(FR, "serp-live-" + t + ".png"), clip: { x: 0, y: 990, width: 1920, height: 90 } });
+    out.push(Object.assign({ t }, box));
+  }
+  fs.writeFileSync(path.join(FR, "serp-live.js"), "/* written by tools/proofs/winter.js serpent */\nwindow.SERP_LIVE = " + JSON.stringify(out) + ";\n");
+  console.log("serpent", JSON.stringify(out.map(b => [b.t, Math.round(b.x), Math.round(b.y)])));
+  await br.close();
+}
+
 /* the frost's paint cost: each stage's SVG decoded and drawn to a board-size canvas, ten times, median ms,
    with no throttle and with 4× CPU throttling (the Chromebox stand-in); written to winter-frames/cost.js */
 async function measure(){
@@ -148,25 +179,17 @@ async function measure(){
   await page.goto("file://" + SHEET);
   await page.waitForTimeout(800);
   const cdp = await page.context().newCDPSession(page);
-  const stages = [["dec02", .25], ["dec16", .55], ["jan13", 1], ["feb24", .22], ["m1280jan", 1]];
+  const stages = [["dec02", .25], ["dec16", .55], ["jan20", 1], ["feb24", .22], ["m1280jan", 1]];
   const out = {};
   for (const rate of [1, 4]){
     await cdp.send("Emulation.setCPUThrottlingRate", { rate });
     for (const [name, sc] of stages){
-      const ms = await page.evaluate(async ([name, sc]) => {
-        const src = window.frostSVG(name, sc), G = window.GEO[name], times = [];
-        for (let i = 0; i < 11; i++){
-          const t0 = performance.now();
-          const url = URL.createObjectURL(new Blob([src], { type: "image/svg+xml" }));
-          const img = new Image(); img.src = url; await img.decode();
-          const c = document.createElement("canvas"); c.width = G.W; c.height = G.H; const x = c.getContext("2d"); x.drawImage(img, 0, 0);
-          x.getImageData(0, 0, 1, 1);   // force the draw to finish
-          URL.revokeObjectURL(url);
-          if (i) times.push(performance.now() - t0);
-        }
-        times.sort((a, b) => a - b); return Math.round(times[5] * 10) / 10;
+      const r = await page.evaluate(([name, sc]) => {   // the frost generator drawing the stage into a canvas, as the build will
+        const G = window.GEO[name], times = []; let res;
+        for (let i = 0; i < 11; i++){ const t0 = performance.now(); res = window.frostPaint(G, sc); res.canvas.getContext("2d").getImageData(0, 0, 1, 1); if (i) times.push(performance.now() - t0); }
+        times.sort((a, b) => a - b); return { ms: Math.round(times[5] * 10) / 10, segs: res.segs, px: res.canvas.width + " × " + res.canvas.height };
       }, [name, sc]);
-      const k = name + "@" + sc; out[k] = out[k] || {}; out[k][rate === 1 ? "ms1" : "ms4"] = ms;
+      const k = name + "@" + sc; out[k] = out[k] || { segs: r.segs, px: r.px }; out[k][rate === 1 ? "ms1" : "ms4"] = r.ms;
     }
   }
   fs.writeFileSync(path.join(FR, "cost.js"), "/* written by tools/proofs/winter.js measure */\nwindow.COST = " + JSON.stringify(out) + ";\n");
@@ -178,6 +201,7 @@ async function measure(){
   const cmd = process.argv[2] || "all";
 
   if (cmd === "capture" || cmd === "all") await capture();
+  if (cmd === "serpent" || cmd === "all") await serpentLive();
   if (cmd === "measure" || cmd === "all") await measure();
   if (cmd === "render" || cmd === "all") await render(process.argv[3]);
 })().catch(e => { console.error(e); process.exit(1); });

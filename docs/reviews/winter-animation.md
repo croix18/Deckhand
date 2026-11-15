@@ -1,10 +1,26 @@
-# Winter 2.0: the motion (Nov 14, 2026)
+# Winter 2.1: the motion (Nov 14, 2026)
 
-This is the motion spec for `winter-design.md` (2.0), written like `october-2.0-animation.md`. Each
+This is the motion spec for `winter-design.md` (2.1), written like `october-2.0-animation.md`. Each
 motion is given in CSS keyframes or the Web Animations API, for a Chromebox driving a Promethean
 panel. The drawings and their class names are in `winter-proofs.html`.
 
-## What changed from the first animation doc, and why
+## What changed in 2.1
+
+Croix on the 2.0 proofs: "Colored bulbs. I want better more realistic looking frost. Smaller
+snowflakes. Occasional flurries. Have the ocean freeze and the coldest part of the year. The serpent
+is still funky as hell not smooth. I want that thing to slither in and out of the water."
+
+- **Snow** is now occasional flurries: a 3-flake cap, one to three flurries a week, 3–6 minutes each,
+  with smaller flakes (B1).
+- **The frost** is a needle generator painted into the same canvas (B2). The cost moved, and is
+  measured.
+- **The lights** are colored. There is still no motion (B3).
+- **The manatee** leaves on Jan 8 and returns with its calf on Feb 1 (B6, B7).
+- **The serpent and the attack** are rebuilt as one body driven by a traveling wave, for every season
+  (B9).
+- **The frozen sea** is new (B12).
+
+## What changed in 2.0, and why
 
 The first doc (in git at `3455d0e`) animated pieces that are now cut: the seal, the floes, the
 narwhal, tusking and the squall. It also had three problems the audit (`winter-audit.md`) found:
@@ -40,14 +56,13 @@ The hardware is a Chromebox and the board over `file://` on a 1080p panel.
 - Only `transform`, `translate`, `rotate`, `scale` and `opacity` animate.
 - At most one sea visitor plays besides the boat.
 
-**The heaviest moment** is a windy snowing period with the calf act on the water and a drip in the
-corner:
+**The heaviest moment** is a flurry with the serpent on the water and a drip in the corner:
 
 | what | animated things | layers |
 |---|---|---|
-| snow at its cap (10) | 3 WAAPI animations each (fall, sway, spin) = 30 | each flake its own ≤ 56 px layer (`will-change: transform`, as the leaves) |
+| a flurry at its cap (3) | 3 WAAPI animations each (fall, sway, spin) = 9 | each flake its own ≤ 26 px layer (`will-change: transform`, as the leaves) |
 | the boat | the existing heave, pitch and drift, plus the lantern | the boat's own |
-| the manatee and calf | ≤ 10 SVG children | the act's box |
+| the serpent (or the manatee and calf) | one path rewritten per frame at 30 fps (B9), or ≤ 10 SVG children | the act's box |
 | the frost | 0 to 2 (a drip, a breath) | **the frost itself is a still `<canvas>`**; the drip and the breath are their own small layers |
 | the snowman | ≤ 2 (a tap, a visit) | a 120 × 160 svg |
 | the lights | **0** | one still svg |
@@ -56,7 +71,7 @@ That is less than November's windy budget, which already ships: the leaves at th
 branch's five swinging leaves and the scarecrow's sway.
 
 **The frost's one real cost is its raster** (design C1, measured in proofs §4): 10–33 ms per stage in
-Chromium, and 47–183 ms with 4× CPU throttling. It happens at a stage change:
+Chromium for the frost's 2.0 drawing; 2.1's needle generator measures 1–43 ms, and 140–220 ms with 4× CPU throttling at the peak. It happens at a stage change:
 - the day's first tick;
 - a resize;
 - a bell, **only if the face's boxes moved**.
@@ -65,8 +80,8 @@ It runs in an idle callback. `createImageBitmap(blob)` decodes off the main thre
 bitmap stays up until the new one is ready, so a slow raster never shows as a blank corner or a
 dropped frame at the bell.
 
-**If 4× throttling shows more than 4 ms of main-thread work per frame** with ten flakes and the calf,
-drop the flakes' sway first; the fall and the spin are the snow.
+**If 4× throttling shows more than 4 ms of main-thread work per frame** with a flurry and the serpent,
+drop the serpent's loop to 24 fps first.
 
 ---
 
@@ -88,16 +103,18 @@ filled crystal turned edge-on is a line, and the tilt cost 10 animations at the 
 | landing on the water | `scale(1 → .55)`, `opacity 1 → 0`, 900 ms | plus a 14 × 4 white ring (`seaRing`, 1.3 s) |
 | tap | the leaves' `fling()`, rotation ±870° | |
 
-**The rate**, from `data-wn-snow` (design C2):
+**The rate: occasional flurries** (design C2). `flurries.times(date)` is pure in the date. It
+gives one to three flurry slots a week, each in one period, starting 10–35 minutes in, lasting 3–6
+minutes.
 
-| weather | first spawn | the gap | a second spawn | cap |
-|---|---|---|---|---|
-| `clear` | none | — | — | 0; flakes already falling finish their fall |
-| `flurries` | 3–7 s after the bell | 14–30 s | 15% of the time | 3 |
-| `snowing` | 2–4 s | 6–12 s | 30% | 8, or 10 when windy (the gap × .7) |
+| | value |
+|---|---|
+| outside a flurry | no spawns; flakes already falling finish their fall |
+| in a flurry | the first spawn at once, then one every 30–50 s (a crystal 60%, a fleck pair 40%), 5–9 flakes in all |
+| cap | 3 on the board |
+| flake sizes | dendrite 20–26 px, stellar plate 18–22 px, flecks 4–5 px; the falls are B1's (crystals 20–28 s, flecks 16–22 s) |
 
-The weather changes only at a bell. A period that turns clear lets its flakes land, so the snow
-stops the way snow does.
+A flurry that is still running at the bell stops spawning, and its flakes land.
 
 **"The first snowflake."** On Nov 30's first period, the first spawn is forced: the dendrite at 56 px,
 a 28 s fall, the right column at 92%.
@@ -105,7 +122,7 @@ a 28 s fall, the right column at 92%.
 **The stage rule** (the leaves'). A `deckhand:stage` start clears the moving flakes, and nothing
 spawns while staged. A resize clears them all.
 
-**Reduced motion.** Nothing falls. On a flurries or snowing period, `rest()` lays two crystals still
+**Reduced motion.** Nothing falls. During a flurry, `rest()` lays two crystals still
 on the sand at the right edge, beside the snowman's patch. Taps do nothing.
 
 ### B2. The frost: a bitmap, a drip, a breath
@@ -171,6 +188,8 @@ Under reduced motion, a tap sets `.on` (opacity 1, no animation), and a timer re
 
 ### B3. The string lights
 
+**Colors** (design C4): red, amber, green, ice blue and yellow, repeating. Each lit bulb has its own color's halo (a radial gradient per color, five in all). A dark bulb is the same hue gone to smoke. The colors cost nothing: the string is one still SVG.
+
 **Markup.** `svg#wnLights`, fixed at the screen's top, the screen's width, and as tall as the deepest
 scallop plus a bulb. It sits above the clock card and below the dock, `pointer-events:none` except on
 the bulbs. Each bulb is `g.wnBulb` (a socket, glass, a core and a glint). A lit bulb adds `.on` with
@@ -211,7 +230,7 @@ socket's top), 1.2 s: 8° → −5° → 2.5° → 0, `ease-in-out` per swing. I
 **Idle.** A snowman does not move. The sargassum end hangs still: wet weed is heavy, and the first
 design's swaying knit was motion for its own sake.
 
-**On a snowing period:** `.smFresh` (a white cap on the pail's base and on the driftwood's tops)
+**During a flurry:** `.smFresh` (a white cap on the pail's base and on the driftwood's tops)
 takes `opacity: var(--wnFresh)`. Season steps it once a minute toward 1 over the period's first 20
 minutes, and it resets at the bell. There is no animation.
 
@@ -246,7 +265,7 @@ loop. That is the only idle motion he ever has, and only in the thaw.
 ### B5. The boat and the gull
 
 - **Snow on the deck:** `.wnDeck{opacity:0; transition:opacity 600s linear}`, and
-  `body[data-wn-snow=snowing] .wnDeck{opacity:1}`.
+  `body[data-wn-snow=flurries] .wnDeck{opacity:1}` (and it stays until the bell).
 - **The lantern** keeps November's keyframes, with its step set by Season.
 - **The lean:** for `boat:"manatee"`, the gull leans to look (November's `nvGullDucks` keyframes),
   at 3.0–6.6 s of the manatee act and 3.4–7.0 s of the calf act.
@@ -297,10 +316,12 @@ The drift starts after the head-up (16.8%), so the manatee looks at the boat fro
 leaves. Its distance (30vw) keeps it clear of the sand pieces at every width. The spray (`.mnSpray`,
 three drops, `translate(0, −6px)` and fade over 700 ms) plays at 1.2 s and 30 s.
 
+**Fri Jan 8: it leaves.** The day's acts use the `leave` variant. After the look at the boat it turns (a 60 ms flip) and cruises **left**, past the boat and behind the dock, without diving: `mnDrift` runs to `translateX(calc(-42vw - 120px))` over 40 s. From Jan 11 it is gone until Feb 1.
+
 **Windy:** the spray shears left (`translate(−6px, −4px)`), and the cruise is unchanged. A manatee
 doesn't care about the wind.
 
-### B7. Mother and calf (54 s, `dur` 54 500)
+### B7. Mother and calf (54 s, `dur` 54 500; from Feb 1, the greeting on Feb 1–2)
 
 The same act with a second `.mnDrift` copy, `.mnCalf`, at 0.55× (width 51 px), 30 px behind the
 mother, on a bob phase 1.4 s later. The calf breathes 0.8 s after its mother (spray at 2.0 s and
@@ -320,34 +341,79 @@ The manatee act at the cruise (no dive until 52 s), with the gull:
 | 50 | `play("gull")` (`defer:gullBack`) brings the resident home |
 | 52–56 | the manatee dives |
 
-### B9. The serpent's winter
+### B9. The serpent, for every season: one body, a traveling wave
 
-All three costumes ride inside the serpent's head group (`.ssSeg.g4 > .ssHump.h4`), so they dive and
-roll with the head and need no clock of their own. The attack's head carries the same costumes.
+This replaces `#sea-serpent`'s four pieces (`ssSeg`/`ssHump` with `ssRoll`, `ssGlide`, `ssDive`) and
+`#sea-attack`'s coils (`atCoil`, `atSink`). Design C8 says why they look funky.
 
-- **The scarf** (`body.wnCaper`, Jan 25–29). `g.wnSerpScarf` is a sargassum wrap with two streaming
-  fronds. The fronds (`.wnSsEnds`, origin at the knot) flutter on the serpent's wind:
+**Markup.**
+- `#sea-serpent`: one svg the width of the lane (100vw × 70 px, far lane, bottom 0), holding:
+  - `path.ssBody`, the whole body in one fill;
+  - `g.ssFace` (the eye and the mouth, placed from the head's frame);
+  - `g.ssCostume` (the scarf, the pail, a flake);
+  - `g.ssRipples`, a pool of six small white arcs;
+  - `g.ssIce`, the holes on the frozen sea.
+- A `clipPath` at the waterline.
+- `#sea-attack`: the same, near lane, with the face-swap drawing kept.
 
-  ```css
-  .wnSerpScarf{display:none;}  body.wnCaper .wnSerpScarf{display:inline;}
-  .wnSsEnds{transform-box:view-box; transform-origin:80px 19.5px;}
-  body.waveMotion.wnCaper #sea-serpent.go .wnSsEnds{animation:wnSsFlut calc(var(--flutT) * 1.4) var(--sine) infinite alternate;}
-  @keyframes wnSsFlut{from{transform:rotate(-3deg);} to{transform:rotate(5deg);}}
-  ```
+**The loop.** One `requestAnimationFrame` loop per playing act (the director already allows one sea
+visitor at a time) computes the centerline and writes `d` on `path.ssBody`. The loop:
+- samples every 2 px from s = 0 to 164, so 83 points;
+- offsets each point by the thickness profile (snout 3 → jaw 10.7 → neck 7.4 → body 7.4 ± 0.5 → tail
+  0.9, with a fin);
+- places the spines where the top normal faces up, plus the face, the costume and the ripples;
+- runs at 30 fps (the swim is 84 px/s, so a 30 fps step is under 3 px);
+- stops at the act's `dur`, on `deckhand:stage`, under reduced motion, and when the page is hidden.
 
-- **The pail** (`body.wnPuddle`, Feb 22–26). `g.wnSerpPail` sits on the head at −12°. It is rigid:
-  a pail on a head doesn't flutter. When the head dives, the pail goes under with it.
-- **The first snow** (`serpentSnow`, uncommon, far lane, 22 s, Dec 7 → Jan 29, flurries or snowing
-  periods only; `dur` 22 500).
+| term | value |
+|---|---|
+| swim | the head's x = start − 84 px/s · t, linear (a serpent doesn't ease) |
+| the wave | `y = wl + D(x) − headUp(s) − A(s) · sin(2π (s/64 + 0.5 t))`; it runs back along the body at 32 px/s |
+| A(s) | 0 for s < 14, ramping to 15 px by s = 36, easing to 55% over the last 30% of the body |
+| headUp(s) | (13 + lift) · (1 − s/30)^1.5 for s < 30, plus a 1.2 px bob at 0.5 Hz; `lift` is 16 for the first-snow look, and 34 for the attack's rear |
+| D(x) | 4 px, plus a smoothstep of 40 px at the entry (x > 70–80% of the lane), the same at the exit (x < 14–24%), and a 34 px dive centered at 46% (± 4.5%) |
+| the waterline | the far lane's wl; everything below it is clipped |
+| ripples | where the top outline crosses wl (a sign change between samples), one white arc 12 × 2 px; the pool is reused |
+| splash | three white drops over the head while its top edge is within 0–5 px above wl |
 
-  | t | the eye sees |
-  |---|---|
-  | 0–5 | the serpent's usual entrance, humps rising |
-  | 5–6.2 | the head lifts 24° (`rotate` on the head group, origin at the neck, ease-out), looking up |
-  | 6.2–8.6 | a flake falls into frame from above (its own element, linear) and lands on the snout tip |
-  | 8.6–10.4 | held: the flake sits on its nose |
-  | 10.4–10.7 | a quick head shake (±5°, three swings): the flake is gone |
-  | 11–22 | the head lowers and it swims on and dives |
+**One pass (26 s, `dur` 26 500)**, as the proofs' frames show:
+- **0–4.5 s:** under water; a ripple or two where the deep body nears the surface.
+- **4.5–6 s:** the head comes up the slope, then the first coil behind it.
+- **6–11.5 s:** two to three coils travel back along the body.
+- **11.5–14.5 s:** the head dives and the coils follow it under, then the head resurfaces.
+- **14.5–19 s:** coils again.
+- **19–21 s:** down the exit slope, head first, the tail fin last.
+- **To 26 s:** under water.
+
+It is clear of the dock, because the exit is at 14–24% of the lane.
+
+**The attack (20 s, `dur` 20 500)**, rebuilt on the body. The beats and the director's rules stay; the
+motion is now the body's.
+- **0–2.8 s:** the tell (bubbles; the periscope, now the head at lift 0 and depth 8 px, so only the
+  horn and the eye show).
+- **2.8–10 s:** the coils roll in toward the boat along the traveling wave. The swim eases to a stop
+  40 px short of the boat (`cubic-bezier(.25,.5,.35,1)`), the speed change that says "it's here".
+- **10–11 s:** it rears: lift 0 → 34 over 1 s, with an overshoot to 38.
+- **11–13.6 s:** the lunge and the bite. The body's existing front-face swap plays here, and coral is
+  its eye.
+- **13.6 s:** the miss, and the head into the water.
+- **15.7–20 s:** the whole body slides back down along its path: D rises 0 → 40 over 4 s, head first,
+  the coils following, and ripples where it goes under.
+
+**Costumes.** They are placed each frame from the head's frame (the position and tangent at s = 6 and
+s = 13): the scarf wrap at s = 11–17, with its fronds streaming back; the pail on the head at the
+head's angle; the first-snow flake landing on the snout.
+
+**The frozen sea** (`body.wnFrozen`). Each span above wl writes a hole (a turquoise lens 4 px deep)
+with two tilted shards into `g.ssIce`. The holes persist for the day; they are drawn into `#wnIce`'s
+picture at the act's end, so they cost nothing after.
+
+**Reduced motion.** No act plays (the sea's rule).
+
+**Cost.** Per frame, about 83 points of math, one `d` write and a repaint of the serpent's box (at
+most 400 × 70 px). That is about the cost of today's four animated groups, and the frame loop runs
+only while the act plays. Measure it in the aquarium with 4× throttle before trusting it. The budget
+line is 2 ms of main-thread work a frame.
 
 ### B10. The whale's breath
 
@@ -368,9 +434,44 @@ Every date-driven change happens at the day's first tick (or when the board open
 Each is a 4 s opacity crossfade between the old and new drawings, except the bulb, which is its 1.5 s
 light-up. The snow weather changes only at a bell.
 
----
+### B12. The frozen sea (Jan 11–29)
 
-## C. The director
+**Markup.** `svg#wnIce`, fixed over the water band (from the dune's foot to the screen's bottom), z
+just over the front waves and under the dock. It is drawn once per stage:
+- the sheet or sheets;
+- the snow rim, the sheen, the cracks, the bubbles and the dusting;
+- in freeze-in, the open water's pancakes;
+- in break-up, the leads and the tilted slabs.
+
+**The stages** (`data-wn-sea`):
+
+| stage | dates | ice cover |
+|---|---|---|
+| `in1` | Jan 11 | 22% |
+| `in2` | Jan 12 | 55% |
+| `in3` | Jan 13–14 | 85%, one lead |
+| `frozen` | Jan 15–25 | the whole band |
+| `break` | Jan 26–29 | slabs and leads |
+| absent | Feb 1 → | open water, with floes drifting out Feb 1–5 (a 44 s flotsam act, common, greeting) |
+
+Stages change at the day's first tick with a 4 s crossfade, never in front of a class.
+
+**What stops.**
+- Under `body.wnFrozen` the wave layers' animations pause (`animation-play-state: paused` on
+  `#wv1`/`#wv2`/`#wv3`), and the boat's heave, pitch and drift pause at their neutral frame.
+- `#boat` gets `.frozen`, which shows its rime and its collar.
+- **This is cheaper than an ordinary day.**
+
+**Motion on the ice.**
+- **The gull's ice walk** (`gullIce`, uncommon, a middle third, 60 s): it hops down from the mast,
+  walks out about 90 px in short steps (a 0.4 s step, a 1.2 s pause, a head turn), leaving a print
+  per step (the prints stay until the bell), and walks back.
+- **The serpent breaking through** (B9).
+- **The attack through the ice** (B9).
+
+Nothing else moves on the ice.
+
+
 
 ### The `ACTS` rows
 
@@ -389,9 +490,11 @@ light-up. The snow weather changes only at a bell.
 | act | tier | `dur` | lanes | flags | notes |
 |---|---|---|---|---|---|
 | `manatee` | common | 50 500 | near | `season:"winter"`, `greeting:true`, `boat:"manatee"`, phase dec2–thaw | the greeting in every period on Dec 7–8 and Jan 4–5 |
-| `manateeCalf` | uncommon | 54 500 | near | `boat:"manatee"`, `notBefore:"01-11"`, phase jan–thaw | |
-| `ride` | rare | 60 500 | near | `lastThird:true`, `gullBack:true`, `notBefore:"12-14"`, phase dec2–thaw (not after Feb 19) | `busy()` treats it as a gull act: no visit, trawler or geese in the same period |
-| `serpentSnow` | uncommon | 22 500 | far | `needs:{snow:["flurries","snowing"]}`, phase dec2–jan (to Jan 29) | |
+| `manateeCalf` | uncommon | 54 500 | near | `boat:"manatee"`, `notBefore:"02-01"`, phase thaw | the greeting on Feb 1–2 |
+| `ride` | rare | 60 500 | near | `lastThird:true`, `gullBack:true`, Dec 14 → Jan 8 and Feb 1 → 19 | `busy()` treats it as a gull act: no visit, trawler or geese in the same period |
+| `serpentSnow` | uncommon | 22 500 | far | `needs:{flurry:true}`, phase dec2–jan (to Jan 29) | |
+| `gullIce` | uncommon | 60 500 | — | `gullBack:true`, `middleThird:true`, only in `frozen` | |
+| `floes` | common | 44 500 | far, near | Feb 1–5 only, `greeting:true` | the break-up's last ice drifting out |
 | `visit` | uncommon | 240 500 | — | `beach:true`, `gullBack:true`, `middleThird:true`, needs the snowman at S3 or later | its clock is `visit.times(date)` |
 
 ### The season's weight (`winterWeight(dateStr)`, pure)
@@ -421,8 +524,11 @@ The existing arc stands:
 - only commons under a timer or the settle-in.
 
 Winter adds four rules inside `plan()`, all pure:
-1. **The snow draw.** After the wind, the same generator draws `snow` at the phase's odds (design
-   C2), and the director sets `data-wn-snow` with `data-sea` at the bell.
+1. **The flurry clock.** `flurries.times(date)` gives the day's flurry, if any, by period and minute;
+   the director sets `data-wn-snow` (`flurries` or absent) during it.
+2. **The freeze.** In `frozen` the water acts (turtle, school, paper, buoy, fish, dolphins, chase,
+   whale, the manatees) have weight 0. In `in1`–`in3` and `break` their weight is ×.5. The serpent's
+   is ×1.5 in `frozen`; it is the sea's only resident then.
 2. **Two winter acts a period** at most (one in the thaw).
 3. **The serpent** at × 2 in caper week and × 1.5 in puddle week, and in caper week's greeting pool.
    The attack still needs a sighting first.
@@ -444,7 +550,8 @@ motion is a flake's fall, at about one board height in 20 s.
 - The gull leans to look at the manatee.
 - The gull rides the manatee (rare) and visits the snowman.
 - The serpent wears the scarf, then the pail.
-- Snowing periods put snow on the deck, the dune and the snowman.
+- A flurry dusts the deck and the snowman until the bell.
+- The serpent breaks the ice; the gull walks on it.
 
 Nothing else reacts.
 
@@ -456,9 +563,17 @@ Grab them in the aquarium (`tools/aquarium.html`) at 1920 × 1080 and at one thi
 clock set to a winter date.
 
 - **Snow.**
-  - A 30 s strip at 2 fps in each weather: 0 flakes when clear; never more than 3 / 8 / 10; no flake
-    box between 18% and 82%.
-  - A clear bell after snowing: the falling flakes finish, and none spawn.
+  - A flurry, 30 s at 2 fps: never more than 3 flakes; no flake box between 18% and 82%.
+  - A bell during a flurry: the falling flakes finish, and none spawn.
+- **The serpent (every season).**
+  - One pass at 2 fps: one path, no gaps, coils traveling tailward, never popping.
+  - The 30 fps loop's cost under 4× throttle: under 2 ms a frame.
+  - The attack at 3 / 10.5 (the rear) / 13.6 / 17.
+  - On the ice: the holes.
+- **The freeze.**
+  - Each stage at the first tick.
+  - The waves and the boat paused under `wnFrozen`.
+  - The gull's ice walk.
 - **The frost.**
   - A paint-flashing trace: at rest, nothing in the corner flashes; a drip flashes only the drop's
     box; a breath, only the oval's.
