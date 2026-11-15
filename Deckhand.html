@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.64.0",
+  "appVersion": "7.65.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -3727,6 +3727,139 @@
   #wnLights.wnFade .wnLit, #wnLights.wnFade .wnHalo{transition:opacity 1.5s ease-in-out;}   /* the day's bulb, while the board is up */
   #wnLights .wnBulbSwing{transform-box:view-box;}
   body.waveMotion #wnLights .wnBulbSwing.swing{animation:wnSwing 1.2s linear;}
+
+  /* ---- v7.65 WINTER, DECEMBER (docs/reviews/winter-design.md C1–C3, C6a; winter-animation.md B1, B2, B4–B6) ---- */
+  :root{--wnBlue:#4C7BD9; --wnShade:#C9D9F7; --wnIce:#EEF3FE;
+        --wnSmW:clamp(84px, min(6.25vw, 11.1vh), 132px);}   /* the snowman: 120 × 160 at 1080p, in the scarecrow's slot */
+  /* C1 the frost: one still canvas per stage in the clock card's corner (the web's and the branch's slot), two of them
+     for the 4 s crossfade at a stage change; nothing about it costs a frame after the paint */
+  #wnFrostBox{position:absolute; left:0; top:0; width:0; height:0; overflow:visible; pointer-events:none; z-index:4; display:none;}
+  body.winter .w-clock:not(.stLive) #wnFrostBox{display:block;}
+  body.focusMode #wnFrostBox{display:none !important;}
+  #wnFrostBox .wnFrost{position:absolute; display:block; opacity:0; transition:opacity 4s ease-in-out; will-change:opacity;}
+  #wnFrostBox .wnFrost.on{opacity:1;}
+  /* C2 the snow: a fixed pool of three flakes over the board's outer columns (the leaves' layer and rules) */
+  #wnSnow{position:fixed; inset:0; z-index:3; display:none; overflow:hidden; pointer-events:none;}
+  body.winter:not(.landing):not(.focusMode) #wnSnow{display:block;}
+  .wnFlake{position:absolute; left:0; top:0; visibility:hidden; will-change:transform;}
+  .wnFlake.on{visibility:visible;}
+  .wnSway, .wnSpin, .wnMelt{will-change:transform;}
+  .wnFlake svg{display:block; overflow:visible;}
+  .wnFlake[data-k="f"] .wnCrys, .wnFlake:not([data-k="f"]) .wnFleck{display:none;}
+  .wnFlake[data-k="d"] .kP, .wnFlake[data-k="p"] .kD{display:none;}
+  .wnFlake .fkEdge{fill:none; stroke:var(--wnBlue); stroke-opacity:.85; stroke-linejoin:round;}
+  .wnFlake .fkFill{fill:#fff;}
+  .wnFlake .fkRib{fill:none; stroke:var(--wnShade); stroke-linecap:round;}
+  .wnRing{position:absolute; left:-7px; top:-2px; width:14px; height:4px; border:1.3px solid #fff; border-radius:50%; opacity:0; box-sizing:border-box; will-change:transform, opacity;}
+  /* C3 the snowman of beach finds, in the scarecrow's slot (right 3vw, bottom 34 px); still at rest */
+  #wnSnowman{position:fixed; right:3vw; bottom:34px; width:var(--wnSmW); height:auto; aspect-ratio:120 / 160; z-index:2; display:none; overflow:visible; pointer-events:none;}
+  body.winter:not(.landing):not(.focusMode) #wnSnowman{display:block;}
+  #wnSnowman .smLayer{transition:opacity 4s ease-in-out;}
+  #wnSnowman .smLayer.smIn, #wnSnowman .smLayer.smOut{opacity:0;}
+  #wnSnowman .smTap{pointer-events:auto; cursor:pointer;}
+  #wnSnowman .sn{fill:#fff; stroke:var(--navy); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+  #wnSnowman .snShade{fill:var(--wnShade);} #wnSnowman .snContact{fill:var(--wnBlue); opacity:.32;} #wnSnowman .snFleck{fill:#D2B98A;}
+  #wnSnowman .peb{fill:var(--navy);} #wnSnowman .pebHi{fill:#fff;}
+  #wnSnowman .cone{fill:#D98E2B;} #wnSnowman .coneBand{fill:none; stroke:#B5542A; stroke-width:1.1; stroke-linecap:round;}
+  #wnSnowman .drift{fill:#8F7A60;} #wnSnowman .driftHi{fill:none; stroke:#B9A68C; stroke-width:1.2; stroke-linecap:round;}
+  #wnSnowman .sarg{fill:#A8782E;} #wnSnowman .sargD{fill:#7D5A22;} #wnSnowman .sargB{fill:#C99A45; stroke:#7D5A22; stroke-width:.8;}
+  #wnSnowman .shell{fill:#F6E6CE; stroke:#B5542A; stroke-width:.9; stroke-linejoin:round;} #wnSnowman .shellRib{fill:none; stroke:#B5542A; stroke-width:.8; stroke-linecap:round;}
+  #wnSnowman .dollar{fill:#EAD7B5; stroke:#B89B6A; stroke-width:.9;} #wnSnowman .dollarP{fill:none; stroke:#9C7F52; stroke-width:.9; stroke-linecap:round;}
+  #wnSnowman .pail{fill:var(--wnBlue);} #wnSnowman .pailRim{fill:#7FA3E8;} #wnSnowman .pailHandle{fill:none; stroke:var(--navy); stroke-width:1.6; stroke-linecap:round;} #wnSnowman .pailStar{fill:#fff;}
+  #wnSnowman .print{fill:none; stroke:var(--navy); stroke-opacity:.45; stroke-width:1.1; stroke-linecap:round;}
+  #wnSnowman .track{fill:#E6D5B8;}
+  /* the dusting: during a flurry a cap of fresh snow builds on the pail and the driftwood, and stays until the bell */
+  #wnSnowman .smFresh{fill:#fff; stroke:var(--wnBlue); stroke-opacity:.5; stroke-width:.8; opacity:0; transition:opacity 4s ease-in-out;}
+  #wnSnowman .smFreshLine{fill:none; stroke:#fff; stroke-opacity:1; stroke-width:1.8; stroke-linecap:round;}
+  body.wnDusted #wnSnowman .smFresh{opacity:1; transition:opacity 240s linear;}
+  /* the tap: the head slips on its neck and stays crooked (900 ms; the pail jolts a beat later); the snowball rocks */
+  #wnSnowman .smHead{transform-box:view-box; transform-origin:61px 74px;}
+  #wnSnowman .smHead .smPail{transform-box:view-box;}
+  #wnSnowman.crooked .smHead{transform:rotate(6deg);}
+  body.waveMotion #wnSnowman.slip .smHead{animation:smSlip .9s linear both;}
+  body.waveMotion #wnSnowman.unslip .smHead{animation:smUnslip .7s linear both;}
+  @keyframes smSlip{0%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.35,0,.6,1);} 38%{transform:rotate(7deg); animation-timing-function:ease-out;}
+    62%{transform:rotate(9.5deg); animation-timing-function:ease-in-out;} 100%{transform:rotate(6deg);}}
+  @keyframes smUnslip{0%{transform:rotate(6deg); animation-timing-function:cubic-bezier(.4,0,.5,1);} 60%{transform:rotate(-1.4deg); animation-timing-function:ease-in-out;} 100%{transform:rotate(0deg);}}
+  #wnSnowman .smBall{transform-box:view-box; transform-origin:58px 150px;}
+  body.waveMotion #wnSnowman.rock .smBall{animation:smRock 1.2s linear both;}
+  @keyframes smRock{0%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.3,0,.5,1);} 25%{transform:rotate(-5deg); animation-timing-function:ease-in-out;}
+    55%{transform:rotate(3deg); animation-timing-function:ease-in-out;} 80%{transform:rotate(-1.2deg); animation-timing-function:ease-in-out;} 100%{transform:rotate(0deg);}}
+  /* B4 the gull's visit (240 s): it glides in from the upper left, lands on the pail, sits, looks round, nods at his
+     face, and flies home as our own gull lands on the masthead */
+  #wnSnowman .wnVisit{visibility:hidden; pointer-events:none;}
+  #wnSnowman .wnVisit path, #wnSnowman .wnVisit circle{fill:var(--navy);}
+  #wnSnowman .wnVisit .glLegs{fill:none; stroke:var(--navy); stroke-width:.7; stroke-linecap:round;}
+  #wnSnowman .wnVisit .vgEye{fill:#D8F6F1;}
+  #wnSnowman .wnVisit .vgScarf .k{fill:#B5542A;} #wnSnowman .wnVisit .vgScarf .b{fill:#F6E6CE;}
+  #wnSnowman .vgX, #wnSnowman .vgY, #wnSnowman .vgSettle, #wnSnowman .vgTurn, #wnSnowman .vgNod{transform-box:view-box; transform-origin:0 0;}
+  #wnSnowman .vgTurn{transform-origin:1px -6px;} #wnSnowman .vgNod{transform-origin:5px -8px;}
+  #wnSnowman .vgFly{visibility:hidden;}
+  body.waveMotion #wnSnowman .wnVisit.go{visibility:visible;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgX{animation:vgX 240s linear both;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgY{animation:vgY 240s linear both;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgSettle{animation:vgSettle 240s linear both;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgTurn{animation:vgTurn 240s linear both;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgNod{animation:vgNod 240s linear both;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgFly{animation:vgFly 240s step-end both;}
+  body.waveMotion #wnSnowman .wnVisit.go .vgPerch{animation:vgPerch 240s step-end both;}
+  /* 1 s = .41667 %: off the masthead 0–2.5 s (Sea.gullLeave), the glide 2.5–6.5 s, landed 6.5, the leaving 236–240 */
+  @keyframes vgX{0%,1.0417%{transform:translateX(-300px); animation-timing-function:cubic-bezier(.2,.55,.45,1);} 2.7083%,98.333%{transform:translateX(0); animation-timing-function:cubic-bezier(.55,0,.8,.45);} 100%{transform:translateX(-330px);}}
+  @keyframes vgY{0%,1.0417%{transform:translateY(-760px); animation-timing-function:cubic-bezier(.3,.35,.5,1);} 2.7083%,98.333%{transform:translateY(0); animation-timing-function:cubic-bezier(.35,.1,.65,.55);} 100%{transform:translateY(-800px);}}
+  @keyframes vgSettle{0%,2.7083%{transform:translateY(0); animation-timing-function:cubic-bezier(.3,0,.5,1);} 2.875%{transform:translateY(-2px); animation-timing-function:cubic-bezier(.5,0,.6,1);} 3.0%,98%{transform:translateY(0); animation-timing-function:cubic-bezier(.4,0,.6,1);} 98.333%{transform:translateY(-1.5px);} 100%{transform:translateY(-1.5px);}}
+  @keyframes vgTurn{0%,15.833%{transform:scaleX(1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 15.95%,33.75%{transform:scaleX(-1); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    33.867%,58.333%{transform:scaleX(1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 58.45%,82.083%{transform:scaleX(-1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 82.2%,100%{transform:scaleX(1);}}
+  @keyframes vgNod{0%,45.833%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 46.167%,47.083%{transform:rotate(10deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 47.5%,100%{transform:rotate(0deg);}}
+  @keyframes vgFly{0%{visibility:visible;} 2.7083%{visibility:hidden;} 98.333%{visibility:visible;} 100%{visibility:visible;}}
+  @keyframes vgPerch{0%{visibility:hidden;} 2.7083%{visibility:visible;} 98.333%{visibility:hidden;} 100%{visibility:hidden;}}
+  /* C6a the manatee (50 s): nostrils first beside the boat, a look at the boat (the gull leans), level, a slow cruise
+     right at the surface, one more breath, and the dive with the round tail lifted clear */
+  #sea-manatee{bottom:6px; left:calc(max(42vw, 300px) + 34px); width:92px;}
+  #sea-manatee.far, #sea-manatee.near{bottom:6px;}
+  #sea-manatee .mnSvg{display:block; width:92px; height:36.8px; overflow:visible;}
+  #sea-manatee .mnBody path{fill:var(--navy);}
+  #sea-manatee .mnPt{fill:var(--paleturq);} #sea-manatee .mnPtS{fill:none; stroke:var(--paleturq); stroke-width:.9; stroke-linecap:round;}
+  #sea-manatee .mnSpray path{fill:#fff; stroke:var(--wnBlue); stroke-width:.9; stroke-opacity:.6;}
+  #sea-manatee .mnPitch, #sea-manatee .mnSpray{transform-box:view-box;}
+  #sea-manatee .mnPitch{transform-origin:50px 29px; transform:translateY(40px);}
+  #sea-manatee .mnSpray{opacity:0;}
+  #sea-manatee .mnTurn{transform-origin:46px 50%;}
+  body.waveMotion #sea-manatee.go .mnDrift{animation:mnDrift 50s linear both;}
+  body.waveMotion #sea-manatee.go .mnBob{animation:mnHeave calc(var(--T1) / 2) cubic-bezier(.37,0,.63,1) infinite alternate;}
+  body.waveMotion #sea-manatee.go .mnPitch{animation:mnPitch 50s linear both;}
+  body.waveMotion #sea-manatee.go .mnSpray{animation:mnSpray 50s linear both;}
+  body.waveMotion #sea-manatee.go .seaRing.r0{animation:seaRing 1.3s cubic-bezier(.2,.6,.4,1) .1s forwards;}
+  body.waveMotion #sea-manatee.go .seaRing.r1{animation:seaRing 1.3s cubic-bezier(.2,.6,.4,1) 42.4s forwards;}
+  body.waveMotion #sea-manatee.go .seaBub{animation:seaBub .9s ease-out .3s forwards;}
+  body.waveMotion #sea-manatee.go .seaBub.b2{animation-delay:.6s;}
+  @keyframes mnHeave{from{translate:0 1.4px;} to{translate:0 -1.4px;}}
+  @keyframes mnDrift{0%,16.8%{transform:translateX(0); animation-timing-function:cubic-bezier(.45,0,.55,1);} 84%,100%{transform:translateX(calc(30vw - 40px));}}
+  @keyframes mnPitch{0%,2.4%{transform:translateY(26px) rotate(20deg); animation-timing-function:cubic-bezier(.2,.6,.4,1);}
+    4%{transform:translateY(6px) rotate(20deg); animation-timing-function:ease-in-out;} 6%,13.2%{transform:translateY(3px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    16.8%,60%{transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 62%{transform:translateY(0) rotate(10deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    64%,76%{transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.4,0,.6,1);}
+    80.8%,82.8%{transform:translateY(5px) rotate(-22deg); animation-timing-function:cubic-bezier(.5,0,.9,.5);}
+    84.8%,100%{transform:translateY(46px) rotate(-22deg);}}
+  @keyframes mnSpray{0%,2.4%{opacity:0; transform:translate(0,0);} 2.6%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 3.8%{opacity:0; transform:translate(0,-6px);}
+    59.9%{opacity:0; transform:translate(0,0);} 60.3%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 61.5%,100%{opacity:0; transform:translate(0,-6px);}}
+  body.waveMotion[data-sea="windy"] #sea-manatee.go .mnSpray{animation-name:mnSprayW;}
+  @keyframes mnSprayW{0%,2.4%{opacity:0; transform:translate(0,0);} 2.6%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 3.8%{opacity:0; transform:translate(-6px,-4px);}
+    59.9%{opacity:0; transform:translate(0,0);} 60.3%{opacity:1; transform:translate(0,0); animation-timing-function:ease-out;} 61.5%,100%{opacity:0; transform:translate(-6px,-4px);}}
+  /* the first Friday back (B6): after the look it turns and cruises LEFT, past the boat and behind the dock, without diving */
+  body.waveMotion #sea-manatee.go.leave .mnDrift{animation-name:mnDriftL;}
+  body.waveMotion #sea-manatee.go.leave .mnTurn{animation:mnTurn 50s linear both;}
+  body.waveMotion #sea-manatee.go.leave .mnPitch{animation-name:mnPitchL;}
+  body.waveMotion #sea-manatee.go.leave .seaRing.r1{animation:none;}
+  @keyframes mnDriftL{0%,18%{transform:translateX(0); animation-timing-function:cubic-bezier(.5,0,.75,1);} 98%,100%{transform:translateX(calc(-42vw - 160px));}}
+  @keyframes mnTurn{0%,16.8%{transform:scaleX(1); animation-timing-function:cubic-bezier(.45,0,.55,1);} 18%,100%{transform:scaleX(-1);}}
+  @keyframes mnPitchL{0%,2.4%{transform:translateY(26px) rotate(20deg); animation-timing-function:cubic-bezier(.2,.6,.4,1);}
+    4%{transform:translateY(6px) rotate(20deg); animation-timing-function:ease-in-out;} 6%,13.2%{transform:translateY(3px) rotate(20deg); animation-timing-function:cubic-bezier(.45,0,.55,1);}
+    16.8%,100%{transform:translateY(0) rotate(0deg);}}
+  /* the boat's part (B5): the gull leans over to look at it, 3.0–6.6 s, and straightens */
+  body.waveMotion #boat.manatee.gull .glPerch{animation:mnGullLean 50s linear both;}
+  @keyframes mnGullLean{0%,6%{transform:rotate(0deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 7.6%,12%{transform:rotate(11deg); animation-timing-function:cubic-bezier(.45,0,.55,1);} 13.6%,100%{transform:rotate(0deg);}}
+  #wnCap{display:none;} body.winter:not(.landing) #wnCap{display:inline;}
+  #wnCap .capLayer{transition:opacity 4s ease-in-out;} #wnCap .capLayer.smIn, #wnCap .capLayer.smOut{opacity:0;}
   @keyframes wnSwing{0%{rotate:0deg; animation-timing-function:ease-out;} 20%{rotate:8deg; animation-timing-function:ease-in-out;}
     48%{rotate:-5deg; animation-timing-function:ease-in-out;} 75%{rotate:2.5deg; animation-timing-function:ease-in-out;} 100%{rotate:0deg;}}
   .btGull .nvScarfKnit{fill:var(--nov);}  .btGull .nvScarfBar{fill:var(--cream);}   /* over .btGull path's navy */
@@ -3965,6 +4098,7 @@
     #ocPumpkins{display:none !important;}
     #nvLeaves, #nvGourds{display:none !important;}   /* v7.56: no fall on a phone, like the pumpkins */
     #nvScarecrow, #nvSquirrel, #nvTurkey, #sea-campfire, .nvBranch{display:none !important;}   /* v7.58: nor the rest of November 2.0 */
+    #wnSnow, #wnSnowman, #wnFrostBox, #wnCap{display:none !important;}   /* v7.65: nor winter's furniture */
     .wvLayer{display:none;}
     #sea{display:none;}
     .tplGrid{grid-template-columns:1fr;}
@@ -4163,6 +4297,7 @@
      Thanksgiving week's bowl of gourds on the sand where October's vine was. A tap on a leaf
      sends it spinning away; a tap on a gourd wobbles it. -->
 <div id="nvLeaves" aria-hidden="true"></div>
+<div id="wnSnow" aria-hidden="true"></div>   <!-- v7.65: the flurries' pool (Season → Winter → Snow) -->
 <svg id="nvGourds" viewBox="0 0 200 110" aria-hidden="true">
   <ellipse class="nvGShade" cx="100" cy="102" rx="90" ry="5"/>
   <g class="nvGourd g1" data-g="acorn">
@@ -4201,6 +4336,8 @@
      left third of the sand, so the scarecrow stands on the first open dune right of the boat:
      hung on his post among three cornstalks, a crow on his left arm, a hay bale at his right
      foot. A tap sends the crow off and back. -->
+<!-- v7.65: the snowman of beach finds, in the scarecrow's slot (Season → Winter → Snowman draws his stage; the visiting gull is appended) -->
+<svg id="wnSnowman" viewBox="0 0 120 160" aria-hidden="true"></svg>
 <svg id="nvScarecrow" viewBox="0 0 200 170" aria-hidden="true">
   <ellipse class="scShade" cx="104" cy="161" rx="78" ry="4.5"/>
   <g class="scStalk s1">
@@ -4595,6 +4732,7 @@
          branch reaching in from the corner, a limb that tapers in four steps, two twigs that fork
          once, buds at the tips. Season hangs five leaves on it (.nvHangs); now and then one lets
          go and becomes a falling leaf; a tap on the limb is a gust. -->
+    <div id="wnFrostBox" aria-hidden="true"></div>   <!-- v7.65: the frost (Season → Winter → Frost paints it) -->
     <svg class="nvBranch" id="nvBranch" viewBox="0 0 160 160" aria-hidden="true">
       <g class="nvLimbRig">
         <g class="nvLimb">
@@ -4935,6 +5073,24 @@
   <!-- v7.58 November 2.0 (docs/reviews/november-2.0-design.md, C): the sea's November acts.
        DUCKS: a raft of five, right to left — a leader, two pairs, each on its own bob; the
        fourth dabbles (head under, tail up) once. Navy, a paleturq cheek patch. -->
+  <!-- v7.65 the manatee (docs/reviews/winter-design.md C6a, winter-animation.md B6): a navy silhouette 92 px long in the
+       near lane at Wilson's spot; nested wrappers, one motion each: drift > turn (the leaving day) > bob > svg > the pitch -->
+  <div id="sea-manatee" class="seaThing">
+    <div class="mnDrift"><div class="mnTurn"><div class="mnBob">
+      <svg class="mnSvg" viewBox="0 0 100 40">
+        <defs><clipPath id="mnClip"><rect x="-60" y="-80" width="240" height="109"/></clipPath></defs>
+        <g clip-path="url(#mnClip)"><g class="mnPitch">
+          <g class="mnBody"><path d="M8,24 C6,19 9,15 14,14.6 C18,14 21,15 24,14.4 C30,10.4 42,8.2 54,8.6 C66,9 75,13 81,19 C83,14 90,9.6 97,11 C102.5,12.4 102.8,20.6 98,24 C94,27 88,26.6 84.6,25 C78,30 66,34.6 52,34.8 C38,35 26,33 18,30 C13,28.6 9.4,27 8.4,25.6 Z"/><path d="M24,29 C20,33 21,37 26,36.4 C28,34.6 28.6,31.6 27.6,29 Z"/></g>
+          <g class="mnDet"><circle class="mnPt" cx="18.6" cy="19.4" r="1.7"/><circle class="mnPt" cx="9.4" cy="17.6" r=".9"/><circle class="mnPt" cx="11.8" cy="16.6" r=".9"/>
+            <g class="mnPt"><circle cx="8.8" cy="21.6" r=".55"/><circle cx="10.4" cy="22.6" r=".55"/><circle cx="9" cy="23.6" r=".55"/><circle cx="11.6" cy="21.2" r=".55"/></g>
+            <path class="mnPtS" d="M50,9.4 l1.2,4.6 M54,9 l1.2,4.6 M58,9.4 l1.2,4.6"/><path class="mnPtS" d="M24.4,15.2 Q26.4,20 24.8,25" style="stroke-width:.7"/><path class="mnPtS" d="M88,15 Q93,13 98,15.6" style="stroke-width:.7"/></g>
+          <g class="mnSpray" transform="translate(6 12) rotate(-20)"><path d="M2,2 c-1.6,-2.6 -1,-5.4 1,-6.4 c.6,2 1.6,4 .6,6.6 z"/><path d="M6.6,1 c-.6,-3 .6,-5.6 2.8,-6 c0,2.2 .4,4.4 -1.4,6.2 z"/><path d="M-.8,4.6 c-2.4,-1.4 -3.2,-3.8 -2,-5.6 c1,1.6 2.6,3 2.6,5.4 z"/></g>
+        </g></g>
+        <ellipse class="seaRing r0" cx="18" cy="29.4" rx="16" ry="2.6"/><ellipse class="seaRing r1" cx="62" cy="29.4" rx="20" ry="2.8"/>
+        <circle class="seaBub b1" cx="14" cy="28" r="1.4"/><circle class="seaBub b2" cx="22" cy="28.4" r="1.1"/>
+      </svg>
+    </div></div></div>
+  </div>
   <div id="sea-ducks" class="seaThing">
     <svg viewBox="0 0 160 30">
       <g class="dkDuck d1" transform="translate(2 8)"><g class="dkBob"><g class="dkDip"><path d="M3,14 C3,10.6 6.6,9 11,9.4 L19,10 C22,9.6 25,8.6 27.6,7 C27.2,10 26.4,13 24,15.2 C20,16.8 10,16.8 6,16.2 C4.4,15.8 3,15.2 3,14 Z"/><path d="M8.6,10.4 C7.4,8 7.2,5.6 8.4,4 C9.6,2.6 11.8,2.4 13.2,3.6 C14.4,4.8 14.2,6.8 13,8.2 L12.8,10.4 Z"/><path d="M8.6,4.6 L4.4,5.6 C4.8,6.4 6.2,6.8 8.4,6.2 Z"/><ellipse class="dkCheek" cx="10.9" cy="5.7" rx="1.3" ry=".85"/><path class="dkWingLine" d="M13,12.2 C17,11.2 21,11.2 24,12.4"/></g></g></g>
@@ -5113,6 +5269,7 @@
 <!-- the static base: the sand dune and a still floor of water. In flow (it's the page's last row). -->
 <svg id="waves" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
   <path d="M0,55 C240,25 480,85 720,55 C960,25 1200,85 1440,55 C1680,25 1820,70 1920,50 L1920,120 L0,120 Z" class="wvSand"/>
+  <g id="wnCap"></g>   <!-- v7.65: the dune's snow -->
   <path d="M0,84 L1920,84 L1920,120 L0,120 Z" class="wvLight"/>
   <path d="M0,104 L1920,104 L1920,120 L0,120 Z" class="wvMid"/>
 </svg>
@@ -15477,7 +15634,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.64.0",
+  appVersion: "7.65.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -26895,7 +27052,19 @@ var Sea = (function(){
     /* campfire: a BEACH act (no lane; its own element on the sand right of the scarecrow, outside
        #sea) — a period's last third, afternoons only (afternoon: plan() needs the period's start,
        play() refuses before noon); three minutes, so it never holds the water (busy() skips it) */
-    campfire: { tier: "uncommon", dur: 180500, season: "november", beach: true, lastThird: true, afternoon: true }
+    campfire: { tier: "uncommon", dur: 180500, season: "november", beach: true, lastThird: true, afternoon: true },
+    /* v7.65 Winter (docs/reviews/winter-animation.md, "The ACTS rows"; from/to are month-day in the season's own
+       year). The manatee: winter's lead, common, near (Wilson's spot), from the second Monday; it greets every
+       period on its first two days and the first two school days back, and on the first Friday back it swims off
+       upriver (its last day; it comes back with a calf in February's version). The boat wears "manatee": the
+       gull leans to look. */
+    manatee:  { tier: "common",   dur: 50500, lanes: ["near"], greeting: true, season: "winter", boat: "manatee", from: "12-07", to: "01-08",
+                incompatible: ["attack", "whale", "scatter"] },
+    /* the gull's visit to the snowman: a BEACH act on its own clock (Season.visitTimes: the day he is finished in
+       the day's first class, then about one school day in three before the break, one in five in January to the
+       14th); never in a setlist (clock: true). Our gull leaves the masthead, the visitor sits on his pail four
+       minutes, and our gull comes home as it goes (gullBack). */
+    visit:    { tier: "uncommon", dur: 240500, season: "winter", beach: true, clock: true, gullBack: true, from: "12-14", to: "01-14" }
   };
   /* Halloween on the board: the 31st, or the last weekday before it (2026: Friday the 30th) */
   function halloweenDay(year){
@@ -26937,9 +27106,22 @@ var Sea = (function(){
     if (mo !== 11 || !inSeason({ season: "november" }, dateStr)) return { w: 0, day: 0, halloween: false, cap: 0 };
     return { w: 1, day: day, halloween: false, cap: 2 };
   }
-  /* the month's weight by date: October's or November's (zero otherwise) */
+  /* v7.65: winter's weight (winter-animation.md, "The season's weight"): nothing in the first week (the furniture is
+     the announcement, October's rule), then 1 (1.2 in January) and two winter acts a period; greet: the act that
+     greets every period today (the manatee on its first two days and the first two school days back) */
+  function winterWeight(dateStr){
+    var z = { w: 0, day: 0, halloween: false, cap: 0 };
+    if (typeof Season === "undefined" || !Season.winter || (cfg.ui && cfg.ui.season === "off")) return z;
+    var d = new Date(+String(dateStr).slice(0, 4), +String(dateStr).slice(5, 7) - 1, +String(dateStr).slice(8, 10));
+    if (!Season.winter(d)) return z;
+    var sy = d.getMonth() < 6 ? d.getFullYear() - 1 : d.getFullYear();
+    if (Math.round((d - Season.winterStart(sy)) / 864e5) < 7) return z;
+    return { w: d.getMonth() === 0 ? 1.2 : 1, day: d.getDate(), halloween: false, cap: 2, greet: Season.manateeGreets(d) ? "manatee" : null };
+  }
+  /* the month's weight by date: October's or November's (zero otherwise); v7.65: winter's from its first Monday */
   function seasonWeight(dateStr){
     var mo = +String(dateStr).slice(5, 7);
+    if (typeof Season !== "undefined" && Season.winter && Season.winter(new Date(+String(dateStr).slice(0, 4), mo - 1, +String(dateStr).slice(8, 10)))) return winterWeight(dateStr);
     return mo === 11 ? novemberWeight(dateStr) : octoberWeight(dateStr);
   }
   /* v7.58: the fog's clock — a pure function of the date: a November weekday, about two in five */
@@ -26951,6 +27133,15 @@ var Sea = (function(){
   }
   function inSeason(a, dateStr){                 // pure: the plan is a function of the date
     if (!a.season) return true;
+    if (a.season === "winter"){                  // v7.65: winter's acts — in winter, inside the act's own window
+      if ((typeof cfg !== "undefined" && cfg.ui && cfg.ui.season === "off") || typeof Season === "undefined" || !Season.winter) return false;
+      var wd = dateStr ? new Date(+String(dateStr).slice(0, 4), +String(dateStr).slice(5, 7) - 1, +String(dateStr).slice(8, 10)) : now();
+      wd = new Date(wd.getFullYear(), wd.getMonth(), wd.getDate());
+      if (!Season.winter(wd)) return false;
+      var sy = wd.getMonth() < 6 ? wd.getFullYear() - 1 : wd.getFullYear();
+      var md = function(s){ var m = +s.slice(0, 2); return new Date(m >= 7 ? sy : sy + 1, m - 1, +s.slice(3, 5)); };
+      return (!a.from || wd >= md(a.from)) && (!a.to || wd <= md(a.to));
+    }
     var mo = dateStr ? +String(dateStr).slice(5, 7) : (now().getMonth() + 1);
     var off = typeof cfg !== "undefined" && cfg.ui && cfg.ui.season === "off";
     /* v7.64: November ends when winter begins (the Monday after Thanksgiving week: Nov 30 in 2026) */
@@ -27024,6 +27215,7 @@ var Sea = (function(){
     var greetings = GREETINGS.filter(function(k){ return inSeason(ACTS[k], dateStr); });
     var gw = {}; greetings.forEach(function(k){ gw[k] = ACTS[k].season ? oct.w : 1; });   // v7.11.5: the rumour weight applies to the greeting too
     var greeting = oct.halloween ? "castaway" : pickWeighted(r, gw);
+    if (oct.greet && greetings.indexOf(oct.greet) !== -1) greeting = oct.greet;   // v7.65: the manatee greets every period on its days
     ev.push({ at: 45000, act: greeting }); count[greeting] = 1;
     var t = 10 * 60000;                          // hush through the first ten minutes (instruction)
     var end = (periodMin - 3) * 60000;           // nothing in the last three (packing up is chaos enough)
@@ -27036,6 +27228,7 @@ var Sea = (function(){
         var a = ACTS[k];
         if (a.greeting && k === greeting) return;
         if (a.sky) return;                         // v7.56: the geese keep their own clock (geeseTimes)
+        if (a.clock) return;                       // v7.65: the gull's visit keeps its own (Season.visitTimes)
         if (!inSeason(a, dateStr)) return;
         if (a.afternoon && !(startMin >= 12 * 60)) return;   // v7.58: the campfire is an afternoon's
         if (a.morning && !(startMin < 10 * 60 + 30)) return;
@@ -27072,7 +27265,7 @@ var Sea = (function(){
 
   /* ---- the stage ---- */
   var THINGS = ["serpent", "fish", "buoy", "whale", "turtle", "school", "paper", "attack", "dolphins", "bats", "ghost", "castaway", "bones", "geese",
-                "fog", "ducks", "loon", "trawler", "campfire"];   // v7.58
+                "fog", "ducks", "loon", "trawler", "campfire", "manatee", "visit"];   // v7.58; v7.65
   function elFor(name){ return document.getElementById("sea-" + name); }
   var boat = function(){ return document.getElementById("boat"); };
   var timers = {}, t0 = null, residents = { gull: false }, gullTid = null;
@@ -27086,7 +27279,7 @@ var Sea = (function(){
   }
   function busy(){
     var b = boat();
-    if (b && /\b(pennant|gullIn|gullOut|battle|rippled|haunted|wilson|fogged|ducks|trawl)\b/.test(b.className)) return true;   // v7.64: battle (was struck)
+    if (b && /\b(pennant|gullIn|gullOut|battle|rippled|haunted|wilson|fogged|ducks|trawl|manatee)\b/.test(b.className)) return true;   // v7.64: battle (was struck)
     return THINGS.some(function(n){ var th = elFor(n); return th && !ACTS[n].beach && th.classList.contains("go"); });   // v7.58: a fire on the sand never holds the water
   }
   function timerRunning(){
@@ -27191,6 +27384,20 @@ var Sea = (function(){
       }, 3200);
       return true;
     }
+    /* v7.65: while our gull sits on the snowman's pail nothing brings it home but the visit's own end, and no battle starts */
+    var visiting = (function(){ var v = elFor("visit"); return !!(v && v.classList.contains("go")); })();
+    if (visiting && (name === "attack" || (a.resident === "gull" && lane !== "visitBack"))) return false;
+    if (name === "visit"){
+      var vt = elFor("visit");
+      if (!vt || visiting || !(Season.snowman && Season.snowman.ready())) return false;
+      if (residents.gull) gullLeave();
+      vt.classList.remove("go"); try { void vt.getBBox(); } catch(e){} vt.classList.add("go");
+      clearTimeout(timers.visit);
+      timers.visit = setTimeout(function(){ vt.classList.remove("go"); }, a.dur);
+      clearTimeout(timers["defer:gullBack"]);
+      timers["defer:gullBack"] = setTimeout(function(){ if (ok() && !residents.gull) play("gull", "visitBack"); }, 235500);
+      return true;
+    }
     if (a.resident === "gull"){
       if (residents.gull) return false;
       boatWear("gullIn", 6200);
@@ -27213,6 +27420,7 @@ var Sea = (function(){
     placeLane(name, lane);
     if (a.boat) boatWear(a.boat, a.dur);       // same style recalc as .go: the same clock
     th.classList.remove("joined");
+    if (name === "manatee") th.classList.toggle("leave", !!(Season.manateeLeaves && Season.manateeLeaves(now())));   // v7.65: the first Friday back, it swims off upriver
     th.classList.add("go");
     /* v7.64: the serpent's two acts run on Serpent's frame loop, timed by the act it actually plays */
     if (name === "serpent" || name === "attack"){
@@ -27259,7 +27467,7 @@ var Sea = (function(){
     var b = boat();
     if (b && residents.gull){ residents.gull = false; b.classList.remove("gull"); }
     try { Serpent.stop(); } catch(e){}           // v7.64: the serpent's frame loop, and the boat it was driving
-    if (b) ["pennant", "gullIn", "gullOut", "battle", "rippled", "haunted", "wilson", "fogged", "ducks", "trawl", "hop"].forEach(function(c){
+    if (b) ["pennant", "gullIn", "gullOut", "battle", "rippled", "haunted", "wilson", "fogged", "ducks", "trawl", "hop", "manatee"].forEach(function(c){
       b.classList.remove(c); clearTimeout(timers["boat:" + c]);
     });
   }
@@ -27320,10 +27528,25 @@ var Sea = (function(){
     fogDone = ds;
     stage("fog");
   }
+  /* v7.65: the gull's visit to the snowman, at its minute (Season.visitTimes), once a day, into a clear sea, within
+     ten minutes of its slot */
+  var visitDone = null;
+  function visitTick(s){
+    if (s.type !== "in" || typeof Season === "undefined" || !Season.visitTimes) return;
+    var ds = dateKey(now());
+    if (visitDone === ds) return;
+    var v = Season.visitTimes(ds);
+    if (!v || v.p !== s.idx) return;
+    var el = (s.totalMs || 0) - (s.remainMs || 0);
+    if (el < v.at || el > v.at + 10 * 60000 || (s.remainMs || 0) < 5 * 60000) return;
+    if (!ok() || busy() || timerRunning()) return;
+    if (stage("visit")) visitDone = ds;
+  }
   function tick(){
     var s = bellNow();
     try { skyTick(s); } catch(e){}
     try { fogTick(s); } catch(e){}
+    try { visitTick(s); } catch(e){}             // v7.65
     if (s.type === "in"){
       var d = dateKey(now()), key = d + "|" + s.idx;
       if (!current || current.key !== key){
@@ -27439,6 +27662,7 @@ var Sea = (function(){
     geeseTimes: geeseTimes,                      // v7.56: pure — the sky's minutes for a date (tests)
     octoberWeight: octoberWeight,
     novemberWeight: novemberWeight,              // v7.58
+    winterWeight: winterWeight,                  // v7.65: pure — {w, cap, greet}
     fogMorning: fogMorning,                      // v7.58: pure — is this date a fog morning?
     seeded: function(str){ return rng(hash(str)); },   // v7.58: the director's seeded generator, for Season's clocks
     _every: function(ms){                        // test hook: hurry the free-time scheduler (bells or not)
@@ -32224,6 +32448,7 @@ var Season = (function(){
     try { Leaves.step(); } catch(e){}
     try { Fall.step(); } catch(e){}
     try { Lights.step(); } catch(e){}            // v7.64
+    try { Winter.step(); } catch(e){}            // v7.65: the frost, the snowman, the dune's snow
   }
 
   /* ---- v7.56 November ----
@@ -32577,6 +32802,638 @@ var Season = (function(){
     return { count: count, step: step, wire: wire, takeDown: takeDown, relayout: function(){ built = null; step(); } };
   })();
 
+  /* ---- v7.65 WINTER, DECEMBER (docs/reviews/winter-design.md C1–C3, C5, C6a; winter-animation.md B1, B2, B4–B6, B11) ----
+     The rest of December's winter, from the approved 2.1 drawings (docs/reviews/winter-proofs*.{html,js}):
+     the frost grown like window frost in the clock card's corner (one canvas, painted once per stage in an
+     idle callback, crossfaded over 4 s), occasional flurries (Snow: a fixed pool of three flakes on the Web
+     Animations API, never more on the board), the snowman of beach finds in the scarecrow's slot (S1 a
+     snowball Nov 30, S2 stacked Dec 7, S3 finished Dec 14), the dune's snow, and the clocks the sea reads
+     (the manatee's greeting days, its leaving day, the gull's visits). Every date-driven change is a pure
+     function of the date (and the board's school calendar) and happens at the day's first tick. */
+  var Winter = (function(){
+    var DAY = 864e5;
+    function mid(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+    function seasonYear(d){ return d.getMonth() < 6 ? d.getFullYear() - 1 : d.getFullYear(); }
+    function days(a, b){ return Math.round((mid(b) - mid(a)) / DAY); }
+    function plus(d, n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+    function parse(ds){ return new Date(+String(ds).slice(0, 4), +String(ds).slice(5, 7) - 1, +String(ds).slice(8, 10)); }
+    function school(d){ try { return Bell.isSchoolDay(d); } catch(e){ var w = d.getDay(); return w > 0 && w < 6; } }
+    /* the first Monday of January (2027: Jan 4) — the design's January stages count from it */
+    function janMonday(y){ var d = new Date(y + 1, 0, 1); d.setDate(1 + (8 - d.getDay()) % 7); return d; }
+    /* the last December school day before the break (2026: Fri Dec 18) */
+    function lastDecDay(y){ var d = new Date(y, 11, 31), g = 0; while (!school(d) && g++ < 31) d.setDate(d.getDate() - 1); return d; }
+    /* the frost's s (design C1's table). FROST_CAP: this version grows it through F4 (Jan 4–8); the January
+       version (the peak, with the frozen sea) lifts the cap — the generator already paints any s up to 1. */
+    var FROST_CAP = .78;
+    function frostS(d, y){
+      var ws = winterStart(y), jm = janMonday(y), n = days(ws, d), j = days(jm, d), peak = Lights.takeDown(y + 1);
+      var s = n < 7 ? .25 : n < 14 ? .40 : j < 0 ? .55 : j < 7 ? .78 : d < peak ? .90 : j < 28 ? 1 : j < 40 ? .72 : j < 46 ? .45 : j < 53 ? .22 : 0;
+      return Math.min(FROST_CAP, s);
+    }
+    /* → null outside winter, else { frost: s, sm: "S1"|"S2"|"S3", cap: dune cover }. Pure in the date. */
+    function stages(d){
+      d = mid(d || now());
+      if (!inWinter(d)) return null;
+      var y = seasonYear(d), n = days(winterStart(y), d), j = days(janMonday(y), d);
+      return {
+        frost: frostS(d, y),
+        sm: n < 7 ? "S1" : n < 14 ? "S2" : "S3",          // finished Dec 14 (the thaw's stages come with February's version)
+        cap: n < 7 ? .45 : n < 14 ? .7 : j < 39 ? .85 : j < 46 ? .6 : j < 53 ? .3 : 0
+      };
+    }
+    /* the manatee's greeting days: its debut (the first two school days from the second Monday, Dec 7–8) and the
+       first two school days back (2027: Jan 6–7; Jan 4–5 are teacher days since 7.64). Its leaving day: the Friday
+       of the first week back (Jan 8). */
+    function firstSchoolDays(from, n){ var out = [], d = mid(from), g = 0; while (out.length < n && g++ < 40){ if (school(d)) out.push(dateKey(d)); d = plus(d, 1); } return out; }
+    function manateeGreets(d){
+      d = mid(d); if (!inWinter(d)) return false;
+      var y = seasonYear(d), k = dateKey(d);
+      return firstSchoolDays(plus(winterStart(y), 7), 2).indexOf(k) !== -1 || firstSchoolDays(new Date(y + 1, 0, 1), 2).indexOf(k) !== -1;
+    }
+    function manateeLeaves(d){ d = mid(d); var y = seasonYear(d); return inWinter(d) && days(plus(janMonday(y), 4), d) === 0; }
+    /* the gull's visits to the snowman (design C3, B4): the first on the day he is finished, in the day's first
+       class, 60 s after its greeting; then about one school day in three before the break, one in five in January
+       up to the freeze (Jan 15 on: the gull walks on the ice instead, with the frozen sea). Pure: { p, at } | null */
+    function visitTimes(ds){
+      var d = parse(ds); if (!inWinter(d) || !school(d)) return null;
+      var y = seasonYear(d), n = days(winterStart(y), d), r = Sea.seeded(ds + "|visit");
+      if (n < 14) return null;
+      if (n === 14) return { p: 0, at: 105000 };
+      var odds = d <= lastDecDay(y) ? 1 / 3 : (d.getFullYear() === y + 1 && d.getMonth() === 0 && d.getDate() < 15) ? .2 : 0;
+      if (!(r() < odds)) return null;
+      return { p: Math.floor(r() * 6), at: Math.round((18 + r() * 12) * 60000) };   // a period's middle third
+    }
+    /* flurries.times(date) — snow is rare weather (design C2): one to three short flurries a school week, each in
+       one period, starting 10–35 minutes in, 3–6 minutes long, 5–9 flakes; one a day over the break (free time,
+       10:00–2:30); none from Feb 15. Nov 30's week has one: the first snowflake, in the morning's first period.
+       Pure in the date (and the board's calendar): → [] or [{ p, at, len, n, first? }] / [{ free: true, min, len, n }] */
+    function flurryTimes(ds){
+      var d = parse(ds); if (!inWinter(d)) return [];
+      var y = seasonYear(d), ws = winterStart(y), n = days(ws, d), jm = janMonday(y), j = days(jm, d);
+      if (n === 0) return [{ p: 0, at: 10 + (Sea.seeded(ds + "|snow")() * 15 | 0), len: 5, n: 6, first: true }];
+      if (n < 7) return [];
+      var R = Sea.seeded(ds + "|snow");
+      if (!school(d)){                                   // the break (and a weekend in it): one a day, free time only
+        if (d > lastDecDay(y) && d < jm) return [{ free: true, min: Math.round(10 * 60 + R() * 270), len: 3 + Math.floor(R() * 4), n: 5 + Math.floor(R() * 5) }];
+        return [];
+      }
+      var perWeek = j < 0 ? 2 : j < 32 ? 3 : j < 39 ? 1 : 0;   // Dec 7–18: 2 · Jan 4 – Feb 5: 3 · Feb 8–12: 1 · then none
+      if (!perWeek) return [];
+      /* this school week's days, seeded by its Monday: perWeek of them get one */
+      var mon = plus(d, -((d.getDay() + 6) % 7)), wk = [], i;
+      for (i = 0; i < 5; i++){ var x = plus(mon, i); if (school(x)) wk.push(dateKey(x)); }
+      var W = Sea.seeded(dateKey(mon) + "|snowweek"), pick = wk.slice();
+      for (i = pick.length - 1; i > 0; i--){ var k = Math.floor(W() * (i + 1)), t = pick[i]; pick[i] = pick[k]; pick[k] = t; }
+      if (pick.slice(0, perWeek).indexOf(ds) === -1) return [];
+      return [{ p: Math.floor(R() * 7), at: 10 + Math.floor(R() * 26), len: 3 + Math.floor(R() * 4), n: 5 + Math.floor(R() * 5) }];
+    }
+
+    /* ===== the drawings (winter-proofs.html / winter-proofs-21.js, reused, not redrawn) ===== */
+    function rngP(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    function r1(n){ return Math.round(n * 10) / 10; }
+    function P2(p){ return r1(p[0]) + "," + r1(p[1]); }
+    function poly(ps){ return "M" + ps.map(P2).join(" L") + " Z"; }
+    function lump(cx, cy, rx, ry, seed, flat){
+      var Rn = rngP(seed), pts = [], n = 22, i;
+      for (i = 0; i < n; i++){ var a = i / n * Math.PI * 2, j = 1 + (Rn() - .5) * .07, y = cy + Math.sin(a) * ry * j; if (flat && y > cy + ry * .78) y = cy + ry * .78 + (y - cy - ry * .78) * .25; pts.push([cx + Math.cos(a) * rx * j, y]); }
+      var d = "M" + P2(pts[0]);
+      for (i = 0; i < n; i++){ var p1 = pts[(i + 1) % n], p0 = pts[i]; d += " Q" + P2(p0) + " " + P2([(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2]); }
+      return d + " Z";
+    }
+    function ballSnow(cx, cy, rx, ry, seed, flat, fleck){
+      var s = '<path class="sn" d="' + lump(cx, cy, rx, ry, seed, flat) + '"/>';
+      s += '<path class="snShade" d="M' + P2([cx + rx * .92, cy - ry * .1]) + ' C' + P2([cx + rx * .9, cy + ry * .7]) + ' ' + P2([cx + rx * .2, cy + ry * .95]) + ' ' + P2([cx - rx * .55, cy + ry * .78]) + ' C' + P2([cx - rx * .05, cy + ry * .62]) + ' ' + P2([cx + rx * .62, cy + ry * .42]) + ' ' + P2([cx + rx * .92, cy - ry * .1]) + ' Z"/>';
+      if (fleck){ var Rn = rngP(seed + 9); for (var i = 0; i < 16; i++){ var a = Math.PI * (.15 + .7 * Rn()), rr = .6 + .35 * Rn(); s += '<circle class="snFleck" cx="' + r1(cx + Math.cos(a) * rx * rr) + '" cy="' + r1(cy + Math.sin(a) * ry * rr) + '" r="' + r1(.8 + Rn() * .9) + '"/>'; } }
+      return s;
+    }
+    function prints(x, y, n){ var s = ""; for (var i = 0; i < n; i++){ var px = x + i * 9, py = y + (i % 2 ? 3 : 0);
+      s += '<path class="print" d="M' + r1(px) + ',' + r1(py) + ' l-3,-2.4 M' + r1(px) + ',' + r1(py) + ' l-3.6,.4 M' + r1(px) + ',' + r1(py) + ' l-2.4,2.6 M' + r1(px) + ',' + r1(py) + ' l2,0"/>'; } return s; }
+    function scallop(x, y, sz, rot){ var s = '<g transform="translate(' + r1(x) + ' ' + r1(y) + ') rotate(' + (rot || 0) + ') scale(' + sz + ')"><path class="shell" d="M0,5 L-5.6,-1.2 C-5,-5.4 -2.6,-6.6 0,-6.6 C2.6,-6.6 5,-5.4 5.6,-1.2 Z"/><path class="shell" d="M-1.6,5.6 L1.6,5.6 L0,4 Z"/>';
+      for (var i = -2; i <= 2; i++) s += '<path class="shellRib" d="M0,4.4 L' + r1(i * 2.3) + ',' + r1(-5.8 + Math.abs(i) * .5) + '"/>'; return s + '</g>'; }
+    function dollar(x, y, r){ var s = '<circle class="dollar" cx="' + x + '" cy="' + y + '" r="' + r + '"/>'; for (var i = 0; i < 5; i++){ var a = i * Math.PI * 2 / 5 - Math.PI / 2; s += '<path class="dollarP" d="M' + r1(x + Math.cos(a) * r * .18) + ',' + r1(y + Math.sin(a) * r * .18) + ' L' + r1(x + Math.cos(a) * r * .66) + ',' + r1(y + Math.sin(a) * r * .66) + '"/>'; } return s; }
+    function cone(x, y, len, ang){ return '<g class="smNose" transform="translate(' + x + ' ' + y + ') rotate(' + ang + ')"><path class="cone" d="M0,-3.6 C-6,-3 -14,-1.4 ' + (-len) + ',.4 C-14,1.6 -6,3.2 0,3.6 C1.4,2 1.4,-2 0,-3.6 Z"/>' +
+      '<path class="coneBand" d="M-4,-3 L-3,3 M-9,-2 L-8.2,2.2 M-14,-1 L-13.4,1.4"/></g>'; }
+    function driftArm(x0, y0, x1, y1, fork){
+      var dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L, w0 = 3.2, w1 = 1.1;
+      var d = poly([[x0 + nx * w0, y0 + ny * w0], [x1 + nx * w1, y1 + ny * w1], [x1 - nx * w1, y1 - ny * w1], [x0 - nx * w0, y0 - ny * w0]]);
+      var fx = x0 + dx * .66, fy = y0 + dy * .66, s = '<path class="drift" d="' + d + '"/>';
+      if (fork){ var a = Math.atan2(dy, dx) + fork, fl = L * .34; s += '<path class="drift" d="' + poly([[fx + nx * 1.6, fy + ny * 1.6], [fx + Math.cos(a) * fl, fy + Math.sin(a) * fl], [fx - nx * 1.6, fy - ny * 1.6]]) + '"/>'; }
+      s += '<path class="driftHi" d="M' + P2([x0 + dx * .1 + nx * .8, y0 + dy * .1 + ny * .8]) + ' L' + P2([x0 + dx * .55 + nx * .5, y0 + dy * .55 + ny * .5]) + '"/>';
+      /* the dusting: a thin line of snow along the arm's upper edge (a flurry, until the bell) */
+      var up = ny < 0 ? 1 : -1;
+      s += '<path class="smFresh smFreshLine" d="M' + P2([x0 + dx * .08 + nx * w0 * up, y0 + dy * .08 + ny * w0 * up]) + ' L' + P2([x0 + dx * .8 + nx * 1.5 * up, y0 + dy * .8 + ny * 1.5 * up]) + '"/>';
+      return s;
+    }
+    function seaweed(){
+      var s = '<path class="sarg" d="M41,79 C50,85 66,85 77,78 L78,84 C66,90 50,90 40,85 Z"/><path class="sargD" d="M43,84 C52,88 64,88 76,83 L77,85 C65,90 51,90 42,86 Z"/>' +
+        '<path class="sarg" d="M47,83 C44,92 46,104 42,116 L48,117 C51,105 50,94 53,85 Z"/><path class="sarg" d="M42,116 l-4,6 l7,-2 l3,5 l1,-8 Z"/>';
+      [[52,92,-1],[46,99,1],[51,106,-1],[45,112,1],[58,80,-1],[68,80,-1],[74,77,1],[38,82,1]].forEach(function(f){ var x = f[0], y = f[1], d = f[2];
+        s += '<path class="sargD" d="M' + x + ',' + y + ' c' + (d * 3) + ',-3 ' + (d * 7) + ',-3 ' + (d * 9) + ',-1 c' + (-d * 3) + ',2 ' + (-d * 6) + ',3 ' + (-d * 9) + ',1 z"/>'; });
+      [[44,95],[47,103],[43,110],[57,86],[63,87],[71,84],[49,89],[60,84]].forEach(function(b){ s += '<circle class="sargB" cx="' + b[0] + '" cy="' + b[1] + '" r="1.5"/>'; });
+      return '<g class="wnScarf">' + s + '</g>';
+    }
+    function pail(x, y, rot, sc){
+      return '<g class="smPail" transform="translate(' + x + ' ' + y + ') rotate(' + rot + ') scale(' + sc + ')"><path class="pailHandle" d="M14,-3 C22,1 24,9 19,14"/><path class="pail" d="M-16,0 L16,0 L12,-21 L-12,-21 Z"/>' +
+        '<path class="pailRim" d="M-17,-1 L17,-1 L17,3.4 L-17,3.4 Z"/><path class="pailStar" d="M3,-13 l1.6,3.4 3.6,.4 -2.7,2.4 .8,3.6 -3.3,-1.9 -3.3,1.9 .8,-3.6 -2.7,-2.4 3.6,-.4 Z"/>' +
+        '<path d="M-12,-21 L12,-21 L12.3,-19.4 L-12.3,-19.4 Z" fill="#3B66BE"/>' +
+        '<path class="smFresh" d="M-12.6,-20.6 C-11,-24.4 -5,-25.4 0,-25 C5,-25.4 11,-24.2 12.6,-20.6 Z"/></g>'; }
+    /* the snowman (proofs' snowman(stage), regrouped so the head turns on its neck: .smHead, origin 61,74) */
+    function snowmanSVG(stage){
+      var patch = '<path fill="#fff" stroke="#4C7BD9" stroke-opacity=".55" stroke-width="1.2" d="M14,150 C20,141 44,139 62,140 C84,139 104,142 112,150 C100,155 26,156 14,150 Z"/>';
+      if (stage === "S1")
+        return '<path class="track" d="M70,151 C82,148 96,148 112,151 L112,154 C96,152 82,152 70,154 Z"/>' + patch.replace("M14,150", "M30,150") + '<ellipse class="snContact" cx="58" cy="150" rx="24" ry="4.4"/>' +
+          '<g class="smTap smBall">' + ballSnow(58, 134, 20, 17, 3, true, true) + '<path class="smFresh" d="M42,124 C46,117.6 52,116 58,116.2 C65,116 71,118 74.6,124.4 C68,121.4 48,121 42,124 Z"/></g>' + prints(76, 146, 4) + '<path class="sargB" d="M96,147 l4,-2 l2,3 Z"/>';
+      var full = stage !== "S2", s = patch + '<ellipse class="snContact" cx="62" cy="150" rx="40" ry="6"/>' + prints(84, 146, full ? 4 : 3);
+      s += '<g class="smTap">' + ballSnow(62, 126, 31, 25, 5, true, true);
+      s += driftArm(42, 92, 14, 66, -.55) + driftArm(80, 94, 108, 112, .5);
+      s += ballSnow(60, 93, 21, 19, 8, false, false);
+      if (full) s += scallop(59, 89, 1, 6) + dollar(60, 102, 4.4) + '<g transform="translate(62 121) rotate(80) scale(.62)">' + cone(0, 0, 18, 0) + '</g>';
+      else s += scallop(59, 89, .9, 6);
+      var head = ballSnow(61, 63, 16, 15, 11, false, false) +
+        '<circle class="peb" cx="55" cy="60" r="2.7"/><circle class="peb" cx="66.5" cy="59.4" r="2.1"/><circle class="pebHi" cx="54.2" cy="59" r=".8"/><circle class="pebHi" cx="65.9" cy="58.6" r=".6"/>';
+      if (full){
+        head += [[52,70,1.1],[55.5,72.4,1.2],[59.5,73.4,1.3],[63.6,72.8,1.2],[67,70.8,1.1]].map(function(p){ return '<circle class="peb" cx="' + p[0] + '" cy="' + p[1] + '" r="' + p[2] + '"/>'; }).join("");
+        head += cone(57, 65.5, 21, -4) + pail(61, 50, -7, .95);
+      } else head += '<path class="smFresh" d="M48,56 C50,49.6 56,47.4 61,47.6 C67,47.4 72,49.6 74,56 C68,52.6 54,52.6 48,56 Z"/>';
+      s += '<g class="smHead">' + head + '</g>';
+      if (full) s += seaweed();
+      return s + '</g>';
+    }
+    /* the visiting gull (the boat's own drawings: the perch with its November scarf, and the glide) */
+    var GULL_PERCH = '<path class="glLegs" d="M-.6,-3.4 L-.8,0 M1.8,-3.4 L1.8,0"/>' +
+      '<path d="M-11,-6.2 L-6,-7.4 C-3,-9.6 2,-10 4.4,-9.6 C4.2,-11.8 5.4,-13.2 7.2,-13.2 C8.8,-13.2 9.6,-12.2 9.8,-11.2 L9.6,-10.2 C8.8,-9.2 8.2,-8.6 8.2,-7.6 C8,-5 5,-3.2 .5,-3.2 C-3.5,-3.2 -6.4,-4.4 -8,-5.4 Z"/>' +
+      '<path d="M-12.4,-6.4 C-7,-9.4 0,-9.6 5,-8 C4,-5.8 0,-4.6 -4,-4.8 C-7,-5 -10,-5.8 -12.4,-6.4 Z"/>' +
+      '<path d="M9.7,-11.6 L13,-10.8 L9.6,-10.1 Z"/><circle class="vgEye" cx="7.6" cy="-11.8" r=".7"/>' +
+      '<g class="vgScarf"><path class="k" d="M4.8,-9.4 L-1.6,-10.8 L-1.4,-9.4 L4.6,-8.4 Z"/><path class="k" d="M5,-8.8 L-.4,-7.4 L0,-6.2 L5.2,-8 Z"/><path class="b" d="M1.4,-10.1 L.6,-10.3 L.8,-9 L1.6,-8.9 Z M2.2,-7.9 L1.4,-7.6 L1.8,-6.6 L2.6,-7 Z"/>' +
+      '<path class="k" d="M4.2,-10.2 C5.6,-11 7.6,-11.2 8.9,-10.3 L8.6,-8.5 C7.3,-9.2 5.6,-9 4.4,-8.3 Z"/><path class="b" d="M6,-10.7 L6.8,-10.8 L6.7,-8.9 L5.9,-8.8 Z"/></g>';
+    var GULL_FLY = '<path d="M-.6,-8.4 Q-3.5,-13.8 -8.5,-13.6 Q-11.6,-13.4 -13.6,-11.2 Q-8.6,-11.8 -5.4,-9.6 Q-3,-8 -1.8,-7 Z"/><path d="M.6,-8.4 Q3.5,-13.8 8.5,-13.6 Q11.6,-13.4 13.6,-11.2 Q8.6,-11.8 5.4,-9.6 Q3,-8 1.8,-7 Z"/>' +
+      '<path d="M-5,-7.6 Q0,-9.6 4.6,-8.2 L7.2,-7.6 L4.6,-7 Q0,-5.6 -5,-7.6 Z"/>';
+    var VISIT = '<g transform="translate(64 26.4) scale(1.25)"><g id="sea-visit" class="wnVisit"><g class="vgX"><g class="vgY"><g class="vgSettle"><g class="vgTurn"><g class="vgNod">' +
+      '<g class="vgFly">' + GULL_FLY + '</g><g class="vgPerch">' + GULL_PERCH + '</g></g></g></g></g></g></g></g>';
+    /* the flakes: perfect (one arm, mirrored, turned six times), filled white, an ice-blue edge, a pale rib */
+    function flakeBody(kind, R){
+      var arm = "", hub = "";
+      if (kind === "dendrite"){
+        var w0 = R * .085;
+        arm = poly([[-w0, 0], [w0, 0], [w0 * .45, -R], [-w0 * .45, -R]]);
+        [[.34, .36], [.56, .3], [.76, .19]].forEach(function(b){
+          var y = -R * b[0], L = R * b[1], w = R * .05, a = 60 * Math.PI / 180;
+          [-1, 1].forEach(function(sd){ var dx = sd * Math.sin(a), dy = -Math.cos(a), px = -dy, py = dx;
+            arm += " " + poly([[px * w, y + py * w], [-px * w, y - py * w], [dx * L - px * w * .5, y + dy * L - py * w * .5], [dx * L + px * w * .5, y + dy * L + py * w * .5]]); });
+        });
+        hub = poly([0, 1, 2, 3, 4, 5].map(function(i){ var a = i * Math.PI / 3; return [Math.sin(a) * R * .2, -Math.cos(a) * R * .2]; }));
+      } else if (kind === "plate"){
+        var w = R * .16;
+        arm = poly([[-w, 0], [w, 0], [w, -R * .74], [w * 1.55, -R * .86], [w * 1.2, -R], [-w * 1.2, -R], [-w * 1.55, -R * .86], [-w, -R * .74]]);
+        hub = poly([0, 1, 2, 3, 4, 5].map(function(i){ var a = i * Math.PI / 3 + Math.PI / 6; return [Math.sin(a) * R * .42, -Math.cos(a) * R * .42]; }));
+      } else hub = poly([0, 1, 2, 3, 4, 5].map(function(i){ var a = i * Math.PI / 3; return [Math.sin(a) * R, -Math.cos(a) * R]; }));
+      var s = '<path d="' + hub + '"/>';
+      if (arm) for (var i = 0; i < 6; i++) s += '<path d="' + arm + '" transform="rotate(' + (i * 60) + ')"/>';
+      return s;
+    }
+    function flake(kind, R, edge){
+      var body = flakeBody(kind, R), rib = "";
+      if (kind !== "fleck") for (var i = 0; i < 6; i++) rib += '<path d="M0,0 L0,' + r1(-R * (kind === "plate" ? .88 : .8)) + '" transform="rotate(' + (i * 60) + ')"/>';
+      return '<g class="fkEdge" stroke-width="' + edge + '">' + body + '</g><g class="fkFill">' + body + '</g>' +
+        (rib ? '<g class="fkRib" stroke-width="' + r1(R * (kind === "plate" ? .07 : .045) * 10) / 10 + '">' + rib + '</g>' : '');
+    }
+
+    /* ===== the frost (C1, B2): proofs' frostPaint(), on the live clock card ===== */
+    var Frost = (function(){
+      var box = null, cvs = [], front = -1, painted = null, hold = false, fitDay = null, fit = null, pend = 0, lastCheck = 0;
+      var stats = { segments: 0, ms: 0, px: "", s: 0, paints: 0 };
+      function card(){ return document.getElementById("clockWidget"); }
+      function shown(){
+        var b = document.body, c = card();
+        return !!c && Season.active() === "winter" && !b.classList.contains("landing") && !b.classList.contains("focusMode") && !c.classList.contains("stLive") &&
+          window.innerWidth > 780 && window.innerHeight > 540;
+      }
+      /* the card's free corner (tools/proofs/winter.js capture): every visible text or bar box in the face is
+         content (the frost keeps 28 px from it), every control on the card gets a 12 px clear ring */
+      function measure(){
+        var c = card(), face = document.getElementById("clockFace");
+        if (!c || !face) return null;
+        var C = c.getBoundingClientRect();
+        if (C.width < 300 || C.height < 200) return null;
+        var cR = -1e9, cT = 1e9;
+        [].forEach.call(face.querySelectorAll("*"), function(el){
+          if (el.closest("svg")) return;
+          var own = false; for (var n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 3 && n.textContent.trim()){ own = true; break; }
+          if (!own && el.children.length) return;
+          var b = el.getBoundingClientRect(); if (b.width < 1 || b.height < 1) return;
+          var st = getComputedStyle(el); if (st.visibility === "hidden" || +st.opacity < .05) return;
+          cR = Math.max(cR, b.right); cT = Math.min(cT, b.top);
+        });
+        if (cR < -1e8) return null;
+        var ctl = [];
+        [].forEach.call(c.querySelectorAll("button, .wSize, .wFocus, [role=button]"), function(el){
+          if (el.closest("#clockFace")) return;
+          var b = el.getBoundingClientRect(); if (b.width < 2 || b.height < 2 || b.right < C.right - 560 || b.top > C.top + 140) return;
+          if (getComputedStyle(el).visibility === "hidden") return;
+          ctl.push({ x: b.left, y: b.top, w: b.width, h: b.height });
+        });
+        var fs = document.getElementById("fsBtn"), fb = fs && fs.getBoundingClientRect();
+        if (fb && fb.width > 2 && fb.left < C.right && fb.bottom > C.top) ctl.push({ x: fb.left, y: fb.top, w: fb.width, h: fb.height });
+        var hb = document.body.classList.contains("locked") ? 0 : 30;   // editing: under the handle band (the web's rule)
+        return { clock: { x: C.left, y: C.top + hb, w: C.width, h: C.height - hb }, cardL: C.left, cardT: C.top, cl: c.clientLeft, ct: c.clientTop,
+                 free: { uMax: C.right - (cR + 28), vTop: cT - 28 - (C.top + hb), contentRight: cR, contentTop: cT }, controls: ctl };
+      }
+      function envelope(G, s){
+        var C = G.clock, f = G.free, Rx = C.x + C.w, T = C.y;
+        var u = Math.max(0, Math.min(520, .92 * f.uMax)) * s, strip = .64 * C.h * s, v = f.vTop >= 20 ? Math.min(130, .92 * f.vTop) * s : 0, band = v ? .42 * C.w * s : 0;
+        return { Rx: Rx, T: T, u: u, strip: strip, v: v, band: band, x0: Rx - Math.max(u, band) - 4, w: Math.max(u, band) + 4, h: strip + 4 };
+      }
+      function paint(cv, G, s, dpr){
+        var E = envelope(G, s), ctls = G.controls, t0 = performance.now();
+        cv.width = Math.max(1, Math.ceil(E.w * dpr)); cv.height = Math.max(1, Math.ceil(E.h * dpr));
+        var x = cv.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.translate(-E.x0, -E.T);
+        var Rn = rngP(7), segs = 0;
+        function inside(px, py){
+          if (px > E.Rx - 1 || py < E.T + 1) return false;
+          var inStrip = px >= E.Rx - E.u && py <= E.T + E.strip, inBand = py <= E.T + E.v && px >= E.Rx - E.band;
+          if (!inStrip && !inBand) return false;
+          for (var i = 0; i < ctls.length; i++){ var q = ctls[i], dx = px - (q.x + q.w / 2), dy = py - (q.y + q.h / 2), rr = Math.max(q.w, q.h) / 2 + 12; if (dx * dx + dy * dy < rr * rr) return false; }
+          return true;
+        }
+        /* 1. the rime haze: a translucent pane, whitest at the frame */
+        if (E.u > 2){
+          var hz = x.createLinearGradient(E.Rx, 0, E.Rx - E.u, 0);
+          hz.addColorStop(0, "rgba(206,221,247,.78)"); hz.addColorStop(.35, "rgba(218,230,250,.5)"); hz.addColorStop(1, "rgba(232,240,252,0)");
+          x.save(); x.beginPath(); x.rect(E.Rx - E.u, E.T, E.u, E.strip); x.clip();
+          x.fillStyle = hz; x.fillRect(E.Rx - E.u, E.T, E.u, E.strip);
+          var hzV = x.createLinearGradient(0, E.T + E.strip * .55, 0, E.T + E.strip); hzV.addColorStop(0, "rgba(255,255,255,0)"); hzV.addColorStop(1, "rgba(255,255,255,1)");
+          x.globalCompositeOperation = "destination-out"; x.fillStyle = hzV; x.fillRect(E.Rx - E.u, E.T + E.strip * .55, E.u, E.strip * .45); x.restore();
+        }
+        if (E.v){ var hb = x.createLinearGradient(0, E.T, 0, E.T + E.v); hb.addColorStop(0, "rgba(206,221,247,.78)"); hb.addColorStop(1, "rgba(232,240,252,0)");
+          x.save(); x.beginPath(); x.rect(E.Rx - E.band, E.T, E.band - E.u * .5, E.v); x.clip(); x.fillStyle = hb; x.fillRect(E.Rx - E.band, E.T, E.band, E.v);
+          var hbH = x.createLinearGradient(E.Rx - E.band, 0, E.Rx - E.band * .7, 0); hbH.addColorStop(0, "rgba(255,255,255,1)"); hbH.addColorStop(1, "rgba(255,255,255,0)");
+          x.globalCompositeOperation = "destination-out"; x.fillStyle = hbH; x.fillRect(E.Rx - E.band, E.T, E.band * .3, E.v); x.restore(); }
+        /* 2. the dendrites: feather plumes of needles from nuclei along the frame, side needles at 60° */
+        var W = [1.3, .8, .5], P = W.map(function(){ return []; }), tips = [];
+        function line(x1, y1, a, len, lvl){ var x2 = x1 + Math.cos(a) * len, y2 = y1 + Math.sin(a) * len; if (!inside(x2, y2)) return null; P[lvl].push([[x1, y1], [x2, y2]]); segs++; return [x2, y2]; }
+        function plume(px, py, ang, L, curl){
+          var a = ang, stem = [[px, py]], Bw = Math.max(6, Math.min(26, L * .17)), next = 3 + Rn() * 3, n = Math.round(L / 4);
+          for (var i = 1; i <= n; i++){
+            a += curl + (Rn() - .5) * .04;
+            var nx = px + Math.cos(a) * 4, ny = py + Math.sin(a) * 4; if (!inside(nx, ny)) break;
+            px = nx; py = ny; stem.push([px, py]); segs++;
+            var t = i / n;
+            if (i * 4 >= next){
+              next += 5 + Rn() * 2;
+              var shape = t < .25 ? .35 + .65 * t / .25 : (1 - t) / .75, b = Bw * shape * (.7 + .5 * Rn());
+              for (var sd = -1; sd <= 1; sd += 2){
+                if (b < 2.5) continue;
+                var ba = a + sd * (Math.PI / 3 + (Rn() - .5) * .12), e = line(px, py, ba, b, 1);
+                if (e && b > 9){ for (var fi = 0; fi < 2; fi++){ var f = fi ? .65 : .35, sx = px + Math.cos(ba) * b * f, sy = py + Math.sin(ba) * b * f, sb = b * .3 * (.7 + .5 * Rn());
+                  line(sx, sy, ba + sd * Math.PI / 3, sb, 2); if (Rn() < .5) line(sx, sy, ba - sd * Math.PI / 3, sb * .8, 2); } }
+                if (e && Rn() < .05) tips.push(e);
+              }
+            }
+          }
+          if (stem.length > 1){ var cut = Math.max(2, Math.round(stem.length * .6)); P[0].push(stem.slice(0, cut)); P[1].push(stem.slice(cut - 1)); tips.push(stem[stem.length - 1]); }
+        }
+        var gap = 15 + 8 * (1 - s), y, xx;
+        if (E.u > 6) for (y = E.T + 6; y < E.T + E.strip; y += gap * (.7 + .6 * Rn())){
+          var q = (y - E.T) / E.strip, L = E.u * (1 - .7 * Math.pow(q, 1.15)) * (.5 + .5 * Rn());
+          if (L > 6) plume(E.Rx - 1, y, Math.PI + (Rn() - .3) * .6, L, (Rn() - .5) * .012);
+        }
+        if (E.v) for (xx = E.Rx - 8; xx > E.Rx - E.band; xx -= gap * (.7 + .6 * Rn())){
+          var qx = (E.Rx - xx) / E.band, Lt = E.v * 1.3 * (1 - .55 * qx) * (.5 + .5 * Rn());
+          if (Lt > 5) plume(xx, E.T + 1, Math.PI / 2 + (Rn() - .35) * .7, Lt, (Rn() - .5) * .014);
+        }
+        /* the crust: tiny three-armed needle stars crowding the frame */
+        var crust = [];
+        for (var i = 0; i < 420 * s + 60; i++){
+          var onRight = !E.v || Rn() < E.strip / (E.strip + E.band), cx, cy, dd = Math.pow(Rn(), 2.2) * (14 + 10 * s);
+          if (onRight){ cx = E.Rx - 1 - dd; cy = E.T + Rn() * E.strip * (1 - .4 * Rn()); } else { cx = E.Rx - Rn() * E.band * (1 - .3 * Rn()); cy = E.T + 1 + dd; }
+          if (!inside(cx, cy)) continue;
+          var r = 1.2 + Rn() * 2.4, a0 = Rn() * Math.PI;
+          for (var k = 0; k < 3; k++){ var aa = a0 + k * Math.PI / 3; crust.push([[cx - Math.cos(aa) * r, cy - Math.sin(aa) * r], [cx + Math.cos(aa) * r, cy + Math.sin(aa) * r]]); segs++; }
+        }
+        function strokeAll(list, w, style, dx, dy){ x.beginPath(); for (var li = 0; li < list.length; li++){ var p = list[li]; x.moveTo(p[0][0] + dx, p[0][1] + dy); for (var j = 1; j < p.length; j++) x.lineTo(p[j][0] + dx, p[j][1] + dy); } x.lineWidth = w; x.strokeStyle = style; x.stroke(); }
+        x.lineCap = "round"; x.lineJoin = "round";
+        strokeAll(crust, .7, "rgba(70,110,185,.32)", .6, .6); strokeAll(crust, .55, "rgba(255,255,255,.95)", 0, 0);
+        var lv;
+        for (lv = 2; lv >= 0; lv--) strokeAll(P[lv], W[lv] + .5, "rgba(62,102,178," + (lv === 0 ? .45 : .34) + ")", .7, .8);
+        for (lv = 2; lv >= 0; lv--) strokeAll(P[lv], W[lv], "rgba(255,255,255,.97)", 0, 0);
+        /* 3. sparkle points where the light catches a tip */
+        tips.forEach(function(p, ti){ if (ti % 3) return; var rr = 2.6 + Rn() * 2.4;
+          x.strokeStyle = "rgba(255,255,255,1)"; x.lineWidth = 1; x.beginPath(); x.moveTo(p[0] - rr, p[1]); x.lineTo(p[0] + rr, p[1]); x.moveTo(p[0], p[1] - rr); x.lineTo(p[0], p[1] + rr); x.stroke();
+          x.fillStyle = "rgba(160,190,240,.55)"; x.beginPath(); x.arc(p[0], p[1], 1.5, 0, 7); x.fill(); x.fillStyle = "#fff"; x.beginPath(); x.arc(p[0], p[1], .9, 0, 7); x.fill(); });
+        /* 4. a thin snow lip and clear icicles along the top edge, longest toward the corner */
+        var iceL = Math.max(E.band, E.u), xi;
+        x.strokeStyle = "rgba(76,123,217,.45)"; x.lineWidth = 1;
+        for (xi = E.Rx - iceL; xi < E.Rx - 22; xi += 9 + Rn() * 16){
+          var qi = (E.Rx - xi) / iceL, len = (5 + Rn() * 30 * (1 - .65 * qi)) * Math.min(1, .3 + s), w2 = 2 + len * .13;
+          for (var ci = 0; ci < ctls.length; ci++){ var cq = ctls[ci]; if (Math.abs(xi - (cq.x + cq.w / 2)) < cq.w / 2 + 16) len = Math.min(len, cq.y - 14 - E.T); }
+          if (len < 5) continue;
+          var g = x.createLinearGradient(xi - w2, 0, xi + w2, 0); g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(.6, "rgba(225,236,252,.9)"); g.addColorStop(1, "rgba(185,206,244,.9)");
+          x.fillStyle = g; x.beginPath(); x.moveTo(xi - w2, E.T + 2); x.quadraticCurveTo(xi - w2 * .4, E.T + len * .6, xi + .4, E.T + len); x.quadraticCurveTo(xi + w2 * .5, E.T + len * .5, xi + w2, E.T + 2); x.closePath(); x.fill(); x.stroke();
+        }
+        x.fillStyle = "#fff"; x.beginPath(); x.moveTo(E.Rx - iceL - 4, E.T); for (xi = E.Rx - iceL - 4; xi < E.Rx; xi += 8) x.quadraticCurveTo(xi + 4, E.T + 4.5 + Rn() * 2.5, xi + 8, E.T + 2); x.lineTo(E.Rx, E.T); x.closePath(); x.fill();
+        ctls.forEach(function(q){ x.save(); x.globalCompositeOperation = "destination-out"; x.beginPath(); x.arc(q.x + q.w / 2, q.y + q.h / 2, Math.max(q.w, q.h) / 2 + 12, 0, 7); x.fill(); x.restore(); });
+        var ms = performance.now() - t0;
+        stats = { segments: segs, ms: Math.round(ms * 10) / 10, px: cv.width + "×" + cv.height, s: s, paints: stats.paints + 1 };
+        return E;
+      }
+      function canvas(i){
+        if (!box){ box = document.getElementById("wnFrostBox"); if (!box) return null; }
+        if (!cvs[i]){ cvs[i] = document.createElement("canvas"); cvs[i].className = "wnFrost"; box.appendChild(cvs[i]); }
+        return cvs[i];
+      }
+      function clear(){ cvs.forEach(function(c){ c.classList.remove("on"); }); painted = null; front = -1; }
+      /* the day's first tick, a resize, or the face's content moving into the frost: paint the back canvas in an
+         idle callback, then crossfade (the old one stays up until the new one is ready) */
+      function step(force){
+        var st = stages(), b = document.getElementById("wnFrostBox");
+        if (!b || hold) return;
+        if (!st || !st.frost || !shown()){ if (!st || !st.frost) clear(); return; }
+        var t = Date.now();
+        if (!force && painted && t - lastCheck < 5000) return;
+        lastCheck = t;
+        var G = measure(); if (!G) return;
+        var dk = dateKey(now());
+        if (fitDay !== dk || force === "resize"){ fitDay = dk; fit = null; }
+        /* within a day the free corner only ever shrinks (content that grew); it grows back the next morning */
+        if (fit){ G.free.uMax = Math.min(G.free.uMax, fit.uMax); G.free.vTop = Math.min(G.free.vTop, fit.vTop); }
+        fit = { uMax: G.free.uMax, vTop: G.free.vTop };
+        var dpr = Math.min(2, window.devicePixelRatio || 1);
+        var key = [st.frost, dpr, Math.round(G.clock.x), Math.round(G.clock.y), Math.round(G.clock.w), Math.round(G.clock.h), Math.round(G.free.uMax), Math.round(G.free.vTop),
+                   G.controls.map(function(q){ return Math.round(q.x) + ":" + Math.round(q.y); }).join(",")].join("|");
+        if (painted === key || pend) return;
+        var run = function(){
+          pend = 0;
+          var back = front === 0 ? 1 : 0, cv = canvas(back); if (!cv) return;
+          var E = paint(cv, G, st.frost, dpr);
+          cv.style.width = E.w + "px"; cv.style.height = E.h + "px";
+          cv.style.left = Math.round(E.x0 - G.cardL - G.cl) + "px"; cv.style.top = Math.round(E.T - G.cardT - G.ct) + "px";
+          void cv.offsetWidth;
+          cv.classList.add("on");
+          if (front !== -1 && cvs[front]) cvs[front].classList.remove("on");
+          front = back; painted = key;
+          b.dataset.s = String(st.frost);
+        };
+        pend = 1;
+        if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 2500 }); else setTimeout(run, 200);
+      }
+      return { step: step, stats: function(){ return stats; }, measure: measure, envelope: envelope,
+               paintAt: function(s){ var G = measure(); if (!G) return null; var cv = canvas(front === 0 ? 1 : 0), dpr = Math.min(2, window.devicePixelRatio || 1);
+                 var E = paint(cv, G, s, dpr); cv.style.width = E.w + "px"; cv.style.height = E.h + "px";
+                 cv.style.left = Math.round(E.x0 - G.cardL - G.cl) + "px"; cv.style.top = Math.round(E.T - G.cardT - G.ct) + "px";
+                 cv.classList.add("on"); if (front !== -1 && cvs[front] !== cv) cvs[front].classList.remove("on"); front = cvs.indexOf(cv); painted = "test"; hold = true; return stats; },
+               reset: function(){ painted = null; fit = null; lastCheck = 0; hold = false; } };
+    })();
+
+    /* ===== the snow (C2, B1): a fixed pool of three flakes; one to three flurries a week ===== */
+    var Snow = (function(){
+      var CAP = 3, host = null, slots = [], rings = [], tid = null, rested = false;
+      var fl = null, fkey = "", spawned = 0, nextAt = 0, forced = null, dust = null;
+      function moving(){ try { return waveMotionOn(); } catch(e){ return false; } }
+      function shown(){
+        var b = document.body;
+        return Season.active() === "winter" && !document.hidden && !b.classList.contains("landing") && !b.classList.contains("focusMode") &&
+          window.innerWidth > 780 && window.innerHeight > 540;
+      }
+      function build(){
+        if (host) return true;
+        host = document.getElementById("wnSnow"); if (!host) return false;
+        var D = flake("dendrite", 13, 1.45), P = flake("plate", 13, 1.45);
+        var F = '<g transform="translate(6 6)">' + flake("fleck", 2.6, .9) + '</g><g transform="translate(22 30)">' + flake("fleck", 2.2, .9) + '</g>';
+        for (var i = 0; i < CAP; i++){
+          var el = document.createElement("div"); el.className = "wnFlake"; el.dataset.k = "d";
+          el.innerHTML = '<div class="wnSway"><div class="wnSpin"><div class="wnMelt">' +
+            '<svg class="wnCrys" viewBox="-15 -15 30 30"><g class="kD">' + D + '</g><g class="kP">' + P + '</g></svg>' +
+            '<svg class="wnFleck" viewBox="0 0 28 36" width="28" height="36">' + F + '</svg></div></div></div>';
+          host.appendChild(el);
+          slots.push({ el: el, sway: el.firstChild, spin: el.firstChild.firstChild, melt: el.firstChild.firstChild.firstChild, crys: el.querySelector(".wnCrys"), busy: false, anims: [] });
+          var rg = document.createElement("div"); rg.className = "wnRing"; host.appendChild(rg); rings.push(rg);
+        }
+        return true;
+      }
+      function free(sl){
+        sl.anims.forEach(function(a){ try { a.cancel(); } catch(e){} }); sl.anims = [];
+        sl.el.classList.remove("on"); sl.busy = false;
+      }
+      function clear(){ slots.forEach(free); rings.forEach(function(r){ r.getAnimations().forEach(function(a){ a.cancel(); }); }); }
+      function count(){ return slots.filter(function(s){ return s.busy; }).length; }
+      function windy(){ return document.body.dataset.sea === "windy"; }
+      function landY(x, w){
+        var y = window.innerHeight - 20, dock = document.getElementById("dock"), db = dock && dock.getBoundingClientRect();
+        if (db && db.width > 2 && x + w > db.left && x < db.right) y = Math.min(y, db.top + 3);   // over the dock: it settles on the dock's top and melts there
+        return y;
+      }
+      /* one flake. opts (tests, proofs): kind "dendrite"|"plate"|"fleck", size, side, x (0–1 of the screen) */
+      function spawn(opts){
+        opts = opts || {};
+        if (!build() || !shown() || !moving()) return null;
+        if (rested){ unrest(); }
+        var sl = slots.filter(function(s){ return !s.busy; })[0]; if (!sl) return null;   // never more than three on the board
+        var W = window.innerWidth, wy = windy();
+        var kind = opts.kind || (Math.random() < .6 ? (Math.random() < .55 ? "dendrite" : "plate") : "fleck");
+        var size = kind === "fleck" ? 28 : Math.round(opts.size || (kind === "dendrite" ? 20 + Math.random() * 6 : 18 + Math.random() * 4));
+        var w = kind === "fleck" ? 28 : size * 30 / 26, h = kind === "fleck" ? 36 : w;
+        var side = opts.side || (Math.random() < .55 ? "right" : "left"), amp = 6 + Math.random() * 8, col = W * .15;
+        var lo = W * .012 + amp, hi = col - w - amp;   // the outer 15% column, sway included: never over the clock's digits or the bell strip
+        var x = opts.x != null ? opts.x * W - w / 2 : lo + Math.random() * Math.max(0, hi - lo);
+        if (opts.x == null && side === "right") x = W - x - w;
+        var dx = wy ? -(80 + Math.random() * 80) : 0;
+        if (wy){ var minX = side === "right" ? W - col + amp : W * .012 + amp; dx = Math.max(dx, minX - x); }   // a windy slant stays in its outer column
+        var y0 = -h - 10, y1 = landY(x + dx, w) - h / 2;
+        var dur = (kind === "fleck" ? 16000 + Math.random() * 6000 : 20000 + Math.random() * 8000) * (wy ? .7 : 1);
+        sl.busy = true; sl.el.dataset.k = kind === "dendrite" ? "d" : kind === "plate" ? "p" : "f";
+        if (kind !== "fleck"){ sl.crys.style.width = w + "px"; sl.crys.style.height = h + "px"; }
+        sl.el.classList.add("on");
+        var r0 = Math.random() * 60, spinD = (14000 + Math.random() * 8000) * (wy ? .62 : 1), dir = Math.random() < .5 ? 1 : -1;
+        var fall = sl.el.animate([{ transform: "translate(" + x.toFixed(1) + "px," + y0.toFixed(1) + "px)" }, { transform: "translate(" + (x + dx).toFixed(1) + "px," + y1.toFixed(1) + "px)" }],
+                                 { duration: dur, easing: "linear", fill: "forwards" });
+        var sway = sl.sway.animate([{ transform: "translateX(" + (-amp).toFixed(1) + "px)" }, { transform: "translateX(" + amp.toFixed(1) + "px)" }],
+                                   { duration: 3600 + Math.random() * 1800, easing: "cubic-bezier(.37,0,.63,1)", direction: "alternate", iterations: Infinity, delay: -Math.random() * 3000 });
+        var spin = sl.spin.animate([{ transform: "rotate(" + r0.toFixed(1) + "deg)" }, { transform: "rotate(" + (r0 + dir * 360).toFixed(1) + "deg)" }],
+                                   { duration: spinD, easing: "linear", iterations: Infinity });
+        sl.melt.style.opacity = ""; sl.anims = [fall, sway, spin];
+        var at = Math.max(0, Math.min(.999, +opts.at || 0)); if (at) fall.currentTime = at * dur;
+        fall.onfinish = function(){
+          if (!sl.busy) return;
+          /* it reaches the water (or the dock): it shrinks and melts, and the water rings once */
+          var m = sl.melt.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(.55)", opacity: 0 }], { duration: 900, easing: "cubic-bezier(.4,0,.7,1)", fill: "forwards" });
+          sl.anims.push(m);
+          var rg = rings[slots.indexOf(sl)], cx = x + dx + w / 2, cy = y1 + h / 2 + (kind === "fleck" ? 14 : size * .4);
+          rg.animate([{ transform: "translate(" + cx.toFixed(1) + "px," + cy.toFixed(1) + "px) scale(.3,.25)", opacity: .95 }, { transform: "translate(" + cx.toFixed(1) + "px," + cy.toFixed(1) + "px) scale(1.6,1.1)", opacity: 0 }],
+                     { duration: 1300, delay: 250, easing: "cubic-bezier(.2,.6,.4,1)", fill: "both" });
+          m.onfinish = function(){ free(sl); };
+        };
+        return sl.el;
+      }
+      /* reduced motion during a flurry: two crystals lie still on the sand by the snowman */
+      function rest(){
+        if (!build() || rested) return;
+        rested = true; var W = window.innerWidth, H = window.innerHeight;
+        [[.81, "d", 22, 12], [.835, "p", 19, -9]].forEach(function(p, i){ var sl = slots[i];
+          free(sl); sl.busy = true; sl.el.dataset.k = p[1]; sl.crys.style.width = sl.crys.style.height = (p[2] * 30 / 26) + "px";
+          sl.el.style.transform = "translate(" + Math.round(W * p[0]) + "px," + Math.round(H - 52 - i * 4) + "px) rotate(" + p[3] + "deg)";
+          sl.el.classList.add("on"); });
+      }
+      function unrest(){ if (!rested) return; rested = false; slots.slice(0, 2).forEach(function(sl){ sl.el.style.transform = ""; free(sl); }); }
+      /* the flurry now, if any: { key, n, first } */
+      var tsDay = null, tsList = [];
+      function today(ds){ if (tsDay !== ds){ tsDay = ds; tsList = flurryTimes(ds); } return tsList; }   // pure in the date: once a day
+      function current(s){
+        if (forced){ if (Date.now() < forced.until) return forced; forced = null; }
+        if (Season.active() !== "winter") return null;
+        var d = now(), ds = dateKey(d), ts = today(ds); if (!ts.length) return null;
+        if (!s){ try { s = Bell.statusAt(d); } catch(e){ s = { type: "off" }; } }
+        for (var i = 0; i < ts.length; i++){
+          var f = ts[i];
+          if (f.free){ var m = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; if (s.type !== "in" && m >= f.min && m < f.min + f.len) return { key: ds + "|free", n: f.n, period: "free" }; continue; }
+          if (s.type !== "in" || s.idx !== f.p) continue;
+          var el = ((s.totalMs || 0) - (s.remainMs || 0)) / 60000;
+          if (el >= f.at && el < f.at + f.len && (s.remainMs || 0) > 3 * 60000) return { key: ds + "|" + f.p, n: f.n, first: !!f.first, period: ds + "|" + s.idx };
+        }
+        return null;
+      }
+      function step(){
+        if (!build()) return;
+        var b = document.body, t = Date.now();
+        /* the cheap path (most seconds of most days): no flurry today, nothing falling, nothing dusted, nothing at rest */
+        if (!forced && !dust && !rested && !fl && (Season.active() !== "winter" || !today(dateKey(now())).length) && !slots.some(function(s){ return s.busy; })){
+          if (b.dataset.wnSnow) delete b.dataset.wnSnow;
+          if (b.classList.contains("wnDusted")) b.classList.remove("wnDusted");
+          return;
+        }
+        var s; try { s = Bell.statusAt(now()); } catch(e){ s = { type: "off" }; }
+        var f = current(s);
+        if (f){ if (b.dataset.wnSnow !== "flurries") b.dataset.wnSnow = "flurries"; } else if (b.dataset.wnSnow) delete b.dataset.wnSnow;
+        /* the dusting (the snowman's pail, the driftwood): from a flurry until the bell */
+        var pkey = s.type === "in" ? dateKey(now()) + "|" + s.idx : "free";
+        if (f) dust = f.period || pkey;
+        if (dust && dust !== pkey && !f) dust = null;
+        var dz = !!dust && Season.active() === "winter"; if (b.classList.contains("wnDusted") !== dz) b.classList.toggle("wnDusted", dz);
+        if (!shown()){ clear(); rested = false; return; }
+        if (!moving()){ slots.forEach(function(sl){ if (sl.anims.length) free(sl); }); if (f) rest(); else unrest(); return; }
+        if (rested) unrest();
+        if (!f){ fl = null; return; }
+        if (fkey !== f.key){ fkey = f.key; spawned = 0; nextAt = t; fl = f; }
+        if (spawned >= f.n || t < nextAt) return;
+        var first = f.first && spawned === 0;
+        if (spawn(first ? { kind: "dendrite", size: 26, side: "right", x: .92 } : null)){ spawned++; nextAt = t + 30000 + Math.random() * 20000; }
+        else nextAt = t + 4000;                       // all three are still falling: try again shortly
+      }
+      return {
+        init: function(){
+          clearInterval(tid); tid = setInterval(step, 1000);
+          document.addEventListener("deckhand:stage", function(e){ if (e.detail && e.detail.type) clear(); });   // the stage takes the moving ones
+          window.addEventListener("resize", function(){ clear(); rested = false; });
+        },
+        step: step, spawn: spawn, clear: clear, count: count, times: flurryTimes, current: current, CAP: CAP,
+        flurry: function(ms, n){ forced = ms ? { key: "forced|" + Date.now(), n: n || 9, until: Date.now() + ms, period: "forced" } : null; fkey = ""; step(); },
+        slots: function(){ return slots; }
+      };
+    })();
+
+    /* ===== the snowman (C3, B4) and the dune's snow ===== */
+    var Snowman = (function(){
+      var svg = null, stage = null, capCov = -1, capKey = "", crookDay = null;
+      function shownNow(){ var b = document.body; return Season.active() === "winter" && !b.classList.contains("landing") && !b.classList.contains("focusMode"); }
+      function layer(markup){ var g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.setAttribute("class", "smLayer"); g.innerHTML = markup; return g; }
+      function step(){
+        svg = svg || document.getElementById("wnSnowman");
+        if (!svg) return;
+        var st = stages(), want = st ? st.sm : null, dk = dateKey(now());
+        if (crookDay && crookDay !== dk){ crookDay = null; svg.classList.remove("crooked", "slip", "unslip"); }   // the next day's first tick rights him
+        if (want !== stage){
+          var fade = stage !== null && want !== null && shownNow() && svg.getBoundingClientRect().width > 0;
+          var old = [].slice.call(svg.querySelectorAll(".smLayer"));
+          stage = want;
+          svg.dataset.stage = want || "";
+          if (want){
+            var g = layer(snowmanSVG(want));
+            if (fade){ g.classList.add("smIn"); svg.insertBefore(g, svg.querySelector(".wnVisitHost")); void g.getBBox(); g.classList.remove("smIn"); }
+            else svg.insertBefore(g, svg.querySelector(".wnVisitHost"));
+          }
+          old.forEach(function(o){ if (fade){ o.classList.add("smOut"); setTimeout(function(){ if (o.parentNode) o.parentNode.removeChild(o); }, 4200); } else o.parentNode.removeChild(o); });
+        }
+        cap(st ? st.cap : 0);
+      }
+      /* the dune's cap (proofs' duneCap): white, 14 units at its thickest, an ice-blue underside line; clipped under the dock */
+      var DUNE = [[[0, 55], [240, 25], [480, 85], [720, 55]], [[720, 55], [960, 25], [1200, 85], [1440, 55]], [[1440, 55], [1680, 25], [1820, 70], [1920, 50]]];
+      function capPath(cov){
+        var pts = [];
+        DUNE.forEach(function(s){ for (var i = 0; i <= 80; i++){ var t = i / 80, m = 1 - t;
+          pts.push([m*m*m*s[0][0] + 3*m*m*t*s[1][0] + 3*m*t*t*s[2][0] + t*t*t*s[3][0], m*m*m*s[0][1] + 3*m*m*t*s[1][1] + 3*m*t*t*s[2][1] + t*t*t*s[3][1]]); } });
+        var R = rngP(5), p1 = R() * 6, p2 = R() * 6, p3 = R() * 6, p4 = R() * 6;
+        var th = pts.map(function(p){ var x = p[0], m = .5 + .26 * Math.sin(x / 97 + p1) + .16 * Math.sin(x / 41 + p2) + .08 * Math.sin(x / 17 + p3);
+          var c = Math.max(0, Math.min(1, (m - (1 - cov)) / .1)), above = Math.max(0, Math.min(1, (80 - p[1]) / 10));
+          return 14 * c * above * (1 + .2 * Math.sin(x / 9 + p4)); });
+        var top = pts.map(function(p){ return [p[0], p[1] - 1]; }), bot = pts.map(function(p, i){ return [p[0], p[1] + th[i]]; });
+        var sh = pts.map(function(p, i){ return [p[0], p[1] + th[i] * .62]; }).concat(bot.slice().reverse());
+        var line = "", on = false;
+        bot.forEach(function(p, i){ if (th[i] > 1.2){ line += (on ? " L" : " M") + P2(p); on = true; } else on = false; });
+        return '<path fill="#fff" d="M' + top.concat(bot.slice().reverse()).map(P2).join(" L") + ' Z"/><path fill="#C9D9F7" d="M' + sh.map(P2).join(" L") + ' Z"/><path fill="none" stroke="#4C7BD9" stroke-opacity=".55" stroke-width="1.3" vector-effect="non-scaling-stroke" d="' + line + '"/>';
+      }
+      function cap(cov){
+        var host = document.getElementById("wnCap"), wv = document.getElementById("waves");
+        if (!host || !wv) return;
+        var dk = document.getElementById("dock"), db = dk && dk.getBoundingClientRect(), wb = wv.getBoundingClientRect();
+        var x0 = db && db.width > 2 && wb.width > 2 ? Math.max(0, (db.right + 4 - wb.left) * 1920 / wb.width) : 0;
+        var key = cov + "|" + Math.round(x0 / 8);
+        if (key === capKey) return;
+        var fade = capCov > 0 && cov !== capCov && shownNow();
+        capKey = key; capCov = cov;
+        var old = [].slice.call(host.querySelectorAll(".capLayer"));
+        if (cov > 0){
+          var g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.setAttribute("class", "capLayer");
+          g.innerHTML = '<clipPath id="wnCapClip' + (key.length + old.length) + '"><rect x="' + r1(x0) + '" y="0" width="' + r1(1920 - x0) + '" height="120"/></clipPath><g clip-path="url(#wnCapClip' + (key.length + old.length) + ')">' + capPath(cov) + '</g>';
+          if (fade){ g.classList.add("smIn"); host.appendChild(g); void g.getBBox(); g.classList.remove("smIn"); } else host.appendChild(g);
+        }
+        old.forEach(function(o){ if (fade){ o.classList.add("smOut"); setTimeout(function(){ if (o.parentNode) o.parentNode.removeChild(o); }, 4200); } else o.parentNode.removeChild(o); });
+      }
+      /* a tap: his head slips 6° and stays crooked (the next tap rights it); the snowball rocks */
+      function tap(){
+        if (!svg || !stage) return;
+        var still = !document.body.classList.contains("waveMotion");
+        if (stage === "S1"){ if (still) return; svg.classList.remove("rock"); void svg.getBBox(); svg.classList.add("rock"); setTimeout(function(){ svg.classList.remove("rock"); }, 1300); return; }
+        var crooked = svg.classList.contains("crooked");
+        svg.classList.remove("slip", "unslip");
+        if (still){ svg.classList.toggle("crooked", !crooked); crookDay = crooked ? null : dateKey(now()); return; }
+        void svg.getBBox();
+        svg.classList.toggle("crooked", !crooked); svg.classList.add(crooked ? "unslip" : "slip");
+        crookDay = crooked ? null : dateKey(now());
+      }
+      function wire(){
+        svg = document.getElementById("wnSnowman");
+        if (!svg) return;
+        svg.addEventListener("pointerdown", function(e){ if (e.target.closest && e.target.closest(".smTap")){ e.stopPropagation(); tap(); } });
+        window.addEventListener("resize", function(){ capKey = ""; step(); });
+      }
+      return { step: step, wire: wire, tap: tap, stage: function(){ return stage; }, ready: function(){ return stage === "S3" && shownNow(); } };
+    })();
+
+    var fitT = null, lastFit = 0;
+    function step(){
+      try { Frost.step(); } catch(e){}
+      try { Snowman.step(); } catch(e){}
+    }
+    function wire(){
+      Snow.init(); Snowman.wire();
+      var sm = document.getElementById("wnSnowman");
+      if (sm && !sm.querySelector(".wnVisitHost")){ var g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.setAttribute("class", "wnVisitHost"); g.innerHTML = VISIT; sm.appendChild(g); }
+      /* the frost refits within a few seconds of a resize, a scene or the lock (the card's box), never per frame */
+      var bellKey = "";
+      setInterval(function(){
+        var s; try { s = Bell.statusAt(now()); } catch(e){ s = { type: "off" }; }
+        var k = s.type + "|" + (s.idx != null ? s.idx : "") + "|" + dateKey(now()), due = k !== bellKey || Date.now() - lastFit > 30000;
+        if (!due) return;
+        bellKey = k; lastFit = Date.now();
+        var go = function(){ try { Frost.step(true); } catch(e){} };
+        if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 }); else go();
+      }, 5000);
+      window.addEventListener("resize", function(){ clearTimeout(fitT); fitT = setTimeout(function(){ Frost.reset(); Frost.step("resize"); }, 400); });
+      document.addEventListener("deckhand:stage", function(){ setTimeout(function(){ Frost.step(true); }, 600); });
+    }
+    return { stages: stages, step: step, wire: wire, frost: Frost, snow: Snow, snowman: Snowman, flurryTimes: flurryTimes, visitTimes: visitTimes,
+             manateeGreets: manateeGreets, manateeLeaves: manateeLeaves, FROST_CAP: FROST_CAP };
+  })();
+
   var Fall = (function(){
     var HANG = [ { x: 60, y: 45, r: 8, k: 0, c: 0 }, { x: 92.5, y: 86, r: -10, k: 1, c: 1 }, { x: 122.5, y: 60, r: 14, k: 0, c: 2 },
                  { x: 79, y: 76, r: -4, k: 2, c: 3 }, { x: 16, y: 65, r: 6, k: 4, c: 2 } ];
@@ -32802,7 +33659,7 @@ var Season = (function(){
       clearTimeout(endTid); endTid = setTimeout(land, DROP);
     });
   }
-  function wire(){ wirePumpkins(); wireSpider(); wireGourds(); Leaves.init(); Fall.wire(); Lights.wire(); }
+  function wire(){ wirePumpkins(); wireSpider(); wireGourds(); Leaves.init(); Fall.wire(); Lights.wire(); Winter.wire(); }
   return {
     init: function(){ wire(); apply(); setInterval(apply, 60000); },
     apply: apply,
@@ -32818,6 +33675,15 @@ var Season = (function(){
     lamp: lamp,                                  // v7.56: the lantern's week, 1–4 (0 outside November); v7.64: 4/3/2 by the winter month
     winter: inWinter,                            // v7.64: Nov 30 → Mar 7 (pure in the date)
     lights: Lights,                              // v7.64: count(date) → {lit, of} | null; step(); relayout()
+    winterStages: Winter.stages,                 // v7.65: pure — {frost, sm, cap} | null for a date
+    winterStart: winterStart,                    // v7.65
+    frost: Winter.frost,                         // v7.65: step(), stats(), paintAt(s) (proofs), measure()
+    snow: Winter.snow,                           // v7.65: times(ds) (pure), spawn(opts), flurry(ms, n), count(), CAP
+    snowman: Winter.snowman,                     // v7.65: stage(), tap(), ready()
+    flurryTimes: Winter.flurryTimes,             // v7.65: pure
+    visitTimes: Winter.visitTimes,               // v7.65: pure — the gull's visit to the snowman: {p, at} | null
+    manateeGreets: Winter.manateeGreets,         // v7.65: Dec 7–8 and the first two school days back
+    manateeLeaves: Winter.manateeLeaves,         // v7.65: the first Friday back (Jan 8)
     _leaf: function(opts){ return Leaves.spawn(opts); },   // v7.56 test hook: one leaf now
     leaves: Leaves,                              // v7.56 (tests)
     prelight: function(){ prelitFor = null; prelight(); },
