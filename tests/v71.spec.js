@@ -306,11 +306,15 @@ test.describe("the sea", () => {
     ok(/heave1/.test(sway) && /pitch1/.test(sway), "the boat does not ride the swell: " + sway);
     await pg.evaluate(() => window.Deckhand.sea("attack"));
     await expect(pg.locator("#sea-attack")).toHaveClass(/go/);
-    // v7.5: the boat wears .struck for the act's whole clock (its lurch keyframes are timed to the hit at 12s)
-    await expect(pg.locator("#boat")).toHaveClass(/struck/);
-    ok(/btStruck/.test(await pg.evaluate(() => getComputedStyle(document.querySelector("#boat .btRig")).animationName)), "no lurch keyframes on the rig");
-    await expect(pg.locator("#sea-attack")).not.toHaveClass(/go/, { timeout: 25000 });
-    await expect(pg.locator("#boat")).not.toHaveClass(/struck/, { timeout: 5000 });
+    // v7.64: the attack is the serpent's battle — the boat wears .battle for the act's clock and Serpent drives its rig
+    await expect(pg.locator("#boat")).toHaveClass(/battle/);
+    ok(await pg.evaluate(() => window.Deckhand.seaModule.serpent.battling()), "no battle running");
+    await pg.waitForFunction(() => /rotate|translate/.test(document.querySelector("#boat .btRig").style.transform), null, { timeout: 3000 });
+    // clearing the sea (the stage does this) ends it and gives the boat back
+    await pg.evaluate(() => window.Deckhand.seaModule.clear());
+    await expect(pg.locator("#sea-attack")).not.toHaveClass(/go/);
+    await expect(pg.locator("#boat")).not.toHaveClass(/battle/);
+    ok(await pg.evaluate(() => document.querySelector("#boat .btRig").style.transform === "" && !window.Deckhand.seaModule.serpent.playing()), "the boat was not given back");
     // a tap on the boat while something plays is refused; the school and turtle play too
     for (const n of ["turtle", "school", "paper"]){
       await pg.evaluate(x => window.Deckhand.sea(x), n);

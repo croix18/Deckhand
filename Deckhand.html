@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.63.1",
+  "appVersion": "7.64.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -60,6 +60,7 @@
     "autoWeek": true,
     "anchorMonday": "2026-08-31",
     "skipWeeks": ["2026-11-23", "2026-12-21", "2026-12-28", "2027-03-22"],
+    "skipDays": ["2027-01-18", "2027-02-15"],
     "anchorWeekName": "Black Week",
     "defaultGroup": "Teal Week",
     "groups": [
@@ -2677,38 +2678,17 @@
   body.waveMotion .btWakeBow{animation:wake calc(var(--T1) / 2) var(--sine) calc(var(--T1) / -4) infinite alternate;}
   body.waveMotion .btWakeStern{animation:wake calc(var(--T1) / 2) var(--sine) calc(var(--T1) * -.75) infinite alternate;}
   @keyframes wake{from{opacity:1; transform:scaleX(1.3);} to{opacity:.25; transform:scaleX(.7);}}
-  /* struck (the attack) and rippled (the whale's splash) ride on the rig's OWN properties, so they add to
-     the idle motion instead of replacing it; both are added with .go and share the act's clock */
-  body.waveMotion #boat.struck .btRig{animation:btStruck 20s linear both;}
+  /* rippled (the whale's splash) rides on the rig's OWN properties, so it adds to the idle motion instead of
+     replacing it; it is added with .go and shares the act's clock. (v7.64: the attack's "struck" is gone — the
+     serpent's battle drives the rig from Serpent, on its inline transform, with the swell and chop left running.) */
   body.waveMotion #boat.rippled .btRig{animation:btRipple 24s linear both;}
   body.waveMotion #boat.pennant .btRig{animation:btHeelPen 22s linear both;}
-  @keyframes btStruck{
-    0%,60%{rotate:0deg; translate:0 0; animation-timing-function:cubic-bezier(.1,.9,.3,1);}
-    60.6%{rotate:-18deg; translate:-1px 4px; animation-timing-function:ease-in-out;}   /* +120ms: shoved under */
-    62.5%{rotate:11deg; translate:0 -2px; animation-timing-function:ease-in-out;}
-    64.5%{rotate:-6deg; translate:0 1px; animation-timing-function:ease-in-out;}
-    66.5%{rotate:3deg; translate:0 0; animation-timing-function:ease-in-out;}
-    68%,68.5%{rotate:-4deg; translate:0 0; animation-timing-function:ease-in-out;}      /* the miss: it leans away */
-    71%{rotate:1deg; translate:0 0; animation-timing-function:ease-in-out;}
-    74%,100%{rotate:0deg; translate:0 0;}}
   @keyframes btRipple{0%,71%{rotate:0deg; translate:0 0; animation-timing-function:ease-in-out;}
     72.5%{rotate:-4deg; translate:0 3px; animation-timing-function:ease-in-out;} 74%{rotate:3deg; translate:0 -2px; animation-timing-function:ease-in-out;}
     75.5%{rotate:-2deg; translate:0 1px; animation-timing-function:ease-in-out;} 77%,100%{rotate:0deg; translate:0 0;}}
   @keyframes btHeelPen{0%,18%{rotate:0deg;} 22%{rotate:-4deg;} 26%{rotate:-2.5deg; animation-timing-function:ease-in-out;}
     72%{rotate:-2.5deg;} 80%,100%{rotate:0deg;}}
-  /* spray at the sail on each hit: x on translate (linear), y on transform (up-ease, down-ease) = a parabola */
   .btSpray circle{fill:var(--white); opacity:0;}
-  .btSpray .d1{--dx:-8px;} .btSpray .d2{--dx:10px;} .btSpray .d3{--dx:18px;}
-  body.waveMotion #boat.struck .btSpray g{animation:spX .75s linear 12s forwards;}
-  body.waveMotion #boat.struck .btSpray circle{animation:spY .75s linear 12s forwards;}
-  @keyframes spX{from{transform:translateX(0);} to{transform:translateX(var(--dx));}}
-  @keyframes spY{0%{opacity:1; transform:translateY(0); animation-timing-function:cubic-bezier(.2,.7,.5,1);}
-                 40%{opacity:1; transform:translateY(-12px); animation-timing-function:cubic-bezier(.5,0,.8,.3);}
-                 100%{opacity:0; transform:translateY(10px);}}
-  /* the victory flick: the burgee grows and flaps for two seconds after the serpent goes under */
-  body.waveMotion #boat.struck .btBurgeeRig{animation:btFlick 20s linear both;}   /* v7.11: on the rig, so the streamer's flutter survives */
-  @keyframes btFlick{0%,86%{transform:scale(1) skewY(0);} 87%{transform:scale(2.4) skewY(-8deg);} 88.5%{transform:scale(2.2) skewY(8deg);}
-    90%{transform:scale(2.3) skewY(-7deg);} 91.5%{transform:scale(2.2) skewY(6deg);} 93%{transform:scale(2.3) skewY(-4deg);} 96%,100%{transform:scale(1) skewY(0);}}
 
   /* ---- the pennant (22s): mast up, the lump climbs in hitches, the cloth reveals from the mast ---- */
   .btPen{visibility:hidden;}
@@ -2765,7 +2745,6 @@
   .seaThing.far{--ls:.62;}
   .seaThing.near{--ls:1.4;}
   .seaThing svg{overflow:visible; display:block;}
-  .ssSwim svg, .atRise svg{width:100%; height:100%;}
   /* v7.5.1: every sea class is scoped under #sea — an unscoped `.ring` here matched the TIMER's ring
      face (class "ring" too) and blanked every ring timer, Next Bell and the ghost timer on the stage */
   #sea .seaRing{fill:none; stroke:var(--white); stroke-width:1.6; opacity:0; transform-box:fill-box; transform-origin:center; vector-effect:non-scaling-stroke;}
@@ -2777,27 +2756,24 @@
   @keyframes thingHeave{from{translate:0 calc(var(--h1) * 1px);} to{translate:0 calc(var(--h1) * -1px);}}
   @keyframes thingPitch{from{rotate:calc(var(--p1) * .6);} to{rotate:calc(var(--p1) * -.6);}}
 
-  /* SERPENT (26s): glides left head-first, dives head-first mid-crossing, resurfaces */
-  #sea-serpent{bottom:9px; left:100vw; width:136px;}
-  #sea-serpent .ssSwim svg{transform:scaleX(-1);}
-  .ssFx{position:absolute; left:0; top:0; transform:scaleX(-1);}
-  .ssHump{fill:var(--navy); transform-box:fill-box; transform-origin:50% 100%;}
-  .ssMouth{fill:none; stroke:var(--paleturq); stroke-width:1; stroke-linecap:round;}
-  .ssEye{fill:var(--paleturq);}
-  body.waveMotion #sea-serpent.go{animation:ssGlide 26s linear;}
-  /* Chrome paints an SVG element wrongly when a `transform` animation and an individual-property
-     animation run on it at once (the compositor drops the latter) — so the roll and the dive live on
-     nested groups: .ssSeg dives (transform), .ssHump rolls (transform) */
-  body.waveMotion #sea-serpent.go .ssHump{animation:ssRoll 1.6s ease-in-out infinite;}
-  body.waveMotion #sea-serpent.go .ssSeg{animation:ssDive 26s linear both;}
-  body.waveMotion #sea-serpent.go .h4{animation-delay:0s;} body.waveMotion #sea-serpent.go .g4{animation-delay:0s;}
-  body.waveMotion #sea-serpent.go .h3{animation-delay:-.4s;} body.waveMotion #sea-serpent.go .g3{animation-delay:.25s;}
-  body.waveMotion #sea-serpent.go .h2{animation-delay:-.8s;} body.waveMotion #sea-serpent.go .g2{animation-delay:.5s;}
-  body.waveMotion #sea-serpent.go .h1{animation-delay:-1.2s;} body.waveMotion #sea-serpent.go .g1{animation-delay:.75s;}
-  body.waveMotion #sea-serpent.go .r0{animation-delay:7.5s;} body.waveMotion #sea-serpent.go .r1{animation-delay:8s;} body.waveMotion #sea-serpent.go .r2{animation-delay:8.5s;}
-  @keyframes ssGlide{from{transform:translateX(0);} to{transform:translateX(calc(-100vw - 220px));}}
-  @keyframes ssRoll{0%,100%{transform:translateY(2px) scaleY(.8);} 50%{transform:translateY(-2px) scaleY(1.12);}}
-  @keyframes ssDive{0%,28%{transform:translateY(0); animation-timing-function:cubic-bezier(.5,0,.8,.5);} 33%,54%{transform:translateY(56px); animation-timing-function:cubic-bezier(.2,.6,.4,1);} 60%,100%{transform:translateY(0);}}
+  /* v7.64 SERPENT and ATTACK: drawn by Serpent (one rAF loop while the act plays) into three layers, each the
+     full width of the screen and the bottom 200 px (the strip's own units: the far lane's waterline is y 180.7) */
+  #sea-serpent, #sea-attack{left:0; bottom:0; width:1px; height:1px;}
+  .srpLayer{position:fixed; left:0; bottom:0; width:100vw; height:200px; z-index:2; pointer-events:none; overflow:visible; display:none;}
+  body.focusMode:not(.landing) #srpTop, body.landing #srpTop{display:none !important;}
+  @media (max-width: 780px), (max-height: 540px){ .srpLayer{display:none !important;} }
+  .srpLayer .sk{fill:var(--navy);}  .srpLayer .belly{fill:var(--teal);}  .srpLayer .eyeW{fill:var(--paleturq);}  .srpLayer .mouthIn{fill:var(--coral);}
+  .srpLayer .edge{fill:none; stroke:var(--cream); stroke-width:2.2;   /* in the body's half-pixel units: 1.1 px */ stroke-linecap:round; stroke-opacity:.9;}
+  .srpLayer .lineP{fill:none; stroke:var(--paleturq); stroke-width:1.1; stroke-linecap:round; stroke-linejoin:round;}
+  .srpLayer .rip{fill:none; stroke:var(--white); stroke-width:1.6; stroke-linecap:round;}  .srpLayer .drop{fill:var(--white);}
+  .srpLayer .puff{fill:var(--white); stroke:var(--navy); stroke-width:1.2;}
+  .srpLayer .star{fill:#FFD27A; stroke:var(--navy); stroke-width:1; stroke-linejoin:round;}
+  .srpLayer .pop{font-family:"DM Sans", system-ui, sans-serif; font-weight:900; fill:var(--navy); stroke:var(--cream); stroke-width:5; paint-order:stroke; stroke-linejoin:round; text-anchor:middle;}
+  .srpLayer .glBodyF{fill:var(--white); stroke:var(--navy); stroke-width:1.1;}
+  .srpLayer .hole{fill:#5FCBC4; stroke:#4C7BD9; stroke-width:1;}  .srpLayer .skin, .srpLayer .shard{fill:#F4F8FF; stroke:#4C7BD9; stroke-width:.8; stroke-linejoin:round;}
+  .srpLayer .crackNew{fill:none; stroke:#4C7BD9; stroke-width:1.3; stroke-linejoin:round; stroke-linecap:round;}
+  .btCannon{fill:var(--navy);}
+  #boat.btlAway .btGull{visibility:hidden !important;}   /* the gull is in the air (Serpent draws it) */
 
   /* SKIPPER (5.5s): a flying fish, four damped hops with gravity, rings where it lands */
   #sea-fish{bottom:2px; left:44vw; width:260px; height:64px;}
@@ -2931,95 +2907,6 @@
     71%{opacity:1; transform:translateY(0) scale(1.05,1.2); animation-timing-function:cubic-bezier(.2,.7,.4,1);}
     73.5%{opacity:.9; transform:translateY(-3px) scale(1.25,1);}
     80%,100%{opacity:0; transform:translateY(10px) scale(1.5,.5);}}   /* the crown collapses outward */
-
-  /* THE ATTACK (20s): tell (bubbles), periscope look, slither (four strokes, never stopping), the rear with an
-     overshoot, a wind-up and ONE hit at 12.0s (the boat is shoved), a MISS at 13.6s into the water, the look
-     at the room, and a head-first dive with the coils following. Parks 40px short of the boat. */
-  #sea-attack{bottom:-4px; left:calc(max(42vw, 300px) + 1px); width:150px; height:90px;}
-  .atFx{position:absolute; left:0; top:0; width:100%; height:100%;}
-  .atSlither{position:absolute; left:0; top:0; width:100%; height:100%; transform:translateX(62vw);}
-  .atRise{position:absolute; left:0; top:0; width:100%; height:100%; transform:translateY(2px);}
-  .atHump, .atNeckP, .atFrill, .atHead, .atJaw, .atFace path{fill:var(--navy);}
-  .atHump{transform-box:fill-box; transform-origin:50% 100%;}
-  .atNeck{transform-box:view-box; transform-origin:66px 82px; transform:rotate(-34deg);}
-  .atJaw{transform-box:view-box; transform-origin:34px 20px;}
-  .atEye{fill:var(--coral); transform-box:fill-box; transform-origin:center;}
-  .atFace{opacity:0;}
-  .atPeri{fill:var(--navy); transform:translateY(40px);}
-  body.waveMotion #sea-attack.go .atPeri{animation:atPeri 20s linear both;}
-  @keyframes atPeri{0%,13%{transform:translateY(40px); animation-timing-function:cubic-bezier(.2,.7,.3,1.15);}
-    16%{transform:translateY(0);} 22%{transform:translateY(0); animation-timing-function:cubic-bezier(.6,0,.9,.5);} 25%,100%{transform:translateY(40px);}}
-  .atGrin{fill:none !important; stroke:var(--paleturq); stroke-width:1.2; stroke-linecap:round;}
-  body.waveMotion #sea-attack.go .atSlither{animation:atSlither 20s linear both;}
-  body.waveMotion #sea-attack.go .atRise{animation:atRise 20s linear both;}
-  body.waveMotion #sea-attack.go .atNeck{animation:atLunge 20s linear both;}
-  body.waveMotion #sea-attack.go .atJaw{animation:atBite 20s linear both;}
-  body.waveMotion #sea-attack.go .atProfile .atEye{animation:atEye 20s linear both;}
-  body.waveMotion #sea-attack.go .atProfile{animation:atProfile 20s linear both;}
-  body.waveMotion #sea-attack.go .atFace{animation:atFaceIn 20s linear both;}
-  body.waveMotion #sea-attack.go .a1{animation:atCoil 2s ease-in-out infinite;}
-  body.waveMotion #sea-attack.go .a2{animation:atCoil 2s ease-in-out -1.65s infinite;}
-  body.waveMotion #sea-attack.go .a3{animation:atCoil 2s ease-in-out -1.3s infinite;}
-  body.waveMotion #sea-attack.go .atSeg{animation:atSink 20s linear both;}   /* the coils follow the head under, one by one */
-  body.waveMotion #sea-attack.go .atSeg:nth-child(2){animation-delay:.3s;} body.waveMotion #sea-attack.go .atSeg:nth-child(1){animation-delay:.6s;}
-  body.waveMotion #sea-attack.go .seaBub{animation:seaBub .9s ease-out forwards;}
-  body.waveMotion #sea-attack.go .b1{animation-delay:.5s;} body.waveMotion #sea-attack.go .b2{animation-delay:1.1s;} body.waveMotion #sea-attack.go .b3{animation-delay:1.7s;}
-  body.waveMotion #sea-attack.go .p0{animation-delay:4.9s;}     /* the periscope sinks */
-  body.waveMotion #sea-attack.go .m0{animation-delay:13.6s;}    /* the miss hits the water */
-  body.waveMotion #sea-attack.go .r0{animation-delay:15.7s;} body.waveMotion #sea-attack.go .r1{animation-delay:16.1s;}
-  body.waveMotion #sea-attack.go .r2{animation-delay:16.4s;} body.waveMotion #sea-attack.go .r3{animation-delay:16.7s;}
-  @keyframes atSlither{
-    0%,14%{transform:translateX(62vw); animation-timing-function:cubic-bezier(.4,.25,.6,.75);}   /* (0–2.8s: the tell and the periscope play in the fx layer) */
-    20%{transform:translateX(50vw); animation-timing-function:cubic-bezier(.4,.25,.6,.75);}
-    30%{transform:translateX(36vw); animation-timing-function:cubic-bezier(.4,.25,.6,.75);}
-    40%{transform:translateX(20vw); animation-timing-function:cubic-bezier(.25,.5,.35,1);}
-    50%{transform:translateX(40px); animation-timing-function:ease-in-out;}   /* arrives 40px short, with weight */
-    52%,78%{transform:translateX(40px); animation-timing-function:ease-in;}
-    100%{transform:translateX(20px);}}
-  @keyframes atCoil{0%,100%{transform:translateY(4px) scaleY(.72);} 50%{transform:translateY(-3px) scaleY(1.15);}}
-  @keyframes atSink{0%,80%{transform:translateY(0); animation-timing-function:cubic-bezier(.5,0,.9,.5);} 83%,100%{transform:translateY(44px);}}
-  @keyframes atRise{
-    0%,50%{transform:translateY(2px); animation-timing-function:cubic-bezier(.2,.8,.3,1.3);}
-    54%{transform:translateY(-12px); animation-timing-function:ease-in-out;}
-    56.5%{transform:translateY(-7px); animation-timing-function:cubic-bezier(.3,0,.5,1);}
-    59%{transform:translateY(-10px); animation-timing-function:cubic-bezier(.7,0,1,.5);}
-    60%{transform:translateY(-3px); animation-timing-function:ease-out;}
-    62%,67%{transform:translateY(-8px); animation-timing-function:cubic-bezier(.7,0,1,.5);}
-    68%{transform:translateY(8px); animation-timing-function:ease-out;}          /* the miss: into the water */
-    70%,77%{transform:translateY(-8px); animation-timing-function:cubic-bezier(.5,0,.8,.5);}
-    82%{transform:translateY(-4px);} 100%{transform:translateY(30px);}}
-  @keyframes atLunge{
-    0%,14%{transform:rotate(-34deg); animation-timing-function:ease-in-out;}
-    17%,23%,29%,35%,41%,47%{transform:rotate(-28deg); animation-timing-function:ease-in-out;}   /* a nod per stroke */
-    20%,26%,32%,38%,44%{transform:rotate(-34deg); animation-timing-function:ease-in-out;}
-    50%{transform:rotate(-34deg); animation-timing-function:cubic-bezier(.2,.8,.3,1);}
-    51.5%,52.5%{transform:rotate(-22deg); animation-timing-function:cubic-bezier(.25,.8,.35,1.2);}  /* sees the boat */
-    54%{transform:rotate(18deg); animation-timing-function:ease-in-out;}          /* rears, overshoots back */
-    56.5%{transform:rotate(9deg); animation-timing-function:cubic-bezier(.3,0,.5,1);}
-    59%{transform:rotate(16deg); animation-timing-function:cubic-bezier(.7,0,1,.5);}   /* wind-up: slow in… */
-    60%{transform:rotate(-26deg); animation-timing-function:ease-out;}            /* …200ms snap: THE HIT (12.0s) */
-    61%{transform:rotate(-16deg); animation-timing-function:ease-in-out;}         /* bounces off the sail */
-    62.5%{transform:rotate(-23deg); animation-timing-function:ease-in-out;}
-    64%{transform:rotate(-19deg); animation-timing-function:cubic-bezier(.3,0,.3,1);}
-    66.5%{transform:rotate(22deg); animation-timing-function:linear;}
-    67.4%{transform:rotate(25deg); animation-timing-function:cubic-bezier(.7,0,1,.5);}   /* coiled again */
-    68%{transform:rotate(-44deg); animation-timing-function:ease-out;}            /* THE MISS (13.6s): the boat leaned away */
-    69.5%{transform:rotate(-40deg); animation-timing-function:ease-in-out;}
-    72%{transform:rotate(4deg); animation-timing-function:ease-in-out;}           /* up, and turns to the room */
-    77%{transform:rotate(4deg); animation-timing-function:cubic-bezier(.5,0,.8,.4);}
-    82%{transform:rotate(-30deg); animation-timing-function:ease-in;}
-    90%,100%{transform:rotate(-78deg);}}                                          /* head-first dive on an arc */
-  @keyframes atBite{
-    0%,56.5%{transform:rotate(0);}
-    59.2%{transform:rotate(-32deg); animation-timing-function:linear;}
-    59.8%{transform:rotate(-30deg); animation-timing-function:cubic-bezier(.3,.9,.4,1);}
-    60.3%{transform:rotate(3deg);}                        /* snaps shut ON contact */
-    61.5%,66%{transform:rotate(0);}
-    67.4%{transform:rotate(-34deg); animation-timing-function:linear;} 68%{transform:rotate(-30deg); animation-timing-function:cubic-bezier(.3,.9,.4,1);}
-    68.5%{transform:rotate(3deg);} 69.5%,100%{transform:rotate(0);}}
-  @keyframes atEye{0%,50%,52.5%,80%,82%,100%{transform:scale(1);} 51%{transform:scale(1.9);} 81%{transform:scale(1.3,.1);}}
-  @keyframes atProfile{0%,72%{opacity:1;} 73.5%,76.5%{opacity:0;} 78%,100%{opacity:1;}}
-  @keyframes atFaceIn{0%,72%{opacity:0;} 73.5%,76.5%{opacity:1;} 78%,100%{opacity:0;}}
 
   /* π-BUOY (46s, far or near): drifts right leaning into it, heaves on the swell, the lamp blinks */
   #sea-buoy{bottom:6px; left:-52px; width:38px;}
@@ -3619,7 +3506,7 @@
 
   /* ---- the lantern on the mast: dim in the first week, bright for Thanksgiving ---- */
   .nvLantern{display:none;}
-  body.november .nvLantern{display:inline;}
+  body.november .nvLantern, body.winter .nvLantern{display:inline;}   /* v7.64: the lantern carries into winter */
   body{--lamp:.3;}
   body[data-nv-lamp="2"]{--lamp:.5;}  body[data-nv-lamp="3"]{--lamp:.72;}  body[data-nv-lamp="4"]{--lamp:1;}
   .nvLampGlow{fill:url(#nvLampGlowG); opacity:calc(var(--lamp) * .95); transform-box:fill-box; transform-origin:50% 50%; scale:calc(.7 + var(--lamp) * .45);}
@@ -3824,7 +3711,24 @@
 
   /* ---- B4. the gull's knitted scarf, from the 15th (perched only) ---- */
   .nvScarf{display:none;}
-  body.november.nvKnit .nvScarf{display:inline;}
+  body.november.nvKnit .nvScarf, body.winter .nvScarf{display:inline;}   /* v7.64: and the gull keeps its scarf */
+  /* ---- v7.64 Winter: the string lights (Season's Lights; design C4, motion B3) ---- */
+  #wnLights{position:fixed; left:0; top:0; width:100vw; height:120px; z-index:3; pointer-events:none; overflow:visible; display:none;}
+  body.wnLightsUp #wnLights{display:block;}
+  body.focusMode #wnLights, body.landing #wnLights{display:none;}
+  @media (max-width: 780px), (max-height: 540px){ #wnLights{display:none !important;} }
+  #wnLights .liWire{fill:none; stroke:var(--navy); stroke-opacity:.85; stroke-linecap:round;}
+  #wnLights .liTack, #wnLights .liSocket{fill:var(--navy);}
+  #wnLights .liGlint{fill:none; stroke:#fff; stroke-opacity:.9; stroke-linecap:round;}
+  #wnLights .wnHit{fill:transparent; pointer-events:all; cursor:pointer;}
+  #wnLights .wnDark{opacity:.8;}
+  #wnLights .wnLit, #wnLights .wnHalo{opacity:0;}
+  #wnLights .wnBulb.on .wnLit, #wnLights .wnBulb.on .wnHalo{opacity:1;}
+  #wnLights.wnFade .wnLit, #wnLights.wnFade .wnHalo{transition:opacity 1.5s ease-in-out;}   /* the day's bulb, while the board is up */
+  #wnLights .wnBulbSwing{transform-box:view-box;}
+  body.waveMotion #wnLights .wnBulbSwing.swing{animation:wnSwing 1.2s linear;}
+  @keyframes wnSwing{0%{rotate:0deg; animation-timing-function:ease-out;} 20%{rotate:8deg; animation-timing-function:ease-in-out;}
+    48%{rotate:-5deg; animation-timing-function:ease-in-out;} 75%{rotate:2.5deg; animation-timing-function:ease-in-out;} 100%{rotate:0deg;}}
   .btGull .nvScarfKnit{fill:var(--nov);}  .btGull .nvScarfBar{fill:var(--cream);}   /* over .btGull path's navy */
   .nvScarfEnds{transform-box:view-box; transform-origin:4.6px -8.8px;}
   body.waveMotion.nvKnit .nvScarfEnds{animation:nvScarfFlut calc(var(--flutT) * 1.2) var(--sine) infinite alternate;}
@@ -4826,21 +4730,15 @@
 <svg id="wv3" class="wvLayer wvWide" viewBox="0 0 2400 120" preserveAspectRatio="none" aria-hidden="true">
   <path class="wvLight" d="M-580.0,82.0 C-434.3,82.0 -325.7,74.0 -180.0,74.0 C-34.3,74.0 74.3,82.0 220.0,82.0 C365.7,82.0 474.3,74.0 620.0,74.0 C765.7,74.0 874.3,82.0 1020.0,82.0 C1165.7,82.0 1274.3,74.0 1420.0,74.0 C1565.7,74.0 1674.3,82.0 1820.0,82.0 C1965.7,82.0 2074.3,74.0 2220.0,74.0 C2365.7,74.0 2474.3,82.0 2620.0,82.0 C2765.7,82.0 2874.3,74.0 3020.0,74.0 L3020.0,140 L-580.0,140 Z"/>
 </svg>
+<!-- v7.64 Winter: the string lights across the top of the board (Season's Lights; drawn on the day) -->
+<svg id="wnLights" aria-hidden="true"></svg>
 <div id="sea" aria-hidden="true" data-weather="breezy">
   <div class="seaFar">
-  <!-- SERPENT — glides left, head first (drawn head-right, mirrored by CSS) -->
-  <div id="sea-serpent" class="seaThing">
-    <div class="ssSwim">
-      <svg viewBox="0 0 132 44">
-        <g class="ssSeg g1"><path class="ssHump h1" d="M9,34 C9.5,27 8,22 5,18.8 L2,19.6 L3.6,14.2 L8.2,16.4 L7.4,18.4 C11.5,22 13.5,27 13.5,34 Z"/></g>
-        <g class="ssSeg g2"><path class="ssHump h2" d="M22,34 C22,17 40,17 40,34 L35.5,34 C35.5,24.5 26.5,24.5 26.5,34 Z"/></g>
-        <g class="ssSeg g3"><g class="ssHump h3"><path d="M46,34 C46,9 70,9 70,34 L63.5,34 C63.5,19 52.5,19 52.5,34 Z"/><path d="M50.6,19 L52,11.8 L54.6,16.2 L56.2,10 L58.6,15.4 L60.8,10.6 L62.8,16 L65,18.8 Z"/></g></g>
-        <g class="ssSeg g4"><g class="ssHump h4"><path d="M76,34 C75,18 84,10 94,10.5 C98,6.5 104,5 110,6.5 C117,8 122,10 124.5,13 Q125.8,15.4 122.8,16.4 C117,18 111,19.5 104.5,19 Q100,18.8 97.5,17 C92,19 87.5,25 86.5,34 Z"/><path d="M95.5,11 Q92,5 87.5,3.5 Q91.5,8.5 91.8,12.8 Z"/>
-          <path class="ssMouth" d="M122.5,15.4 Q114,16.2 106,15.2"/><circle class="ssEye" cx="111.5" cy="10.6" r="1.9"/></g></g>
-      </svg>
-    </div>
-    <svg class="ssFx" viewBox="0 0 132 44"><ellipse class="seaRing r0" cx="112" cy="36" rx="9" ry="2.6"/><ellipse class="seaRing r1" cx="58" cy="36" rx="9" ry="2.6"/><ellipse class="seaRing r2" cx="30" cy="36" rx="7" ry="2.2"/></svg>
-  </div>
+  <!-- v7.64 SERPENT and ATTACK: the acts' elements (they carry .go); the serpent itself is drawn by Serpent into
+       #srpBack (here, behind the boat), #srpFront (in front of it) and #srpTop (over the front waves) -->
+  <div id="sea-serpent" class="seaThing"></div>
+  <div id="sea-attack" class="seaThing"></div>
+  <svg id="srpBack" class="srpLayer" aria-hidden="true"></svg>
   <!-- SKIPPER — a flying fish: four damped hops along a dotted parabola -->
   <div id="sea-fish" class="seaThing">
     <svg class="pfArc" viewBox="0 0 260 64">
@@ -4899,46 +4797,6 @@
         <path d="M22,70 Q34,42 46,70 M52,70 Q66,22 80,70 M86,70 Q100,30 114,70 M120,70 Q130,46 140,70"/>
         <circle class="seaDrop d1" cx="40" cy="44" r="2"/><circle class="seaDrop d2" cx="80" cy="30" r="2.4"/><circle class="seaDrop d3" cx="118" cy="40" r="1.8"/>
       </svg>
-    </div>
-  </div>
-  <!-- THE ATTACK — head-left. Bubbles, a periscope look, the slither, the rear, one strike,
-       one miss, a look at the room, and a head-first dive. Parks 40px short of the boat. -->
-  <div id="sea-attack" class="seaThing">
-    <svg class="atFx" viewBox="0 0 150 90">
-      <circle class="seaBub b1" cx="134" cy="80" r="3"/><circle class="seaBub b2" cx="142" cy="78" r="2.2"/><circle class="seaBub b3" cx="127" cy="77" r="1.8"/>
-      <!-- the periscope: just the head comes up where the bubbles were, looks at the boat, and sinks -->
-      <g class="atPeri">
-        <path d="M148,84 C150,70 146,58 132,50 L137,42 C158,54 160,72 156,84 Z"/>
-        <path d="M140,42.5 C136,36 128,33.5 120,35 C114,36 108,39 104,43 Q101.5,45.6 104.5,47 L108,47.4 L109.5,49.6 L111.5,47.6 L114.5,48 L116,50.2 L118,48.2 L124,48.4 C129,49.5 133,52 134.5,54 Z"/>
-        <path d="M130,49.5 C122,48.5 114,49.4 107,50.8 Q104.6,52.8 107.4,54.2 C114.5,55.6 123,54.6 131,52.8 Z"/>
-        <circle class="atEye" cx="123" cy="40.4" r="2.1"/>
-      </g>
-      <ellipse class="seaRing p0" cx="146" cy="82" rx="16" ry="3.4"/>
-      <ellipse class="seaRing m0" cx="-30" cy="82" rx="18" ry="3.6"/>
-      <ellipse class="seaRing r0" cx="24" cy="82" rx="14" ry="3.2"/><ellipse class="seaRing r1" cx="94" cy="82" rx="12" ry="3"/><ellipse class="seaRing r2" cx="132" cy="82" rx="10" ry="2.8"/><ellipse class="seaRing r3" cx="164" cy="82" rx="8" ry="2.4"/>
-    </svg>
-    <div class="atSlither">
-      <div class="atRise">
-        <svg viewBox="0 0 150 90">
-          <g class="atSeg"><path class="atHump a3" d="M156,80 C156,70 160,63 166,59 L164.5,55 L171,55.5 L169.5,61.5 L167.5,61 C163.5,65 161.5,72 161.5,80 Z"/></g>
-          <g class="atSeg"><path class="atHump a2" d="M118,80 C118,56 146,56 146,80 L139,80 C139,64.5 125,64.5 125,80 Z"/></g>
-          <g class="atSeg"><path class="atHump a1" d="M78,80 C78,50 110,50 110,80 L101.5,80 C101.5,61 86.5,61 86.5,80 Z"/></g>
-          <g class="atNeck">
-            <path class="atNeckP" d="M59.5,84 C65,60 60,36 36,19 L41,11 C72,30 79,58 72.5,84 Z"/>
-            <path class="atFrill" d="M46,13.5 Q49,4.5 56,1.5 Q52.5,8 53.5,16.5 Z M55,22 Q60,15 66.5,13.5 Q61.5,19 61,27 Z"/>
-            <g class="atProfile">
-              <path class="atHead" d="M44,11.5 C40,5 32,2.5 24,4 C18,5 12,8 8,12 Q5.5,14.6 8.5,16 L12,16.4 L13.5,18.6 L15.5,16.6 L18.5,17 L20,19.2 L22,17.2 L28,17.4 C33,18.5 37,21 38.5,23 Z"/>
-              <path class="atJaw" d="M34,18.5 C26,17.5 18,18.4 11,19.8 Q8.6,21.8 11.4,23.2 C18.5,24.6 27,23.6 35,21.8 Z"/>
-              <circle class="atEye" cx="27" cy="9.4" r="2.1"/>
-            </g>
-            <g class="atFace">
-              <path d="M44,11.5 C44,3 22,2 18,9 C15,14 16,22 22,24 C28,26 40,25 42,20 Q44,16 44,11.5 Z"/>
-              <circle class="atEye" cx="24.5" cy="12" r="2.1"/><circle class="atEye" cx="36" cy="12" r="2.1"/>
-              <path class="atGrin" d="M22,19.5 Q30,23 39,19.5"/>
-            </g>
-          </g>
-        </svg>
-      </div>
     </div>
   </div>
   <!-- π-BUOY — the lattice tower is the π; a lamp blinks on top. Far or near. -->
@@ -5198,6 +5056,8 @@
             <path class="nvFlagRed" d="M20.4,14.2h8.4v.34h-8.4Z M20.4,14.88h8.4v.34h-8.4Z M20.4,15.56h8.4v.34h-8.4Z M20.4,16.24h8.4v.34h-8.4Z M20.4,16.92h8.4v.34h-8.4Z M20.4,17.6h8.4v.34h-8.4Z M20.4,18.28h8.4v.34h-8.4Z"/>
             <rect class="nvFlagCanton" x="20.4" y="14.2" width="3.36" height="2.38"/>
           </g></g>
+          <!-- v7.64: the little cannon the boat runs out in the serpent's battle (Serpent drives it; hidden otherwise) -->
+          <g class="btCannon" style="display:none"><path d="M31,24.2 L41.5,21.4 L42.3,24.4 L32,26.6 Z"/><circle cx="31.6" cy="25.6" r="2.2"/></g>
           <path class="btHull" d="M5,26.8 L37,25 Q34.6,31 29.5,34.8 L11.5,34.8 Q7,33 5,26.8 Z"/>
           <path class="btStripe" d="M7.2,29 L34.4,28.2"/>
           <!-- the GULL: a resident. Flies in, lands on the masthead, sits, and is
@@ -5248,6 +5108,7 @@
       <div class="fgHaloDrift"><div class="fgHalo"></div></div>
     </div>
   </div>
+  <svg id="srpFront" class="srpLayer" aria-hidden="true"></svg>
 </div>
 <!-- the static base: the sand dune and a still floor of water. In flow (it's the page's last row). -->
 <svg id="waves" viewBox="0 0 1920 120" preserveAspectRatio="none" aria-hidden="true">
@@ -5268,6 +5129,8 @@
 <svg id="foamB" class="wvLayer foam" viewBox="0 0 1600 120" preserveAspectRatio="none" aria-hidden="true">
   <path d="M-214.0,94.6 C-202.0,92.2 -188.0,91.6 -180.0,92.8 C-171.0,91.4 -156.0,92 -146.0,94.4 M586.0,94.6 C598.0,92.2 612.0,91.6 620.0,92.8 C629.0,91.4 644.0,92 654.0,94.4 M1386.0,94.6 C1398.0,92.2 1412.0,91.6 1420.0,92.8 C1429.0,91.4 1444.0,92 1454.0,94.4"/>
 </svg>
+<!-- v7.64: the serpent over the front waves — its body under the waterline at 20 %, the splashes, the words, the gull in flight -->
+<svg id="srpTop" class="srpLayer" aria-hidden="true"></svg>
 
 <!-- settings: v7.2 preferences panel — a tab rail, one panel at a time,
      every field label-above on a small grid, one sticky action row -->
@@ -5397,8 +5260,12 @@
                   <label class="fLabel" for="sSkipWeeks">Weeks with no school (Mondays)</label>
                   <input class="setInput" type="text" id="sSkipWeeks" placeholder="2026-11-23, 2026-12-21, 2026-12-28, 2027-03-22" spellcheck="false">
                 </div>
+                <div class="fField">
+                  <label class="fLabel" for="sSkipDays">Days with no school</label>
+                  <input class="setInput" type="text" id="sSkipDays" placeholder="2027-01-18, 2027-02-15" spellcheck="false">
+                </div>
               </div>
-              <div class="fHint">Weeks alternate between the first two week types from the anchor Monday, counting <b>school weeks</b>: a week with no school days (Thanksgiving, winter break, spring break) doesn&rsquo;t flip the colour. A week with a single holiday still counts. Tapping a chip on the home screen still overrides for the day; Wednesdays switch times on their own.</div>
+              <div class="fHint">Weeks alternate between the first two week types from the anchor Monday, counting <b>school weeks</b>: a week with no school days (Thanksgiving, winter break, spring break) doesn&rsquo;t flip the colour. A week with a single holiday still counts; list the holiday under <b>Days with no school</b> (no bells that day, and it isn&rsquo;t counted as a school day). Tapping a chip on the home screen still overrides for the day; Wednesdays switch times on their own.</div>
             </div>
             <div class="fGroup">
               <div class="fSection">Clock readout</div>
@@ -15610,7 +15477,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.63.1",
+  appVersion: "7.64.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -15627,6 +15494,7 @@ var DEFAULTS = {
     settle: DEFAULT_SETTLE, wrapup: DEFAULT_WRAPUP,
     autoWeek: false, anchorMonday: "2026-08-31", anchorWeekName: "",
     skipWeeks: [],                               // v7.9: Mondays of weeks with no school (they don't count)
+    skipDays: [],                                // v7.64: single days with no school (MLK Day, Presidents' Day): no bells, not a school day; the rotation is untouched
     defaultGroup: "none", groups: []
   }
 };
@@ -16152,6 +16020,17 @@ function sanitize(c){
         });
         return out.sort();
       })(),
+      /* v7.64: single days with no school (the week still counts for the rotation) — dates, deduped, sorted, ≤ 40 */
+      skipDays: (function(){
+        var out = [];
+        (Array.isArray(b.skipDays) ? b.skipDays : []).slice(0, 80).forEach(function(x){
+          if (typeof x !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(x)) return;
+          var d = new Date(+x.slice(0, 4), +x.slice(5, 7) - 1, +x.slice(8, 10));
+          if (isNaN(d.getTime()) || dateKey(d) !== x) return;
+          if (out.indexOf(x) === -1 && out.length < 40) out.push(x);
+        });
+        return out.sort();
+      })(),
       anchorWeekName: (groups[1] && groups[1].name === b.anchorWeekName) || (groups[0] && groups[0].name === b.anchorWeekName)
         ? b.anchorWeekName
         : (groups.length ? groups[0].name : ""),
@@ -16519,12 +16398,17 @@ function verNum(v){ var p = String(v || "0").split(".").map(function(x){ return 
     var mig = migrate(st.cfg);
     if (!isObj(mig) || !Object.keys(mig).length) throw new Error("unrecognized stored schemaVersion");
     var fileSkips = (!fileBroken && cfg && cfg.bell && cfg.bell.skipWeeks) ? cfg.bell.skipWeeks.slice() : [];
+    var fileDays = (!fileBroken && cfg && cfg.bell && cfg.bell.skipDays) ? cfg.bell.skipDays.slice() : [];   // v7.64
     cfg = sanitize(mig);
     cfgSource = "device";
     /* v7.9: break weeks are calendar facts, not layout — a copy saved before
        the list existed takes the file's (an empty list in the copy is kept) */
     if (!(isObj(mig.bell) && Array.isArray(mig.bell.skipWeeks)) && fileSkips.length){
       cfg.bell.skipWeeks = fileSkips;
+    }
+    /* v7.64: the same for single days off (MLK Day): a copy saved before the list existed takes the file's */
+    if (!(isObj(mig.bell) && Array.isArray(mig.bell.skipDays)) && fileDays.length){
+      cfg.bell.skipDays = fileDays;
     }
     storedFileVersion = typeof st.fileVersion === "string" ? st.fileVersion : null;
     cfgFallback = false;                         // the device copy is good even if the file isn't
@@ -16736,6 +16620,16 @@ var Bell = (function(){
     var mon = new Date(day.getFullYear(), day.getMonth(), day.getDate() - ((day.getDay() + 6) % 7));
     return sk.indexOf(dateKey(mon)) !== -1;
   }
+  /* v7.64: a single day with no school (Settings → Bells → "Days with no school"): MLK Day was a
+     school day to the board — the winter lights counted it, and its bells rang to an empty room */
+  function inSkipDay(day){
+    var sd = cfg.bell.skipDays;
+    return !!(sd && sd.length && sd.indexOf(dateKey(day)) !== -1);
+  }
+  function isSchoolDay(day){
+    var wd = day.getDay();
+    return wd !== 0 && wd !== 6 && !inSkipWeek(day) && !inSkipDay(day);
+  }
   function dayBlocksFor(day, gi){
     var wd = day.getDay();
     var ov = overrideFor(day);
@@ -16750,6 +16644,7 @@ var Bell = (function(){
     }
     if (wd === 0 || wd === 6) return null;                  // no school on weekends
     if (inSkipWeek(day)) return null;                        // v7.11.5: nor in a week with no school (the rotation's list)
+    if (inSkipDay(day)) return null;                         // v7.64: nor on a single day off
     var g = gi >= 0 && cfg.bell.groups[gi] ? cfg.bell.groups[gi] : null;
     if (!g) return null;
     var hasWed = g.wednesday && g.wednesday.length > 0;
@@ -17069,6 +16964,7 @@ var Bell = (function(){
       return (t && t.date === dateKey(now())) ? t.mode : "regular";
     },
     dayBlocksFor: dayBlocksFor,
+    isSchoolDay: isSchoolDay,                    // v7.64: weekday, not in a week or on a day with no school
     /* v7.13: school days after `from` up to and including `to` — weekends and the weeks
        with no school (Settings → Bells) don't count. Dates only; times are ignored. */
     schoolDaysBetween: function(from, to){
@@ -17076,8 +16972,7 @@ var Bell = (function(){
       var end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
       var n = 0, guard = 0;
       while (d <= end && guard++ < 1000){
-        var wd = d.getDay();
-        if (wd !== 0 && wd !== 6 && !inSkipWeek(d)) n++;
+        if (isSchoolDay(d)) n++;                    // v7.64: single days off don't count either
         d.setDate(d.getDate() + 1);
       }
       return n;
@@ -26101,6 +25996,835 @@ function applyWaveMotion(){
   try { if (!was && on && typeof Sea !== "undefined" && Sea.resync) Sea.resync(); } catch(e){}
 }
 
+/* ================= Serpent (v7.64): the year-round serpent and its battle =================
+   Croix (Nov 14–15, 2026): "The serpent is still funky as hell not smooth. I want that thing to slither in and
+   out of the water", "I want a full blown mini battle", "multiple endings … No truce … Randomized", and on the
+   prototype's clips: "Yes that's great. Do it." The spec is docs/reviews/winter-design.md (C8, "Winter 2.2
+   rework") and winter-animation.md (B9); the approved prototype is tools/proofs/serpent.html. This is that
+   prototype on the live board: Deckhand's own boat (#boat, its CSS swell and chop left running), its gull,
+   the far lane's waterline and the real wave layers, at 1× (the clips were × 2.2).
+   · The body is a spine chain that follows its head: the head is keyed in time (cubic Hermite, zero tangents
+     at holds) and sampled once at 120 Hz into a trail with arc length; every frame 44 points sit at fixed arc
+     spacing behind the head on that trail, so nothing ever slides backward along the body. The neck is posed
+     on top (raise, lean, look, curl, turn).
+   · Acts: "pass" (the `serpent` act: porpoising arcs, a stop to look round), "battle" (the `attack` act: a
+     seeded opener, two different exchanges and a finisher — the boat or the serpent wins, never a truce;
+     a fresh seed each showing) and "ice" (the frozen pass: wired behind Sea.frozen(), which needs the frozen
+     sea itself — not built yet, so it never runs on the board; see frozen()).
+   · Layers: #srpBack (in .seaFar: behind the boat), #srpFront (in .seaNear: in front of the boat, under the
+     front waves) and #srpTop (after the foam: the body under the waterline at 20 %, splashes, the words, the
+     flying gull). The serpent's own <g> moves between back and front only when its layer changes; the ghost
+     and the coil's wrap are flat copies of the body's outline, never <use> (Chrome rebuilds a <use>'s shadow
+     tree on every change of what it points at: that, and the prototype's innerHTML for the splashes, made
+     the rare 9–53 ms frames). Splashes and words come from pools of elements that are reused, and an
+     attribute is written only when its value changed.
+   · The boat: the battle drives .btRig (heel, bounce, run, flip, squash), the sails (tack), a little cannon
+     and the perched gull; the boat's drift is held still for the battle and its swell and chop keep running
+     (read back from their own animations, so the serpent strikes where the boat really is).
+   · One requestAnimationFrame loop while an act plays; it stops at the act's end, when the act loses .go
+     (the stage, Sea.clear()), after a hidden tab, and never runs without body.waveMotion. */
+var Serpent = (function(){
+  var PI = Math.PI, NS = "http://www.w3.org/2000/svg", WL = 180.7, MAST0 = 806.4, TXT = 2.3;
+  function r1(n){ return Math.round(n * 10) / 10; }
+  /* the body's outline is written in half pixels as whole numbers, inside a scale(.5) group: a whole number turns
+     into a string from V8's cache, a decimal makes a new one — this halves the garbage each frame */
+  function q(n){ return Math.round(n * 2); }
+  function cl(x, a, b){ return x < a ? a : x > b ? b : x; }
+  function smooth(a, b, x){ var t = cl((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+  function ease(t){ t = cl(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function easeOut(t){ t = cl(t, 0, 1); return 1 - Math.pow(1 - t, 3); }
+  function wrapA(a){ while (a > PI) a -= 2 * PI; while (a < -PI) a += 2 * PI; return a; }
+  function kf(K, t){ if (t <= K[0][0]) return K[0][1]; for (var i = 1; i < K.length; i++) if (t < K[i][0]){ var a = K[i - 1], b = K[i]; return a[1] + (b[1] - a[1]) * ease((t - a[0]) / (b[0] - a[0])); } return K[K.length - 1][1]; }
+  function spring(t, t0, amp, f, d){ if (t < t0) return 0; var u = t - t0; return amp * Math.exp(-d * u) * Math.sin(2 * PI * f * u); }
+  function bump(t, a, b){ return t <= a || t >= b ? 0 : Math.sin(PI * (t - a) / (b - a)); }
+  function hash(k){ var s = Math.sin(k * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+  function rng(seed){ var a = seed >>> 0; return function(){ a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  /* a path keyed in time [[t, x, y, "stop"?], …]: cubic Hermite, Catmull-Rom tangents, zero tangents at holds */
+  function track(K){
+    var n = K.length, M = [];
+    function same(a, b){ return a[1] === b[1] && a[2] === b[2]; }
+    for (var i = 0; i < n; i++){
+      var a = K[Math.max(0, i - 1)], b = K[Math.min(n - 1, i + 1)];
+      if ((i > 0 && same(K[i - 1], K[i])) || (i < n - 1 && same(K[i + 1], K[i])) || K[i][3] === "stop") M.push([0, 0]);
+      else M.push([(b[1] - a[1]) / (b[0] - a[0]), (b[2] - a[2]) / (b[0] - a[0])]);
+    }
+    var last = 0, out = [0, 0];
+    return function(t, o){
+      o = o || out;
+      if (t <= K[0][0]){ o[0] = K[0][1] + M[0][0] * (t - K[0][0]); o[1] = K[0][2] + M[0][1] * (t - K[0][0]); return o; }
+      if (t >= K[n - 1][0]){ o[0] = K[n - 1][1] + M[n - 1][0] * (t - K[n - 1][0]); o[1] = K[n - 1][2] + M[n - 1][1] * (t - K[n - 1][0]); return o; }
+      var i = (K[last][0] <= t) ? last : 0; while (K[i + 1][0] <= t) i++; last = i;
+      var h = K[i + 1][0] - K[i][0], s = (t - K[i][0]) / h, s2 = s * s, s3 = s2 * s, h00 = 2 * s3 - 3 * s2 + 1, h10 = s3 - 2 * s2 + s, h01 = -2 * s3 + 3 * s2, h11 = s3 - s2;
+      o[0] = h00 * K[i][1] + h10 * h * M[i][0] + h01 * K[i + 1][1] + h11 * h * M[i + 1][0];
+      o[1] = h00 * K[i][2] + h10 * h * M[i][1] + h01 * K[i + 1][2] + h11 * h * M[i + 1][1];
+      return o;
+    };
+  }
+
+  /* ---------- the stage: three layers, built once ---------- */
+  var L = null, G = { W: 1920, MAST: MAST0 };
+  function el(tag, attrs, parent){ var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function att(e, k, v){ if (e["_" + k] !== v){ e["_" + k] = v; e.setAttribute(k, v); } }
+  function setD(e, d){ if (e._d !== d){ e._d = d; e.setAttribute("d", d); } }
+  function sty(e, k, v){ if (e["_s" + k] !== v){ e["_s" + k] = v; e.style[k] = v; } }
+  function dom(){
+    if (L) return L;
+    var back = document.getElementById("srpBack"), front = document.getElementById("srpFront"), top = document.getElementById("srpTop");
+    if (!back || !front || !top) return null;
+    L = { back: back, front: front, top: top };
+    var defs = el("defs", {}, top);
+    L.clipA = el("rect", { x: -400, y: -600, width: 4000, height: 600 + WL }, el("clipPath", { id: "srpClipA" }, defs));
+    L.clipB = el("rect", { x: -400, y: WL, width: 4000, height: 300 }, el("clipPath", { id: "srpClipB" }, defs));
+    L.wrapClip = el("path", { d: "" }, el("clipPath", { id: "srpWrapClip" }, defs));
+    L.under = el("g", { "class": "srpUnder" }, back);               // the ice's hole and crack (behind the body)
+    L.serp = el("g", { "class": "srpSerp", "clip-path": "url(#srpClipA)" }, back);
+    L.inner = el("g", {}, L.serp);
+    L.fluke = el("path", { "class": "sk" }, L.inner);
+    var chunks = el("g", {}, L.inner);
+    L.CHK = [];
+    for (var c = 5; c >= 0; c--) L.CHK[c] = [el("path", { "class": "sk" }, chunks), el("path", { "class": "belly" }, chunks), el("path", { "class": "edge" }, chunks)];
+    var head = L.head = el("g", {}, L.inner);
+    L.mouth = el("path", { "class": "mouthIn" }, head);
+    L.jaw = el("path", { "class": "sk", d: "M1.5,1 L19,.7 C19.2,2.6 16.4,4.5 11,5.1 C6,5.5 2,4.7 -.5,3 Z" }, head);
+    el("path", { "class": "sk", d: "M-1.5,-6 L-10,-11.2 L-5.4,-4.2 Z M3.6,-7.4 L-1.6,-12.4 L1,-7 Z" }, head);
+    el("path", { "class": "sk", d: "M-6,-4.8 C-3.6,-7.8 3,-8.6 8.2,-7.2 C12.4,-6.1 16.4,-4.7 20.2,-2.7 C21.8,-1.9 22.2,-.2 21.1,.6 L6,1.4 L-6,5 Z" }, head);
+    el("path", { "class": "belly", d: "M-6,3.4 L6,1.3 L-2,4.6 Z" }, head);
+    L.lip = el("path", { "class": "lineP", d: "M20.4,.9 Q12.5,1.8 6.5,1.3", opacity: ".75" }, head);
+    L.fang = el("path", { fill: "#fff", d: "M16.2,.8 L17.1,3 L18,.8 Z M12.3,1 L13.2,3.1 L14.1,1 Z" }, head);
+    el("circle", { cx: 18.6, cy: -2.7, r: .65, "class": "eyeW" }, head);
+    L.eye = el("ellipse", { "class": "eyeW", cx: 10.4, cy: -3.4, rx: 2.6, ry: 2.6 }, head);
+    L.pupil = el("circle", { "class": "sk", r: 1.2 }, head);
+    L.brow = el("path", { "class": "sk", d: "M6.4,-6.9 L14.2,-4.6 L14.2,-3.3 L6.4,-4.8 Z" }, head);
+    L.mark = el("path", { "class": "lineP" }, head);
+    /* the coil's wrap (in front of the hull, clipped to it) and the ghost (the body under the waterline) */
+    L.wrap = el("g", { "class": "srpWrap", "clip-path": "url(#srpWrapClip)" }, front);
+    L.wrapIn = el("g", {}, L.wrap);
+    L.wrapFill = []; L.wrapEdge = []; for (var wc = 0; wc < 7; wc++){ L.wrapFill.push(el("path", { "class": "sk" }, L.wrapIn)); L.wrapEdge.push(el("path", { "class": "edge" }, L.wrapIn)); }
+    L.ghost = el("g", { "class": "srpGhost", "clip-path": "url(#srpClipB)", opacity: ".2" }, top);
+    L.ghostIn = el("g", {}, L.ghost);
+    L.ghostBody = []; for (var gc = 0; gc < 7; gc++) L.ghostBody.push(el("path", { "class": "sk" }, L.ghostIn));   // a path per chunk (+ the fluke): the frame's own strings, never glued into one
+    L.ghostHead = el("path", { "class": "sk", d: "M-6,-4.8 C-3.6,-7.8 3,-8.6 8.2,-7.2 C12.4,-6.1 16.4,-4.7 20.2,-2.7 C21.8,-1.9 22.2,-.2 21.1,.6 L19,.7 C19.2,2.6 16.4,4.5 11,5.1 C6,5.5 2,4.7 -.5,3 L-6,5 Z" }, L.ghostIn);
+    L.fxUnder = pool(L.under);
+    L.fx = pool(el("g", {}, top));
+    /* the gull in flight (the perched one is the boat's own) */
+    L.gull = el("g", { "class": "srpGull" }, top);
+    el("path", { "class": "glBodyF", d: "M-9,-.4 C-6,-3 2,-3.6 6,-2.6 C6.6,-5 8.4,-5.8 9.8,-5 C11,-4.3 11,-3.2 10.6,-2.4 C9.6,-.4 6,1.6 .5,1.6 C-4,1.6 -7.4,.9 -9,-.4 Z" }, L.gull);
+    el("path", { "class": "sk", d: "M10.6,-4.2 L14,-3.4 L10.5,-2.7 Z M-9,-.4 L-12.6,-2.2 L-12,1.2 Z" }, L.gull);
+    el("circle", { "class": "sk", cx: 9.2, cy: -4.2, r: .7 }, L.gull);
+    L.wing = el("path", { "class": "sk" }, L.gull);
+    L.words = pool(el("g", {}, top));
+    return L;
+  }
+  /* a pool of reusable elements (circles, ellipses, paths, texts): begin(), the shapes, end() hides the rest */
+  function pool(g){
+    var P = { g: g, kinds: {}, n: {} };
+    P.begin = function(){ for (var k in P.n) P.n[k] = 0; };
+    P.take = function(tag){ var a = P.kinds[tag] || (P.kinds[tag] = []), i = P.n[tag] = (P.n[tag] || 0) + 1, e = a[i - 1];
+      if (!e){ e = el(tag, {}, g); a.push(e); } if (e._hid){ e._hid = false; e.style.display = ""; } return e; };
+    P.end = function(){ for (var k in P.kinds){ var a = P.kinds[k]; for (var i = P.n[k] || 0; i < a.length; i++) if (!a[i]._hid){ a[i]._hid = true; a[i].style.display = "none"; } } };
+    P.circle = function(cls, cx, cy, r, op){ var e = P.take("circle"); att(e, "class", cls); att(e, "cx", Math.round(cx)); att(e, "cy", Math.round(cy)); att(e, "r", r1(r)); att(e, "opacity", op == null ? 1 : r1(op)); };
+    P.ellipse = function(cls, cx, cy, rx, ry, op){ var e = P.take("ellipse"); att(e, "class", cls); att(e, "cx", r1(cx)); att(e, "cy", r1(cy)); att(e, "rx", r1(rx)); att(e, "ry", r1(ry)); att(e, "opacity", op == null ? 1 : r1(op)); };
+    P.path = function(cls, d, op, tf){ var e = P.take("path"); att(e, "class", cls); setD(e, d); att(e, "opacity", op == null ? 1 : r1(op)); att(e, "transform", tf || ""); };
+    P.text = function(txt, x, y, sc, size){ var e = P.take("text"); att(e, "class", "pop"); if (e._t !== txt){ e._t = txt; e.textContent = txt; }
+      att(e, "font-size", r1(size)); att(e, "transform", "translate(" + r1(x) + " " + r1(y) + ") scale(" + sc.toFixed(2) + ")"); };
+    return P;
+  }
+
+  /* ---------- the serpent's body ---------- */
+  function makeSerpent(o){
+    var S = { L: o.L, N: 44, sc: o.sc, wl: o.wl, neck: 11, head: track(o.keys), t0: o.keys[0][0] - .5, t1: o.dur + 1, dt: 1 / 120 };
+    S.seg = S.L / S.N;
+    var n = Math.ceil((S.t1 - S.t0) / S.dt) + 2, X = new Float64Array(n), Y = new Float64Array(n), A = new Float64Array(n), F = new Float64Array(n), p = [0, 0];
+    var acc = 0, p0 = S.head(S.t0, [0, 0]), p1 = S.head(S.t0 + .05, [0, 0]), fc = p1[0] < p0[0] ? -1 : 1, tgt = fc;
+    for (var k = 0; k < n; k++){
+      S.head(S.t0 + k * S.dt, p); X[k] = p[0]; Y[k] = p[1];
+      if (k){ var dx = p[0] - X[k - 1], dy = p[1] - Y[k - 1], d = Math.hypot(dx, dy); acc += d;
+        if (d > 1e-6){ var c = dx / d; if (c > .3) tgt = 1; else if (c < -.3) tgt = -1; fc += (tgt - fc) * (1 - Math.exp(-d / 14)); } }
+      A[k] = acc; F[k] = fc;
+    }
+    S.X = X; S.Y = Y; S.A = A; S.F = F; S.n = n;
+    S.dir0 = [X[0] - X[6], Y[0] - Y[6]]; var l0 = Math.hypot(S.dir0[0], S.dir0[1]) || 1; S.dir0 = [S.dir0[0] / l0, S.dir0[1] / l0];
+    S.cross = [];
+    for (k = 1; k < n; k++) if ((Y[k - 1] - S.wl) * (Y[k] - S.wl) < 0){
+      var cx = { x: X[k], a: A[k], up: Y[k] < S.wl, th: S.t0 + k * S.dt, v: (A[k] - A[Math.max(0, k - 6)]) / (6 * S.dt), tt: Infinity };
+      for (var j = k; j < n; j++) if (A[j] >= cx.a + S.L){ cx.tt = S.t0 + j * S.dt; break; }
+      S.cross.push(cx);
+    }
+    var N1 = S.N + 1;
+    S.px = new Float64Array(N1); S.py = new Float64Array(N1); S.pf = new Float64Array(N1); S.w = new Float64Array(N1);
+    for (var i = 0; i < N1; i++){ var u = i / S.N;
+      S.w[i] = S.sc * .5 * (u < .14 ? 9.4 + 3.4 * smooth(0, .14, u) : u < .4 ? 12.8 - .6 * Math.sin(PI * (u - .14) / .26) : 1.6 + 11.2 * Math.pow(1 - (u - .4) / .6, 1.25)); }
+    S.wet = []; S.wetN = 0; for (i = 0; i < 12; i++) S.wet.push([0, 0]);
+    return S;
+  }
+  function spine(S, t){
+    var fi = (t - S.t0) / S.dt, k = cl(Math.floor(fi), 0, S.n - 2), fr = cl(fi - k, 0, 1), A = S.A;
+    var Ah = A[k] + (A[k + 1] - A[k]) * fr, j = k + 1;
+    S.px[0] = S.X[k] + (S.X[k + 1] - S.X[k]) * fr; S.py[0] = S.Y[k] + (S.Y[k + 1] - S.Y[k]) * fr; S.pf[0] = S.F[k] + (S.F[k + 1] - S.F[k]) * fr; S.Ah = Ah;
+    for (var i = 1; i <= S.N; i++){
+      var a = Ah - i * S.seg;
+      while (j > 0 && A[j - 1] >= a) j--;
+      if (j === 0){ var e = A[0] - a; S.px[i] = S.X[0] + S.dir0[0] * e; S.py[i] = S.Y[0] + S.dir0[1] * e; S.pf[i] = S.F[0]; continue; }
+      var u = A[j] > A[j - 1] ? (a - A[j - 1]) / (A[j] - A[j - 1]) : 0;
+      S.px[i] = S.X[j - 1] + (S.X[j] - S.X[j - 1]) * u; S.py[i] = S.Y[j - 1] + (S.Y[j] - S.Y[j - 1]) * u; S.pf[i] = S.F[j - 1] + (S.F[j] - S.F[j - 1]) * u;
+    }
+  }
+  var ANG = new Float64Array(16), LEN = new Float64Array(16);
+  function poseNeck(S, P){
+    var K = S.neck, up = -cl(S.pf[0] * 2, -1, 1), i;
+    if (P.face) up = -P.face;
+    for (i = 0; i < K; i++){ ANG[i] = Math.atan2(S.py[i] - S.py[i + 1], S.px[i] - S.px[i + 1]); LEN[i] = Math.hypot(S.py[i] - S.py[i + 1], S.px[i] - S.px[i + 1]); }
+    for (i = K - 1; i >= 0; i--){
+      var w = (K - i) / K, a = ANG[i];
+      if (P.raise) a += wrapA(-PI / 2 - a) * P.raise * w * w;
+      if (P.lean) a += P.lean * up * w;
+      if (P.curl) a += P.curl * up * Math.sin(2 * PI * w);
+      if (P.look && i < 4) a += P.look * up * (4 - i) / 4;
+      S.px[i] = S.px[i + 1] + LEN[i] * Math.cos(a); S.py[i] = S.py[i + 1] + LEN[i] * Math.sin(a);
+    }
+    S.up = up;
+  }
+  var NCH = 6, CH_N = 8, OUX = new Float64Array(64), OUY = new Float64Array(64), INX = new Float64Array(64), INY = new Float64Array(64);
+  var TOPX = new Float64Array(64), TOPY = new Float64Array(64), BOTX = new Float64Array(64), BOTY = new Float64Array(64), NX = new Float64Array(64), NY = new Float64Array(64);
+  /* path text is built in one array and joined once (whole numbers, space separated): one string per path, not
+     hundreds of pieces glued together — the garbage that made the rare long frames */
+  var PB = [];
+  function curveP(xs, ys, from, to, step){ for (var j = from; j !== to; j += step){ var k = j + step; PB.push("Q", q(xs[j]), q(ys[j]), q((xs[j] + xs[k]) / 2), q((ys[j] + ys[k]) / 2)); } }
+  function joinP(){ var d = PB.join(" "); PB.length = 0; return d; }
+  function autoBlink(t, seed){ var p = 3.7, k = Math.floor((t + seed) / p), st = k * p + .4 + 2.4 * hash(k + seed), d = t + seed - st; return d >= 0 && d < .17 ? 1 - Math.abs(d - .085) / .085 : 0; }
+  function drawSerpent(S, t, P, wrapOn){
+    spine(S, t);
+    if (P.autoCurl){ var hk = cl(Math.floor((t - S.t0) / S.dt), 0, S.n - 2), spd = (S.A[hk + 1] - S.A[hk]) / S.dt, hold = (1 - smooth(8, 70, spd)) * smooth(.35, .75, (S.py[S.neck] - S.py[0]) / (S.neck * S.seg));
+      P.curl = (P.curl || 0) + P.autoCurl * hold; P.lean = (P.lean || 0) + hold * .05 * Math.sin(t * 2.1); }
+    poseNeck(S, P); var oy = P.oy || 0; S.oy = oy;
+    var otf = oy ? "translate(0 " + r1(oy) + ") scale(.5)" : "scale(.5)";
+    att(L.inner, "transform", otf); att(L.ghostIn, "transform", otf); att(L.wrapIn, "transform", otf);
+    var N = S.N, px = S.px, py = S.py, pf = S.pf, i;
+    for (i = 0; i <= N; i++){
+      var a = Math.max(0, i - 1), b = Math.min(N, i + 1), tx = px[a] - px[b], ty = py[a] - py[b], l = Math.hypot(tx, ty) || 1;
+      NX[i] = ty / l; NY[i] = -tx / l;
+      TOPX[i] = px[i] - NX[i] * S.w[i]; TOPY[i] = py[i] - NY[i] * S.w[i]; BOTX[i] = px[i] + NX[i] * S.w[i]; BOTY[i] = py[i] + NY[i] * S.w[i];
+    }
+    S.wetN = 0;
+    for (i = 0; i < N; i++){ var y1 = py[i] + oy - S.wl, y2 = py[i + 1] + oy - S.wl; if (y1 * y2 < 0 && S.wetN < S.wet.length){ var u0 = y1 / (y1 - y2), wt = S.wet[S.wetN++]; wt[0] = px[i] + (px[i + 1] - px[i]) * u0; wt[1] = S.w[i]; } }
+    for (i = 0; i <= N; i++){ var f = -pf[i], sg = f < 0 ? -1 : 1, m = Math.min(1, Math.abs(f) * 1.15), w = S.w[i];
+      OUX[i] = px[i] + sg * NX[i] * w * .98; OUY[i] = py[i] + sg * NY[i] * w * .98; INX[i] = px[i] + sg * NX[i] * w * (1 - .6 * m); INY[i] = py[i] + sg * NY[i] * w * (1 - .6 * m); }
+    var fu = P.finUp || 1; S.finX = null;
+    for (var c = 0; c < NCH; c++){
+      var ia = c * CH_N, ib = Math.min(N, ia + CH_N + 1), last = ib === N, ie = last ? N - 1 : ib;
+      PB.push("M", q(TOPX[ia]), q(TOPY[ia])); curveP(TOPX, TOPY, ia, ib - 1, 1);
+      if (last) PB.push("L", q(px[N]), q(py[N])); else PB.push("L", q(TOPX[ib]), q(TOPY[ib]));
+      var top = joinP();
+      PB.push(q(BOTX[ie]), q(BOTY[ie])); curveP(BOTX, BOTY, ie, ia, -1);
+      var bot = joinP();
+      var d = top + " L" + bot + " Z", ed = top + " M" + bot;
+      for (i = 6; i < N * .7; i += 4){ if (i < ia || i >= ia + CH_N) continue;
+        var s2 = -pf[i] < 0 ? 1 : -1, mm = Math.min(1, Math.abs(pf[i]) * 1.3); if (mm < .08) continue;
+        var w1 = S.w[i] * .92, w2 = S.w[i + 2] * .92, bx1 = px[i] + s2 * NX[i] * w1, by1 = py[i] + s2 * NY[i] * w1, bx2 = px[i + 2] + s2 * NX[i + 2] * w2, by2 = py[i + 2] + s2 * NY[i + 2] * w2;
+        var h = (1.6 + 2.2 * S.w[i] / (6.4 * S.sc)) * S.sc * fu * mm, tx2 = (bx1 + bx2) / 2 + s2 * NX[i + 1] * h + (px[i + 2] - px[i]) * .45, ty2 = (by1 + by2) / 2 + s2 * NY[i + 1] * h + (py[i + 2] - py[i]) * .45;
+        d += " M" + q(bx1) + "," + q(by1) + " L" + q(tx2) + "," + q(ty2) + " L" + q(bx2) + "," + q(by2) + " Z";
+        if (S.finX === null && ty2 + oy < S.wl - 1 && by1 + oy > S.wl - 3) S.finX = [tx2, (bx1 + bx2) / 2]; }
+      var ba = Math.max(1, ia), bb = Math.min(N - 4, ib), bd = "";
+      if (bb > ba){ PB.push("M", q(OUX[ba]), q(OUY[ba])); curveP(OUX, OUY, ba, bb, 1); PB.push("L", q(OUX[bb]), q(OUY[bb]), "L", q(INX[bb]), q(INY[bb])); curveP(INX, INY, bb, ba, -1); PB.push("Z"); bd = joinP(); }
+      setD(L.CHK[c][0], d); setD(L.CHK[c][1], bd); setD(L.CHK[c][2], ed);
+      setD(L.ghostBody[c], d); if (wrapOn){ setD(L.wrapFill[c], d); setD(L.wrapEdge[c], ed); }
+    }
+    var th = Math.atan2(py[N] - py[N - 1], px[N] - px[N - 1]), th2 = Math.atan2(py[N - 6] - py[N - 7], px[N - 6] - px[N - 7]);
+    var fl = th + 1.1 * wrapA(th - th2) + .32 * Math.sin(S.Ah * .05) + .12 * Math.sin(t * 1.9), Lf = 8.5 * S.sc, ex = px[N], ey = py[N];
+    var fd = "M" + q(px[N - 2]) + "," + q(py[N - 2]) + " L" + q(ex + Lf * Math.cos(fl + .62)) + "," + q(ey + Lf * Math.sin(fl + .62)) +
+      " L" + q(ex + 3.4 * S.sc * Math.cos(fl)) + "," + q(ey + 3.4 * S.sc * Math.sin(fl)) + " L" + q(ex + Lf * Math.cos(fl - .62)) + "," + q(ey + Lf * Math.sin(fl - .62)) + " Z";
+    setD(L.fluke, fd);
+    setD(L.ghostBody[6], fd); if (wrapOn) setD(L.wrapFill[6], fd);
+    var ha = Math.atan2(py[0] - py[1], px[0] - px[1]) + (P.nod || 0) * S.up, fy = P.face || (pf[0] < 0 ? -1 : 1) * Math.max(.45, Math.min(1, Math.abs(pf[0]) * 1.3));
+    var tr = cl(P.turn || 0, 0, 1), hs = S.sc * .92;
+    if (tr > 0){ var sg2 = fy < 0 ? -1 : 1, back = sg2 < 0 ? .14 : PI - .14, e = smooth(0, 1, tr), cc = Math.cos(PI * e);
+      ha = e < .5 ? ha + wrapA(-PI / 2 - ha) * e * 2 : -PI / 2 + wrapA(back + PI / 2) * (e * 2 - 1);
+      fy = sg2 * (cc >= 0 ? 1 : -1) * Math.max(.45, Math.abs(cc)); }
+    S.hx = px[0]; S.hy = py[0] + oy; S.ha = ha; S.hsx = hs; S.hsy = hs * fy;
+    var htf = "translate(" + q(px[0]) + " " + q(py[0]) + ") rotate(" + r1(ha * 180 / PI) + ") scale(" + (2 * S.hsx).toFixed(2) + " " + (2 * S.hsy).toFixed(2) + ")";   // ×2: inside the half-pixel group
+    att(L.head, "transform", htf); att(L.ghostHead, "transform", htf);
+    var jw = cl(P.jaw || 0, 0, 1.2), ja = jw * .55, jx = 2 + 17 * Math.cos(ja) + .5 * Math.sin(ja), jy = 1.2 + 17 * Math.sin(ja) - .5 * Math.cos(ja);
+    att(L.jaw, "transform", "rotate(" + r1(ja * 180 / PI) + " 2 1.2)");
+    setD(L.mouth, jw > .04 ? "M1,1.2 L20.6,.7 L" + r1(jx) + "," + r1(jy) + " Z" : "");
+    att(L.lip, "opacity", jw > .04 ? 0 : .75); att(L.fang, "opacity", jw > .25 ? 1 : 0);
+    var bl = Math.max(P.blink || 0, autoBlink(t, P.seed || 0)), lid = cl(Math.max(bl, P.lid || 0), 0, 1), mode = P.eyes || "";
+    att(L.eye, "ry", mode ? .01 : r1(2.6 * (1 - lid) + .01));
+    att(L.pupil, "cx", r1(10.9 + (P.gx == null ? .5 * Math.sin(t * .83) : P.gx))); att(L.pupil, "cy", r1(-3.2 + (lid > 0 ? 1.3 * lid : 0)));
+    att(L.pupil, "r", mode || lid > .75 ? 0 : (P.small ? .75 : 1.2));
+    att(L.brow, "opacity", P.angry ? 1 : 0);
+    setD(L.mark, mode === "x" ? "M8.6,-5.4 L12.2,-1.6 M12.2,-5.4 L8.6,-1.6" : mode === "happy" ? "M8,-2.4 Q10.4,-6 12.8,-2.4" : mode === "sulk" ? "M7.8,-3.6 L13,-3.6" : "");
+  }
+  function headPt(S, lx, ly){ var c = Math.cos(S.ha), s = Math.sin(S.ha), x = lx * S.hsx, y = ly * S.hsy; return [S.hx + x * c - y * s, S.hy + x * s + y * c]; }
+  var curLayer = null;
+  function layer(z){ if (z === curLayer) return; curLayer = z; (z === "front" ? L.front : L.back).appendChild(L.serp); if (z === "front") L.front.insertBefore(L.serp, L.wrap); }
+
+  /* ---------- the water where the body breaks the surface ---------- */
+  function surfaceFx(S, t, ice, F){
+    var wl = S.wl, q, c, k;
+    for (q = 0; q < S.wetN; q++){ var wx = S.wet[q][0], ww = S.wet[q][1] + 1, wb0 = 1.2 * Math.sin(t * 5 + q * 2);
+      F.path("rip", "M" + Math.round(wx - ww - 9) + "," + Math.round(wl + .6) + " Q" + Math.round(wx - ww - 3) + "," + Math.round(wl - 1.8 + wb0) + " " + Math.round(wx - ww) + "," + Math.round(wl + .2) +
+        " M" + Math.round(wx + ww) + "," + Math.round(wl + .2) + " Q" + Math.round(wx + ww + 3) + "," + Math.round(wl - 1.8 - wb0) + " " + Math.round(wx + ww + 9) + "," + Math.round(wl + .6)); }
+    for (c = 0; c < S.cross.length; c++){ var C = S.cross[c], age = t - C.th; if (age < 0 || (S.oy > 2 && t < C.tt)) continue;
+      var sz = cl(C.v / 90, .6, 2.2) * S.sc, x = C.x;
+      if (t >= C.tt && !ice && t < C.tt + 1.1){ var g = (t - C.tt) / 1.1, rx = 7 + 26 * easeOut(g); F.ellipse("rip", x, wl + 1, rx, rx * .16, 1 - g); }
+      if (C.up && age < .9) for (k = 0; k < 5; k++){ var vx = (k - 2) * 17 * sz + 6 * hash(c * 9 + k), vy = -(46 + 26 * hash(c * 7 + k)) * Math.sqrt(sz), y = wl - 2 + vy * age + 230 * age * age;
+        if (y < wl) F.circle("drop", x + vx * age, y, 1.1 + .35 * sz); }
+      if (!C.up && age < .7){ var g2 = age / .7, hh = 13 * sz * Math.sin(PI * Math.min(1, g2 * 1.2)), sp = 5 + 11 * sz * g2;
+        if (hh > .5) F.path("rip", "M" + Math.round(x - sp) + "," + Math.round(wl) + " Q" + Math.round(x - sp * .7) + "," + Math.round(wl - hh) + " " + Math.round(x - sp * .35) + "," + Math.round(wl - hh * .5) +
+          " M" + Math.round(x + sp) + "," + Math.round(wl) + " Q" + Math.round(x + sp * .7) + "," + Math.round(wl - hh) + " " + Math.round(x + sp * .35) + "," + Math.round(wl - hh * .5) + " M" + Math.round(x) + "," + Math.round(wl - 2) + " L" + Math.round(x) + "," + Math.round(wl - 2 - hh * 1.1));
+        for (k = 0; k < 4; k++){ var vx2 = (k - 1.5) * 24 * sz, vy2 = -(60 + 30 * hash(c * 5 + k)) * sz, y2 = wl - 3 + vy2 * age + 300 * age * age; if (y2 < wl) F.circle("drop", x + vx2 * age, y2, 1 + .3 * sz); } }
+    }
+    if (S.finX && !ice){ var fx = S.finX[1], dir = S.pf[6] < 0 ? 1 : -1;
+      F.path("rip", "M" + Math.round(fx - dir * 2) + "," + Math.round(wl + .3) + " Q" + Math.round(fx + dir * 9) + "," + Math.round(wl - 1.4) + " " + Math.round(fx + dir * 20) + "," + Math.round(wl + 1.2), .9); }
+  }
+  function bubbles(F, t, x, y0, t0, t1, seed){ if (t < t0 || t > t1 + 1.2) return;
+    for (var k = 0; k < 7; k++){ var st = t0 + k * (t1 - t0) / 7, a = t - st; if (a < 0 || a > 1.1) continue;
+      var bx = x + 10 * (hash(k + seed) - .5) + 1.5 * Math.sin(a * 9 + k), by = y0 + 6 - 16 * a, r = 1 + 1.6 * hash(k * 3 + seed);
+      if (by < y0 - 1) F.circle("rip", bx, y0 - 1, r * (1 + (a - .4) * 3), 1 - a); else F.circle("rip", bx, by, r, .9); } }
+  function star(F, x, y, r){ var d = "M"; for (var k = 0; k < 8; k++){ var a = k * PI / 4 - PI / 2, rr = k % 2 ? r * .42 : r; d += r1(x + rr * Math.cos(a)) + "," + r1(y + rr * Math.sin(a)) + (k < 7 ? " L" : " Z"); } F.path("star", d); }
+  /* the words, sized for the back of the room (× 2.3 the prototype's at 1×), kept on the screen */
+  function pop(t, t0, t1, x, y, txt, size){ if (t < t0 || t > t1) return;
+    var a = t - t0, sc = Math.min(1, a / .12) * (1 + spring(t, t0 + .12, .35, 2.4, 5)) * (t > t1 - .15 ? (t1 - t) / .15 : 1), fs = (size || 16) * TXT;
+    var half = fs * .32 * txt.length + 6; L.words.text(txt, cl(x, half, G.W - half), y, Math.max(.01, sc), fs); }
+
+  /* ---------- the boat: Deckhand's own, read back where it really is ---------- */
+  var BT = null;
+  function boatRefs(){
+    var b = document.getElementById("boat"); if (!b) return null;
+    if (BT && BT.b === b) return BT;
+    BT = { b: b, rig: b.querySelector(".btRig"), swell: b.querySelector(".btSwell"), chop: b.querySelector(".btChop"), gull: b.querySelector(".btGull"),
+      sails: [].slice.call(b.querySelectorAll(".btSail, .btSail2, .btStay")), cannon: b.querySelector(".btCannon") };
+    return BT;
+  }
+  /* the idle swell and chop, from their own CSS animations. Read ONCE at the act's start (where each animation is,
+     its length, delay and easing); every frame after is arithmetic on the act's clock. Asking an animation for its
+     timing every frame forced a style recalculation inside the frame — those were the long frames at 4×. */
+  var IDLE = { A: null };
+  function bez(x1, y1, x2, y2){
+    return function(x){ if (x <= 0) return 0; if (x >= 1) return 1; var t = x;
+      for (var i = 0; i < 6; i++){ var it = 1 - t, bx = 3 * it * it * t * x1 + 3 * it * t * t * x2 + t * t * t - x, dx = 3 * it * it * x1 + 6 * it * t * (x2 - x1) + 3 * t * t * (1 - x2); if (Math.abs(bx) < 1e-5 || !dx) break; t = cl(t - bx / dx, 0, 1); }
+      var u = 1 - t; return 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t; }; }
+  function easing(str){
+    var m = /cubic-bezier\(([^)]*)\)/.exec(str || "");
+    if (m){ var v = m[1].split(",").map(parseFloat); return bez(v[0], v[1], v[2], v[3]); }
+    if (str === "ease-in-out") return bez(.42, 0, .58, 1);
+    if (str === "ease") return bez(.25, .1, .25, 1);
+    return function(x){ return x; };
+  }
+  function idleInit(){
+    var B = boatRefs(), A = {};
+    function grab(e, map){ try { (e ? e.getAnimations() : []).forEach(function(a){ var k = map[a.animationName]; if (!k) return;
+      var tm = a.effect.getTiming(), d = +tm.duration || 1;
+      A[k] = { a: a, c0: a.currentTime || 0, dur: d, delay: +tm.delay || 0, alt: /alternate/.test(tm.direction), ez: easing(tm.easing), rev: tm.direction === "alternate-reverse" }; }); } catch(x){} }
+    if (B){ grab(B.b, { boatDrift: "drift" }); grab(B.swell, { heave1: "h1", pitch1: "p1" }); grab(B.chop, { heave2: "h2", pitch2: "p2" }); }
+    IDLE.A = A;
+  }
+  function prog(e, t){                           // the directed, eased progress of one animation at act time t
+    if (!e) return .5;
+    var local = e.c0 + t * 1000 - e.delay; if (local < 0) local = 0;
+    var it = Math.floor(local / e.dur), f = local / e.dur - it;
+    if (e.alt && (it % 2 === 1) !== e.rev) f = 1 - f;
+    return e.ez(f);
+  }
+  var AMP = { calm: [2, 2, .8, 1], windy: [7, 9, 3, 4], breezy: [5, 5, 2, 3] };   /* --h1, --p1, --h2, --p2 by the weather (the CSS's numbers) */
+  var Q = { drift: 0, hv1: 0, p1: 0, hv2: 0, p2: 0 };
+  function idleNow(t){
+    var A = IDLE.A; if (!A) return Q;
+    if (t == null) t = 0;
+    var M = AMP[document.body.dataset.sea] || AMP.breezy;
+    Q.drift = A.drift ? 20 * prog(A.drift, A.drift.held ? 0 : t) : 0;   // (never ask an animation its playState in a frame: that too recalculates style)
+    Q.hv1 = A.h1 ? M[0] * (1 - 2 * prog(A.h1, t)) : 0; Q.p1 = A.p1 ? M[1] * (1 - 2 * prog(A.p1, t)) * PI / 180 : 0;
+    Q.hv2 = A.h2 ? M[2] * (1 - 2 * prog(A.h2, t)) : 0; Q.p2 = A.p2 ? M[3] * (1 - 2 * prog(A.p2, t)) * PI / 180 : 0;
+    return Q;
+  }
+  /* a point of the boat's drawing (its 40 × 40 viewBox) on the strip, with the battle's rig state b */
+  function boatPt(X, lx, ly, out){
+    var b = X.b, q = X.q, x = (lx - 20) * b.fx, y = (ly - 31) * b.sy, r = b.roll * PI / 180, c = Math.cos(r), s = Math.sin(r);
+    var rx = x * c - y * s + 20 + b.dx / .95, ry = x * s + y * c + 31 + b.dy / .95;
+    var bx = .95 * rx - 19, by = .95 * ry - 31.92;                    // the chop, about (19, 31.92), then the swell
+    c = Math.cos(q.p2); s = Math.sin(q.p2); var cx = bx * c - by * s, cy = bx * s + by * c + q.hv2;
+    c = Math.cos(q.p1); s = Math.sin(q.p1); var dx = cx * c - cy * s, dy = cx * s + cy * c + q.hv1;
+    out = out || [0, 0]; out[0] = G.MAST - 19 + q.drift + 19 + dx; out[1] = 156 + 31.92 + dy; return out;
+  }
+  function applyBoat(b){
+    var B = boatRefs(); if (!B) return;
+    var tf = "translate(" + r1(b.dx / .95) + "px, " + r1(b.dy / .95) + "px) rotate(" + r1(b.roll) + "deg) scale(" + (b.fx).toFixed(3) + ", " + b.sy.toFixed(3) + ")";
+    sty(B.rig, "transform", tf);
+    var st = "translate(20px, 0) scale(" + b.tack.toFixed(3) + ", 1) translate(-20px, 0)";
+    B.sails.forEach(function(e){ sty(e, "transform", st); });
+    if (B.cannon){ sty(B.cannon, "display", b.cannon > .01 ? "inline" : "none"); att(B.cannon, "transform", "translate(31 25.6) scale(" + b.cannon.toFixed(3) + ") translate(-31 -25.6)"); }
+    B.b.classList.toggle("btlAway", !b.perch);
+    if (B.gull) sty(B.gull, "scale", b.gflip < 0 ? "-1 1" : "");
+  }
+  function releaseBoat(){
+    var B = boatRefs(); if (!B) return;
+    ["transform"].forEach(function(k){ B.rig.style[k] = ""; B.rig["_s" + k] = undefined; });
+    B.sails.forEach(function(e){ e.style.transform = ""; e._stransform = undefined; });
+    if (B.cannon){ B.cannon.style.display = "none"; B.cannon._sdisplay = undefined; }
+    if (B.gull){ B.gull.style.scale = ""; B.gull._sscale = undefined; }
+    B.b.classList.remove("btlAway");
+    try { if (IDLE.A && IDLE.A.drift && IDLE.A.drift.held){ IDLE.A.drift.held = false; IDLE.A.drift.a.play(); } } catch(e){}
+  }
+  function gullAt(t, g){
+    var e = L.gull; if (!g){ sty(e, "display", "none"); return; } sty(e, "display", "");
+    var f = Math.sin(t * 2 * PI * (g[4] || 3.2)), ty = -1 - 9 * f, ex = -1.5 - 2.5 * f;
+    setD(L.wing, "M-4.5,-1.2 Q" + r1(ex) + "," + r1(-1 - 5 * f) + " -2.5," + r1(ty) + " L1.5," + r1(ty + 1.4) + " Q1.6," + r1(-1 - 4 * f) + " 3.5,-1.2 Z");
+    att(e, "transform", "translate(" + r1(g[0]) + " " + r1(g[1]) + ") rotate(" + r1(g[3] || 0) + ") scale(" + (1.0 * g[2]) + " 1)");
+  }
+  function flight(keys){ var f = track(keys), p = [0, 0], q = [0, 0]; return function(t){ f(t, p); f(t + .05, q); var vx = q[0] - p[0], vy = q[1] - p[1];
+    return [p[0], p[1], vx < -.05 ? -1 : 1, cl(Math.atan2(vy, Math.abs(vx) + .4) * 180 / PI * .6, -40, 55) * (vx < -.05 ? -1 : 1)]; }; }
+
+  /* ================= the acts ================= */
+  var SCENES = {};
+  /* ---- the pass (the `serpent` act, 30 s): porpoising arcs of uneven height and spacing, a stop to look round ---- */
+  SCENES.pass = function(){
+    var k = G.W / 1920, K = [[-3, 2190, 206], [0, 1990, 201],
+      [1.5, 1884, 186], [2.15, 1840, 163], [2.75, 1796, 158], [3.35, 1758, 172], [4.0, 1726, 196], [5.6, 1590, 206],
+      [6.5, 1514, 181], [7.1, 1474, 172], [7.7, 1438, 183], [8.5, 1384, 199], [9.4, 1314, 196],
+      [10.1, 1268, 172], [10.7, 1244, 152], [11.2, 1236, 146, "stop"], [11.25, 1236, 146], [13.9, 1236, 146],
+      [14.5, 1218, 154], [15.2, 1190, 176], [15.9, 1160, 201], [17.1, 1060, 207],
+      [18.1, 980, 176], [18.8, 936, 152], [19.5, 890, 150], [20.2, 852, 174], [20.9, 818, 200], [22.3, 700, 205],
+      [23.3, 616, 184], [23.9, 578, 178], [24.6, 544, 192], [26.4, 400, 206], [30, 80, 206]].map(function(q){ var o = q.slice(); o[1] = q[1] * k; return o; });
+    var S = makeSerpent({ L: 176, sc: 1, wl: WL, dur: 30, keys: K });
+    return { dur: 30, S: S, draw: function(t){
+      var P = { seed: 1,
+        raise: kf([[11.1, 0], [11.6, .42], [13.6, .42], [14.2, 0]], t) + .03 * Math.sin(t * 2.2),
+        look: kf([[11.5, 0], [11.9, .32], [12.4, .32], [12.6, -.22], [12.9, -.22], [13.1, 0]], t) + spring(t, 11.25, -.22, 1.5, 3.2),
+        nod: spring(t, 13.3, .25, 1.6, 3), curl: .5 * kf([[11.0, 0], [11.7, 1], [13.7, 1], [14.3, 0]], t),
+        turn: kf([[12.95, 0], [13.15, 1], [13.45, 1], [13.65, 0]], t),
+        jaw: kf([[12.0, 0], [12.12, .45], [12.35, .1], [12.5, 0]], t) + kf([[2.2, 0], [2.4, .25], [2.8, 0]], t),
+        blink: bump(t, 12.92, 13.08), gx: t > 11.2 && t < 14 ? kf([[11.4, .4], [11.9, 1.1], [12.5, -1.0], [13.2, .6]], t) : null };
+      layer("back"); drawSerpent(S, t, P, false); gullAt(t, null);
+      L.fx.begin(); L.words.begin(); surfaceFx(S, t, false, L.fx); L.fx.end(); L.words.end(); } };
+  };
+
+  /* ---- the frozen pass: the shadow under the ice, under the boat, up through the ice on the far side ---- */
+  SCENES.ice = function(o){
+    var wl = 184.5, k = G.MAST - MAST0, S = makeSerpent({ L: 176, sc: 1, wl: wl, dur: 24, keys: [[-3, 1780, 197], [0, 1520, 196], [3, 1250, 198], [5.5, 1010, 196], [7.2, 860, 197], [8.1, 790, 198],
+      [8.9, 720, 197], [9.5, 668, 199], [9.95, 642, 194], [10.3, 630, 170], [10.65, 640, 152], [11.0, 660, 142, "stop"], [11.05, 660, 142], [13.3, 660, 142],
+      [13.75, 676, 151], [14.15, 682, 170], [14.55, 676, 196], [15.2, 640, 197], [16.5, 540, 193], [19, 330, 192], [24, -120, 192]].map(function(q){ var r = q.slice(); r[1] = q[1] + k; return r; }) });
+    var up = S.cross.filter(function(c){ return c.up; })[0], dn = S.cross.filter(function(c){ return !c.up; })[0];
+    var hx = (up.x + dn.x) / 2, hrx = Math.abs(dn.x - up.x) / 2 + 20, tb = up.th, tEnd = dn.tt, X = { b: null, q: null };
+    var CRACK = [[0, 0], [-16, -2], [-30, 3], [-49, 1], [-65, 5], [-78, 2], [-92, 6], [-106, 4], [-118, 7]], CR2 = [[0, 0], [12, 3], [27, 1], [40, 5]];
+    function crack(pts, f, bx){ var d = "", n = Math.max(1, Math.floor(f * (pts.length - 1))); for (var i = 0; i <= n; i++) d += (i ? " L" : "M") + r1(bx + pts[i][0]) + "," + r1(189 + pts[i][1]); return d; }
+    return { dur: 24, S: S, iceWl: wl, draw: function(t){
+      var rock = spring(t, 7.45, 10, 1.4, 1.3) + spring(t, 8.25, -4, 2.2, 2.4) + .8 * Math.sin(t * 26) * bump(t, 7.0, 7.5);
+      var hop = t > 7.5 && t < 8.9 && o.gullHome;
+      var b = { dx: 0, dy: kf([[7.4, 0], [7.62, -4.5], [8.0, .8], [8.4, 0]], t), roll: rock, tack: 1 - .35 * bump(t, 7.45, 9.2) * (.5 + .5 * Math.sin(t * 30)), fx: 1, sy: 1, cannon: 0, perch: !hop, gflip: t > 7.6 && t < 13.8 ? -1 : 1 };
+      applyBoat(b); X.b = b; X.q = idleNow(t);
+      var mx = G.MAST + X.q.drift;
+      if (hop){ var mp = boatPt(X, 20, 2.6), u = (t - 7.5) / 1.4; gullAt(t, [mp[0] - 10 * Math.sin(PI * u), mp[1] - 6 - 26 * Math.sin(PI * u), u < .5 ? 1 : -1, 0, 4.2]); } else gullAt(t, null);
+      var P = { seed: 2, finUp: .8, autoCurl: .4,
+        look: kf([[11.0, 0], [11.4, -.42], [12.4, -.42], [12.7, -.15], [13.3, -.15]], t) + spring(t, 11.05, .2, 1.4, 3),
+        nod: spring(t, 11.9, .22, 1.2, 2.2), raise: kf([[10.8, 0], [11.2, .22], [13.2, .22], [13.6, 0]], t),
+        blink: bump(t, 11.75, 11.9) + bump(t, 12.0, 12.15), gx: t > 11 && t < 13.4 ? kf([[11.1, 0], [11.5, 1.2], [12.6, 1.2], [12.9, -.4]], t) : null,
+        jaw: kf([[12.45, 0], [12.6, .3], [12.8, .05], [12.9, 0]], t) };
+      layer("back"); drawSerpent(S, t, P, false);
+      var U = L.fxUnder, F = L.fx; U.begin(); F.begin(); L.words.begin();
+      if (t >= tb - .05){ var g = easeOut((t - tb + .05) / .18), sk = smooth(tEnd + .4, tEnd + 3.4, t), rx = hrx * g, ry = 5.2 * g;
+        if (rx > .5){ U.ellipse("hole", hx, wl + 1, rx, ry); if (sk > 0) U.ellipse("skin", hx, wl + 1, rx * (.35 + .65 * sk), ry * (.35 + .65 * sk), sk); }
+        for (var i = 0; i < 9; i++){ var a = t - tb, side = i % 2 ? 1 : -1, vx = side * (25 + 55 * hash(i)), vy = -(70 + 70 * hash(i + 9)), gy = wl + 1 + (hash(i + 4) - .3) * 8, land = (-vy + Math.sqrt(vy * vy + 4 * 210 * (gy - wl + 2))) / (2 * 210);
+          var aa = Math.min(a, land), x = hx + side * hrx * .55 * hash(i + 2) + vx * aa, y = wl - 2 + vy * aa + 210 * aa * aa, rot = aa * (300 + 400 * hash(i + 6)) * side, sz = 2.4 + 3 * hash(i + 3), op = 1 - smooth(tEnd + 1, tEnd + 3, t);
+          if (op > .02) F.path("shard", "M" + r1(-sz) + "," + r1(sz * .5) + " L" + r1(sz * .2) + "," + r1(-sz) + " L" + r1(sz) + "," + r1(sz * .7) + " Z", op, "translate(" + r1(x) + " " + r1(y) + ") rotate(" + r1(rot) + ")"); } }
+      var ck = smooth(7.5, 9.6, t), op2 = 1 - .5 * smooth(tEnd + 1, tEnd + 4, t);
+      if (ck > 0) U.path("crackNew", crack(CRACK, ck, mx) + " " + crack(CR2, smooth(7.6, 8.4, t), mx), op2);
+      surfaceFx(S, t, true, F);
+      if (t > 7.4 && t < 8.6) pop(t, 7.45, 8.5, mx + 62, 168, "crrk", 11);
+      if (o.gullHome) pop(t, 7.55, 8.5, mx - 16, 118, "!", 16);
+      U.end(); F.end(); L.words.end(); } };
+  };
+
+  /* ---- the battle: a seeded scenario assembled from a pool of beats (the prototype's, beat for beat) ---- */
+  /* assemble(seed, opts) is pure in its arguments: the plan, the keys and the timings — no DOM */
+  function assemble(seed, o){
+    o = o || {};
+    var MAST = o.mast != null ? o.mast : MAST0, HOME = o.gullHome !== false, wl = WL + 1, R = rng(seed * 7919 + 13);
+    var CH = { dx: [[-9, 0]], dy: [[-9, 0]], roll: [[-9, 0]], flip: [[-9, 1]], tack: [[-9, 1]], cannon: [[-9, 0]] };
+    var KS = [], ADDS = [], POSE = [], FX = [], Z = [[-9, "back"]], WRAP = [], GK = [], PERCH = HOME ? [[-99, 2.45]] : [], PLAN = [], OY = [], SPRAY = [], MASTK = [];
+    var st = { t: 0, x: 0, y: 0, face: -1, dx: 0, tack: 1 };
+    function K(t, x, y){ KS.push([t, x, y]); st.t = t; st.x = x; st.y = y; }
+    function Kr(dt, x, y){ K(st.t + dt, x, y); }
+    function stay(dt){ K(st.t + dt, st.x, st.y); }
+    function bk(ch, t, v){ var c = CH[ch]; if (t <= c[c.length - 1][0]) t = c[c.length - 1][0] + .001; c.push([t, v]); }
+    function bxAt(t){ return MAST + kf(CH.dx, t); }
+    function z(t, v){ Z.push([t, v]); }
+    function pose(f){ POSE.push(f); } function fx(f){ FX.push(f); } function add(f){ ADDS.push(f); }
+    /* v7.64: the open water — the dock covers the bottom-left of the board, so nothing is played behind it */
+    var LEFT = o.left || -1e9, RIGHT = o.right || 1e9;
+    function room(side, D){ var x = MAST + st.dx + side * D; return x > LEFT + 40 && x < RIGHT - 40; }
+    function sideOf(D){ var bx = MAST + st.dx, f = st.face, c;
+      if (((bx - f * D) - st.x) * f > 30) c = -f; else if (((bx + f * D) - st.x) * f > 30) c = f; else c = st.x > bx ? 1 : -1;
+      if (!room(c, D + 150) && room(-c, D + 150)) c = -c;
+      return c; }
+    /* the boat's reactions, big enough to read from the back of the room at 1×: heel ~22°, a bounce, the sail flapping, spray */
+    function react(t0, k, dir){ add(function(t, b){ if (t < t0 || t > t0 + 4) return;
+        b.roll += spring(t, t0, 22 * k * dir, 1.15, 1.5); b.dy += -10 * k * bump(t, t0, t0 + .42) + spring(t, t0 + .42, 3.5 * k, 1.5, 2.4);
+        b.flutter = Math.max(b.flutter || 0, k * (1 - smooth(t0, t0 + 1.8, t))); });
+      SPRAY.push([t0, k, dir]); }
+    function sinkExit(i0, hold, f, sinkT){
+      var minY = wl; for (var i = i0; i < KS.length; i++) minY = Math.min(minY, KS[i][2]);
+      var D = wl - minY + 30, t0 = st.t, x = st.x, y = st.y, T1 = sinkT || Math.max(1.3, hold);
+      if (hold) stay(hold);
+      Kr(.85, x + f * 34, Math.max(y + 24, wl - 10)); Kr(.6, x + f * 76, wl + 42); Kr(.6, x + f * 310, wl + 46);
+      OY.push([t0, t0 + T1, st.t, st.t + .85, D]);
+      return t0;
+    }
+    function gullFill(t1){ var t = GK.length ? GK[GK.length - 1][0] : 2.45, k = GK.length;
+      while (t + 1.7 < t1){ t += 1.5 + .4 * R(); k++; GK.push([t, bxAt(t) + (k % 2 ? 70 + 50 * R() : -60 - 50 * R()), 50 + 26 * R()]); } }
+    function swimTo(x, y, face){
+      if (Math.abs(x - st.x) < 60) Kr(.55, st.x + st.face * 50, Math.max(st.y, wl + 15) + 4);
+      var dir = x > st.x ? 1 : -1;
+      if (dir !== st.face){ Kr(.5, st.x + st.face * 30, st.y + 10); Kr(.5, st.x - st.face * 4, st.y + 14); st.face = dir; }
+      if (face !== dir){ var ox = x + dir * 30, d0 = Math.hypot(ox - st.x, y + 6 - st.y); Kr(Math.max(.6, d0 / 240), ox, y + 6); Kr(.5, ox + dir * 8, y + 18); Kr(.5, ox - dir * 20, y + 14); Kr(.5, x, y); }
+      else Kr(Math.max(.7, Math.hypot(x - st.x, y - st.y) / 240), x, y);
+      st.face = face;
+    }
+    /* the gull: on the mast at the start (it bolts with a "!"), or — when it was away — flying in from the left */
+    function alarmAndFlee(tSpot, tFly){
+      if (HOME){ PERCH[0][1] = tFly; GK.push([tFly, "mast"]); }
+      else GK.push([tFly - 2.4, MAST - 760, 36], [tFly - 1, MAST - 300, 60]);
+      GK.push([tFly + .5, MAST - 12, 136], [tFly + 1.3, MAST - 46, 112], [tFly + 2.3, MAST - 94, 94]);
+      if (HOME){ fx(function(t, C){ pop(t, tSpot, tSpot + 1.1, MAST + 4, 136, "!", 18); });
+        add(function(t, b){ if (t > tSpot - .3 && t < tFly) b.gflip = 1; b.dy += -2.5 * bump(t, tFly - .1, tFly + .3); }); }
+    }
+    var OPEN = {
+      fin: function(){
+        [[-4, 1350, 192], [0, 1100, 191], [1.5, 1010, 191], [3, 890, 192], [4.2, 780, 193],
+         [5.1, 690, 187], [5.65, 655, 161], [6.1, 648, 137], [6.55, 666, 125], [7.0, 692, 139], [7.4, 708, 168], [7.8, 722, 197], [8.7, 790, 208]].forEach(function(k){ K(k[0], k[1] - MAST0 + MAST, k[2]); });
+        st.face = 1; alarmAndFlee(.7, 1.7); z(7.7, "front");
+        pose(function(t, P){ P.finUp = 1 + 1.1 * (1 - smooth(7.1, 7.7, t)); P.jaw += kf([[5.3, 0], [5.8, .3], [6.8, .3], [7.2, 0]], t); });
+      },
+      periscope: function(){
+        [[-4, 1420, 206], [0, 1210, 204], [.9, 1166, 190], [1.4, 1156, 168], [1.75, 1152, 156], [4.2, 1152, 156],
+         [4.7, 1140, 164], [5.2, 1128, 190], [5.9, 1090, 205], [6.7, 1030, 178], [7.15, 1006, 160], [7.6, 982, 164], [8.1, 962, 186], [8.7, 930, 205], [9.4, 880, 208]].forEach(function(k){ K(k[0], k[1] - MAST0 + MAST, k[2]); });
+        st.face = -1; alarmAndFlee(3.1, 3.8); z(0, "front");
+        pose(function(t, P){
+          P.raise += kf([[1.5, 0], [1.9, .5], [4.0, .5], [4.5, 0]], t);
+          P.look += kf([[1.8, 0], [2.1, .3], [2.4, .3], [2.6, -.15], [3.0, -.3], [4.0, -.3], [4.3, 0]], t) + spring(t, 1.75, -.2, 1.4, 3);
+          P.turn = Math.max(P.turn || 0, kf([[2.1, 0], [2.35, 1], [2.65, 1], [2.9, 0]], t));
+          if (t > 3.0 && t < 3.5) P.small = true;
+          P.angry = P.angry || (t > 3.4 && t < 4.6); P.jaw += kf([[3.4, 0], [3.6, .45], [4.2, .45], [4.6, 0]], t);
+          P.blink = Math.max(P.blink || 0, bump(t, 2.92, 3.08));
+          P.gx = t > 1.8 && t < 4.4 ? kf([[1.9, -1], [2.4, 1.1], [2.9, 0], [3.1, -1.1]], t) * (1 - smooth(4.1, 4.4, t)) : P.gx; });
+      }
+    };
+    var MID = {
+      lunge: function(){
+        var bx = MAST + st.dx, s = sideOf(185), T0 = st.t; PLAN.push("lunge");
+        swimTo(bx + s * 185, wl + 15, -s);
+        Kr(.7, bx + s * 172, wl - 4); Kr(.5, bx + s * 170, wl - 34); Kr(.5, bx + s * 156, wl - 62); Kr(.5, bx + s * 138, wl - 82); Kr(.55, bx + s * 124, wl - 94);
+        var A = st.t; stay(2.5); var H = st.t, d0 = st.dx;
+        Kr(.2, bx + s * 104, wl - 100); Kr(.17, bx + s * 74, wl - 90); Kr(.15, bx + s * 42, wl - 56); Kr(.14, bx + s * 22, wl - 16); Kr(.14, bx + s * 10, wl + 14); Kr(.3, bx - s * 18, wl + 34); Kr(.45, bx - s * 70, wl + 40); Kr(.6, bx - s * 150, wl + 42); Kr(.8, bx - s * 190, wl + 24);
+        bk("dx", H - .45, d0); bk("dx", H - .2, d0 + s * 5); bk("dx", H + .45, d0 - s * 68); bk("dx", H + .9, d0 - s * 60); st.dx = d0 - s * 60;
+        bk("tack", H - .35, st.tack); bk("tack", H + .1, -st.tack); st.tack = -st.tack;
+        react(H - .2, 1.1, s); react(H + .62, .7, -s);
+        add(function(t, b){ if (t > A + .2 && t < H - .3) b.roll += 2.2 * Math.sin(t * 23) * bump(t, A + .2, H - .3); });
+        z(T0, "front");
+        pose(function(t, P){ if (t < A - .5 || t > H + 2) return;
+          P.angry = P.angry || (t > A + .3 && t < H + 1);
+          P.jaw += kf([[A + .2, 0], [A + .55, .95], [A + .75, .7], [H - 1.1, .7], [H - .8, .2], [H - .1, .1], [H + .04, 1.05], [H + .5, 1.05], [H + .75, .1], [H + 1.0, 0]], t);
+          P.look += kf([[A, 0], [A + .5, -.55], [H - 1.0, -.55], [H - .1, .15], [H + .12, -.2], [H + .6, 0]], t) + spring(t, A + .05, .25, 1.3, 2.6);
+          P.lean += kf([[H - 1.0, 0], [H - .15, .66], [H + .02, .66], [H + .16, 0]], t);
+          P.raise += kf([[A - .2, 0], [A + .4, .2], [H - 1.0, .2], [H - .15, .35], [H + .15, 0]], t);
+          P.nod += spring(t, H + .04, -.25, 2, 4) + spring(t, A, .18, 1.2, 2.2); });
+        fx(function(t, C){ pop(t, H - .75, H + .2, MAST + kf(CH.dx, H - .7) + 4, 136, "!", 18); pop(t, H + .5, H + 1.4, bx + s * 4, wl - 30, "CHOMP", 12); pop(t, H + 1.5, H + 2.6, MAST + st.dx + 4, 128, "phew", 11); });
+        st.face = -s;
+      },
+      peck: function(){
+        var bx = MAST + st.dx, s = sideOf(92), T0 = st.t, i0; PLAN.push("peck");
+        swimTo(bx + s * 92, wl + 15, -s); i0 = KS.length;
+        Kr(.6, bx + s * 88, wl - 6); Kr(.45, bx + s * 82, wl - 28); Kr(.4, bx + s * 74, wl - 40);
+        var A = st.t, hx = st.x, hy = st.y, p = A + 1.6; stay(3.0); var H = st.t;
+        gullFill(p - 2.0); GK.push([p - 1.5, hx + s * 40, 62], [p - .95, hx + s * 30, 70], [p - .45, hx + s * 16, hy - 30], [p, hx - s * 2, hy - 13], [p + .4, hx - s * 26, hy - 34], [p + 1.1, hx - s * 70, 76], [p + 2.1, hx - s * 30, 52]);
+        sinkExit(i0, .5, -s, 1.6);
+        z(T0, "front");
+        pose(function(t, P){ if (t < A - .5 || t > H + 2) return;
+          var srch = smooth(A, A + .4, t) * (1 - smooth(p - .7, p - .35, t));
+          P.look += .3 * Math.sin((t - A) * 3.0) * srch; P.gx = 1.1 * Math.sin((t - A) * 3.0) * srch + (t > p - .7 && t < p ? 1.1 * smooth(p - .7, p - .4, t) : 0);
+          if (t > p - .8 && t < p) P.small = true;
+          P.nod += spring(t, p, .6, 1.8, 3); P.blink = Math.max(P.blink || 0, bump(t, p, p + .35));
+          P.look += spring(t, p + .55, .36, 3.4, 2.8) + kf([[p + 1.4, 0], [p + 1.6, .6], [p + 1.95, .6], [p + 2.3, 0]], t);
+          P.jaw += kf([[p + 1.45, 0], [p + 1.58, 1.05], [p + 1.75, 0]], t);
+          P.angry = P.angry || (t > p + .5 && t < H + .4);
+          P.lid = Math.max(P.lid || 0, .5 * smooth(H + .1, H + .5, t) * (1 - smooth(H + 1.3, H + 1.8, t))); });
+        fx(function(t, C){ if (t < p || t > p + 1) return; var hq = headPt(C.S, 6, -10); for (var k = 0; k < 3; k++){ var an = (t - p) * 5 + k * 2.09; star(C.F, hq[0] + 14 * Math.cos(an), hq[1] - 3 + 4 * Math.sin(an), 4); } pop(t, p, p + .9, hq[0] - 6, hq[1] - 18, "peck!", 11); });
+        fx(function(t, C){ if (t < p + 1.55 || t > p + 2.3) return; var hq = headPt(C.S, 14, -8); pop(t, p + 1.55, p + 2.3, hq[0], hq[1] - 14, "SNAP", 11); });
+        st.face = -s;
+      },
+      coil: function(){
+        var cx = MAST + st.dx, s = sideOf(78), T0 = st.t, i0; PLAN.push("coil");
+        swimTo(cx + s * 78, wl + 15, -s); i0 = KS.length;
+        Kr(.6, cx + s * 70, wl - 12); Kr(.5, cx + s * 62, wl - 37); stay(.5);
+        var C0 = st.t, wrap0 = 0;
+        [[.4, -38, -20], [.32, -14, -24], [.3, 12, -23], [.28, 32, -15], [.28, 40, -4], [.27, 30, 9], [.27, 8, 14], [.27, -16, 14], [.26, -33, 6], [.26, -38, -5],
+         [.26, -16, -6], [.26, 6, -9], [.26, 28, -11], [.26, 37, -19], [.26, 20, -28], [.26, -2, -26], [.26, -18, -18]].forEach(function(k, i){
+          Kr(k[0], cx - s * k[1], wl + k[2]); if (i === 9) wrap0 = st.t; });
+        stay(.3); var Tsq = st.t - .1, d0 = st.dx;
+        [[.34, -22, -4], [.3, -12, 2], [.28, 2, -2], [.28, 5, -12], [.26, -6, -19]].forEach(function(k){ Kr(k[0], cx - s * k[1], wl + k[2]); });
+        var Hq = st.t; stay(.85); var H = st.t;
+        sinkExit(i0, .4, -s, 1.4);
+        bk("dx", Tsq, d0); bk("dx", Tsq + .45, d0 - s * 104); bk("dx", Tsq + 1.0, d0 - s * 94); st.dx = d0 - s * 94;
+        react(Tsq + .05, 1.2, -s);
+        add(function(t, b){ if (t > C0 + 1.4 && t < Tsq + .2){ var q = smooth(C0 + 1.4, Tsq - .2, t) * (1 - smooth(Tsq, Tsq + .2, t)); b.sx *= 1 - .12 * q + .025 * Math.sin(t * 38) * q; b.sy *= 1 + .07 * q; }
+          b.sx *= 1 + spring(t, Tsq, .2, 2.4, 5); b.sy *= 1 - spring(t, Tsq, .18, 2.4, 5); });
+        WRAP.push([wrap0 - .05, Tsq + .1]); z(T0, "back"); z(H + 1.5, "front");
+        pose(function(t, P){ if (t < C0 || t > H + 2) return;
+          var sq = smooth(C0 + 1.0, C0 + 1.5, t) * (1 - smooth(Tsq, Tsq + .15, t));
+          P.lid = Math.max(P.lid || 0, .45 * sq); P.jaw += .25 * sq;
+          var cf = smooth(Tsq + .2, Tsq + .5, t) * (1 - smooth(H - .3, H, t));
+          if (cf > .05) P.small = true; P.look += .25 * Math.sin((t - Hq) * 6) * cf;
+          P.blink = Math.max(P.blink || 0, bump(t, Hq + .3, Hq + .45) + bump(t, Hq + .55, Hq + .7)); });
+        fx(function(t, C){ var bp = boatPt(C.X, 19, 26); pop(t, Tsq + .05, Tsq + .8, bp[0] - s * 30, bp[1] - 14, "pop!", 12); if (t > Hq - .2 && t < H) pop(t, Hq - .2, H, C.S.hx + 4, C.S.hy - 24, "?", 17); });
+        st.face = -s;
+      },
+      chase: function(){
+        var f = st.dx > 30 ? -1 : st.dx < -30 ? 1 : (R() < .5 ? 1 : -1), T0 = st.t; PLAN.push("chase");
+        if (!room(f, 300) && room(-f, 300)) f = -f;   // v7.64: run for open water, not under the dock
+        var bx = MAST + st.dx;
+        swimTo(bx - f * 92, wl + 15, f);
+        var S0 = st.t + .3, d0 = st.dx, flip0 = kf(CH.flip, S0);
+        bk("flip", S0 - .9, flip0); bk("flip", S0 - .4, f); bk("tack", S0 - .9, st.tack); bk("tack", S0 - .4, f); st.tack = f;
+        bk("dx", S0 - .2, d0); bk("dx", S0 + 3.6, d0 + f * 110); bk("dx", S0 + 4.3, d0 + f * 150); bk("dx", S0 + 5.2, d0 + f * 160); st.dx = d0 + f * 160;
+        K(S0, st.x + f * 20, wl + 22);
+        for (var k = 0; k < 3; k++){ var tk = S0 + k * 1.5, x0 = bxAt(tk + .7) - f * (70 - k * 12);
+          K(tk + .4, x0 - f * 6, wl - 16 - 9 * k); K(tk + .72, x0 + f * 12, wl - 27 - 8 * k); K(tk + 1.05, x0 + f * 26, wl - 8); K(tk + 1.5, x0 + f * 40, wl + 20); }
+        var chomp = S0 + 2 * 1.5 + .72;
+        Kr(.9, st.x + f * 50, wl + 32); Kr(.9, st.x + f * 40, wl + 36);
+        react(S0 - .2, .8, -f); react(chomp + .02, 1.1, -f);
+        z(T0, "front");
+        pose(function(t, P){ if (t < S0 || t > S0 + 6) return; P.angry = P.angry || t < chomp + .6; P.jaw += kf([[chomp - .45, 0], [chomp - .15, 1.05], [chomp + .06, 0]], t) + .2 * bump(t, S0, S0 + 2.8); });
+        fx(function(t, C){ pop(t, chomp, chomp + .7, C.S.hx + f * 10, C.S.hy - 22, "CHOMP", 12); pop(t, chomp + .1, chomp + .9, bxAt(chomp + .3) + f * 40, 138, "zoom!", 11); });
+        st.face = f;
+      }
+    };
+    var FIN = {
+      bonk: function(){
+        var bx = MAST + st.dx, s = sideOf(70), T0 = st.t, i0; PLAN.push("bonk");
+        swimTo(bx + s * 70, wl + 15, -s); i0 = KS.length;
+        Kr(.55, bx + s * 66, wl - 14); Kr(.45, bx + s * 60, wl - 38); Kr(.4, bx + s * 58, wl - 46);
+        var A = st.t, F = A + 2.0, bonk = F + .5; stay(bonk + 1.6 - A); var H = st.t, hx = st.x;
+        sinkExit(i0, 1.6, -s, 2.4);
+        var fl0 = kf(CH.flip, A - .9); bk("flip", A - .9, fl0); bk("flip", A - .35, s); bk("cannon", A + .2, 0); bk("cannon", A + .45, 1.15); bk("cannon", A + .6, 1); bk("cannon", H + .8, 1); bk("cannon", H + 1.1, 0);
+        bk("flip", H + 3.0, s); bk("flip", H + 3.5, 1); bk("dx", H + 1.4, st.dx); bk("dx", H + 3.8, 0); st.dx = 0;
+        react(F, .9, s);
+        add(function(t, b){ b.dx += kf([[F - .15, 0], [F + .03, 8], [F + .6, 2]], t) * -s; b.sx *= 1 + spring(t, F, .16, 3, 5); b.dy += -7 * bump(t, H + 3.7, H + 4.1) - 5 * bump(t, H + 4.2, H + 4.55); });
+        z(T0, "front");
+        pose(function(t, P){ if (t < A - .3 || t > H + 5) return;
+          P.angry = P.angry || (t > A + .1 && t < bonk);
+          P.jaw += kf([[A + .7, 0], [A + .95, .55], [A + 1.15, .3], [A + 1.35, .6], [A + 1.55, .35], [bonk - .15, .4], [bonk, 0]], t);
+          P.nod += spring(t, bonk, -.7, 1.4, 2);
+          if (t > bonk && t < H + .8){ P.eyes = "x"; P.look += .32 * Math.sin((t - bonk) * 4.6) * Math.exp(-(t - bonk) * .5) * (1 - smooth(H + .3, H + .8, t)); }
+          if (t >= H + .8) P.eyes = "sulk"; P.look -= .25 * smooth(H + .3, H + 1.0, t) * (1 - smooth(H + 3.6, H + 4.2, t)); });
+        var from = null;
+        fx(function(t, C){ var X = C.X, Fp = C.F;
+          if (t > F && t < bonk + .02){ if (!from) from = boatPt(X, 42, 22.8, [0, 0]); var u = (t - F) / (bonk - F), hp = headPt(C.S, 9, -7);
+            Fp.circle("sk", from[0] + (hp[0] - from[0]) * u, from[1] + (hp[1] - from[1]) * u - 46 * 4 * u * (1 - u), 3.2); }
+          if (t > F && t < F + 1){ var pz = boatPt(X, 43, 22.6), a2 = (t - F) / 1; for (var k = 0; k < 3; k++){ var rr = (3 + 10 * easeOut(a2)) * (1 - .25 * k); Fp.circle("puff", pz[0] + 8 * k * easeOut(a2) * s, pz[1] - 3 * k * easeOut(a2) - 5 * a2, rr * (1 - a2 * .4), 1 - a2); } }
+          var am = boatPt(X, 40, 4); pop(t, F - .7, F, am[0], am[1] - 6, "aim...", 10); pop(t, F, F + .6, am[0] + 8 * s, am[1] - 6, "pop", 12);
+          if (t > bonk && t < H + .8){ var hc = headPt(C.S, 6, -12); pop(t, bonk, bonk + 1.0, hc[0], hc[1] - 16, "BONK", 14);
+            for (var k2 = 0; k2 < 3; k2++){ var an = (t - bonk) * 4.4 + k2 * 2.09; star(Fp, hc[0] + 16 * Math.cos(an), hc[1] - 4 + 5 * Math.sin(an), 4.4); } }
+          bubbles(Fp, t, hx, wl, H + .6, H + 2.6, 5); pop(t, H + 3.7, H + 4.8, MAST + 6, 130, "♪", 15); });
+        st.face = -s; return { end: H + 3.0, winner: "boat" };
+      },
+      knot: function(){
+        var bx = MAST + st.dx, s = sideOf(64), T0 = st.t, i0; PLAN.push("knot");
+        swimTo(bx + s * 64, wl + 15, -s); i0 = KS.length;
+        Kr(.55, bx + s * 60, wl - 12); Kr(.45, bx + s * 54, wl - 30); stay(.6);
+        var A = st.t, d0 = st.dx, x0 = st.x, y0 = st.y, f = -s;
+        [[.36, 34, -2], [.3, 58, 14], [.32, 54, 36], [.32, 26, 42], [.32, 6, 22], [.32, 20, -10], [.3, 54, -18], [.28, 74, 2], [.32, 64, 28], [.32, 36, 30], [.32, 26, 4], [.34, 44, -16]].forEach(function(k){ Kr(k[0], x0 + f * k[1], y0 + k[2]); });
+        var Kt = st.t; stay(1.8); var H = st.t;
+        sinkExit(i0, 1.6, f, 2.6);
+        bk("dx", A + .15, d0); bk("dx", A + .6, d0 - s * 34); bk("dx", A + 1.9, d0 - s * 34); bk("dx", A + 2.35, d0 - s * 68);
+        bk("flip", A + .05, kf(CH.flip, A)); bk("flip", A + .35, f); bk("flip", Kt + .4, f); bk("flip", Kt + .9, -f);
+        bk("dx", H + 1.8, d0 - s * 68); bk("dx", H + 3.9, 0); st.dx = 0;
+        react(A + .2, 1, f); react(A + 1.95, 1, f);
+        z(T0, "front");
+        pose(function(t, P){ if (t < A - .3 || t > H + 5) return;
+          P.angry = P.angry || (t > A && t < Kt); P.jaw += .6 * Math.abs(Math.sin((t - A) * 3.6)) * smooth(A, A + .3, t) * (1 - smooth(Kt - .3, Kt, t));
+          if (t > Kt){ P.eyes = t < Kt + 1.3 ? "x" : "sulk"; P.look += .25 * Math.sin((t - Kt) * 3.6) * Math.exp(-(t - Kt)); P.nod += spring(t, Kt + 1.3, .3, 2.2, 3) + spring(t, Kt + 1.8, -.3, 2.2, 3); } });
+        fx(function(t, C){ pop(t, A + .25, A + 1.0, bxAt(A + .6) - s * 14, 138, "zip!", 11); pop(t, A + 2.0, A + 2.75, bxAt(A + 2.35) - s * 14, 138, "zip!", 11);
+          pop(t, Kt + .2, Kt + 1.3, C.S.hx, C.S.hy - 32, "?!", 15); pop(t, Kt + 1.35, Kt + 2.6, x0 + f * 36, y0 - 50, "uh oh", 11); bubbles(C.F, t, x0 + f * 36, wl, H + .4, H + 2.6, 9); pop(t, H + 3.4, H + 4.5, MAST + 6, 130, "♪", 15); });
+        st.face = f; return { end: H + 3.0, winner: "boat" };
+      },
+      dunk: function(){
+        var bx = MAST + st.dx, s = sideOf(70), T0 = st.t, i0; PLAN.push("dunk");
+        swimTo(bx + s * 70, wl + 15, -s); i0 = KS.length;
+        Kr(.55, bx + s * 34, wl + 32); Kr(.55, bx + s * 2, wl + 20); Kr(.45, bx - s * 1, wl + 4); Kr(.4, bx - s * 1, wl - 14); Kr(.4, bx, wl - 32); Kr(.35, bx + s * 1, wl - 41);
+        var A = st.t; stay(2.0); var H = st.t;
+        sinkExit(i0, .5, s, 1.6);
+        var L0 = A - 1.3, Lt = A - .4, Sd = A + .3, d0 = st.dx;
+        bk("dy", L0, 0); bk("dy", L0 + .4, -10); bk("dy", Lt + .1, -27);
+        bk("roll", L0 + .05, 0); bk("roll", Lt + .1, 24 * -s); bk("roll", Sd, 48 * -s); bk("roll", Sd + .9, 48 * -s); bk("roll", Sd + 1.2, -12 * -s); bk("roll", Sd + 1.6, 5 * -s); bk("roll", Sd + 2.0, 0);
+        bk("dx", Sd - .5, d0); bk("dx", Sd + .25, d0 - s * 30);
+        bk("dy", Sd - .4, -27); bk("dy", Sd + .25, 44); bk("dy", Sd + 1.1, 44); bk("dy", Sd + 1.35, -14); bk("dy", Sd + 1.7, 4); bk("dy", Sd + 2.05, 0);
+        bk("dx", H + 1.8, d0 - s * 30); bk("dx", H + 3.9, 0); st.dx = 0;
+        add(function(t, b){ b.flutter = Math.max(b.flutter || 0, bump(t, L0, Sd + .3)); });
+        react(Sd + 1.35, .8, s);
+        z(T0, "back");
+        pose(function(t, P){ if (t < L0 || t > H + 2.5) return;
+          P.lid = Math.max(P.lid || 0, .55 * smooth(L0, L0 + .3, t) * (1 - smooth(A - .1, A + .1, t)));
+          var lf = smooth(A + .1, A + .3, t) * (1 - smooth(H - .3, H, t));
+          if (lf > .3) P.eyes = "happy"; P.jaw += lf * (.5 + .45 * Math.sin((t - A) * 20)); P.nod += lf * .1 * Math.sin((t - A) * 10); });
+        fx(function(t, C){ pop(t, A + .2, H, bx, wl - 78, "ha ha!", 12); bubbles(C.F, t, boatPt(C.X, 20, 31)[0], wl, Sd + .25, Sd + 1.1, 8); pop(t, Sd + .1, Sd + .9, bx - s * 40, wl - 24, "SPLOOSH", 12);
+          if (t > Sd + 1.3 && t < Sd + 3.8) for (var k = 0; k < 7; k++){ var a3 = ((t - Sd - 1.3) * 1.2 + k / 7) % 1, dp = boatPt(C.X, 8 + k * 4.4, 14 + (k % 3) * 6); C.F.circle("drop", dp[0], dp[1] + 24 * a3 * a3, 1.6, 1 - a3); } });
+        st.face = s; return { end: H + 3.2, winner: "serpent" };
+      },
+      flop: function(){
+        var bx = MAST + st.dx, s = sideOf(84), T0 = st.t, i0; PLAN.push("flop");
+        swimTo(bx + s * 84, wl + 15, -s); var u0 = st.t;
+        Kr(.5, bx + s * 70, wl + 8); Kr(.45, bx + s * 64, wl - 30); Kr(.45, bx + s * 64, wl - 72); Kr(.45, bx + s * 70, wl - 100); Kr(.4, bx + s * 80, wl - 110);
+        var Ap = st.t; stay(.9);
+        Kr(.34, bx + s * 98, wl - 104); Kr(.28, bx + s * 116, wl - 78); Kr(.22, bx + s * 132, wl - 40); Kr(.18, bx + s * 142, wl - 4); Kr(.55, bx + s * 156, wl + 30);
+        var Fl = st.t - .45;
+        Kr(.45, bx + s * 196, wl + 44); Kr(.4, bx + s * 222, wl + 56); Kr(.4, bx + s * 204, wl + 66); Kr(.5, bx + s * 150, wl + 50); Kr(.5, bx + s * 110, wl + 26); i0 = KS.length; Kr(.55, bx + s * 98, wl - 6); Kr(.45, bx + s * 92, wl - 30); Kr(.4, bx + s * 88, wl - 38);
+        var A = st.t; stay(1.9); var H = st.t;
+        sinkExit(i0, .4, s, 1.4);
+        var d0 = st.dx, W0 = Fl + .3;
+        bk("dx", W0, d0); bk("dx", W0 + .9, d0 - s * 46); bk("dy", W0, 0); bk("dy", W0 + .4, -26); bk("dy", W0 + .85, 2); bk("dy", W0 + 1.15, 0);
+        bk("roll", W0, 0); bk("roll", W0 + .85, 360 * -s); bk("roll", W0 + .851, 0);
+        bk("dx", H + 1.0, d0 - s * 46); bk("dx", H + 3.3, 0); st.dx = 0;
+        react(W0 + .85, 1.0, -s);
+        add(function(t, b){ b.flutter = Math.max(b.flutter || 0, bump(t, W0, W0 + 2.4)); });
+        z(T0, "front");
+        pose(function(t, P){ if (t < u0 || t > H + 2) return;
+          var g1 = smooth(Ap - .3, Ap, t) * (1 - smooth(Fl - .2, Fl, t)); P.jaw += .5 * g1; P.look += .3 * g1 * bump(t, Ap, Ap + .9);
+          var g2 = smooth(A - .2, A + .1, t) * (1 - smooth(H - .2, H + .2, t));
+          if (t > A + .6 && t < A + 1.8) P.eyes = "happy"; P.nod += g2 * kf([[A + .5, 0], [A + .9, .65], [A + 1.4, .65], [A + 1.8, 0]], t); P.raise += .25 * g2; });
+        fx(function(t, C){ var g = t - Fl, Fp = C.F;
+          if (g > 0 && g < 1.3){ var cx = bx + s * 118; for (var k = 0; k < 9; k++){ var vx = (k - 4) * 26, vy = -(120 + 70 * hash(k)), x = cx + vx * g, y = wl - 2 + vy * g + 240 * g * g; if (y < wl) Fp.circle("drop", x, y, 2.4); }
+            var hh = 34 * Math.sin(PI * Math.min(1, g * 1.2)); if (hh > 1) Fp.path("drop", "M" + r1(cx - 40) + "," + r1(wl + 1) + " Q" + r1(cx - 20) + "," + r1(wl - hh) + " " + r1(cx) + "," + r1(wl - hh * .7) + " Q" + r1(cx + 20) + "," + r1(wl - hh) + " " + r1(cx + 40) + "," + r1(wl + 1) + " Z", .95);
+            pop(t, Fl, Fl + 1.3, cx, wl - 64, "KER-SPLASH", 13); }
+          pop(t, A + .5, A + 2.0, bx + s * 88, wl - 80, "ta-da!", 12); pop(t, W0 + .2, W0 + 1.4, MAST + kf(CH.dx, W0 + .8) + 6, 124, "whee!", 11); });
+        st.face = s; return { end: H + 2.3, winner: "serpent" };
+      }
+    };
+    /* ---- assemble: an opener, two different exchanges, a finisher (two the boat wins, two the serpent wins; no truce) ---- */
+    var opener = R() < .5 ? "fin" : "periscope"; PLAN.push(opener); OPEN[opener]();
+    var mids = ["lunge", "peck", "coil", "chase"], a = Math.floor(R() * 4), b2 = (a + 1 + Math.floor(R() * 3)) % 4;
+    [mids[a], mids[b2]].forEach(function(m){ gullFill(st.t + 1); MID[m](); gullFill(st.t); });
+    var fins = R() < .5 ? ["bonk", "knot"] : ["dunk", "flop"], fin = fins[R() < .5 ? 0 : 1];
+    var E = FIN[fin](), DUR = E.end + 1.9, landT = E.end + 1.2;
+    gullFill(landT - 1.6); GK.push([landT - .8, "mastUp"], [landT, "mast"]);
+    PERCH.push([landT, 999]);
+    return { seed: seed, plan: PLAN, opener: opener, exchanges: [mids[a], mids[b2]], finisher: fin, winner: E.winner, dur: DUR, landT: landT,
+      KS: KS, CH: CH, ADDS: ADDS, POSE: POSE, FX: FX, Z: Z, WRAP: WRAP, GK: GK, PERCH: PERCH, OY: OY, SPRAY: SPRAY, wl: wl, mast: MAST, home: HOME };
+  }
+  SCENES.battle = function(o){
+    var mast = G.MAST + idleNow().drift, left = 0;
+    try { var dk = document.getElementById("dock"), r = dk && dk.getBoundingClientRect(); if (r && r.width > 0 && r.bottom > window.innerHeight - 120 && r.left < G.W / 3) left = r.right; } catch(e){}
+    var B = assemble(o.seed, { mast: mast, gullHome: o.gullHome, left: left, right: G.W }), wl = B.wl, CH = B.CH;
+    var S = makeSerpent({ L: 214, sc: 1.22, wl: wl, dur: B.dur, keys: B.KS });
+    function oyAt(t){ var v = 0; for (var i = 0; i < B.OY.length; i++){ var e = B.OY[i]; if (t > e[0] && t < e[3]) v += e[4] * smooth(e[0], e[1], t) * (1 - smooth(e[2], e[3], t)); } return v; }
+    function boat(t){
+      var b = { dx: kf(CH.dx, t), dy: kf(CH.dy, t), roll: kf(CH.roll, t), flip: kf(CH.flip, t), tack: kf(CH.tack, t), sx: 1, sy: 1, cannon: kf(CH.cannon, t), perch: false, gflip: 1, flutter: 0 };
+      for (var i = 0; i < B.PERCH.length; i++) if (t >= B.PERCH[i][0] && t < B.PERCH[i][1]) b.perch = true;
+      for (i = 0; i < B.ADDS.length; i++) B.ADDS[i](t, b);
+      b.flip = (b.flip < 0 ? -1 : 1) * Math.max(.3, Math.abs(b.flip));
+      if (b.flutter > 0) b.tack *= 1 - .4 * b.flutter * (.5 + .5 * Math.sin(t * 31));
+      b.fx = b.flip * b.sx; return b;
+    }
+    /* the gull's mast keys: placed on the boat's planned rig now, and pulled onto where the mast really is near them */
+    var X = { b: null, q: { drift: 0, hv1: 0, p1: 0, hv2: 0, p2: 0 } }, MK = [];
+    X.q.drift = mast - G.MAST;
+    B.GK.forEach(function(k){ if (k[1] === "mast" || k[1] === "mastUp"){ var up = k[1] === "mastUp"; X.b = boat(k[0]); var m = boatPt(X, 20, 2.6, [0, 0]);
+      k[1] = m[0] + (up ? 22 : 0); k[2] = m[1] - 6 - (up ? 26 : 0); MK.push([k[0], k[1] - (up ? 22 : 0), k[2] + (up ? 26 : 0)]); } });
+    var gull = flight(B.GK), landed = false, mp = [0, 0], sp = [0, 0];
+    return { dur: B.dur, S: S, B: B, draw: function(t){
+      var b = boat(t); applyBoat(b); X.b = b; X.q = idleNow(t);
+      var g = b.perch ? null : gull(t);
+      if (g){ boatPt(X, 20, 2.6, mp); mp[1] -= 6;                   // the live mast
+        for (var i = 0; i < MK.length; i++){ var w = 1 - smooth(0, 1.2, Math.abs(t - MK[i][0])); if (w > 0){ g[0] += (mp[0] - MK[i][1]) * w; g[1] += (mp[1] - MK[i][2]) * w; } }
+        g.push(3.4); }
+      gullAt(t, g);
+      if (!landed && t >= B.landT){ landed = true; if (!B.home && o.onLand) try { o.onLand(); } catch(e){} }
+      var P = { seed: 3, finUp: 1, jaw: 0, look: 0, lean: 0, nod: 0, raise: 0, face: 0, autoCurl: .42 };
+      for (i = 0; i < B.POSE.length; i++) B.POSE[i](t, P);
+      P.oy = oyAt(t); var h0 = S.head(t, sp), hr = h0[1], hx0 = h0[0], h1 = S.head(t + .05, sp), hv = Math.hypot(h1[0] - hx0, h1[1] - hr) / .05;
+      P.finUp = Math.max(P.finUp, 1 + 1.1 * smooth(wl + 4, wl + 9, hr) * (1 - smooth(wl + 22, wl + 30, hr)) * smooth(30, 80, hv) * (1 - smooth(1, 6, P.oy)));
+      var zz = "back"; for (i = 0; i < B.Z.length; i++) if (B.Z[i][0] <= t) zz = B.Z[i][1];
+      var wr = false; for (i = 0; i < B.WRAP.length; i++) if (t > B.WRAP[i][0] && t < B.WRAP[i][1]) wr = true;
+      layer(zz); drawSerpent(S, t, P, wr);
+      sty(L.wrap, "display", wr ? "" : "none");
+      if (wr){ var c1 = boatPt(X, 7, 22, [0, 0]), c2 = boatPt(X, 36, 21, [0, 0]), c3 = boatPt(X, 34, 34, [0, 0]), c4 = boatPt(X, 9, 34, [0, 0]);
+        setD(L.wrapClip, "M" + r1(c1[0]) + "," + r1(c1[1]) + " L" + r1(c2[0]) + "," + r1(c2[1]) + " L" + r1(c3[0]) + "," + r1(Math.min(c3[1], wl + 1)) + " L" + r1(c4[0]) + "," + r1(Math.min(c4[1], wl + 1)) + " Z"); }
+      var F = L.fx, C = { S: S, X: X, b: b, F: F }; F.begin(); L.words.begin();
+      surfaceFx(S, t, false, F);
+      for (i = 0; i < B.FX.length; i++) B.FX[i](t, C);
+      for (i = 0; i < B.SPRAY.length; i++){ var s = B.SPRAY[i], ag = t - s[0]; if (ag < 0 || ag > .9) continue; var hp = boatPt(X, 21, 31, mp);   /* spray off the hull, bigger at 1× */
+        for (var k = 0; k < 8; k++){ var vx = ((k - 3.5) * 22 + 16 * s[2]) * s[1], vy = -(80 + 46 * hash(k + i * 7)) * s[1], yy = wl - 2 + vy * ag + 260 * ag * ag; if (yy < wl) F.circle("drop", hp[0] + vx * ag, yy, 2.1); } }
+      F.end(); L.words.end(); } };
+  };
+
+  /* ================= running an act ================= */
+  var ACT = null, raf = 0, manual = false;
+  function shown(on){ if (!L) return; [L.back, L.front, L.top].forEach(function(e){ e.style.display = on ? "block" : "none"; }); }
+  function size(){ G.W = Math.max(320, window.innerWidth || 1920); G.MAST = Math.max(G.W * .42, 300);
+    [L.back, L.front, L.top].forEach(function(e){ e.setAttribute("viewBox", "0 0 " + G.W + " 200"); }); }
+  /* start(kind, el, opts) → the act's length in ms (the director's timer), or 0 when it cannot run.
+     kind: "pass" | "battle" | "ice"; el: the act's element (#sea-serpent / #sea-attack), which carries .go;
+     opts: { seed, gullHome, onLand } */
+  function start(kind, host, o){
+    o = o || {};
+    stop(true);
+    if (!dom() || !SCENES[kind]) return 0;
+    size(); idleInit();
+    if (o.seed == null) o.seed = Math.floor(Math.random() * 1e9);
+    var sc = SCENES[kind](o);
+    ACT = { kind: kind, host: host, sc: sc, t0: null, last: null, o: o, dur: sc.dur };
+    curLayer = null; L.wrap.style.display = "none"; L.wrap._sdisplay = "none";
+    if (kind === "battle"){ try { if (IDLE.A.drift){ IDLE.A.drift.a.pause(); IDLE.A.drift.held = true; } } catch(e){} }   // the boat holds its place for the fight
+    L.ghost.setAttribute("opacity", kind === "ice" ? ".16" : ".2");
+    var wl = sc.iceWl || (kind === "battle" ? WL + 1 : WL);
+    L.clipA.setAttribute("height", 600 + wl); L.clipB.setAttribute("y", wl);
+    if (!document.body.classList.contains("waveMotion")){ ACT.still = true; return Math.round(sc.dur * 1000) + 500; }   // the act's clock runs; nothing moves
+    shown(true);
+    render(0);
+    if (!manual) raf = requestAnimationFrame(loop);
+    return Math.round(sc.dur * 1000) + 500;
+  }
+  function stop(quiet){
+    if (raf) cancelAnimationFrame(raf); raf = 0;
+    if (!ACT) return;
+    var was = ACT; ACT = null;
+    shown(false);
+    if (L){ L.fx.begin(); L.fx.end(); L.fxUnder.begin(); L.fxUnder.end(); L.words.begin(); L.words.end(); }
+    if (was.kind !== "pass") releaseBoat();
+  }
+  var STATS = { frames: 0, ms: 0, worst: 0 };
+  function render(t){
+    if (!ACT || !L) return;
+    var a = performance.now();
+    ACT.sc.draw(Math.min(t, ACT.dur));
+    var d = performance.now() - a; STATS.frames++; STATS.ms += d; if (d > STATS.worst) STATS.worst = d;
+  }
+  function loop(now){
+    raf = 0;
+    if (!ACT) return;
+    if (!ACT.host || !ACT.host.classList.contains("go") || !document.body.classList.contains("waveMotion")){ stop(true); return; }   // the stage, Sea.clear(), motion off
+    if (ACT.t0 === null) ACT.t0 = now;
+    if (ACT.last !== null && now - ACT.last > 1000){ ACT.done = true; stop(); return; }   // back from a hidden tab: the moment has passed
+    ACT.last = now;
+    var t = (now - ACT.t0) / 1000;
+    if (t >= ACT.dur){ render(ACT.dur); ACT.done = true; stop(); return; }
+    render(t);
+    raf = requestAnimationFrame(loop);
+  }
+  /* the frozen sea's dates (design C6e: Jan 11–29), and whether the frozen sea is on the board to swim under.
+     The frozen sea is not built yet (a later version sets body.wnFrozen), so the ice pass waits for it. */
+  function frozenDates(dateStr){ var m = +String(dateStr).slice(5, 7), d = +String(dateStr).slice(8, 10); return m === 1 && d >= 11 && d <= 29; }
+  function frozen(dateStr){ return frozenDates(dateStr) && document.body.classList.contains("wnFrozen"); }
+  return {
+    start: start, stop: function(){ stop(true); }, assemble: assemble, frozen: frozen, frozenDates: frozenDates,
+    playing: function(){ return ACT ? ACT.kind : null; },
+    battling: function(){ return !!(ACT && ACT.kind === "battle"); },
+    /* proofs and tests: hold the frame loop and draw any moment by hand */
+    hold: function(on){ manual = !!on; if (manual && raf){ cancelAnimationFrame(raf); raf = 0; } else if (!manual && ACT && !raf && !ACT.still) raf = requestAnimationFrame(loop); },
+    render: function(t){ render(t); return ACT ? { hx: ACT.sc.S.hx, hy: ACT.sc.S.hy } : null; },
+    act: function(){ return ACT ? { kind: ACT.kind, dur: ACT.dur, seed: ACT.o.seed, plan: ACT.sc.B ? ACT.sc.B.plan.slice() : null, winner: ACT.sc.B ? ACT.sc.B.winner : null } : null; },
+    stats: STATS
+  };
+})();
+
 /* ================= Sea module (v6.18 → v7.5 "Sea 2.0") =================
    Croix, v6.18: "is it possible to do more with it? Keep it small and
    subtle but add in things like a sea monster or maybe math things."
@@ -26119,7 +26843,7 @@ var Sea = (function(){
      boat: a class the boat wears for the act's whole clock (its
      reaction keyframes are timed to the act). loud acts spook the gull. */
   var ACTS = {
-    serpent:  { tier: "common",   dur: 26500, lanes: ["far"] },
+    serpent:  { tier: "common",   dur: 30500, lanes: ["far"] },   /* v7.64: the new serpent's pass (Serpent, "pass"; the ice pass on a frozen sea) */
     turtle:   { tier: "common",   dur: 34500, lanes: ["far", "near"], greeting: true },
     school:   { tier: "common",   dur: 12500, lanes: ["far"], greeting: true },
     paper:    { tier: "common",   dur: 50500, lanes: ["far", "near"], greeting: true },
@@ -26129,7 +26853,10 @@ var Sea = (function(){
     pennant:  { tier: "uncommon", dur: 22500, boat: "pennant", incompatible: ["attack"] },
     gull:     { tier: "uncommon", dur: 6500,  boat: "gullIn", resident: "gull" },
     whale:    { tier: "uncommon", dur: 24500, lanes: ["far"], loud: true, boat: "rippled" },
-    attack:   { tier: "rare",     dur: 20500, lanes: ["far"], loud: true, boat: "struck",
+    /* v7.64: the attack is the serpent's battle (Serpent, "battle"): a fresh seed each showing, 39–50 s (dur is
+       the longest; play() times each one by its own length). It brings the gull into the fight instead of
+       sending it away first (not loud), and the boat wears "battle" for the act's whole clock. */
+    attack:   { tier: "rare",     dur: 50500, lanes: ["far"], battle: true,
                 needs: "serpent", lastThird: true },
     scatter:  { tier: "rare",     combo: [["school", 0], ["whale", 3500]], dur: 28500, loud: true },
     chase:    { tier: "uncommon", combo: [["fish", 0], ["dolphins", 1200]], dur: 11000 },
@@ -26226,7 +26953,10 @@ var Sea = (function(){
     if (!a.season) return true;
     var mo = dateStr ? +String(dateStr).slice(5, 7) : (now().getMonth() + 1);
     var off = typeof cfg !== "undefined" && cfg.ui && cfg.ui.season === "off";
-    return !off && ((a.season === "october" && mo === 10) || (a.season === "november" && mo === 11));   // v7.56: November's sky
+    /* v7.64: November ends when winter begins (the Monday after Thanksgiving week: Nov 30 in 2026) */
+    var nov = a.season === "november" && mo === 11 && !(typeof Season !== "undefined" && Season.winter &&
+      Season.winter(dateStr ? new Date(+String(dateStr).slice(0, 4), mo - 1, +String(dateStr).slice(8, 10)) : now()));
+    return !off && ((a.season === "october" && mo === 10) || nov);   // v7.56: November's sky
   }
   var TIER_W = { common: 1, uncommon: .4, rare: .12 };
   var SUMMON = { attack: .5, whale: .2, scatter: .15, chase: .15 };   // a tap wants a SHOW, not a 50s drift
@@ -26356,7 +27086,7 @@ var Sea = (function(){
   }
   function busy(){
     var b = boat();
-    if (b && /\b(pennant|gullIn|gullOut|struck|rippled|haunted|wilson|fogged|ducks|trawl)\b/.test(b.className)) return true;
+    if (b && /\b(pennant|gullIn|gullOut|battle|rippled|haunted|wilson|fogged|ducks|trawl)\b/.test(b.className)) return true;   // v7.64: battle (was struck)
     return THINGS.some(function(n){ var th = elFor(n); return th && !ACTS[n].beach && th.classList.contains("go"); });   // v7.58: a fire on the sand never holds the water
   }
   function timerRunning(){
@@ -26427,6 +27157,7 @@ var Sea = (function(){
   }
   function gullLeave(){
     if (!residents.gull) return;
+    if (Serpent.battling()){ clearTimeout(gullTid); gullTid = setTimeout(gullLeave, 60000); return; }   // v7.64: it is in the fight; it goes after
     residents.gull = false;
     clearTimeout(gullTid);
     var b = boat(); if (!b) return;
@@ -26483,6 +27214,15 @@ var Sea = (function(){
     if (a.boat) boatWear(a.boat, a.dur);       // same style recalc as .go: the same clock
     th.classList.remove("joined");
     th.classList.add("go");
+    /* v7.64: the serpent's two acts run on Serpent's frame loop, timed by the act it actually plays */
+    if (name === "serpent" || name === "attack"){
+      var kind = name === "attack" ? "battle" : (Serpent.frozen(dateKey(now())) ? "ice" : "pass");
+      var ms = Serpent.start(kind, th, { gullHome: residents.gull, onLand: gullLand }) || a.dur;
+      if (name === "attack") boatWear("battle", ms);
+      clearTimeout(timers[name]);
+      timers[name] = setTimeout(function(){ th.classList.remove("go"); try { Serpent.stop(); } catch(e){} }, ms);
+      return true;
+    }
     alignHeave(th);
     if (name === "fog") alignDrift(th);          // v7.58: the halo drifts with the boat
     clearTimeout(timers[name]);
@@ -26518,7 +27258,8 @@ var Sea = (function(){
     clearTimeout(gullTid); gullTid = null;
     var b = boat();
     if (b && residents.gull){ residents.gull = false; b.classList.remove("gull"); }
-    if (b) ["pennant", "gullIn", "gullOut", "struck", "rippled", "haunted", "wilson", "fogged", "ducks", "trawl", "hop"].forEach(function(c){
+    try { Serpent.stop(); } catch(e){}           // v7.64: the serpent's frame loop, and the boat it was driving
+    if (b) ["pennant", "gullIn", "gullOut", "battle", "rippled", "haunted", "wilson", "fogged", "ducks", "trawl", "hop"].forEach(function(c){
       b.classList.remove(c); clearTimeout(timers["boat:" + c]);
     });
   }
@@ -26681,6 +27422,8 @@ var Sea = (function(){
     summon: summon,
     earned: earned,
     plan: plan,                                  // pure: the director's setlist for (date, period, minutes, weekday)
+    serpent: Serpent,                            // v7.64: the serpent's acts — assemble(seed) (pure), act(), hold(), render(t), stats
+    frozen: function(ds){ return Serpent.frozen(ds || dateKey(now())); },   // v7.64: the ice pass's gate (Jan 11–29 and the frozen sea on the board)
     acts: ACTS,
     setWeather: setWeather,
     reapplyWeather: reapplyWeather,
@@ -28619,6 +29362,7 @@ var Settings = (function(){
     warn: $("sWarn"), warnChime: $("sWarnChime"), flash: $("sFlash"), flashMin: $("sFlashMin"), ccOn: $("sCcOn"), ccMin: $("sCcMin"),
     bath: $("sBath"), bathFirst: $("sBathFirst"), bathLast: $("sBathLast"),
     skipWeeks: $("sSkipWeeks"),
+    skipDays: $("sSkipDays"),                    // v7.64
     stOn: $("sStOn"), stSecs: $("sStSecs"), stMsg: $("sStMsg"), stCard: $("sStCard"),
     pmOn: $("sPmOn"), pmSide: $("sPmSide"), pmNature: $("sPmNature"), pmVol: $("sPmVol"),
     wuOn: $("sWuOn"), wuMin: $("sWuMin"), wuMsg: $("sWuMsg"), wuPrompt: $("sWuPrompt"), wuSteps: $("sWuSteps"),   // v7.14
@@ -28813,6 +29557,7 @@ var Settings = (function(){
     f.auto.checked = !!cfg.bell.autoWeek;
     f.anchor.value = cfg.bell.anchorMonday || "";
     f.skipWeeks.value = (cfg.bell.skipWeeks || []).join(", ");
+    f.skipDays.value = (cfg.bell.skipDays || []).join(", ");   // v7.64
     f.nudge.value = cfg.bell.nudgeSeconds || 0;
     f.presets.value = (cfg.timer.presetsMinutes || []).map(function(m){ return Number.isInteger(m) ? String(m) : fmtPresetChip(m); }).join(", ");
     rebuildDefaultOptions();
@@ -29019,6 +29764,19 @@ var Settings = (function(){
     });
     if (skipWeeks.length > 20) errors.push("Weeks with no school: at most 20");
     skipWeeks.sort();
+    /* v7.64: single days with no school */
+    var skipDays = [];
+    f.skipDays.value.split(/[,\s]+/).forEach(function(tok){
+      if (!tok) return;
+      var mm = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(tok);
+      var dd = mm ? new Date(+mm[1], +mm[2] - 1, +mm[3]) : null;
+      if (!dd || isNaN(dd.getTime()) || dd.getFullYear() !== +mm[1] || dd.getMonth() !== +mm[2] - 1 || dd.getDate() !== +mm[3]){
+        errors.push('Days with no school: "' + tok + '" is not a date (use 2027-01-18)'); return; }
+      var k = dateKey(dd);
+      if (skipDays.indexOf(k) === -1) skipDays.push(k);
+    });
+    if (skipDays.length > 40) errors.push("Days with no school: at most 40");
+    skipDays.sort();
 
     var newGroups = [];
     var seenNames = Object.create(null);   // no inherited keys ("constructor"...)
@@ -29118,6 +29876,7 @@ var Settings = (function(){
     cfg.bell.autoWeek = autoOn && newGroups.length >= 2;
     if (autoOn){ cfg.bell.anchorMonday = f.anchor.value; cfg.bell.anchorWeekName = newAnchorName; }
     cfg.bell.skipWeeks = skipWeeks;
+    cfg.bell.skipDays = skipDays;                // v7.64
     var oldGroups = cfg.bell.groups;
     cfg.bell.groups = newGroups;
     cfg.rosters = gatherRosters();
@@ -29728,6 +30487,7 @@ var SaveState = (function(){
             cfg.bell.anchorWeekName = fileBells.anchorWeekName;
             cfg.bell.autoWeek = fileBells.autoWeek;
             cfg.bell.skipWeeks = fileBells.skipWeeks.slice();   // v7.9
+            cfg.bell.skipDays = (fileBells.skipDays || []).slice();   // v7.64
             cfg.bell.defaultGroup = fileBells.defaultGroup;
             Bell.reResolve(null);
             Landing.refresh();
@@ -31419,8 +32179,20 @@ var Season = (function(){
      Seasonal touches switch (cfg.ui.season "off") takes both. */
   function active(){
     if (cfg.ui && cfg.ui.season === "off") return null;
-    var m = now().getMonth();
+    var d = now(), m = d.getMonth();
+    if (inWinter(d)) return "winter";           // v7.64: Nov 30 (the Monday after Thanksgiving week) → Mar 7
     return m === 9 ? "october" : m === 10 ? "november" : null;
+  }
+  /* v7.64 Winter (docs/reviews/winter-design.md, A): it starts on the Monday after Thanksgiving week
+     (Thanksgiving + 4; 2026: Mon Nov 30) and ends on the second Monday of March (2027: Mar 8, not
+     included). November clears on that Monday by itself. Pure in the date. */
+  function winterStart(y){ return new Date(y, 10, Sea.thanksgivingDay(y) + 4); }
+  function winterEnd(y){                         // y = the season's first year; the second Monday of March after it
+    var d = new Date(y + 1, 2, 1); d.setDate(1 + (8 - d.getDay()) % 7 + 7); return d;
+  }
+  function inWinter(d){
+    var day = new Date(d.getFullYear(), d.getMonth(), d.getDate()), y = d.getMonth() < 6 ? d.getFullYear() - 1 : d.getFullYear();
+    return day >= winterStart(y) && day < winterEnd(y);
   }
   var prelitFor = null;
   function prelight(){
@@ -31438,6 +32210,7 @@ var Season = (function(){
     var m = active(), d = now();
     document.body.classList.toggle("october", m === "october");
     document.body.classList.toggle("november", m === "november");
+    document.body.classList.toggle("winter", m === "winter");   // v7.64
     document.body.classList.toggle("nvThanks", m === "november" && thanksgivingWeek(d));
     /* v7.58 November 2.0: the date beats — the scarf from the 15th, the flag on Veterans Day,
        the turkey in feast week, the feast on the last school day */
@@ -31445,11 +32218,12 @@ var Season = (function(){
     document.body.classList.toggle("nvVets", m === "november" && veteransDay(d));
     document.body.classList.toggle("nvFeast", m === "november" && feastWeek(d));
     document.body.classList.toggle("nvFeastDay", m === "november" && feastDay(d));
-    if (m === "november") document.body.dataset.nvLamp = String(lamp(d));
+    if (m === "november" || m === "winter") document.body.dataset.nvLamp = String(lamp(d));   // v7.64: the lantern carries into winter
     else delete document.body.dataset.nvLamp;
     if (m === "october") prelight();
     try { Leaves.step(); } catch(e){}
     try { Fall.step(); } catch(e){}
+    try { Lights.step(); } catch(e){}            // v7.64
   }
 
   /* ---- v7.56 November ----
@@ -31485,6 +32259,8 @@ var Season = (function(){
   }
   function lamp(d){
     d = d || now();
+    /* v7.64: in winter the lantern dims by the month (design C5): 4 in December, 3 in January, 2 after */
+    if (inWinter(d)) return d.getMonth() === 10 || d.getMonth() === 11 ? 4 : d.getMonth() === 0 ? 3 : 2;
     if (d.getMonth() !== 10) return 0;
     if (d.getDate() >= Sea.thanksgivingDay(d.getFullYear()) - 3) return 4;
     return Math.min(3, 1 + Math.floor((d.getDate() - 1) / 7));
@@ -31666,6 +32442,123 @@ var Season = (function(){
      on a windy day — and regrow three to five minutes later; a tap is a gust), the scarecrow's
      crow, the squirrel (a dig every few minutes, seeded), the turkey's fan. One tick a second on
      the board's own clock; every motion is CSS behind body.waveMotion, every tap is small. */
+  /* ---- v7.64 Winter: the string lights (docs/reviews/winter-design.md C4, winter-animation.md B3) ----
+     A colored C9 string across the top of the board, still. 14 bulbs, one per December school day:
+     up dark on the season's first Monday (Nov 30), one more lit each December school day (Dec 18 →
+     all 14), all lit over the break, then the reverse countdown — one goes dark each school day from
+     the first day back (Jan 4 → 13) — and the string comes down on the fourth Friday of January
+     (2027: Jan 22). School days are the board's own (Bell.isSchoolDay: weekends, the weeks AND the
+     single days with no school), so MLK Day is not one: Jan 15 → 4, Jan 19 → 3, Jan 21 → 1.
+     count(date) is pure in the date and the calendar. No motion at rest; a bulb that changes while
+     the board is up fades over 1.5 s; a tap swings one bulb, once. */
+  var Lights = (function(){
+    var BULBS = [
+      { glass: "#E0483E", core: "#FFB3A8", dark: "#7A4542", halo: "#FF6A5C" },   // red (warmer than the alerts' coral)
+      { glass: "#EE8F22", core: "#FFDCA0", dark: "#7C5E3E", halo: "#FFA640" },   // amber
+      { glass: "#2FA85A", core: "#B4F2C2", dark: "#3F6650", halo: "#4FD47E" },   // green
+      { glass: "#4C7BD9", core: "#C9DBFF", dark: "#46587E", halo: "#6E9BFF" },   // ice blue, winter's own
+      { glass: "#F2C82E", core: "#FFF4BE", dark: "#7A7046", halo: "#FFE45C" }];  // yellow
+    function mid(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+    function schoolDays(a, b){                   // school days in [a, b], both included
+      var n = 0, d = mid(a), e = mid(b), g = 0;
+      while (d <= e && g++ < 400){ if (Bell.isSchoolDay(d)) n++; d.setDate(d.getDate() + 1); }
+      return n;
+    }
+    function takeDown(y){ var d = new Date(y, 0, 1); d.setDate(1 + (12 - d.getDay()) % 7 + 21); return d; }   // the fourth Friday of January
+    /* → null (no string) or { lit, of } */
+    function count(d){
+      d = mid(d || now());
+      var y = d.getMonth() < 6 ? d.getFullYear() - 1 : d.getFullYear();
+      if (!inWinter(d) || d >= takeDown(y + 1)) return null;
+      var of = Math.max(1, schoolDays(new Date(y, 11, 1), new Date(y, 11, 31)));
+      if (d.getFullYear() === y) return { lit: d.getMonth() === 11 ? Math.min(of, schoolDays(new Date(y, 11, 1), d)) : 0, of: of };
+      return { lit: Math.max(0, of - schoolDays(new Date(y + 1, 0, 1), d)), of: of };
+    }
+    var svg = null, built = null, shown = -1, laidFor = "";
+    function r1(n){ return Math.round(n * 10) / 10; }
+    function tear(cx, top, w, h){ return "M" + r1(cx - w * .32) + "," + r1(top) + " C" + r1(cx - w * .62) + "," + r1(top + h * .35) + " " + r1(cx - w * .5) + "," + r1(top + h * .78) + " " + r1(cx) + "," + r1(top + h) +
+      " C" + r1(cx + w * .5) + "," + r1(top + h * .78) + " " + r1(cx + w * .62) + "," + r1(top + h * .35) + " " + r1(cx + w * .32) + "," + r1(top) + " Z"; }
+    function rect(el){ if (!el) return null; var b = el.getBoundingClientRect(); return (b.width > 2 && b.height > 2) ? b : null; }
+    /* the layout (proofs' topLights): tacks at the screen's top edge from 20 px inside the clock card to 18 px
+       short of its stage chip, seven scallops, each sagging as far as it can (46 px at 1080p) while every
+       bulb keeps 16 px clear of the face's lines */
+    function layout(n){
+      var W = window.innerWidth, H = window.innerHeight, card = rect(document.getElementById("clockWidget"));
+      var k = Math.max(.62, Math.min(1, H / 1080, W / 1920 * 1.12));
+      var chip = null;                           // the card's controls in its top-right corner (the stage chip, and ✕ / resize when unlocked)
+      if (card) [].forEach.call(document.querySelectorAll("#clockWidget .strip button, #clockWidget .strip .wSize, #clockWidget > .wFocus"), function(b){
+        var r = rect(b); if (r && r.top < card.top + 60 && r.left > card.left + card.width / 2 && (!chip || r.left < chip.left)) chip = r; });
+      var x0 = card ? card.left + 20 : 48, x1 = chip ? chip.left - 18 : card ? card.right - 60 : W - 64;
+      var sc = Math.max(1, Math.ceil(n / 2)), y0 = 5, step = (x1 - x0) / sc, drop = 34 * k;
+      var content = ["dateline", "clock", "periodLine"].map(function(id){ return rect(document.getElementById(id)); }).filter(Boolean);
+      var wire = "", tacks = "", pos = [], R = 17;
+      function rnd(){ R = (R * 16807) % 2147483647; return R / 2147483647; }
+      for (var i = 0; i < sc; i++){
+        var a = x0 + i * step, b = a + step, D = 2 * 46 * k;
+        [.3, .7].forEach(function(t){ var bx = a + t * step, lim = 1e9;
+          content.forEach(function(c){ if (bx > c.left - 10 * k - 16 && bx < c.right + 10 * k + 16) lim = Math.min(lim, c.top - 16); });
+          D = Math.max(4, Math.min(D, (lim - drop - y0) / (2 * t * (1 - t)))); });
+        var cx = (a + b) / 2, cy = y0 + D;
+        wire += "M" + r1(a) + "," + y0 + " Q" + r1(cx) + "," + r1(cy) + " " + r1(b) + "," + y0 + " ";
+        [.3, .7].forEach(function(t){ if (pos.length >= n) return;
+          pos.push([(1 - t) * (1 - t) * a + 2 * (1 - t) * t * cx + t * t * b, (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y0, (rnd() - .5) * 10]); });
+      }
+      for (i = 0; i <= sc; i++){ var tx = x0 + i * step; tacks += '<circle class="liTack" cx="' + r1(tx) + '" cy="' + y0 + '" r="' + r1(3.2 * k) + '"/><circle cx="' + r1(tx - k) + '" cy="' + r1(y0 - k) + '" r="' + r1(.9 * k) + '" fill="#fff"/>'; }
+      return { k: k, wire: wire, tacks: tacks, pos: pos, key: [W, H, r1(x0), r1(x1), content.map(function(c){ return r1(c.top); }).join("/")].join("|") };
+    }
+    function build(n){
+      var L = layout(n), defs = "", g = "";
+      if (built && built.key === L.key && built.n === n) return;
+      BULBS.forEach(function(b, i){ defs += '<radialGradient id="liHalo' + i + '"><stop offset="0" stop-color="' + b.halo + '" stop-opacity=".62"/><stop offset=".45" stop-color="' + b.halo + '" stop-opacity=".24"/><stop offset="1" stop-color="' + b.halo + '" stop-opacity="0"/></radialGradient>'; });
+      L.pos.forEach(function(p, i){
+        var B = BULBS[i % 5], k = L.k, x = p[0], y = p[1];
+        g += '<g class="wnBulb" data-i="' + i + '" transform="rotate(' + r1(p[2]) + ' ' + r1(x) + ' ' + r1(y) + ')"><g class="wnBulbSwing" style="transform-origin:' + r1(x) + 'px ' + r1(y) + 'px">' +
+          '<circle class="wnHalo" cx="' + r1(x) + '" cy="' + r1(y + 20 * k) + '" r="' + r1(30 * k) + '" fill="url(#liHalo' + (i % 5) + ')"/>' +
+          '<rect class="liSocket" x="' + r1(x - 4 * k) + '" y="' + r1(y) + '" width="' + r1(8 * k) + '" height="' + r1(8 * k) + '" rx="' + r1(1.4 * k) + '"/>' +
+          '<path class="wnDark" fill="' + B.dark + '" d="' + tear(x, y + 7.4 * k, 17 * k, 26 * k) + '"/>' +
+          '<g class="wnLit"><path fill="' + B.glass + '" d="' + tear(x, y + 7.4 * k, 17 * k, 26 * k) + '"/><path fill="' + B.core + '" d="' + tear(x, y + 11 * k, 9 * k, 15 * k) + '"/></g>' +
+          '<path class="liGlint" style="stroke-width:' + r1(1.8 * k) + '" d="M' + r1(x - 4 * k) + ',' + r1(y + 13 * k) + ' q' + r1(-1.4 * k) + ',' + r1(5 * k) + ' ' + r1(.4 * k) + ',' + r1(9 * k) + '"/>' +
+          '<rect class="wnHit" x="' + r1(x - 13 * k) + '" y="' + r1(y - 2) + '" width="' + r1(26 * k) + '" height="' + r1(40 * k) + '"/></g></g>';
+      });
+      svg.innerHTML = '<defs>' + defs + '</defs><path class="liWire" style="stroke-width:' + r1(1.8 * L.k) + '" d="' + L.wire + '"/>' + g + L.tacks;
+      built = { key: L.key, n: n }; shown = -1;
+    }
+    function paint(lit, fade){
+      if (!svg) return;
+      svg.classList.toggle("wnFade", !!fade);
+      [].forEach.call(svg.querySelectorAll(".wnBulb"), function(b, i){ b.classList.toggle("on", i < lit); });
+      shown = lit;
+    }
+    function step(){
+      svg = svg || document.getElementById("wnLights");
+      if (!svg) return;
+      var c = Season.active() === "winter" ? count(now()) : null;
+      document.body.classList.toggle("wnLightsUp", !!c);
+      if (!c){ if (built){ svg.innerHTML = ""; built = null; shown = -1; } return; }
+      var was = built ? shown : -1;
+      build(c.of);
+      paint(c.lit, was !== -1 && was !== c.lit);   // a change while the board is up fades (the first paint does not)
+    }
+    function wire(){
+      svg = document.getElementById("wnLights");
+      if (!svg) return;
+      svg.addEventListener("pointerdown", function(e){
+        var b = e.target.closest && e.target.closest(".wnBulb");
+        if (!b || !document.body.classList.contains("waveMotion")) return;
+        var sw = b.querySelector(".wnBulbSwing");
+        sw.classList.remove("swing"); void sw.getBBox(); sw.classList.add("swing");
+      });
+      window.addEventListener("resize", function(){ if (built){ built = null; step(); } });
+      /* the clock card moves or resizes (a scene, the lock, a board laid out after boot): lay the string out again */
+      try { var cw = document.getElementById("clockWidget"); if (cw && window.ResizeObserver) new ResizeObserver(function(){ if (built) step(); }).observe(cw); } catch(e){}
+      /* the lock shows or hides the card's corner controls (a body class): one look a frame later, at most */
+      var pend = false;
+      try { new MutationObserver(function(){ if (!built || pend) return; pend = true; requestAnimationFrame(function(){ pend = false; step(); }); })
+        .observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch(e){}
+    }
+    return { count: count, step: step, wire: wire, takeDown: takeDown, relayout: function(){ built = null; step(); } };
+  })();
+
   var Fall = (function(){
     var HANG = [ { x: 60, y: 45, r: 8, k: 0, c: 0 }, { x: 92.5, y: 86, r: -10, k: 1, c: 1 }, { x: 122.5, y: 60, r: 14, k: 0, c: 2 },
                  { x: 79, y: 76, r: -4, k: 2, c: 3 }, { x: 16, y: 65, r: 6, k: 4, c: 2 } ];
@@ -31891,7 +32784,7 @@ var Season = (function(){
       clearTimeout(endTid); endTid = setTimeout(land, DROP);
     });
   }
-  function wire(){ wirePumpkins(); wireSpider(); wireGourds(); Leaves.init(); Fall.wire(); }
+  function wire(){ wirePumpkins(); wireSpider(); wireGourds(); Leaves.init(); Fall.wire(); Lights.wire(); }
   return {
     init: function(){ wire(); apply(); setInterval(apply, 60000); },
     apply: apply,
@@ -31904,7 +32797,9 @@ var Season = (function(){
     squirrel: Fall.squirrel,                     // v7.58: dig(dx) / times(date)
     scarecrow: Fall.scarecrow,                   // v7.58: crow()
     turkey: Fall.turkey,                         // v7.58: tap()
-    lamp: lamp,                                  // v7.56: the lantern's week, 1–4 (0 outside November)
+    lamp: lamp,                                  // v7.56: the lantern's week, 1–4 (0 outside November); v7.64: 4/3/2 by the winter month
+    winter: inWinter,                            // v7.64: Nov 30 → Mar 7 (pure in the date)
+    lights: Lights,                              // v7.64: count(date) → {lit, of} | null; step(); relayout()
     _leaf: function(opts){ return Leaves.spawn(opts); },   // v7.56 test hook: one leaf now
     leaves: Leaves,                              // v7.56 (tests)
     prelight: function(){ prelitFor = null; prelight(); },

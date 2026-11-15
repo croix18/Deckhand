@@ -135,7 +135,9 @@ test.describe("v7.56 November", () => {
     });
     ok(!M.novPlan.includes("geese"), "a period setlist cast the geese");
     ok(M.tg === 26, "Thanksgiving 2026 is the 26th: " + M.tg);
-    for (let d = 1; d <= 30; d++){
+    // v7.64: winter starts on Mon Nov 30 (the Monday after Thanksgiving week), and November's sky goes with it
+    ok(M.days[30].length === 0, "geese on Nov 30, winter's first day: " + JSON.stringify(M.days[30]));
+    for (let d = 1; d <= 29; d++){
       const t = M.days[d];
       ok(t.length >= 1 && t.length <= 2, "Nov " + d + ": " + JSON.stringify(t));
       ok(t.every(m => m >= 9 * 60 + 15 && m <= 15 * 60 + 15), "Nov " + d + " outside the school day: " + JSON.stringify(t));

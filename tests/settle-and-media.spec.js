@@ -789,14 +789,13 @@ test.describe("motion", () => {
     await launch(pg);
     await expect(pg.locator("main#canvas")).toBeVisible();
     await pg.evaluate(() => window.Deckhand.sea("serpent"));
-    ok(await pg.evaluate(() => {
-      const s = document.getElementById("sea-serpent");
-      return s.classList.contains("go") &&
-             getComputedStyle(s).animationName.includes("ssGlide") &&
-             getComputedStyle(s.querySelector(".ssSeg")).animationName.includes("ssDive") &&
-             getComputedStyle(s.querySelector(".ssHump")).animationName.includes("ssRoll") &&
-             getComputedStyle(s).visibility === "visible";
-    }), "serpent not gliding/diving/bobbing");
+    // v7.64: the serpent is drawn by Serpent's frame loop (one body, a spine that follows its head)
+    await pg.waitForFunction(() => {
+      const s = document.getElementById("sea-serpent"), back = document.getElementById("srpBack");
+      const body = back && back.querySelector(".srpSerp path.sk");
+      return s.classList.contains("go") && window.Deckhand.seaModule.serpent.playing() === "pass" &&
+             getComputedStyle(back).display === "block" && body && (body.getAttribute("d") || "").length > 20;
+    }, null, { timeout: 3000 });
     // v6.20: the whale surfaces, spouts, and its rig animates
     await pg.evaluate(() => {
       document.getElementById("sea-serpent").classList.remove("go");
