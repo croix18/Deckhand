@@ -2,6 +2,18 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.63.1 — 2026-11-14
+
+**Nib 1.7.0 inside.** Croix, of Nib after its audit: "take on the speed head on. Throw your best at it." The engine's
+symbol classifier now runs as a small WebAssembly kernel carried in the file, about 16 times as fast, and it reads
+what it read before: 5,605 expressions and eight scripted sessions on a board were compared with the old engine,
+symbol by symbol and answer by answer. A Sketch Pad that comes back with writing on it — a scene put back, the board
+opened again — has its answers back in a fraction of the time. Where WebAssembly cannot run the engine reads the same,
+in JavaScript, at the old speed. A read put off by a touch that wrote nothing starts again by itself (it used to wait
+for the next stroke). It also brings Nib 1.6.7's hardening: a piece of writing that cannot be read no longer stops the
+reading of the rest, and a very long stroke no longer holds the pad when the pen lifts. Nothing in Deckhand's own code
+changes; the file is about 40 KB larger.
+
 ## 7.63.0 — 2026-11-14
 
 **The warm-up in one tap.** Croix: "I didn't have a warm up ready and I tried to use deckhand and cadence to
