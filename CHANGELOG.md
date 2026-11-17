@@ -2,6 +2,28 @@
 
 The full per-version story lives in `docs/HANDOFF.md`; this is the short form.
 
+## 7.66.0 — 2026-11-16
+
+**The lesson list: pick which lesson's slides are up.** Croix: "Deckhand pulled up today's slide, good, but I'm a
+little off. I need to be able to select which lesson if not the current one." Today's lesson still follows the
+site's calendar, and now the class does not have to be on it. **On the slides: ⋯ → Lesson** opens a list of the
+course's lessons that have slides, by unit, with the one that is up filled in and today's own day marked. Tap a
+lesson and its slides are up for the rest of the day, for every class of that course (pick it in 2nd and it is
+there in 4th and 5th; the accelerated classes keep their own). It works on a locked board. Tap today's line to go
+back to the calendar. The same list opens from the Slides card's ✎ row (a button with the lesson's number) and from
+**Pick a lesson**, which now sits on a card that has no slides for the day (a test day, a review day).
+**Staying behind (or ahead):** the next morning the calendar is back, unless you kept the pace. The toast after a
+pick offers it ("10.07 for today · Stay 1 day behind"), and the list's last line is the same switch. A pace is the
+plan moved over by that many class days, on every class day after: a lesson where the plan had a lesson, nothing
+where it had the review or the test (the card says "No slides today: Unit 10 review day (1 day behind the
+calendar)"). Weekends, days off and break weeks are not counted. It ends when you tap today's line, turn the switch
+off, pick something else, or when the calendar itself is re-dated so the lessons around it have moved.
+The choice lives in the panel's browser, beside the calendars: never in the board's settings, the card's link or an
+exported copy. Over `file://` there is no list, as there is no Today's lesson.
+The lesson list sheet takes Escape and the clicker (the first press puts it away), a tap outside it closes it
+without touching the slide, and it ignores the second half of a double tap. Also: when a bell changed the class but
+not the slides' address, the card could keep the last class's "No slides today" line; it follows the class now.
+
 ## 7.65.1 — 2026-11-15
 
 **Nib 1.8.0 inside.** Croix: "Push it deckhand." The engine behind the Sketch Pad and the pen over the slides, two

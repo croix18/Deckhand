@@ -316,10 +316,10 @@ test.describe("v7.63 today's lesson", () => {
     ok(L.courses.on.src === "m7" && L.courses.acc.src === "a7", "src");
     const on = L.courses.on.days, acc = L.courses.acc.days;
     ok(on.length === 7 && !on.some(d => d.d === "2026-02-30"), "on days (the bad date dropped): " + JSON.stringify(on.map(d => d.d)));
-    ok(JSON.stringify(on[0]) === JSON.stringify({ d: "2026-11-16", kind: "lesson", label: "Solving Real-World Problems With Two-Step Equations", slides: "slides/10.08/" }), "a lesson: " + JSON.stringify(on[0]));
-    ok(JSON.stringify(on.find(d => d.d === "2026-11-19")) === JSON.stringify({ d: "2026-11-19", kind: "test", label: "Unit 10 Test — day 1", slides: null }), "the test day: " + JSON.stringify(on.find(d => d.d === "2026-11-19")));
+    ok(JSON.stringify(on[0]) === JSON.stringify({ d: "2026-11-16", kind: "lesson", label: "Solving Real-World Problems With Two-Step Equations", slides: "slides/10.08/", code: "10.08", unit: 10 }), "a lesson: " + JSON.stringify(on[0]));   // v7.66: its code and unit, for the lesson list
+    ok(JSON.stringify(on.find(d => d.d === "2026-11-19")) === JSON.stringify({ d: "2026-11-19", kind: "test", label: "Unit 10 Test — day 1", slides: null, unit: 10 }), "the test day: " + JSON.stringify(on.find(d => d.d === "2026-11-19")));
     ok(["2026-11-30", "2026-12-01", "2026-12-02", "2026-12-03"].every(k => on.find(d => d.d === k).slides === null), "a bad slides value was kept: " + JSON.stringify(on.slice(3)));
-    ok(JSON.stringify(acc[1]) === JSON.stringify({ d: "2026-11-18", kind: "lesson", label: "Thread B: angle pairs — supplementary, complementary, vertical, adjacent", slides: "slides/T-B1/" }), "the no-code lesson with slides: " + JSON.stringify(acc[1]));
+    ok(JSON.stringify(acc[1]) === JSON.stringify({ d: "2026-11-18", kind: "lesson", label: "Thread B: angle pairs — supplementary, complementary, vertical, adjacent", slides: "slides/T-B1/", unit: 6 }), "the no-code lesson with slides: " + JSON.stringify(acc[1]));
     const P = await pacing(page);
     ok(Object.keys(P).sort().join() === "at,courses,v" && Object.keys(P.courses.on).sort().join() === "asOf,days,src" && P.courses.acc.days.length === 1, "cadence.pacing changed shape: " + JSON.stringify(P));
     // the helpers

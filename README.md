@@ -10,7 +10,7 @@ or from the hosted copy at **https://croix18.github.io/Deckhand/**.
 
 ## The one file that matters
 
-**`Deckhand.html`** — the current release (v7.65.1; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
+**`Deckhand.html`** — the current release (v7.66.0; the name is version-free since 7.0, `Deckhand_v6.html` forwards to it). Everything — HTML, CSS, JS — lives
 in this one file. No build step, no install, no accounts. That includes **Nib** (croix18/Nib, the handwriting-to-math
 engine of the Board), which reads the Sketch Pad and the pen: `python3 tools/vendor_nib.py` puts in the engine the
 Windmill kit carries (`../Windmill/nib/nib.js`), or the one at the path given.
@@ -35,6 +35,13 @@ slides page for the class in the room (the next class's, before school and betwe
 and **Warm-up** (+ Add, the Cadence card, or W) puts Cadence's four-question warm-up on the
 stage — Cadence is found in `../cadence/` and told what has been taught
 (`cadence.pacing`). On `file://` none of this fetches anything; the cards work as before.
+
+Since v7.66 the class does not have to be on the calendar's lesson. Croix: "I'm a little off. I need
+to be able to select which lesson if not the current one." On the slides, **⋯ → Lesson** (or the
+Slides card's ✎ row, or **Pick a lesson** on a card with no slides that day) opens the course's
+lessons; a tap puts one up for the rest of the day for every class of that course, and **Stay 1 day
+behind** keeps the plan shifted on the class days after, until today's line is tapped or the
+calendar is re-dated. The choice is kept in the browser (`deckhand.lessonPick`), never in the board.
 
 `docs/HANDOFF.md` is the project memory — every version's story, the design rules, the
 known constraints (YouTube Error 153 over `file://`, the iframe drag shield,

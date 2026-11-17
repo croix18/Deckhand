@@ -27,7 +27,7 @@
 <script id="deckhand-config" type="application/json">
 {
   "schemaVersion": 4,
-  "appVersion": "7.65.1",
+  "appVersion": "7.66.0",
   "ownerName": "Mr. Shaffer",
   "ui": { "locked": false, "motion": "auto" },
   "activeScene": "Daily Board",
@@ -803,7 +803,7 @@
   #stageMoreMenu button svg{width:20px; height:20px;}
   #stageMoreMenu #unfocusBtn{background:var(--turq);}
   #stageMoreMenu #removeStageBtn{background:var(--cream); box-shadow:inset 0 0 0 2px var(--sand);}
-  #stageMoreMenu #editStageBtn[hidden], #stageMoreMenu #bellStageBtn[hidden], #stageMoreMenu #removeStageBtn[hidden]{display:none;}
+  #stageMoreMenu #editStageBtn[hidden], #stageMoreMenu #bellStageBtn[hidden], #stageMoreMenu #removeStageBtn[hidden], #stageMoreMenu #lessonStageBtn[hidden]{display:none;}
   #stageMoreMenu .stageSub{margin-left:auto; font-size:13px; font-weight:700; color:var(--teal);}
   #stageMoreMenu #bellStageBtn[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--turq);}
   #focusTimerMenu .strip{
@@ -846,6 +846,61 @@
   body:not(.inkLeft) #stageShelf{flex-direction:row-reverse; padding:0 12px 0 0; border-top:0; border-right:2px solid rgba(23,50,77,.18);}
   #stageShelf:empty{display:none;}
   #focusBar .stTab[aria-pressed="true"]{background:var(--turq); color:var(--navy); opacity:1;}
+
+  /* ===== v7.66 THE LESSON LIST: a sheet of the course's lessons, over the board or the slides =====
+     The quick tools' card (white, a hairline of sand, the hard shadow); on the stage it stands where they
+     stand, on the pen's side. Rows are plain until they mean something: the one that is up is filled, today's
+     own day wears its word. */
+  #lsScrim{position:fixed; inset:0; z-index:900000; background:rgba(27,46,69,.2);}
+  #lsScrim[hidden]{display:none;}
+  #lsPop{position:fixed; z-index:900002; left:50%; top:50%; transform:translate(-50%, -50%);
+    width:clamp(440px, 36vw, 660px); max-width:calc(100vw - 24px); max-height:min(calc(100vh - 48px), 860px);
+    background:var(--white); color:var(--navy); border:2px solid rgba(227,212,180,.9); border-radius:20px;
+    box-shadow:4px 6px 0 var(--shadow); padding:12px; display:flex; flex-direction:column; gap:6px;}
+  #lsPop[hidden]{display:none;}
+  #lsPop:focus{outline:none;}
+  #lsPop.lsStage{left:auto; top:auto; right:16px; bottom:82px; transform:none; transform-origin:100% 100%; animation:inkPop .16s ease-out; max-height:min(calc(100vh - 108px), 860px);}
+  body.inkLeft #lsPop.lsStage{right:auto; left:76px; bottom:auto; top:50%; transform:translateY(-50%); transform-origin:0 50%; animation:ccPopL .16s ease-out; max-height:min(92vh, 860px);}
+  @media (prefers-reduced-motion: reduce){ #lsPop.lsStage, body.inkLeft #lsPop.lsStage{animation:none;} }
+  /* a small window (a phone): there is no side to stand on — the sheet is centered there too */
+  @media (max-width: 780px), (max-height: 540px){
+    #lsPop, #lsPop.lsStage, body.inkLeft #lsPop.lsStage{left:50%; top:50%; right:auto; bottom:auto; transform:translate(-50%, -50%); animation:none; max-height:calc(100vh - 24px);}
+    .lsTag{width:74px;}
+  }
+  /* a ringing timer has the screen */
+  body:has(#alarm.on:not(.calm)) #lsPop, body:has(#alarm.on:not(.calm)) #lsScrim{visibility:hidden;}
+  .lsHead{display:flex; align-items:center; gap:10px; min-height:44px; padding-left:4px;}
+  .lsName{font-weight:900; color:var(--teal); background:var(--paleturq); border-radius:999px; padding:5px 14px; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+  .lsX{margin:-6px -6px -6px auto; flex:none;}
+  .lsBody{flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:2px; padding:0 2px 2px; position:relative;}
+  /* the unit's name stays at the top of the list while its lessons scroll under it */
+  .lsUnit{flex:none; position:sticky; top:0; z-index:1; background:var(--white); font-weight:900; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); padding:14px 12px 8px; line-height:1.2;}
+  .lsUnit:first-child{padding-top:6px;}
+  .lsRow{flex:none; display:flex; align-items:center; gap:12px; width:100%; min-height:52px; padding:8px 12px; border:0; border-radius:12px;
+    background:transparent; color:var(--navy); font:inherit; font-size:16px; text-align:left; cursor:pointer;}
+  .lsRow:disabled{cursor:default;}
+  .lsTag{flex:none; width:88px; font-weight:900; white-space:nowrap; font-variant-numeric:tabular-nums;}   /* "13.05+06" fits; every title starts on one line */
+  .lsLbl{flex:1; min-width:0; font-weight:500; line-height:1.25; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;}
+  .lsDate{flex:none; font-weight:700; font-size:13px; color:var(--teal); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .lsNow{flex:none; font-weight:900; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); background:var(--paleturq); border-radius:999px; padding:5px 10px;}
+  .lsRow.lsPlain .lsLbl{font-weight:700; color:var(--teal);}   /* a day with no slides: today's test, a review day */
+  @media (hover:hover){ .lsRow:not(:disabled):hover{background:var(--cream);} }
+  .lsRow:not(:disabled):active{background:var(--paleturq);}
+  .lsRow[aria-pressed="true"]{background:var(--turq);}
+  .lsRow[aria-pressed="true"] .lsLbl{font-weight:700; color:var(--navy);}
+  .lsRow[aria-pressed="true"] .lsDate{color:var(--navy);}
+  .lsRow[aria-pressed="true"] .lsNow{background:var(--white);}
+  .lsRow:focus-visible, .lsKeep:focus-visible{outline:3px solid var(--navy); outline-offset:-3px;}
+  /* the last line is a switch: this pace on the next class days too */
+  .lsFoot{flex:none; padding-top:6px; border-top:2px solid var(--grid);}
+  .lsFoot[hidden]{display:none;}
+  .lsKeep{display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:52px; padding:0 12px; border:0; border-radius:12px; cursor:pointer;
+    font:inherit; font-size:16px; font-weight:700; color:var(--navy); background:transparent; text-align:left;}
+  .lsSw{flex:none; position:relative; width:52px; height:30px; border-radius:999px; background:var(--sand); transition:background .15s;}
+  .lsSw::after{content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:var(--white); box-shadow:0 1px 2px rgba(23,50,77,.3); transition:transform .15s;}
+  .lsKeep[aria-checked="true"] .lsSw{background:var(--teal);}
+  .lsKeep[aria-checked="true"] .lsSw::after{transform:translateX(22px);}
+  @media (prefers-reduced-motion: reduce){ .lsSw, .lsSw::after{transition:none;} }
 
   /* ===== v6.14 STAGE MODE: direct instruction gets the WHOLE screen =====
      (Croix, field: "look at all the space the date and top bar are
@@ -2109,6 +2164,13 @@
   .embWhy{margin-top:1.4cqh; font-weight:700; color:var(--teal); opacity:.8; font-size:clamp(11px, 2cqw, 15px); max-width:720px;}
   .embWhy[hidden], .embTodayLbl[hidden]{display:none;}
   .embToday .embIn{background:var(--cream); color:var(--teal);}
+  /* v7.66: the lesson list's doors on the card — the empty state's button, and the lesson's name in the ✎ row */
+  .embPick{margin-top:1.6cqh; background:var(--turq); color:var(--navy); padding:10px 26px; min-height:48px; font-size:clamp(14px, 2.4cqw, 20px);}
+  .embPick[hidden], .embLs[hidden]{display:none;}
+  .embLs{font-family:inherit; font-weight:900; font-size:clamp(11px, 2.2cqw, 15px); line-height:1; white-space:nowrap; font-variant-numeric:tabular-nums;
+    border:none; cursor:pointer; background:var(--turq); color:var(--navy); border-radius:10px; padding:5px 12px;
+    display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:36px;}
+  .embLs:focus-visible{outline:3px solid var(--navy); outline-offset:2px;}
   .embPer[hidden]{display:none;}
 
   /* Next Bell widget: a draining ring synced to the bell schedule */
@@ -4619,6 +4681,8 @@
       <button id="stageMoreBtn" type="button" aria-label="More: refresh, minimize, exit" aria-haspopup="true" aria-expanded="false"><svg class="wIcon"><use href="#i-dots"/></svg></button>
       <div id="stageMoreMenu" role="group" aria-label="The slides" hidden>
         <button id="reloadStageBtn" type="button" aria-label="Refresh the slides"><svg class="wIcon"><use href="#i-reload"/></svg> Refresh</button>
+        <!-- v7.66: another lesson's slides, from the site's list for the class in the room (a Slides card with Today's lesson on) -->
+        <button id="lessonStageBtn" type="button" aria-label="Pick a lesson" aria-haspopup="dialog" hidden><svg class="wIcon"><use href="#i-slides"/></svg> <span>Lesson</span><span class="stageSub"></span></button>
         <!-- v7.52: a stage-only deck is hidden on the board and the stage hides its strip — its link, its bell and its ✕ live here -->
         <button id="editStageBtn" type="button" aria-label="Change the link"><svg class="wIcon"><use href="#i-pencil"/></svg> Change the link</button>
         <button id="bellStageBtn" type="button" aria-label="Use these slides after the bell" aria-pressed="false"><svg class="wIcon"><use href="#i-bell"/></svg> <span>After the bell</span><span class="stageSub"></span></button>
@@ -16316,7 +16380,7 @@ var WRAPUP_STEPS = "Finish the exit ticket\nPack up\nPush in your chair";
 var WRAPUP_MSG = "The teacher dismisses you, not the bell.";
 var DEFAULTS = {
   schemaVersion: 4,
-  appVersion: "7.65.1",
+  appVersion: "7.66.0",
   ownerName: "",
   ui: { locked: false, motion: "auto", seaWeather: "varies", season: "auto" },
   activeScene: "Daily Board",
@@ -17322,12 +17386,12 @@ var Undo = (function(){
     wireButton(el.querySelector("button"), function(){ var f = fn; hide(); if (f) f(); });
   }
   function hide(){ clearTimeout(tid); tid = null; fn = null; if (el) el.hidden = true; }
-  function show(text, restore, label){
+  function show(text, restore, label, ms){
     ensure();
     el.querySelector("span").textContent = text; fn = restore; el.hidden = false;
     el.querySelector("button").textContent = label || "Undo";   // v7.45: "Slides on"
     el.querySelector("button").hidden = !restore;                // v7.55: a toast with nothing to take back is just a status
-    clearTimeout(tid); tid = setTimeout(hide, 5000);
+    clearTimeout(tid); tid = setTimeout(hide, ms > 0 ? ms : 5000);   // v7.66: an offer (not an undo) may wait a little longer
   }
   return { show: show, hide: hide };
 })();
@@ -26297,6 +26361,8 @@ function makeEmbed(host, wcfg){
         'YouTube, PhET, GeoGebra and Desmos links work too.</div>' +
         '<div class="chips embSaved" role="group" aria-label="Saved decks"></div>' +
         '<div class="embWhy" hidden></div>' +
+        /* v7.66: the site's list of this class's lessons — the day has none, or the class is not on the day's */
+        '<button class="btn embPick" type="button" hidden>Pick a lesson</button>' +
       '</div>' +
       /* v7.1: `allow` with a * allowlist — `allowfullscreen` alone only
          delegates to the frame's OWN origin, and a YouTube player nested
@@ -26307,6 +26373,7 @@ function makeEmbed(host, wcfg){
       '<div class="embRow">' +
         '<label class="embPP embTodayLbl" title="The site\u2019s slides for the class in the room" hidden>' +
           '<input type="checkbox" class="embTodayCk"> Today\u2019s lesson</label>' +
+        '<button class="embLs" type="button" aria-label="Pick a lesson" aria-haspopup="dialog" hidden></button>' +   // v7.66 (not an .embGo: the row finds its Reload by that class)
         '<label class="embPP" title="A different deck for each class, following the bells">' +
           '<input type="checkbox" class="embPPck"> Per-period</label>' +
         '<select class="pkSel embPer" hidden aria-label="Deck period"></select>' +
@@ -26337,6 +26404,7 @@ function makeEmbed(host, wcfg){
   var bigIn = q(".embBigIn"), shelfCk = q(".embShelfCk");
   var emptyTitle = q(".embEmpty b");
   var todayCk = q(".embTodayCk"), todayLbl = q(".embTodayLbl"), why = q(".embWhy");   // v7.63
+  var pickBtn = q(".embPick"), lsBtn = q(".embLs");   // v7.66: the lesson list's two doors on the card (the stage's ⋯ is the third)
   var todayLive = false;                         // v7.63: the frame shows the site's slides for today (never saved)
   if (!Array.isArray(wcfg.saved)) wcfg.saved = [];
   if (typeof wcfg.stageOnly !== "boolean") wcfg.stageOnly = false;
@@ -26453,12 +26521,25 @@ function makeEmbed(host, wcfg){
      site's slides page for the class in the room (the same period the per-period decks follow, so
      before school and in passing it already holds the NEXT class's), from Pacing's calendars. Null
      when off or when the site has nothing for that class today; {url: ""} when the day has no slides. */
+  /* v7.66 (Croix: "I'm a little off. I need to be able to select which lesson if not the current one."):
+     the lesson in effect is Pacing.shownFor — the calendar's, one chosen for today, or the plan a few class
+     days over (a pace). how / off / tag say which, for the lines that name it. */
   function todayInfo(){
     if (!wcfg.today) return null;
     var L = null;
-    try { L = Pacing.lessonFor(resolvedPeriod(), dateKey(now())); } catch(e){ return null; }
+    try { L = Pacing.shownFor(resolvedPeriod(), dateKey(now())); } catch(e){ return null; }
     if (!L) return null;
-    return { url: L.url ? embedURL(L.url) : "", label: L.label || "", kind: L.kind || "" };
+    return { url: L.url ? embedURL(L.url) : "", label: L.label || "", kind: L.kind || "", how: L.how, off: L.off, tag: L.tag || "" };
+  }
+  /* v7.66: is there a list of lessons for the class in the room? (Today's lesson on, the site's calendars here,
+     a course for that class, and slides in it) */
+  function canPick(){
+    if (!wcfg.today) return false;
+    try { return Pacing.canPick(resolvedPeriod()); } catch(e){ return false; }
+  }
+  function openPicker(){
+    if (!canPick()) return;
+    try { LessonPick.open({ host: host, period: resolvedPeriod }); } catch(e){}
   }
   function shownURL(){ var t = todayInfo(); return (t && t.url) || activeURL(); }
   var draftFor = null;                               // the period this input text belongs to
@@ -26469,19 +26550,29 @@ function makeEmbed(host, wcfg){
     input.value = activeURL();
     draftFor = wcfg.perPeriod ? resolvedPeriod() : null;
   }
-  var lastShown = null;
+  var lastShown = null, lastSig = null;
+  /* v7.66: everything the card says about the lesson — its address, the reason line, the lesson's name on the
+     ✎ row, whether there is a list. The tick repaints when any of it changes (a bell that changes the class
+     but not the address used to leave the last class's reason line up). */
+  function sigOf(t){ return ((t && t.url) || activeURL()) + "\n" + (t ? [t.label, t.how, t.off, t.tag].join("\n") : "") + "\n" + (canPick() ? "1" : "0"); }
   function render(){
     var t = todayInfo();                         // v7.63
     todayLive = !!(t && t.url);
     var u = todayLive ? t.url : activeURL();
-    lastShown = u;
+    lastShown = u; lastSig = sigOf(t);
     var hasL = false; try { hasL = Pacing.hasLessons(); } catch(e){}
     todayLbl.hidden = !hasL;                     // only where the site's calendars are (http/https with a copy)
     todayCk.checked = !!wcfg.today;
     host.classList.toggle("embToday", todayLive);
     /* the empty state says why today's lesson isn't up — the day's own label (textContent only) */
     var whyText = !todayLive && t && !t.url ? (t.label ? "No slides today: " + t.label : "No slides today") : "";
+    if (whyText && t.how === "pace"){ try { whyText += " (" + Pacing.paceWords(t.off) + " the calendar)"; } catch(e){} }   // v7.66: the plan, a day over
     why.textContent = whyText; why.hidden = !whyText;
+    /* v7.66: the lesson list — a button in the empty state, and in the ✎ row the lesson that is up */
+    var pickable = canPick();
+    pickBtn.hidden = !pickable;
+    lsBtn.hidden = !pickable;
+    lsBtn.textContent = (t && t.tag ? t.tag : "Lesson") + " \u25be";
     ppCk.checked = wcfg.perPeriod;
     perSel.hidden = !wcfg.perPeriod;
     if (u){
@@ -26642,12 +26733,14 @@ function makeEmbed(host, wcfg){
      tick never reloads the deck — or resets a slide the teacher moved to) */
   var tickTid = setInterval(function(){
     fillPer();
-    if (shownURL() !== lastShown){
+    if (sigOf(todayInfo()) !== lastSig){         // v7.66: was the address alone
       render();
       syncInput();
     }
   }, 5000);
-  function onLessons(){ render(); syncInput(); }   // v7.63: Pacing wrote new calendars
+  function onLessons(){ render(); syncInput(); }   // v7.63: Pacing wrote new calendars (v7.66: or a lesson was chosen)
+  wireButton(pickBtn, openPicker);                 // v7.66
+  wireButton(lsBtn, openPicker);
   input.addEventListener("blur", applyInput);
   input.addEventListener("keydown", function(e){
     if (Alarm.isOn()) return;                    // never shield the alarm stage
@@ -26732,7 +26825,15 @@ function makeEmbed(host, wcfg){
     rebuild: render,
     resync: function(){},
     today: function(){ return todayLive ? lastShown : null; },   // v7.63 (tests): today's lesson, when it is up
+    /* v7.66: the stage's ⋯ asks whether this card has a lesson list, and what is up: {tag, how, off} | null */
+    lesson: function(){
+      if (!canPick()) return null;
+      var t = todayInfo();
+      return { tag: t ? t.tag : "", how: t ? t.how : "calendar", off: t ? t.off : 0 };
+    },
+    pickLesson: openPicker,
     destroy: function(){                         // scene switch unloads the iframe
+      try { LessonPick.closeFor(host); } catch(e){}   // v7.66: the list belongs to this card
       window.removeEventListener("blur", onWinBlur);
       window.removeEventListener("focus", onWinFocus);
       document.removeEventListener("deckhand:home", onHome);
@@ -28873,7 +28974,7 @@ var Canvas = (function(){
   function keysTaken(){
     try {
       if (Ink.isArmed() || Alarm.isOn() || Settings.isOpen() || DayEditor.isOpen() || Landing.isShowing()) return true;
-      if (CcardPop.isOpen() || CcardPop.reminding() || PickPop.isOpen()) return true;
+      if (CcardPop.isOpen() || CcardPop.reminding() || PickPop.isOpen() || LessonPick.isOpen()) return true;   // v7.66: the lesson list
     } catch(e){ return true; }
     return !$("addMenu").hidden || !$("sceneMenu").hidden || !$("moreMenu").hidden || !$("focusTimerMenu").hidden || !$("stageMoreMenu").hidden;
   }
@@ -28961,6 +29062,16 @@ var Canvas = (function(){
     $("editStageBtn").hidden = !emb || locked || !en.api.edit;
     $("removeStageBtn").hidden = !en || en.type === "clock" || locked;
     var bb = $("bellStageBtn"); bb.hidden = !emb || locked;
+    /* v7.66: Lesson — offered locked too (choosing the slides is teaching, not editing); its right-hand
+       word is the lesson that is up, and the pace when the board is running a day off the plan */
+    var lb = $("lessonStageBtn"), li = null;
+    try { li = emb && en.api.lesson ? en.api.lesson() : null; } catch(e){ li = null; }
+    lb.hidden = !li;
+    if (li){
+      var said = li.tag ? [li.tag] : [];
+      if (li.how === "pace"){ try { said.push(Pacing.paceWords(li.off)); } catch(e){} }
+      lb.querySelector(".stageSub").textContent = said.join(" \u00b7 ");
+    }
     if (emb){
       var mine = bellDeck() === en;
       bb.setAttribute("aria-pressed", mine ? "true" : "false");
@@ -30011,6 +30122,11 @@ var Canvas = (function(){
         refocusDeck();
       });
       wireButton($("removeStageBtn"), function(){ removeWithUndo(focusedEntry); });
+      wireButton($("lessonStageBtn"), function(){                         // v7.66: the lesson list, over the slides
+        var en = focusedEntry;
+        hideStageMore();
+        if (en && en.api.pickLesson) en.api.pickLesson();
+      });
       /* the toolbar lives at the body's level: inside the canvas its z-index only ranked it among the cards */
       document.body.appendChild($("focusBar"));
       var scrim = document.createElement("div"); scrim.id = "railScrim"; scrim.hidden = true; document.body.appendChild(scrim);
@@ -30199,6 +30315,7 @@ var Canvas = (function(){
       var any = !$("addMenu").hidden || !$("sceneMenu").hidden ||
                 !$("focusTimerMenu").hidden || !$("moreMenu").hidden || !$("stageMoreMenu").hidden;
       hideAddMenu(); hideSceneMenu(); hideTimerMenu(); hideMoreMenu(); hideStageMore();
+      try { if (LessonPick.isOpen()){ LessonPick.close(); any = true; } } catch(e){}   // v7.66
       return any;
     },
     unfocus: function(){ setFocus(null); },
@@ -34539,13 +34656,26 @@ var Keys = (function(){
    have to do the whole html process every time."): from the same calendars Deckhand keeps what IT needs —
    which periods each course has and each day's slides page — in its own key, localStorage["deckhand.lessons"]:
    {v:1, at, courses:{on:{src:"m7", periods:[2,4,5], days:[{d, kind, label, slides|null}]}, acc:{…}}}.
-   The Slides card's "Today's lesson" reads it (lessonFor); Warm-up's hash names the course (courseFor). */
+   The Slides card's "Today's lesson" reads it (lessonFor); Warm-up's hash names the course (courseFor).
+   v7.66 (Croix: "Deckhand pulled up today's slide, good, but I'm a little off. I need to be able to select
+   which lesson if not the current one."): the calendar is the plan, and the class is not always on it. A
+   course's lesson can be chosen from the list of its slides (LessonPick, below): for today only, or — one
+   more tap — as a pace, "1 day behind", that carries to the next class days. The choice lives in its own
+   key, localStorage["deckhand.lessonPick"] = {v:1, courses:{on:{d, pick, slides[, keep:true, off, anchors]}}}:
+   d the day it was made, pick the chosen lesson's own day on the calendar, slides its page (a lesson the
+   calendar has since moved is not the one that was chosen); a pace keeps off (class days, negative = behind)
+   and anchors, the lessons around the pick as [day, slides] — it holds while those lessons are still on
+   those days, so a plan that has been re-dated to follow the class ends it. The lessons copy gains each
+   day's code and unit and the course's name and unit names (the list's words). shownFor is what the card
+   shows; lessonFor stays the calendar's own answer. */
 var Pacing = (function(){
   /* the paths Croix's site publishes each course's calendar at (same origin, relative);
      "on" / "acc" are Cadence's class ids (7th on-level, 7th accelerated) */
   var SOURCES = [{ course: "on", src: "m7", url: "/m7/schedule.json" },
                  { course: "acc", src: "a7", url: "/a7/schedule.json" }];
   var KEY = "cadence.pacing", LKEY = "deckhand.lessons", STALE_MS = 6 * 3600000, TIMEOUT_MS = 4000;
+  var PKEY = "deckhand.lessonPick", MAXOFF = 10;  // v7.66: the chosen lesson; a pace is at most ten class days off the plan
+  var TAG = /^[A-Za-z0-9][A-Za-z0-9.+ -]{0,15}$/;   // v7.66: a lesson's code as the calendar writes it ("10.08", "6.07+08")
   var inflight = null;
   /* a day's slides page, relative to the course's folder: a plain relative path, never "..", a leading
      "/", a scheme or a query — it is joined to "/<src>/" on this origin and nowhere else */
@@ -34591,12 +34721,26 @@ var Pacing = (function(){
     j.days.slice(0, 1000).forEach(function(x){
       if (!x || !isDay(x.date)) return;
       var sl = typeof x.slides === "string" && SLIDES.test(x.slides) && x.slides.indexOf("..") === -1 ? x.slides : null;
-      days.push({ d: x.date, kind: typeof x.kind === "string" ? x.kind.slice(0, 20) : "",
-                  label: typeof x.label === "string" ? x.label.trim().slice(0, 120) : "", slides: sl });
+      var o = { d: x.date, kind: typeof x.kind === "string" ? x.kind.slice(0, 20) : "",
+                label: typeof x.label === "string" ? x.label.trim().slice(0, 120) : "", slides: sl };
+      /* v7.66: the lesson's code and its unit, for the lesson list (only ever drawn with textContent) */
+      if (typeof x.code === "string" && TAG.test(x.code.trim())) o.code = x.code.trim();
+      if (isUnit(x.unit)) o.unit = x.unit;
+      days.push(o);
     });
     days.sort(function(a, b){ return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
-    return { src: src, periods: periods, days: days };
+    var out = { src: src, periods: periods, days: days };
+    /* v7.66: the course's name and its units' names (the list's heading and its dividers) */
+    var nm = typeof j.name === "string" ? j.name.trim().slice(0, 40) : "";
+    if (nm) out.name = nm;
+    var units = {}, any = false;
+    (Array.isArray(j.units) ? j.units : []).slice(0, 60).forEach(function(u){
+      if (u && isUnit(u.unit) && typeof u.name === "string" && u.name.trim()){ units[u.unit] = u.name.trim().slice(0, 60); any = true; }
+    });
+    if (any) out.units = units;
+    return out;
   }
+  function isUnit(n){ return typeof n === "number" && Math.floor(n) === n && n >= 0 && n <= 99; }
   function parse(j, src){
     if (!calendar(j, src)) return null;
     var days = [];
@@ -34675,19 +34819,203 @@ var Pacing = (function(){
     try {
       if (!web()) return null;
       var c = courseFor(label); if (!c) return null;
-      var co = readLessons().courses[c.course], day = null;
-      for (var i = 0; i < co.days.length; i++) if (co.days[i] && co.days[i].d === dk){ day = co.days[i]; break; }
+      var co = readLessons().courses[c.course], day = entryOn(co, dk);
       if (!day) return null;
-      var url = null, sl = day.slides;
-      if (typeof sl === "string" && SLIDES.test(sl) && sl.indexOf("..") === -1 && /^[a-z0-9]{1,12}$/.test(c.src)){
-        var u = new URL(sl, location.origin + "/" + c.src + "/");
-        if (u.origin === location.origin && u.pathname.indexOf("/" + c.src + "/") === 0) url = u.href;
-      }
       return { course: c.course, src: c.src, label: typeof day.label === "string" ? day.label.slice(0, 120) : "",
-               kind: typeof day.kind === "string" ? day.kind : "", url: url };
+               kind: typeof day.kind === "string" ? day.kind : "", url: slidesURL(c.src, day.slides) };
     } catch(e){ return null; }
   }
   function hasLessons(){ return web() && !!readLessons(); }
+
+  /* ---- v7.66: which lesson (see the note at the top of this module) ---- */
+  /* a day's slides page on THIS origin, under /<src>/ — or null */
+  function slidesURL(src, sl){
+    try {
+      if (typeof sl !== "string" || !SLIDES.test(sl) || sl.indexOf("..") !== -1 || !/^[a-z0-9]{1,12}$/.test(src)) return null;
+      var u = new URL(sl, location.origin + "/" + src + "/");
+      return u.origin === location.origin && u.pathname.indexOf("/" + src + "/") === 0 ? u.href : null;
+    } catch(e){ return null; }
+  }
+  function entryOn(co, dk){
+    var ds = co && Array.isArray(co.days) ? co.days : [];
+    for (var i = 0; i < ds.length; i++) if (ds[i] && ds[i].d === dk) return ds[i];
+    return null;
+  }
+  /* per stored copy (the parsed copy is replaced at every write, and these lists with it) */
+  var memo = typeof WeakMap === "function" ? new WeakMap() : null;
+  function lists(c, co){
+    var hit = memo && memo.get(co); if (hit) return hit;
+    var ds = (Array.isArray(co.days) ? co.days : []).filter(function(x){ return x && typeof x.d === "string"; });
+    hit = { classDays: ds.filter(function(x){ return x.kind !== "no-class"; }),          // the days the class meets
+            decks: ds.filter(function(x){ return !!slidesURL(c.src, x.slides); }) };      // the lessons that have slides
+    if (memo) memo.set(co, hit);
+    return hit;
+  }
+  /* class days from one of the calendar's days to another (negative = earlier); null when either is not a class day */
+  function cdOff(c, co, from, to){
+    if (!from || !to) return null;
+    var cd = lists(c, co).classDays, a = cd.indexOf(from), b = cd.indexOf(to);
+    return a === -1 || b === -1 ? null : b - a;
+  }
+  /* what a lesson is called in a line: its code ("10.08"), else its slides folder ("T-B1") */
+  function tagOf(day){
+    if (!day) return "";
+    if (typeof day.code === "string" && TAG.test(day.code)) return day.code;
+    var m = typeof day.slides === "string" ? /^(?:slides\/)?([A-Za-z0-9][A-Za-z0-9.+-]{0,15})\/?$/.exec(day.slides) : null;
+    return m ? m[1] : "";
+  }
+  function paceWords(off){ var n = Math.abs(off); return n + (n === 1 ? " day " : " days ") + (off < 0 ? "behind" : "ahead"); }
+  var praw = null, pcache = null, pread = false;
+  function readPicks(){
+    try {
+      var raw = localStorage.getItem(PKEY);
+      if (pread && raw === praw) return pcache;
+      pread = true; praw = raw; pcache = null;
+      var o = JSON.parse(raw);
+      if (o && typeof o === "object" && o.v === 1 && o.courses && typeof o.courses === "object") pcache = o;
+      return pcache;
+    } catch(e){ return null; }
+  }
+  /* a course's stored choice, or null when there is none or it is not one this file wrote */
+  function pickRec(course){
+    var P = readPicks(), r = P && Object.prototype.hasOwnProperty.call(P.courses, course) ? P.courses[course] : null;
+    if (!r || typeof r !== "object" || !isDay(r.d) || !isDay(r.pick) || typeof r.slides !== "string" || !SLIDES.test(r.slides)) return null;
+    if (r.keep === true){
+      if (typeof r.off !== "number" || Math.floor(r.off) !== r.off || r.off === 0 || Math.abs(r.off) > MAXOFF) return null;
+      if (!Array.isArray(r.anchors) || !r.anchors.length || r.anchors.length > 8) return null;
+      for (var i = 0; i < r.anchors.length; i++){
+        var a = r.anchors[i];
+        if (!Array.isArray(a) || !isDay(a[0]) || typeof a[1] !== "string") return null;
+      }
+    } else if (r.keep !== undefined && r.keep !== false) return null;
+    return r;
+  }
+  /* write one course's choice (null clears it); the other course's stays; the Slides cards look again */
+  function writePick(course, rec){
+    try {
+      var out = { v: 1, courses: {} }, n = 0;
+      SOURCES.forEach(function(s){
+        var r = s.course === course ? rec : pickRec(s.course);
+        if (r){ out.courses[s.course] = r; n++; }
+      });
+      if (n) localStorage.setItem(PKEY, JSON.stringify(out)); else localStorage.removeItem(PKEY);
+      try { document.dispatchEvent(new CustomEvent("deckhand:lessons")); } catch(e){}
+      return true;
+    } catch(e){ return false; }
+  }
+  /* a pace holds while the lessons around the one it was set on are still on the days they were on */
+  function anchorsFor(c, co, day){
+    var L = lists(c, co).decks, p = L.indexOf(day), out = [];
+    for (var i = Math.max(0, p - 1); p !== -1 && i <= p + 3 && i < L.length; i++) out.push([L[i].d, L[i].slides]);
+    return out;
+  }
+  function anchorsHold(co, rec){
+    return rec.anchors.every(function(a){ var e = entryOn(co, a[0]); return !!e && e.slides === a[1]; });
+  }
+  /* the class's course on a day: cal = the calendar's own day (or null), day = the one in effect, how =
+     "calendar" | "pick" (chosen for today) | "pace" (the plan, off class days over), off = class days from cal */
+  function resolve(label, dk){
+    if (!web()) return null;
+    var c = courseFor(label); if (!c) return null;
+    var co = readLessons().courses[c.course];
+    if (!co || !Array.isArray(co.days)) return null;
+    var cal = entryOn(co, dk), day = cal, how = "calendar", off = 0, rec = pickRec(c.course);
+    if (rec && rec.keep){
+      /* a day with no class has nothing to be behind on: the calendar's own answer */
+      if (cal && cal.kind !== "no-class" && anchorsHold(co, rec)){
+        var cd = lists(c, co).classDays, i = cd.indexOf(cal);
+        if (i !== -1){ day = cd[i + rec.off] || null; how = "pace"; off = rec.off; }
+      }
+    } else if (rec && rec.d === dk){
+      var t = entryOn(co, rec.pick);
+      if (t && t.slides === rec.slides && slidesURL(c.src, t.slides)){ day = t; how = "pick"; off = cdOff(c, co, cal, t); }
+    }
+    return { c: c, co: co, cal: cal, day: day, how: how, off: off };
+  }
+  function canKeep(r){
+    return r.how === "pick" && typeof r.off === "number" && r.off !== 0 && Math.abs(r.off) <= MAXOFF && !!r.cal && r.cal.kind !== "no-class";
+  }
+  /* what the Slides card shows for a class on a day: {course, src, d, label, kind, url|null, tag, how, off}, or
+     null when the class has no course, or the calendar has no such day and nothing was chosen */
+  function shownFor(label, dk){
+    try {
+      var r = resolve(label, dk); if (!r) return null;
+      if (!r.day && r.how === "calendar") return null;
+      var d = r.day;
+      return { course: r.c.course, src: r.c.src, d: d ? d.d : null,
+               label: d && typeof d.label === "string" ? d.label.slice(0, 120) : "", kind: d && typeof d.kind === "string" ? d.kind : "",
+               url: d ? slidesURL(r.c.src, d.slides) : null, tag: tagOf(d), how: r.how, off: r.off };
+    } catch(e){ return null; }
+  }
+  /* is there a list to choose from for this class? */
+  function canPick(label){
+    try {
+      if (!web()) return false;
+      var c = courseFor(label); if (!c) return false;
+      var co = readLessons().courses[c.course];
+      return !!(co && Array.isArray(co.days) && lists(c, co).decks.length);
+    } catch(e){ return false; }
+  }
+  /* the list: every lesson with slides, in the calendar's order — and today's own day and the day in effect
+     when they have none (a test, a review), so "today" is always a line to go back to.
+     {course, src, name, how, off, keep, canKeep, words, rows:[{d, tag, label, unit, unitName, lesson, today, on}]} */
+  function pickList(label, dk){
+    try {
+      var r = resolve(label, dk); if (!r) return null;
+      var c = r.c, co = r.co, L = lists(c, co).decks;
+      if (!L.length) return null;
+      var all = L.slice();
+      if (r.cal && all.indexOf(r.cal) === -1) all.push(r.cal);
+      if (r.day && all.indexOf(r.day) === -1) all.push(r.day);
+      if (!r.cal) all.push({ d: dk, kind: "", label: "", slides: null });      // a day the calendar does not have (a weekend)
+      all.sort(function(a, b){ return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+      var names = co.units && typeof co.units === "object" ? co.units : {};
+      var rows = all.map(function(x){
+        var un = isUnit(x.unit) ? x.unit : null, nm = un !== null && Object.prototype.hasOwnProperty.call(names, un) ? names[un] : "";
+        return { d: x.d, tag: tagOf(x), label: typeof x.label === "string" ? x.label.slice(0, 120) : "",
+                 unit: un, unitName: typeof nm === "string" ? nm.slice(0, 60) : "",
+                 lesson: !!slidesURL(c.src, x.slides), today: x.d === dk,
+                 on: r.day ? x === r.day : (r.how === "calendar" && x.d === dk) };
+      });
+      var ck = canKeep(r);
+      return { course: c.course, src: c.src, name: typeof co.name === "string" ? co.name.slice(0, 40) : "", how: r.how, off: r.off,
+               keep: r.how === "pace", canKeep: ck, words: r.how === "pace" || ck ? paceWords(r.off) : "", rows: rows };
+    } catch(e){ return null; }
+  }
+  /* choose a course's lesson for today: d = that lesson's own day on the calendar. Today's own day (or null)
+     goes back to the calendar. Returns what was stored before (for Undo: restorePick), or false. */
+  function pick(label, dk, d){
+    try {
+      if (!web()) return false;
+      var c = courseFor(label); if (!c) return false;
+      var co = readLessons().courses[c.course], rec = null, before = pickRec(c.course);
+      if (d && d !== dk){
+        var t = entryOn(co, d);
+        if (!t || !slidesURL(c.src, t.slides)) return false;
+        rec = { d: dk, pick: t.d, slides: t.slides };
+      }
+      if (!writePick(c.course, rec)) return false;
+      return { course: c.course, before: before ? JSON.parse(JSON.stringify(before)) : null };
+    } catch(e){ return false; }
+  }
+  function restorePick(course, rec){
+    try {
+      if (!SOURCES.some(function(s){ return s.course === course; })) return false;
+      return writePick(course, rec || null);
+    } catch(e){ return false; }
+  }
+  /* keep today's choice as a pace (on), or let a pace go and keep its lesson for today only (off) */
+  function keep(label, dk, on){
+    try {
+      var r = resolve(label, dk); if (!r) return false;
+      if (on){
+        if (!canKeep(r)) return false;
+        return writePick(r.c.course, { d: dk, pick: r.day.d, slides: r.day.slides, keep: true, off: r.off, anchors: anchorsFor(r.c, r.co, r.day) });
+      }
+      if (r.how !== "pace") return false;
+      return writePick(r.c.course, r.day && slidesURL(r.c.src, r.day.slides) ? { d: dk, pick: r.day.d, slides: r.day.slides } : null);
+    } catch(e){ return false; }
+  }
   /* Warm-up asks: a stale copy (over 6 h) is refreshed behind the board; with no copy at all the
      warm-up waits on the refresh (a moment, at most) — returns that promise, else null */
   function wanted(){
@@ -34703,7 +35031,178 @@ var Pacing = (function(){
     init: function(){ if (web()) setTimeout(function(){ try { refresh(); } catch(e){} }, 1500); },   // after boot, never in its way
     refresh: refresh, wanted: wanted, read: read, codes: codes, parse: parse,
     lessons: lessons, readLessons: readLessons, courseFor: courseFor, lessonFor: lessonFor, hasLessons: hasLessons,   // v7.63
+    shownFor: shownFor, canPick: canPick, pickList: pickList, pick: pick, restorePick: restorePick, keep: keep, paceWords: paceWords,   // v7.66
     SOURCES: SOURCES
+  };
+})();
+
+/* ================= v7.66 THE LESSON LIST =================
+   Croix: "Deckhand pulled up today's slide, good, but I'm a little off. I need to be able to select which
+   lesson if not the current one." One sheet, three doors: the stage's ⋯ → Lesson (a locked board, the slides
+   up), the Slides card's ✎ row, and "Pick a lesson" on a card with no slides today. It lists the course's
+   lessons that have slides, by unit, in the calendar's order; the line that is up is filled, today's own day
+   is marked and is always there (the way back to the calendar). A tap shows that lesson for the rest of the
+   day, for every class of the course; the toast offers to stay that many class days behind (or ahead) — the
+   same switch as the sheet's last line. Nothing here touches the card's saved link or the board's config:
+   the choice is Pacing's (localStorage["deckhand.lessonPick"]). On the stage the sheet stands on the pen's
+   side, like the name picker and the comment cards; it holds the keys while it is up (Escape or the clicker
+   puts it away), and a tap outside it closes it without reaching the slide. */
+var LessonPick = (function(){
+  var pop = null, scrim = null, nameEl = null, bodyEl = null, foot = null, keepBtn = null;
+  var open = false, ctx = null, openedAt = 0;
+  var HOLD_MS = 350;                             // it comes up under the finger that asked for it: a double tap's second half picks nothing
+  var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function md(dk){ var m = +dk.slice(5, 7), d = +dk.slice(8, 10); return (MON[m - 1] || "") + " " + d; }
+  /* the class the sheet was opened for: the list and every tap on it are that class's course, whatever the
+     bell does meanwhile (a line is a day, and the other course has a lesson on the same day) */
+  function period(){ return ctx ? ctx.label : null; }
+  function moved(){ try { return !!ctx && ctx.live() !== ctx.label; } catch(e){ return true; } }
+  function span(cls, text){ var s = document.createElement("span"); s.className = cls; s.textContent = text; return s; }
+  function ensure(){
+    if (pop) return;
+    scrim = document.createElement("div"); scrim.id = "lsScrim"; scrim.hidden = true;
+    pop = document.createElement("div"); pop.id = "lsPop"; pop.hidden = true; pop.tabIndex = -1;
+    pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Lessons");
+    pop.innerHTML =
+      '<div class="lsHead"><span class="lsName"></span><button type="button" class="ccLogX lsX" aria-label="Close">&#x2715;</button></div>' +
+      '<div class="lsBody" role="group" aria-label="Lessons with slides"></div>' +
+      '<div class="lsFoot" hidden><button type="button" class="lsKeep" role="switch" aria-checked="false"><span class="lsKeepLbl"></span><span class="lsSw" aria-hidden="true"></span></button></div>';
+    document.body.appendChild(scrim); document.body.appendChild(pop);
+    nameEl = pop.querySelector(".lsName"); bodyEl = pop.querySelector(".lsBody");
+    foot = pop.querySelector(".lsFoot"); keepBtn = pop.querySelector(".lsKeep");
+    wireButton(pop.querySelector(".lsX"), function(){ show(false); });
+    wireButton(keepBtn, function(){
+      var p = period(); if (!p || held()) return;
+      var on = keepBtn.getAttribute("aria-checked") !== "true";
+      try { Pacing.keep(p, dateKey(now()), on); } catch(e){}
+      paint(false);
+    });
+    pop.addEventListener("pointerdown", function(e){ e.stopPropagation(); });   // taps stay in the sheet
+    /* a tap anywhere else puts it away — on the click, so the cover is still there when the finger lifts
+       and the tap cannot land on the slide underneath */
+    scrim.addEventListener("click", function(e){ e.stopPropagation(); if (open && !held()) show(false); });
+  }
+  function fits(){
+    var c = document.body.classList, on = false;
+    try { on = Alarm.isOn(); } catch(e){}
+    return !c.contains("landing") && !c.contains("inking") && !c.contains("zooming") && !on;
+  }
+  /* the list for the card's class, as it stands now; `place` scrolls the line that is up into the middle */
+  function paint(place){
+    var p = period(), L = null;
+    try { L = p ? Pacing.pickList(p, dateKey(now())) : null; } catch(e){}
+    if (!L){ show(false); return; }
+    nameEl.textContent = L.name || "Lessons";
+    var keepTop = bodyEl.scrollTop;
+    bodyEl.textContent = "";
+    var unit = undefined, onRow = null, todayRow = null;
+    L.rows.forEach(function(r){
+      if (r.unit !== null && r.unit !== unit){
+        unit = r.unit;
+        bodyEl.appendChild(span("lsUnit", "Unit " + r.unit + (r.unitName ? " \u00b7 " + r.unitName : "")));
+      }
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "lsRow" + (r.lesson ? "" : " lsPlain");
+      b.setAttribute("aria-pressed", r.on ? "true" : "false");
+      b.dataset.d = r.d;
+      b.appendChild(span("lsTag", r.tag));          // (a test or a review day has none; a lesson whose slides are not built yet keeps its code)
+      b.appendChild(span("lsLbl", r.label || (r.lesson ? "Lesson" : r.today ? "No class today" : "No slides")));
+      b.appendChild(r.today ? span("lsNow", "Today") : span("lsDate", md(r.d)));
+      /* a lesson is chosen; today's own day goes back to the calendar; a day with no slides that is
+         already up (the plan, a day over, on a review day) has nothing to choose */
+      if (r.lesson || r.today) wireButton(b, function(){ choose(r); });
+      else b.disabled = true;
+      bodyEl.appendChild(b);
+      if (r.on) onRow = b;
+      if (r.today) todayRow = b;
+    });
+    foot.hidden = !(L.keep || L.canKeep);
+    keepBtn.setAttribute("aria-checked", L.keep ? "true" : "false");
+    keepBtn.querySelector(".lsKeepLbl").textContent = "Stay " + L.words;
+    if (place){
+      /* the line that is up, in the middle — set by hand (scrollIntoView can move the page itself), and
+         snapped so a whole line starts right under the unit's name instead of half of one */
+      var at = onRow || todayRow, top = 0;
+      if (at){
+        var want = at.offsetTop - (bodyEl.clientHeight - at.offsetHeight) / 2, head = bodyEl.querySelector(".lsUnit");
+        var hh = head ? head.offsetHeight : 0, rowsEl = bodyEl.querySelectorAll(".lsRow");
+        for (var i = 0; i < rowsEl.length; i++){
+          var y = rowsEl[i].offsetTop - hh;
+          if (y <= want) top = y; else break;
+        }
+      }
+      bodyEl.scrollTop = Math.max(0, top);
+    } else bodyEl.scrollTop = keepTop;
+  }
+  function held(){ return Date.now() - openedAt < HOLD_MS; }
+  function choose(r){
+    var p = period(), dk = dateKey(now()), res = null;
+    if (!p || held()) return;
+    if (r.on){ show(false); return; }              // the line that is already up: nothing changes (a pace stays a pace)
+    try { res = Pacing.pick(p, dk, r.today ? null : r.d); } catch(e){}
+    show(false);
+    if (!res) return;
+    var back = function(){ try { Pacing.restorePick(res.course, res.before); } catch(e){} };
+    var S = null, L = null;
+    try { S = Pacing.shownFor(p, dk); L = Pacing.pickList(p, dk); } catch(e){}
+    try {
+      if (S && S.how === "pick"){
+        var said = (S.tag || "That lesson") + " for today";
+        if (L && L.canKeep){
+          var words = L.words;
+          Undo.show(said, function(){
+            var ok = false; try { ok = Pacing.keep(p, dateKey(now()), true); } catch(e){}
+            if (ok) Undo.show("Staying " + words + " the calendar", function(){ try { Pacing.keep(p, dateKey(now()), false); } catch(e){} });
+          }, "Stay " + words, 8000);
+        } else Undo.show(said, back);
+      } else if (res.before) Undo.show("Following the calendar", back);
+    } catch(e){}
+  }
+  function show(on){
+    on = !!on;
+    if (on && !fits()) return;
+    if (on === open) return;
+    ensure();
+    open = on;
+    pop.hidden = !open; scrim.hidden = !open;
+    if (open){
+      openedAt = Date.now();
+      try { PickPop.close(); CcardPop.close(); BlobTips.hide(); } catch(e){}   // one sheet at a time
+      pop.classList.toggle("lsStage", document.body.classList.contains("focusMode"));
+      paint(true);
+      if (open){ try { pop.focus({ preventScroll: true }); } catch(e){} }      // the keys leave the slides: Escape closes this, the clicker turns no page behind it
+      return;
+    }
+    ctx = null;
+    try { Canvas.refocusDeck(); } catch(e){}
+  }
+  return {
+    init: function(){
+      document.addEventListener("deckhand:home", function(){ show(false); });
+      document.addEventListener("deckhand:stage", function(){ show(false); });   // the card took (or left) the stage: the sheet was placed for where it was
+      document.addEventListener("deckhand:lessons", function(){ if (open) paint(false); });   // new calendars, or the choice changed in another window
+      window.addEventListener("resize", function(){ show(false); });
+      try { new MutationObserver(function(){ if (open && !fits()) show(false); }).observe(document.body, { attributes: true, attributeFilter: ["class"] }); } catch(e){}
+      setInterval(function(){ if (open && (!fits() || moved())) show(false); }, 1000);   // a ringing timer takes the screen; the next class came in
+      document.addEventListener("keydown", function(e){
+        if (!open) return;
+        try { if (Alarm.isOn()) return; } catch(_){}
+        if (e.key === "Escape" || isClickerKey(e.key)){ show(false); e.stopPropagation(); e.preventDefault(); }
+      }, true);
+    },
+    /* c = { host: the card, period: function → the class the card is showing } */
+    open: function(c){
+      if (!c || typeof c.period !== "function") return;
+      if (open) show(false);
+      var label = null; try { label = c.period(); } catch(e){}
+      if (typeof label !== "string" || !label) return;
+      ctx = { host: c.host, label: label, live: c.period }; show(true);
+      if (!open) ctx = null;
+    },
+    close: function(){ show(false); },
+    closeFor: function(host){ if (open && ctx && ctx.host === host) show(false); },
+    isOpen: function(){ return open; },
+    holdMs: function(ms){ HOLD_MS = ms; }          // test hook
   };
 })();
 
@@ -34804,7 +35303,7 @@ var Awake = (function(){
    cards are built, so the picker and the comment cards open knowing their class */
 var rostersAuto = null;
 try { rostersAuto = Settings.autoRosters(); } catch(e){ try { console.error("Deckhand: class lists not read", e); } catch(_){} }
-[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, WrapSong, Awake, Ink, Keys, SaveState, Pacing].forEach(function(mod){
+[Clock, Bell, DayEditor, Landing, Sound, Alarm, Sea, FS, Settings, Canvas, Settle, Wrapup, Flash, NowPlaying, PassingMusic, Season, LunchArt, CcardPop, BoardList, PickPop, BlobTips, WrapSong, Awake, Ink, Keys, SaveState, Pacing, LessonPick].forEach(function(mod){
   try { mod.init(); }
   catch(e){ try { console.error("Deckhand: module failed to boot", e); } catch(_){} }
 });
@@ -34860,6 +35359,7 @@ window.Deckhand = {
   warmup: function(){ return Warmup.open(); },  // v7.63: the warm-up on the stage (tests)
   warmupModule: Warmup,                         // v7.63: hash() / period() (tests)
   pacing: Pacing,                               // v7.63: the calendars for Cadence (tests)
+  lessonPick: LessonPick,                       // v7.66: the lesson list (tests)
   boardList: BoardList,                         // v7.46: who is at the board (tests)
   wrapSong: WrapSong,                           // v7.51: the wrap-up song (tests)
   blobTips: BlobTips,

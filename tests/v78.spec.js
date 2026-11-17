@@ -213,6 +213,10 @@ test.describe("v7.8 the probability kit", () => {
     ok(labels.join() === "Time,Class,Room,Post,Media,Math", "menu headings: " + labels.join());
     for (const id of ["addDiceBtn", "addCoinBtn", "addSpinBtn", "addCardsBtn"]) await expect(page.locator("#" + id)).toBeVisible();
     await page.keyboard.press("Escape");
+    /* v7.66: this page's board is saved NOW. Its autosave runs every 2.5 s, and when one landed between the
+       fixture page's fresh start (the store cleared) and its boot, the fixture opened as this page's board
+       ("kit not clamped: clock:undefined,dice:1" — about one run in twelve under four workers). */
+    await dh.flush();
     const pg = await dh.loadFixture("tmp_kit.html", JSON.stringify({
       schemaVersion: 4, appVersion: "7.8.0", ownerName: "",
       scenes: [{ name: "Daily Board", widgets: [
